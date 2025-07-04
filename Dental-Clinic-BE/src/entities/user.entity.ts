@@ -1,6 +1,11 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  ManyToOne, OneToMany, CreateDateColumn, UpdateDateColumn
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Department } from './department.entity';
 import { Appointment } from './appointment.entity';
@@ -37,19 +42,19 @@ export class User {
   @Column({ nullable: true })
   DepartmentId: number;
 
-  @ManyToOne(() => Department, department => department.Users)
+  @ManyToOne(() => Department, (department) => department.Users)
   Department: Department;
 
-  @OneToMany(() => Appointment, appointment => appointment.Doctor)
+  @OneToMany(() => Appointment, (appointment) => appointment.Doctor)
   Appointments: Appointment[];
 
-  @OneToMany(() => MedicalRecord, record => record.Doctor)
+  @OneToMany(() => MedicalRecord, (record) => record.Doctor)
   MedicalRecords: MedicalRecord[];
 
-  @OneToMany(() => Attendance, attendance => attendance.User)
+  @OneToMany(() => Attendance, (attendance) => attendance.User)
   Attendances: Attendance[];
 
-  @OneToMany(() => Log, log => log.User)
+  @OneToMany(() => Log, (log) => log.User)
   Logs: Log[];
 
   @CreateDateColumn()
