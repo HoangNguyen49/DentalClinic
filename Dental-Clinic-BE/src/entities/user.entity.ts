@@ -36,6 +36,9 @@ export class User {
   @Column()
   Role: string;
 
+  @Column({ default: true })
+  IsActive: boolean;
+
   @Column({ nullable: true })
   AvatarUrl: string;
 
