@@ -1,16 +1,18 @@
 import 'reflect-metadata';
 import { DataSource } from 'typeorm';
+import * as dotenv from 'dotenv';
+dotenv.config();
 
 export const AppDataSource = new DataSource({
   type: 'mssql',
-  host: 'localhost',
-  port: 1433,
-  username: 'sa',
-  password: '123',
-  database: 'DentalClinicDB',
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT!, 10),
+  username: process.env.DB_USERNAME,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_DATABASE,
   entities: ['dist/src/entities/*.js'],
   migrations: ['dist/src/migration/*.js'],
-  synchronize: false,
+  synchronize: process.env.DB_SYNCHRONIZE === 'true',
   options: {
     encrypt: false,
     trustServerCertificate: true,

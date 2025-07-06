@@ -1,6 +1,10 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  OneToMany, CreateDateColumn, UpdateDateColumn
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Appointment } from './appointment.entity';
 import { MedicalRecord } from './medical-record.entity';
@@ -10,44 +14,44 @@ import { CrmLog } from './crm-log.entity';
 @Entity('Patients')
 export class Patient {
   @PrimaryGeneratedColumn()
-  PatientId: number;
+  patientId: number;
 
   @Column()
-  FullName: string;
+  fullName: string;
 
   @Column()
-  Gender: string;
+  gender: string;
 
   @Column()
-  DateOfBirth: Date;
+  dateOfBirth: Date;
 
   @Column()
-  Phone: string;
+  phone: string;
 
   @Column()
-  Email: string;
+  email: string;
 
   @Column()
-  Address: string;
+  address: string;
 
   @Column({ nullable: true })
-  Note: string;
+  note: string;
 
-  @OneToMany(() => Appointment, appointment => appointment.Patient)
-  Appointments: Appointment[];
+  @OneToMany(() => Appointment, appointment => appointment.patient)
+  appointments: Appointment[];
 
-  @OneToMany(() => MedicalRecord, record => record.Patient)
-  MedicalRecords: MedicalRecord[];
+  @OneToMany(() => MedicalRecord, record => record.patient)
+  medicalRecords: MedicalRecord[];
 
-  @OneToMany(() => Invoice, invoice => invoice.Patient)
-  Invoices: Invoice[];
+  @OneToMany(() => Invoice, invoice => invoice.patient)
+  invoices: Invoice[];
 
-  @OneToMany(() => CrmLog, crmLog => crmLog.Patient)
-  CrmLogs: CrmLog[];
+  @OneToMany(() => CrmLog, crmLog => crmLog.patient)
+  crmLogs: CrmLog[];
 
   @CreateDateColumn()
-  CreatedAt: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  UpdatedAt: Date;
+  updatedAt: Date;
 }

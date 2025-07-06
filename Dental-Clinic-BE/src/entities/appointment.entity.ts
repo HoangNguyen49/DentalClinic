@@ -1,6 +1,11 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne,
-  OneToMany, CreateDateColumn, UpdateDateColumn
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Patient } from './patient.entity';
 import { User } from './user.entity';
@@ -13,59 +18,59 @@ import { ProductUsage } from './product-usage.entity';
 @Entity('Appointments')
 export class Appointment {
   @PrimaryGeneratedColumn()
-  AppointmentId: number;
+  appointmentId: number;
 
   @Column()
-  AppointmentDateTime: Date;
+  appointmentDateTime: Date;
 
   @Column()
-  Status: string;
+  status: string;
 
   @Column({ nullable: true })
-  Note: string;
+  note: string;
 
   @Column({ nullable: true })
-  Channel: string;
+  channel: string;
 
-  @ManyToOne(() => Patient, patient => patient.Appointments)
-  Patient: Patient;
-
-  @Column()
-  PatientId: number;
-
-  @ManyToOne(() => User, user => user.Appointments)
-  Doctor: User;
+  @ManyToOne(() => Patient, patient => patient.appointments)
+  patient: Patient;
 
   @Column()
-  DoctorId: number;
+  patientId: number;
 
-  @ManyToOne(() => Service, service => service.Appointments)
-  Service: Service;
-
-  @Column()
-  ServiceId: number;
-
-  @ManyToOne(() => Room, room => room.Appointments)
-  Room: Room;
+  @ManyToOne(() => User, user => user.appointments)
+  doctor: User;
 
   @Column()
-  RoomId: number;
+  doctorId: number;
 
-  @ManyToOne(() => Chair, chair => chair.Appointments)
-  Chair: Chair;
+  @ManyToOne(() => Service, service => service.appointments)
+  service: Service;
 
   @Column()
-  ChairId: number;
+  serviceId: number;
 
-  @OneToMany(() => Invoice, invoice => invoice.Appointment)
-  Invoices: Invoice[];
+  @ManyToOne(() => Room, room => room.appointments)
+  room: Room;
 
-  @OneToMany(() => ProductUsage, usage => usage.Appointment)
-  ProductUsages: ProductUsage[];
+  @Column()
+  roomId: number;
+
+  @ManyToOne(() => Chair, chair => chair.appointments)
+  chair: Chair;
+
+  @Column()
+  chairId: number;
+
+  @OneToMany(() => Invoice, invoice => invoice.appointment)
+  invoices: Invoice[];
+
+  @OneToMany(() => ProductUsage, usage => usage.appointment)
+  productUsages: ProductUsage[];
 
   @CreateDateColumn()
-  CreatedAt: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  UpdatedAt: Date;
+  updatedAt: Date;
 }

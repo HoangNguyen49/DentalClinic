@@ -5,26 +5,26 @@ import { Patient } from './patient.entity';
 @Entity('CrmLogs')
 export class CrmLog {
   @PrimaryGeneratedColumn()
-  LogId: number;
+  logId: number;
 
   @Column()
-  Channel: string;
+  channel: string;
 
   @Column()
-  Status: string;
+  status: string;
 
   @Column()
-  SentAt: Date;
+  sentAt: Date;
 
-  @ManyToOne(() => CrmCampaign, campaign => campaign.CrmLogs)
-  Campaign: CrmCampaign;
-
-  @Column()
-  CampaignId: number;
-
-  @ManyToOne(() => Patient, patient => patient.CrmLogs)
-  Patient: Patient;
+  @ManyToOne(() => CrmCampaign, campaign => campaign.crmLogs)
+  campaign: CrmCampaign;
 
   @Column()
-  PatientId: number;
+  campaignId: number;
+
+  @ManyToOne(() => Patient, patient => patient.crmLogs)
+  patient: Patient;
+
+  @Column()
+  patientId: number;
 }

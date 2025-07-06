@@ -4,23 +4,23 @@ import { Invoice } from './invoice.entity';
 @Entity('Payments')
 export class Payment {
   @PrimaryGeneratedColumn()
-  PaymentId: number;
+  paymentId: number;
 
   @Column('decimal')
-  Amount: number;
+  amount: number;
 
   @Column()
-  PaymentMethod: string;
+  paymentMethod: string;
 
   @Column()
-  PaymentDate: Date;
+  paymentDate: Date;
 
   @Column({ nullable: true })
-  Note: string;
+  note: string;
 
-  @ManyToOne(() => Invoice, invoice => invoice.Payments)
-  Invoice: Invoice;
+  @ManyToOne(() => Invoice, invoice => invoice.payments)
+  invoice: Invoice;
 
   @Column()
-  InvoiceId: number;
+  invoiceId: number;
 }

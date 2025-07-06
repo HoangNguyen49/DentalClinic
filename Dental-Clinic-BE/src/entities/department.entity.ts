@@ -4,11 +4,11 @@ import { User } from './user.entity';
 @Entity('Departments')
 export class Department {
   @PrimaryGeneratedColumn()
-  DepartmentId: number;
+  departmentId: number;
 
   @Column()
-  DepartmentName: string;
+  departmentName: string;
 
-  @OneToMany(() => User, user => user.Department)
-  Users: User[];
+  @OneToMany(() => User, user => user.department)
+  users: User[];
 }

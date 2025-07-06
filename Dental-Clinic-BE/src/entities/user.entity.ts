@@ -16,53 +16,53 @@ import { Log } from './log.entity';
 @Entity('Users')
 export class User {
   @PrimaryGeneratedColumn()
-  UserId: number;
+  userId: number;
 
   @Column()
-  FullName: string;
+  fullName: string;
 
   @Column({ unique: true })
-  Username: string;
+  username: string;
 
   @Column()
-  PasswordHash: string;
+  passwordHash: string;
 
   @Column({ unique: true })
-  Email: string;
+  email: string;
 
   @Column({ nullable: true })
-  Phone: string;
+  phone: string;
 
   @Column()
-  Role: string;
+  role: string;
 
   @Column({ default: true })
-  IsActive: boolean;
+  isActive: boolean;
 
   @Column({ nullable: true })
-  AvatarUrl: string;
+  avatarUrl: string;
 
   @Column({ nullable: true })
-  DepartmentId: number;
+  departmentId: number;
 
-  @ManyToOne(() => Department, (department) => department.Users)
-  Department: Department;
+  @ManyToOne(() => Department, (department) => department.users)
+  department: Department;
 
-  @OneToMany(() => Appointment, (appointment) => appointment.Doctor)
-  Appointments: Appointment[];
+  @OneToMany(() => Appointment, (appointment) => appointment.doctor)
+  appointments: Appointment[];
 
-  @OneToMany(() => MedicalRecord, (record) => record.Doctor)
-  MedicalRecords: MedicalRecord[];
+  @OneToMany(() => MedicalRecord, (record) => record.doctor)
+  medicalRecords: MedicalRecord[];
 
-  @OneToMany(() => Attendance, (attendance) => attendance.User)
-  Attendances: Attendance[];
+  @OneToMany(() => Attendance, (attendance) => attendance.user)
+  attendances: Attendance[];
 
-  @OneToMany(() => Log, (log) => log.User)
-  Logs: Log[];
+  @OneToMany(() => Log, (log) => log.user)
+  logs: Log[];
 
   @CreateDateColumn()
-  CreatedAt: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  UpdatedAt: Date;
+  updatedAt: Date;
 }

@@ -1,6 +1,11 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne,
-  OneToMany, CreateDateColumn, UpdateDateColumn
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Patient } from './patient.entity';
 import { Appointment } from './appointment.entity';
@@ -9,41 +14,41 @@ import { Payment } from './payment.entity';
 @Entity('Invoices')
 export class Invoice {
   @PrimaryGeneratedColumn()
-  InvoiceId: number;
+  invoiceId: number;
 
   @Column('decimal')
-  TotalAmount: number;
+  totalAmount: number;
 
   @Column('decimal')
-  PaidAmount: number;
+  paidAmount: number;
 
   @Column()
-  PaymentStatus: string;
+  paymentStatus: string;
 
   @Column()
-  PaymentMethod: string;
+  paymentMethod: string;
 
   @Column()
-  InvoiceDate: Date;
+  invoiceDate: Date;
 
-  @ManyToOne(() => Patient, patient => patient.Invoices)
-  Patient: Patient;
-
-  @Column()
-  PatientId: number;
-
-  @ManyToOne(() => Appointment, appointment => appointment.Invoices)
-  Appointment: Appointment;
+  @ManyToOne(() => Patient, patient => patient.invoices)
+  patient: Patient;
 
   @Column()
-  AppointmentId: number;
+  patientId: number;
 
-  @OneToMany(() => Payment, payment => payment.Invoice)
-  Payments: Payment[];
+  @ManyToOne(() => Appointment, appointment => appointment.invoices)
+  appointment: Appointment;
+
+  @Column()
+  appointmentId: number;
+
+  @OneToMany(() => Payment, payment => payment.invoice)
+  payments: Payment[];
 
   @CreateDateColumn()
-  CreatedAt: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  UpdatedAt: Date;
+  updatedAt: Date;
 }

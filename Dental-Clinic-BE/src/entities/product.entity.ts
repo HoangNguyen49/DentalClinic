@@ -1,35 +1,39 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  OneToMany, CreateDateColumn, UpdateDateColumn
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { ProductUsage } from './product-usage.entity';
 
 @Entity('Products')
 export class Product {
   @PrimaryGeneratedColumn()
-  ProductId: number;
+  productId: number;
 
   @Column()
-  ProductName: string;
+  productName: string;
 
   @Column()
-  Category: string;
+  category: string;
 
   @Column()
-  QuantityInStock: number;
+  quantityInStock: number;
 
   @Column()
-  Unit: string;
+  unit: string;
 
   @Column('decimal')
-  Price: number;
+  price: number;
 
-  @OneToMany(() => ProductUsage, usage => usage.Product)
-  ProductUsages: ProductUsage[];
+  @OneToMany(() => ProductUsage, usage => usage.product)
+  productUsages: ProductUsage[];
 
   @CreateDateColumn()
-  CreatedAt: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  UpdatedAt: Date;
+  updatedAt: Date;
 }

@@ -1,6 +1,11 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, ManyToOne,
-  OneToMany, CreateDateColumn, UpdateDateColumn
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Patient } from './patient.entity';
 import { User } from './user.entity';
@@ -10,44 +15,44 @@ import { MedicalRecordImage } from './medical-record-image.entity';
 @Entity('MedicalRecords')
 export class MedicalRecord {
   @PrimaryGeneratedColumn()
-  RecordId: number;
+  recordId: number;
 
   @Column()
-  Diagnosis: string;
+  diagnosis: string;
 
   @Column()
-  TreatmentPlan: string;
+  treatmentPlan: string;
 
   @Column({ nullable: true })
-  Note: string;
+  note: string;
 
   @Column()
-  RecordDate: Date;
+  recordDate: Date;
 
-  @ManyToOne(() => Patient, patient => patient.MedicalRecords)
-  Patient: Patient;
-
-  @Column()
-  PatientId: number;
-
-  @ManyToOne(() => User, user => user.MedicalRecords)
-  Doctor: User;
+  @ManyToOne(() => Patient, patient => patient.medicalRecords)
+  patient: Patient;
 
   @Column()
-  DoctorId: number;
+  patientId: number;
 
-  @ManyToOne(() => Service, service => service.MedicalRecords)
-  Service: Service;
+  @ManyToOne(() => User, user => user.medicalRecords)
+  doctor: User;
 
   @Column()
-  ServiceId: number;
+  doctorId: number;
 
-  @OneToMany(() => MedicalRecordImage, image => image.MedicalRecord)
-  Images: MedicalRecordImage[];
+  @ManyToOne(() => Service, service => service.medicalRecords)
+  service: Service;
+
+  @Column()
+  serviceId: number;
+
+  @OneToMany(() => MedicalRecordImage, image => image.medicalRecord)
+  images: MedicalRecordImage[];
 
   @CreateDateColumn()
-  CreatedAt: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  UpdatedAt: Date;
+  updatedAt: Date;
 }

@@ -5,20 +5,20 @@ import { Appointment } from './appointment.entity';
 @Entity('Rooms')
 export class Room {
   @PrimaryGeneratedColumn()
-  RoomId: number;
+  roomId: number;
 
   @Column()
-  RoomName: string;
+  roomName: string;
 
   @Column()
-  IsPrivate: boolean;
+  isPrivate: boolean;
 
   @Column()
-  NumberOfChairs: number;
+  numberOfChairs: number;
 
-  @OneToMany(() => Chair, chair => chair.Room)
-  Chairs: Chair[];
+  @OneToMany(() => Chair, chair => chair.room)
+  chairs: Chair[];
 
-  @OneToMany(() => Appointment, appointment => appointment.Room)
-  Appointments: Appointment[];
+  @OneToMany(() => Appointment, appointment => appointment.room)
+  appointments: Appointment[];
 }

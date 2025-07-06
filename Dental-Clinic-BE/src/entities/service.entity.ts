@@ -1,6 +1,10 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column,
-  OneToMany, CreateDateColumn, UpdateDateColumn
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 import { Appointment } from './appointment.entity';
 import { MedicalRecord } from './medical-record.entity';
@@ -8,29 +12,29 @@ import { MedicalRecord } from './medical-record.entity';
 @Entity('Services')
 export class Service {
   @PrimaryGeneratedColumn()
-  ServiceId: number;
+  serviceId: number;
 
   @Column()
-  ServiceName: string;
+  serviceName: string;
 
   @Column()
-  Description: string;
+  description: string;
 
   @Column('decimal')
-  Price: number;
+  price: number;
 
   @Column()
-  Duration: number;
+  duration: number;
 
-  @OneToMany(() => Appointment, appointment => appointment.Service)
-  Appointments: Appointment[];
+  @OneToMany(() => Appointment, appointment => appointment.service)
+  appointments: Appointment[];
 
-  @OneToMany(() => MedicalRecord, record => record.Service)
-  MedicalRecords: MedicalRecord[];
+  @OneToMany(() => MedicalRecord, record => record.service)
+  medicalRecords: MedicalRecord[];
 
   @CreateDateColumn()
-  CreatedAt: Date;
+  createdAt: Date;
 
   @UpdateDateColumn()
-  UpdatedAt: Date;
+  updatedAt: Date;
 }

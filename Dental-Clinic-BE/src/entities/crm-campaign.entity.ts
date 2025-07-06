@@ -4,23 +4,23 @@ import { CrmLog } from './crm-log.entity';
 @Entity('CrmCampaigns')
 export class CrmCampaign {
   @PrimaryGeneratedColumn()
-  CampaignId: number;
+  campaignId: number;
 
   @Column()
-  CampaignName: string;
+  campaignName: string;
 
   @Column()
-  Description: string;
+  description: string;
 
   @Column()
-  StartDate: Date;
+  startDate: Date;
 
   @Column()
-  EndDate: Date;
+  endDate: Date;
 
   @Column()
-  Status: string;
+  status: string;
 
-  @OneToMany(() => CrmLog, log => log.Campaign)
-  CrmLogs: CrmLog[];
+  @OneToMany(() => CrmLog, log => log.campaign)
+  crmLogs: CrmLog[];
 }

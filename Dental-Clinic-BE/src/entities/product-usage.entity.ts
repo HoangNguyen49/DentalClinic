@@ -5,23 +5,23 @@ import { Appointment } from './appointment.entity';
 @Entity('ProductUsage')
 export class ProductUsage {
   @PrimaryGeneratedColumn()
-  UsageId: number;
+  usageId: number;
 
   @Column()
-  QuantityUsed: number;
+  quantityUsed: number;
 
   @Column()
-  UsedAt: Date;
+  usedAt: Date;
 
-  @ManyToOne(() => Product, product => product.ProductUsages)
-  Product: Product;
-
-  @Column()
-  ProductId: number;
-
-  @ManyToOne(() => Appointment, appointment => appointment.ProductUsages)
-  Appointment: Appointment;
+  @ManyToOne(() => Product, product => product.productUsages)
+  product: Product;
 
   @Column()
-  AppointmentId: number;
+  productId: number;
+
+  @ManyToOne(() => Appointment, appointment => appointment.productUsages)
+  appointment: Appointment;
+
+  @Column()
+  appointmentId: number;
 }

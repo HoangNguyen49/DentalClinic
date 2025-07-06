@@ -4,25 +4,26 @@ import { User } from './user.entity';
 @Entity('Attendance')
 export class Attendance {
   @PrimaryGeneratedColumn()
-  AttendanceId: number;
+  attendanceId: number;
 
   @Column()
-  CheckInTime: Date;
+  checkInTime: Date;
 
   @Column()
-  CheckOutTime: Date;
+  checkOutTime: Date;
 
   @Column()
-  IsOvertime: boolean;
+  isOvertime: boolean;
 
   @Column({ nullable: true })
-  Note: string;
+  note: string;
 
-  @ManyToOne(() => User, user => user.Attendances)
-  User: User;
+  @ManyToOne(() => User, user => user.attendances)
+  user: User;
 
   @Column()
-  UserId: number;
+  userId: number;
 }
+
 // The Attendance entity represents the attendance records of users in the dental clinic system.
-// It includes fields for check-in and check-out times, overtime status, and an optional note
+// It includes fields for check-in and check-out times, overtime status, and an optional note.

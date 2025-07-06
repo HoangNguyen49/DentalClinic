@@ -4,23 +4,23 @@ import { User } from './user.entity';
 @Entity('Logs')
 export class Log {
   @PrimaryGeneratedColumn()
-  LogId: number;
+  logId: number;
 
   @Column()
-  Action: string;
+  action: string;
 
   @Column()
-  TableName: string;
+  tableName: string;
 
   @Column()
-  RecordId: number;
+  recordId: number;
 
   @Column()
-  ActionTime: Date;
+  actionTime: Date;
 
-  @ManyToOne(() => User, user => user.Logs)
-  User: User;
+  @ManyToOne(() => User, user => user.logs)
+  user: User;
 
   @Column()
-  UserId: number;
+  userId: number;
 }

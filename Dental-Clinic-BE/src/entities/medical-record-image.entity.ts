@@ -4,20 +4,20 @@ import { MedicalRecord } from './medical-record.entity';
 @Entity('MedicalRecordImages')
 export class MedicalRecordImage {
   @PrimaryGeneratedColumn()
-  ImageId: number;
+  imageId: number;
 
   @Column()
-  ImageUrl: string;
+  imageUrl: string;
 
   @Column({ nullable: true })
-  Description: string;
+  description: string;
 
-  @ManyToOne(() => MedicalRecord, record => record.Images)
-  MedicalRecord: MedicalRecord;
+  @ManyToOne(() => MedicalRecord, record => record.images)
+  medicalRecord: MedicalRecord;
 
   @Column()
-  RecordId: number;
+  recordId: number;
 
   @CreateDateColumn()
-  CreatedAt: Date;
+  createdAt: Date;
 }

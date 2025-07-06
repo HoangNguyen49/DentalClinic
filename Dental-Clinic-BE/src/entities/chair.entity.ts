@@ -5,17 +5,17 @@ import { Appointment } from './appointment.entity';
 @Entity('Chairs')
 export class Chair {
   @PrimaryGeneratedColumn()
-  ChairId: number;
+  chairId: number;
 
   @Column()
-  ChairNumber: string;
+  chairNumber: string;
 
   @Column()
-  RoomId: number;
+  roomId: number;
 
-  @ManyToOne(() => Room, room => room.Chairs)
-  Room: Room;
+  @ManyToOne(() => Room, room => room.chairs)
+  room: Room;
 
-  @OneToMany(() => Appointment, appointment => appointment.Chair)
-  Appointments: Appointment[];
+  @OneToMany(() => Appointment, appointment => appointment.chair)
+  appointments: Appointment[];
 }
