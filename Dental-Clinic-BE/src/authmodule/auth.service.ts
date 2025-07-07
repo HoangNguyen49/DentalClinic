@@ -2,10 +2,14 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import * as bcrypt from 'bcrypt';
-import { UserPayload } from '../users/users.interface'; 
+import { UserPayload, UserRole } from '../users/users.interface';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AuthService {
+  // Tạm lưu refresh tokens nếu bạn chưa muốn lưu DB
+  private refreshTokens: Record<string, string> = {};
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -24,14 +28,33 @@ export class AuthService {
     return {
       userId: user.userId,
       username: user.username,
-      role: user.role,
+      role: user.role as UserRole,
       isActive: user.isActive,
     };
   }
 
   async login(payload: UserPayload) {
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+    const refreshToken = uuidv4();
+    this.refreshTokens[refreshToken] = JSON.stringify(payload);
+
     return {
-      access_token: this.jwtService.sign(payload),
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    };
+  }
+
+  async refresh(refreshToken: string) {
+    const payloadString = this.refreshTokens[refreshToken];
+    if (!payloadString) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    const payload: UserPayload = JSON.parse(payloadString);
+    const newAccessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
+
+    return {
+      access_token: newAccessToken,
     };
   }
 }
