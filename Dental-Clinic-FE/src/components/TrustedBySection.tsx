@@ -24,7 +24,7 @@ function TrustedBySection() {
                 key={index}
                 src={logo}
                 alt={`Trusted Logo ${index + 1}`}
-                className="h-20 object-contain grayscale-[1] hover:grayscale-0 transition"
+                className="h-20 object-contain grayscale-[0.75] hover:grayscale-0 transition"
               />
             ))}
           </div>
