@@ -14,3 +14,16 @@
 .animate-shine {
   animation: shine 1.5s infinite linear;
 }
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+body {
+  @apply font-instrument;
+}

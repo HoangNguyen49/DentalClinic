@@ -11,12 +11,15 @@ export default {
       fontSize: {
         base: '18px',
       },
-      colors:{
+      colors: {
         primary: '#3366FF',
       },
       backgroundImage: {
-      'hero-gradient': 'linear-gradient(90deg, #60ffd2, #3366ff 56%, #60ffd2)',
-    },
+        'hero-gradient': 'linear-gradient(90deg, #60ffd2, #3366ff 56%, #60ffd2)',
+      },
+      fontFamily: {
+        instrument: ['"Instrument Sans"', 'sans-serif'],
+      },
     },
   },
   plugins: [],
