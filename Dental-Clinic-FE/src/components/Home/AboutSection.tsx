@@ -1,6 +1,5 @@
-import toothlogo from "../assets/images/tooth-logo.png";
-import doctorImg from "../assets/images/about-doctor.png";
-import smileImg from "../assets/images/smile.png";
+import toothlogo from "../../assets/images/tooth-logo.png";
+
 
 function AboutSection() {
   return (
@@ -16,17 +15,9 @@ function AboutSection() {
             <img src={toothlogo} alt="Logo" className="w-full h-full object-contain" />
           </div>
         </div>
-        <h2 className="text-3xl md:text-5xl font-semibold text-[#0D1B3E] leading-relaxed md:leading-loose max-w-5xl mx-auto">
-          We are Professionally Dedicated
-          <span className="inline-block mx-2 align-middle">
-            <img src={doctorImg} alt="Doctor" className="h-[62px] w-[117px] object-cover rounded-lg inline-block" />
-          </span>
-          to Ensuring Your <span className="bg-gradient-to-r from-[#6699FF] to-[#33CCFF] bg-clip-text text-transparent">Oral Health</span> to Maintain
-          <span className="inline-block mx-2 align-middle">
-            <img src={smileImg} alt="Smile" className="h-[62px] w-[117px] object-cover rounded-lg inline-block" />
-          </span>
-          a <span className="bg-gradient-to-r from-[#6699FF] to-[#33CCFF] bg-clip-text text-transparent">Healthy Smile</span>
-        </h2>
+        <h2 className="text-3xl md:text-5xl font-semibold text-[#0D1B3E] leading-relaxed md:leading-loose max-w-5xl mx-auto text-center">
+  We are Professionally Dedicated to Ensuring Your <span className="bg-gradient-to-r from-[#6699FF] to-[#33CCFF] bg-clip-text text-transparent">Oral Health</span> to Maintain a <span className="bg-gradient-to-r from-[#6699FF] to-[#33CCFF] bg-clip-text text-transparent">Healthy Smile</span>
+</h2>
         <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-8xl mx-auto border-t border-b py-8">
           <div>
             <p className="text-4xl font-bold text-[#0D1B3E]">23</p>

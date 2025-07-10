@@ -1,7 +1,7 @@
 import { useState } from "react";
-import patient1 from "../assets/images/patient1.png";
-import patient2 from "../assets/images/patient2.png";
-import patient3 from "../assets/images/patient3.png";
+import patient1 from "../../assets/images/patient1.png";
+import patient2 from "../../assets/images/patient2.png";
+import patient3 from "../../assets/images/patient3.png";
 
 const feedbacks = [
   {

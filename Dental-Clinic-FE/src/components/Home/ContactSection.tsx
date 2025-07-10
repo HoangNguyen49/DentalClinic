@@ -1,5 +1,5 @@
 
-import toothImage from "../assets/images/contact-tooth.png";
+import toothImage from "../../assets/images/contact-tooth.png"; // Adjust the path as necessary
 
 function ContactSection() {
   return (

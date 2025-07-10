@@ -1,6 +1,6 @@
-import toothImage from "../assets/images/hero-tooth.png";
-import avatarLeft from "../assets/images/avatar-left.png";
-import avatarRight from "../assets/images/avatar-right.png";
+import toothImage from "../../assets/images/hero-tooth.png";
+import avatarLeft from "../../assets/images/avatar-left.png";
+import avatarRight from "../../assets/images/avatar-right.png";
 import {
   SparklesIcon,
   ShieldCheckIcon,
