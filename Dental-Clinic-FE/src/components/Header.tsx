@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 
 function Header() {
@@ -18,18 +19,20 @@ function Header() {
         {/* CTA */}
         <div className="flex items-center">
           {/* Login Button */}
-          <button className="
-            mr-3
-            px-5 py-2
-            rounded-full
-            border-2 border-[#3366FF]
-            text-[#3366FF]
-            font-bold
-            transition
-            hover:bg-[#3366FF] hover:text-white
-          ">
-            Login
-          </button>
+          <Link to="/login">
+            <button className="
+              mr-3
+              px-5 py-2
+              rounded-full
+              border-2 border-[#3366FF]
+              text-[#3366FF]
+              font-bold
+              transition
+              hover:bg-[#3366FF] hover:text-white
+            ">
+              Login
+            </button>
+          </Link>
 
           {/* Get In Touch Button */}
           <button className="

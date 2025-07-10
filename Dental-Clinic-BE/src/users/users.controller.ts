@@ -1,11 +1,9 @@
-import { Controller, Get, Post, Param, Body, Patch } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Patch, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { UseGuards } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 
-@UseGuards(AuthGuard('jwt')) // Ensure that all routes in this controller require JWT authentication
 @Controller('users')
 export class UsersController {
     constructor(private readonly usersService: UsersService) {}
@@ -16,26 +14,31 @@ export class UsersController {
     }
 
     @Get()
+    @UseGuards(AuthGuard('jwt'))
     async findAll() {
         return await this.usersService.findAll();
     }
 
     @Get(':id')
+    @UseGuards(AuthGuard('jwt'))
     async findOne(@Param('id') id: string) {
         return await this.usersService.findOne(+id);
     }
 
     @Patch(':id')
+    @UseGuards(AuthGuard('jwt'))
     async updateUser(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
         return await this.usersService.updateUser(+id, updateUserDto);
     }
 
     @Patch(':id/deactivate')
+    @UseGuards(AuthGuard('jwt'))
     async deactivateUser(@Param('id') id: string) {
         return await this.usersService.deactivateUser(+id);
     }
 
     @Patch(':id/activate')
+    @UseGuards(AuthGuard('jwt'))
     async activateUser(@Param('id') id: string) {
         return await this.usersService.activateUser(+id);
     }

@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import * as bcrypt from 'bcrypt';
+import { QueryFailedError } from 'typeorm';
 
 @Injectable()
 export class UsersService {
@@ -14,12 +15,38 @@ export class UsersService {
     ) {}
 
     async createUser(createUserDto: CreateUserDto): Promise<User> {
+        // Check username uniqueness
+        const existingUser = await this.userRepository.findOne({
+            where: { username: createUserDto.username },
+        });
+        if (existingUser) {
+            throw new BadRequestException('Username already exists, please choose another.');
+        }
+
+        // Check email uniqueness
+        const existingEmail = await this.userRepository.findOne({
+            where: { email: createUserDto.email },
+        });
+        if (existingEmail) {
+            throw new BadRequestException('Email already exists, please use another.');
+        }
+
         const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
         const newUser = this.userRepository.create({
             ...createUserDto,
             passwordHash: hashedPassword,
         });
-        return await this.userRepository.save(newUser);
+
+        try {
+            return await this.userRepository.save(newUser);
+        } catch (error) {
+            if (error instanceof QueryFailedError) {
+                if (error.message.includes('duplicate') || error.message.includes('UNIQUE')) {
+                    throw new BadRequestException('Username or email already exists.');
+                }
+            }
+            throw error;
+        }
     }
 
     async findAll(): Promise<User[]> {

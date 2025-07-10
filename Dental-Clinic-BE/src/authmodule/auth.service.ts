@@ -22,7 +22,7 @@ export class AuthService {
     }
     const isMatch = await bcrypt.compare(password, user.passwordHash);
     if (!isMatch) {
-      throw new UnauthorizedException('Invalid password');
+      throw new UnauthorizedException('Invalid password, plese try again');
     }
 
     return {
