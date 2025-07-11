@@ -1,5 +1,5 @@
 function TrustedBySection() {
-  const logoImports = import.meta.glob("../assets/images/slider-logo*.png", {
+  const logoImports = import.meta.glob("../../assets/images/slider-logo*.png", {
     eager: true,
   });
   const logos = Object.values(logoImports).map(
