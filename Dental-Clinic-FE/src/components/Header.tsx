@@ -6,11 +6,14 @@ function Header() {
     <header className="bg-white shadow sticky top-0 z-50 font-instrument text-base">
       <div className="max-w-7xl mx-auto flex justify-between items-center py-4 px-6">
         {/* Logo */}
-        <img src={logo} alt="Logo" className="h-20 w-auto" />
+        <Link to="/">
+          <img src={logo} alt="Logo" className="h-20 w-auto cursor-pointer" />
+        </Link>
+
 
         {/* Navbar */}
         <nav className="hidden md:flex space-x-8 text-primary font-bold">
-          <a href="#" className="hover:text-blue-600">Home</a>
+          <Link to="/" className="hover:text-blue-600">Home</Link>
           <a href="#" className="hover:text-blue-600">Services</a>
           <a href="#" className="hover:text-blue-600">About</a>
           <a href="#" className="hover:text-blue-600">Contact</a>

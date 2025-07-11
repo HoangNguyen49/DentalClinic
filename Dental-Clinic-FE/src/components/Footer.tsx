@@ -1,4 +1,5 @@
 
+import { Link } from "react-router-dom";
 import toothlogo from "../assets/images/tooth-logo.png";
 import { FiInstagram, FiFacebook, FiLinkedin } from "react-icons/fi";
 
@@ -30,7 +31,7 @@ function Footer() {
         {/* Row 3: Menu links left, working hours with image right */}
         <div className="flex flex-col md:flex-row justify-between items-start md:text-lg text-sm text-[#0F2154] font-bold">
           <div className="flex flex-col space-y-3">
-            <a href="#" className="hover:text-[#3366FF]">Home</a>
+            <Link to="/"className="hover:text-[#3366FF]">Home</Link>
             <a href="#" className="hover:text-[#3366FF]">Doctors</a>
             <a href="#" className="hover:text-[#3366FF]">Services</a>
             <a href="#" className="hover:text-[#3366FF]">Contact</a>
