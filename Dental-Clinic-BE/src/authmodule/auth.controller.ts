@@ -29,15 +29,25 @@ export class AuthController {
   }
 
   @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
-    const user: any = req.user; 
-    const tokens = await this.authService.login({
-      userId: user.userId ?? user.id, 
-      username: user.username,
-      role: user.role,
-      isActive: user.isActive,
-    });
-    res.redirect(`${process.env.CLIENT_URL}/oauth-success?access_token=${tokens.access_token}&refresh_token=${tokens.refresh_token}`);
-  }
+@UseGuards(AuthGuard('google'))
+async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
+  const user: any = req.user;
+
+  const payload = {
+    userId: user.userId ?? user.id,
+    username: user.username,
+    role: user.role,
+    isActive: user.isActive,
+  };
+
+  const tokens = await this.authService.login(payload);
+
+  const encodedUser = encodeURIComponent(JSON.stringify({
+    userId: payload.userId,
+    username: payload.username,
+    role: payload.role,
+  }));
+
+  res.redirect(`${process.env.CLIENT_URL}/google-success?token=${tokens.access_token}&user=${encodedUser}`);
+}
 }

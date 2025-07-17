@@ -3,6 +3,7 @@ import HomePage from "./Pages/HomePage";
 import LoginPage from "./Pages/LoginPage"; 
 import SignUp from "./Pages/SignUp";
 import OAuthSuccessHandler from "./Pages/OAuthSuccessHandler";
+import MyAccount from "./Pages/MyAccount";
 
 function App() {
   return (
@@ -11,7 +12,8 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<SignUp />} />
-        <Route path="/oauth-success" element={<OAuthSuccessHandler />} />
+        <Route path="/google-success" element={<OAuthSuccessHandler />} />
+        <Route path="/my-account" element={<MyAccount />} />
       </Routes>
     </Router>
   );

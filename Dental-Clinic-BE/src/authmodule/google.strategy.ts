@@ -1,3 +1,4 @@
+// src/auth/google.strategy.ts
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';
@@ -31,6 +32,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     const email = emails[0].value;
 
     let user = await this.usersService.findByEmail(email);
+
     if (!user) {
       user = await this.usersService.createUser({
         fullName: `${name?.givenName ?? ''} ${name?.familyName ?? ''}`.trim() || 'Google User',

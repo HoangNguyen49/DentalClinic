@@ -30,8 +30,16 @@ function LoginPage() {
       const data = response.data as {
         access_token: string;
         refresh_token: string;
+        user: {
+          userId: number;
+          username: string;
+          role: string;
+          fullName?: string;
+          email?: string;
+        };
       };
       localStorage.setItem("access_token", data.access_token);
+      localStorage.setItem("user", JSON.stringify(data.user));
       toast.success("Login successful! Redirecting...");
       setTimeout(() => navigate("/"), 1500);
     } catch (err: any) {
@@ -115,16 +123,16 @@ function LoginPage() {
                 {loading ? "Logging in..." : "Login now"}
               </button>
               <button
-              type="button"
-              onClick={() =>
-                (window.location.href = `${
-                  import.meta.env.VITE_API_URL
-                }/auth/google`)
-              }
-              className="w-full flex items-center justify-center border rounded py-3 bg-white hover:bg-gray-100 transition text-base shadow"
-            >
-              <FcGoogle className="mr-2" size={24} /> Login with Google
-            </button>
+                type="button"
+                onClick={() =>
+                  (window.location.href = `${
+                    import.meta.env.VITE_API_URL
+                  }/auth/google`)
+                }
+                className="w-full flex items-center justify-center border rounded py-3 bg-white hover:bg-gray-100 transition text-base shadow"
+              >
+                <FcGoogle className="mr-2" size={24} /> Login with Google
+              </button>
               <p className="text-center text-sm">
                 Don't have an account?{" "}
                 <a href="/register" className="text-[#3366FF] hover:underline">
@@ -132,7 +140,6 @@ function LoginPage() {
                 </a>
               </p>
             </form>
-            
           </div>
         </div>
       </div>

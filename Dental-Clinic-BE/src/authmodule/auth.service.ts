@@ -37,10 +37,22 @@ export class AuthService {
     const accessToken = this.jwtService.sign(payload, { expiresIn: '1h' });
     const refreshToken = uuidv4();
     this.refreshTokens[refreshToken] = JSON.stringify(payload);
+    const user = await this.usersService.findByUsername(payload.username);
+    if (!user) {
+      throw new UnauthorizedException('User not found');
+    }
 
     return {
       access_token: accessToken,
       refresh_token: refreshToken,
+      user: {
+        userId: user.userId,
+        username: user.username,
+        role: user.role,
+        fullName: user.fullName,
+        email: user.email,
+        avatarUrl: user.avatarUrl,  
+      }
     };
   }
 

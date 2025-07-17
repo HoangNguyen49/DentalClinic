@@ -19,46 +19,35 @@ export class UsersService {
   ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-    // Check username uniqueness
-    const existingUser = await this.userRepository.findOne({
-      where: { username: createUserDto.username },
-    });
-    if (existingUser) {
-      throw new BadRequestException(
-        'Username already exists, please choose another.',
-      );
-    }
-
-    // Check email uniqueness
-    const existingEmail = await this.userRepository.findOne({
-      where: { email: createUserDto.email },
-    });
-    if (existingEmail) {
-      throw new BadRequestException(
-        'Email already exists, please use another.',
-      );
-    }
-
-    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-    const newUser = this.userRepository.create({
-      ...createUserDto,
-      passwordHash: hashedPassword,
-    });
-
-    try {
-      return await this.userRepository.save(newUser);
-    } catch (error) {
-      if (error instanceof QueryFailedError) {
-        if (
-          error.message.includes('duplicate') ||
-          error.message.includes('UNIQUE')
-        ) {
-          throw new BadRequestException('Username or email already exists.');
-        }
-      }
-      throw error;
-    }
+  // Check username & email
+  const existingUser = await this.userRepository.findOne({
+    where: { username: createUserDto.username },
+  });
+  if (existingUser) {
+    throw new BadRequestException("Username already exists.");
   }
+
+  const existingEmail = await this.userRepository.findOne({
+    where: { email: createUserDto.email },
+  });
+  if (existingEmail) {
+    throw new BadRequestException("Email already exists.");
+  }
+
+  // Hash password
+  const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+  // Gán avatar mặc định nếu không có avatarUrl
+  const avatarUrl = createUserDto.avatarUrl || `${process.env.SERVER_URL}/uploads/default-avatar.png`;
+
+  const newUser = this.userRepository.create({
+    ...createUserDto,
+    avatarUrl,
+    passwordHash: hashedPassword,
+  });
+
+  return await this.userRepository.save(newUser);
+}
 
   async findAll(): Promise<User[]> {
     return await this.userRepository.find();
@@ -101,4 +90,10 @@ export class UsersService {
       where: { email },
     });
   }
+
+  async updateAvatar(id: number, avatarUrl: string): Promise<User> {
+  const user = await this.findOne(id);
+  user.avatarUrl = avatarUrl;
+  return await this.userRepository.save(user);
+}
 }

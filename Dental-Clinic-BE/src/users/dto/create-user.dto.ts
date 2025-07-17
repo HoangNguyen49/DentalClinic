@@ -40,7 +40,7 @@ export class CreateUserDto {
   departmentId?: number;
 
   @IsOptional()
-  @IsUrl({}, { message: 'Avatar URL must be a valid URL' })
+  // @IsUrl({}, { message: 'Avatar URL must be a valid URL' })
   avatarUrl?: string;
 
   @IsOptional()
