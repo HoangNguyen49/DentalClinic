@@ -4,6 +4,7 @@ import LoginPage from "./Pages/LoginPage";
 import SignUp from "./Pages/SignUp";
 import OAuthSuccessHandler from "./Pages/OAuthSuccessHandler";
 import MyAccount from "./Pages/MyAccount";
+import ChangePassword from "./Pages/ChangePassword";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/register" element={<SignUp />} />
         <Route path="/google-success" element={<OAuthSuccessHandler />} />
         <Route path="/my-account" element={<MyAccount />} />
+        <Route path="/change-password" element={<ChangePassword />} />
       </Routes>
     </Router>
   );

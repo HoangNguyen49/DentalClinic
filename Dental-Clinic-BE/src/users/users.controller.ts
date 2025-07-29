@@ -102,4 +102,20 @@ export class UsersController {
       user: updatedUser,
     };
   }
+
+  // Change password
+  @Patch(':id/change-password')
+  @UseGuards(AuthGuard('jwt'))
+  async changePassword(
+    @Param('id') id: string,
+    @Body()
+    body: { oldPassword: string; newPassword: string; confirmPassword: string },
+  ) {
+    const { oldPassword, newPassword, confirmPassword } = body;
+    return await this.usersService.changePassword(+id, {
+      oldPassword,
+      newPassword,
+      confirmPassword,
+    });
+  }
 }

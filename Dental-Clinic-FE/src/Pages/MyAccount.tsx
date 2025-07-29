@@ -11,9 +11,9 @@ function MyAccount() {
   const [newAvatar, setNewAvatar] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const avatarSrc =
-  user?.avatarUrl && user.avatarUrl.trim() !== ""
-    ? user.avatarUrl
-    : `${import.meta.env.VITE_API_URL}/uploads/default-avatar.png`;
+    user?.avatarUrl && user.avatarUrl.trim() !== ""
+      ? user.avatarUrl
+      : `${import.meta.env.VITE_API_URL}/uploads/default-avatar.png`;
 
   const navigate = useNavigate();
 
@@ -35,54 +35,53 @@ function MyAccount() {
   };
 
   const handleUploadAvatar = async () => {
-  if (!newAvatar || !user) return;
+    if (!newAvatar || !user) return;
 
-  const formData = new FormData();
-  formData.append("file", newAvatar);
+    const formData = new FormData();
+    formData.append("file", newAvatar);
 
-  const accessToken = localStorage.getItem("access_token"); 
-  if (!accessToken) {
-    toast.error("Unauthorized: No access token found.");
-    return;
-  }
+    const accessToken = localStorage.getItem("access_token");
+    if (!accessToken) {
+      toast.error("Unauthorized: No access token found.");
+      return;
+    }
 
-  try {
-    const res = await axios.patch(
-      `${import.meta.env.VITE_API_URL}/users/${user.userId}/avatar`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-          Authorization: `Bearer ${accessToken}`, 
-        },
-      }
-    );
+    try {
+      const res = await axios.patch(
+        `${import.meta.env.VITE_API_URL}/users/${user.userId}/avatar`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
-const avatarUrl = (res.data as { avatarUrl: string }).avatarUrl;
-    
-    await axios.patch(
-      `${import.meta.env.VITE_API_URL}/users/${user.userId}`,
-      { ...user, avatarUrl },
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`, 
-        },
-      }
-    );
+      const avatarUrl = (res.data as { avatarUrl: string }).avatarUrl;
 
-    const updatedUser = { ...user, avatarUrl };
-    setUser(updatedUser);
-    localStorage.setItem("user", JSON.stringify(updatedUser));
-    setNewAvatar(null);
-    setPreviewUrl(null);
-    toast.success("Avatar updated successfully!");
-    window.location.reload();
-  } catch (error) {
-    console.error(error);
-    toast.error("Failed to update avatar.");
-  }
-};
+      await axios.patch(
+        `${import.meta.env.VITE_API_URL}/users/${user.userId}`,
+        { ...user, avatarUrl },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
 
+      const updatedUser = { ...user, avatarUrl };
+      setUser(updatedUser);
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      setNewAvatar(null);
+      setPreviewUrl(null);
+      toast.success("Avatar updated successfully!");
+      window.location.reload();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update avatar.");
+    }
+  };
 
   return (
     <>
@@ -93,11 +92,27 @@ const avatarUrl = (res.data as { avatarUrl: string }).avatarUrl;
           {/* Left: Info */}
           <div className="flex-1 space-y-4 w-full">
             <h2 className="text-3xl font-bold">My Account</h2>
-            <p><strong>Full Name:</strong> {user?.fullName}</p>
-            <p><strong>Username:</strong> {user?.username}</p>
-            <p><strong>Email:</strong> {user?.email}</p>
-            <p><strong>Phone:</strong> {user?.phone}</p>
-            <p><strong>Role:</strong> {user?.role}</p>
+            <p>
+              <strong>Full Name:</strong> {user?.fullName}
+            </p>
+            <p>
+              <strong>Username:</strong> {user?.username}
+            </p>
+            <p>
+              <strong>Email:</strong> {user?.email}
+            </p>
+            <p>
+              <strong>Phone:</strong> {user?.phone}
+            </p>
+            <p>
+              <strong>Role:</strong> {user?.role}
+            </p>
+            <button
+              onClick={() => navigate("/change-password")}
+              className="mt-4 px-4 py-2 bg-[#3366FF] text-white rounded hover:bg-[#254EDB] transition"
+            >
+              Change Password
+            </button>
           </div>
 
           {/* Right: Avatar */}
@@ -109,7 +124,12 @@ const avatarUrl = (res.data as { avatarUrl: string }).avatarUrl;
             />
             <label className="bg-white text-[#3366FF] font-semibold px-4 py-2 rounded cursor-pointer hover:bg-gray-100 transition">
               Choose your avatar
-              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleAvatarChange}
+              />
             </label>
             {newAvatar && (
               <button

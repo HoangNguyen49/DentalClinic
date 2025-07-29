@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import * as bcrypt from 'bcrypt';
 import { QueryFailedError } from 'typeorm';
 
@@ -95,5 +96,21 @@ export class UsersService {
   const user = await this.findOne(id);
   user.avatarUrl = avatarUrl;
   return await this.userRepository.save(user);
+}
+
+  async changePassword(userId: number, dto: ChangePasswordDto): Promise<string> {
+  const user = await this.userRepository.findOne({ where: { userId } });
+  if (!user) throw new NotFoundException('User not found');
+
+  const isMatch = await bcrypt.compare(dto.oldPassword, user.passwordHash);
+  if (!isMatch) throw new BadRequestException('Old password is incorrect');
+
+  if (dto.oldPassword === dto.newPassword) {
+    throw new BadRequestException('New password must not match old password');
+  }
+
+  user.passwordHash = await bcrypt.hash(dto.newPassword, 10);
+  await this.userRepository.save(user);
+  return 'Password updated successfully';
 }
 }
