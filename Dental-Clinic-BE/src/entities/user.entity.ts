@@ -45,6 +45,9 @@ export class User {
   @Column({ nullable: true })
   departmentId: number;
 
+  @Column({ unique: true })
+  code: string;
+
   @ManyToOne(() => Department, (department) => department.users)
   department: Department;
 

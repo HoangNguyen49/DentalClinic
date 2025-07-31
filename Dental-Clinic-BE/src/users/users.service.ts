@@ -20,35 +20,40 @@ export class UsersService {
   ) {}
 
   async createUser(createUserDto: CreateUserDto): Promise<User> {
-  // Check username & email
-  const existingUser = await this.userRepository.findOne({
-    where: { username: createUserDto.username },
-  });
-  if (existingUser) {
-    throw new BadRequestException("Username already exists.");
+    
+    // Check username & email
+    const existingUser = await this.userRepository.findOne({
+      where: { username: createUserDto.username },
+    });
+    if (existingUser) {
+      throw new BadRequestException('Username already exists.');
+    }
+
+    const existingEmail = await this.userRepository.findOne({
+      where: { email: createUserDto.email },
+    });
+    if (existingEmail) {
+      throw new BadRequestException('Email already exists.');
+    }
+
+    // Hash password
+    const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
+
+    // Gán avatar mặc định nếu không có avatarUrl
+    const avatarUrl =
+      createUserDto.avatarUrl ||
+      `${process.env.SERVER_URL}/uploads/default-avatar.png`;
+
+    const newUser = this.userRepository.create({
+      ...createUserDto,
+      avatarUrl,
+      passwordHash: hashedPassword,
+    });
+
+    newUser.code = await this.generateUserCode(newUser.role);
+
+    return await this.userRepository.save(newUser);
   }
-
-  const existingEmail = await this.userRepository.findOne({
-    where: { email: createUserDto.email },
-  });
-  if (existingEmail) {
-    throw new BadRequestException("Email already exists.");
-  }
-
-  // Hash password
-  const hashedPassword = await bcrypt.hash(createUserDto.password, 10);
-
-  // Gán avatar mặc định nếu không có avatarUrl
-  const avatarUrl = createUserDto.avatarUrl || `${process.env.SERVER_URL}/uploads/default-avatar.png`;
-
-  const newUser = this.userRepository.create({
-    ...createUserDto,
-    avatarUrl,
-    passwordHash: hashedPassword,
-  });
-
-  return await this.userRepository.save(newUser);
-}
 
   async findAll(): Promise<User[]> {
     return await this.userRepository.find();
@@ -70,10 +75,38 @@ export class UsersService {
 
   async updateUser(id: number, updateUserDto: UpdateUserDto): Promise<User> {
     const user = await this.findOne(id);
+
     Object.assign(user, updateUserDto);
+
+    if (!user.code || updateUserDto.role) {
+      user.code = await this.generateUserCode(user.role);
+    }
+
     return await this.userRepository.save(user);
   }
 
+  private async generateUserCode(role: string): Promise<string> {
+    let prefix = '';
+    switch (role.toLowerCase()) {
+      case 'admin':
+        prefix = 'AD';
+        break;
+      case 'doctor':
+        prefix = 'DT';
+        break;
+      case 'user':
+        prefix = 'PT';
+        break;
+      default:
+        prefix = 'XX';
+    }
+
+    const count = await this.userRepository.count({ where: { role } });
+    const nextNumber = count + 1;
+    const padded = nextNumber.toString().padStart(2, '0');
+
+    return `${prefix}${padded}`;
+  }
   async deactivateUser(id: number): Promise<User> {
     const user = await this.findOne(id);
     user.isActive = false;
@@ -93,24 +126,27 @@ export class UsersService {
   }
 
   async updateAvatar(id: number, avatarUrl: string): Promise<User> {
-  const user = await this.findOne(id);
-  user.avatarUrl = avatarUrl;
-  return await this.userRepository.save(user);
-}
-
-  async changePassword(userId: number, dto: ChangePasswordDto): Promise<string> {
-  const user = await this.userRepository.findOne({ where: { userId } });
-  if (!user) throw new NotFoundException('User not found');
-
-  const isMatch = await bcrypt.compare(dto.oldPassword, user.passwordHash);
-  if (!isMatch) throw new BadRequestException('Old password is incorrect');
-
-  if (dto.oldPassword === dto.newPassword) {
-    throw new BadRequestException('New password must not match old password');
+    const user = await this.findOne(id);
+    user.avatarUrl = avatarUrl;
+    return await this.userRepository.save(user);
   }
 
-  user.passwordHash = await bcrypt.hash(dto.newPassword, 10);
-  await this.userRepository.save(user);
-  return 'Password updated successfully';
-}
+  async changePassword(
+    userId: number,
+    dto: ChangePasswordDto,
+  ): Promise<string> {
+    const user = await this.userRepository.findOne({ where: { userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const isMatch = await bcrypt.compare(dto.oldPassword, user.passwordHash);
+    if (!isMatch) throw new BadRequestException('Old password is incorrect');
+
+    if (dto.oldPassword === dto.newPassword) {
+      throw new BadRequestException('New password must not match old password');
+    }
+
+    user.passwordHash = await bcrypt.hash(dto.newPassword, 10);
+    await this.userRepository.save(user);
+    return 'Password updated successfully';
+  }
 }
