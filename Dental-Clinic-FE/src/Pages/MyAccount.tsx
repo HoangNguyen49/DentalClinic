@@ -102,6 +102,29 @@ function MyAccount() {
     }
   };
 
+  const handleSaveChanges = async () => {
+    const accessToken = localStorage.getItem("access_token");
+    if (!accessToken) return;
+
+    try {
+      const {fullName, email, phone} = user;
+      await axios.patch(
+        `${import.meta.env.VITE_API_URL}/users/${user.userId}`,
+        { fullName, email, phone },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      localStorage.setItem("user", JSON.stringify(user));
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update profile."); 
+    }
+  };
+
   return (
     <>
       <Header />
@@ -111,17 +134,61 @@ function MyAccount() {
           {/* Left: Info */}
           <div className="flex-1 space-y-4 w-full">
             <h2 className="text-3xl font-bold">My Account</h2>
-            <p><strong>Full Name:</strong> {user?.fullName}</p>
+
+            <div>
+              <label className="block font-semibold mb-1">Full Name</label>
+              <input
+                type="text"
+                value={user?.fullName || ""}
+                onChange={(e) =>
+                  setUser((prev: any) => ({ ...prev, fullName: e.target.value }))
+                }
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-1">Email</label>
+              <input
+                type="email"
+                value={user?.email || ""}
+                onChange={(e) =>
+                  setUser((prev: any) => ({ ...prev, email: e.target.value }))
+                }
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
+            <div>
+              <label className="block font-semibold mb-1">Phone</label>
+              <input
+                type="text"
+                value={user?.phone || ""}
+                onChange={(e) =>
+                  setUser((prev: any) => ({ ...prev, phone: e.target.value }))
+                }
+                className="w-full p-2 border rounded"
+              />
+            </div>
+
             <p><strong>Username:</strong> {user?.username}</p>
-            <p><strong>Email:</strong> {user?.email}</p>
-            <p><strong>Phone:</strong> {user?.phone || "Not provided"}</p>
             <p><strong>Role:</strong> {user?.role}</p>
-            <button
-              onClick={() => navigate("/change-password")}
-              className="mt-4 px-4 py-2 bg-[#3366FF] text-white rounded hover:bg-[#254EDB] transition"
-            >
-              Change Password
-            </button>
+
+            <div className="flex flex-wrap gap-4">
+              <button
+                onClick={handleSaveChanges}
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+              >
+                Save Changes
+              </button>
+
+              <button
+                onClick={() => navigate("/change-password")}
+                className="px-4 py-2 bg-[#3366FF] text-white rounded hover:bg-[#254EDB] transition"
+              >
+                Change Password
+              </button>
+            </div>
           </div>
 
           {/* Right: Avatar */}
