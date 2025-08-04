@@ -1,10 +1,10 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "./Pages/HomePage";
-import LoginPage from "./Pages/LoginPage"; 
-import SignUp from "./Pages/SignUp";
-import OAuthSuccessHandler from "./Pages/OAuthSuccessHandler";
-import MyAccount from "./Pages/MyAccount";
-import ChangePassword from "./Pages/ChangePassword";
+import HomePage from "./Pages/Public/HomePage";
+import LoginPage from "./Pages/Public/LoginPage"; 
+import SignUp from "./Pages/Public/SignUp";
+import OAuthSuccessHandler from "./Pages/User/OAuthSuccessHandler";
+import MyAccount from "./Pages/User/MyAccount";
+import ChangePassword from "./Pages/User/ChangePassword";
 
 function App() {
   return (
