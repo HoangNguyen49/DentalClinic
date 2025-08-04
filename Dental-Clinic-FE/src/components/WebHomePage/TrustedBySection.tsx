@@ -1,4 +1,7 @@
+import { useTranslation } from "react-i18next";
+
 function TrustedBySection() {
+  const { t } = useTranslation();
   const logoImports = import.meta.glob("../../assets/images/slider-logo*.png", {
     eager: true,
   });
@@ -10,7 +13,7 @@ function TrustedBySection() {
     <section className="pt-4 md:pt-4 pb-12 md:pb-16 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto text-center px-6">
         <h2 className="text-2xl md:text-3xl font-bold text-[#5e83cc] mb-12">
-          Trusted By
+          {t("trustedBy.heading")}
         </h2>
 
         {/* Marquee container */}

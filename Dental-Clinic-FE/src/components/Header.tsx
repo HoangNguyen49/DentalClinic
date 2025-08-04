@@ -1,16 +1,19 @@
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/images/logo.png";
 import { useEffect, useState } from "react";
+import i18n from "../i18n";
+import axios from "axios";
+import { useTranslation } from "react-i18next";
 
 function Header() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [user, setUser] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const avatarSrc =
-  user?.avatarUrl && user.avatarUrl.trim() !== ""
-    ? user.avatarUrl
-    : `${import.meta.env.VITE_API_URL}/uploads/default-avatar.png`;
-
+    user?.avatarUrl && user.avatarUrl.trim() !== ""
+      ? user.avatarUrl
+      : `${import.meta.env.VITE_API_URL}/uploads/default-avatar.png`;
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -27,7 +30,6 @@ function Header() {
 
   const isAdmin = user?.role === "admin";
 
-  // Đóng dropdown nếu click ra ngoài
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -38,6 +40,15 @@ function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const changeLang = async () => {
+    const newLang = i18n.language === "en" ? "vi" : "en";
+    await axios.get(`${import.meta.env.VITE_API_URL}/locale?lang=${newLang}`, {
+      withCredentials: true,
+    });
+    i18n.changeLanguage(newLang);
+    localStorage.setItem("lang", newLang);
+  };
 
   return (
     <header className="bg-white shadow sticky top-0 z-50 font-instrument text-base">
@@ -50,25 +61,41 @@ function Header() {
         {/* Navbar */}
         <nav className="hidden md:flex space-x-8 text-primary font-bold">
           <Link to="/" className="hover:text-blue-600">
-            Home
+            {t("nav.home")}
           </Link>
           <a href="#" className="hover:text-blue-600">
-            Services
+            {t("nav.services")}
           </a>
           <a href="#" className="hover:text-blue-600">
-            About
+            {t("nav.about")}
           </a>
           <a href="#" className="hover:text-blue-600">
-            Contact
+            {t("nav.contact")}
           </a>
         </nav>
 
         {/* CTA */}
         <div className="flex items-center space-x-4 relative">
+          {/* Language switcher */}
+          <button
+            onClick={changeLang}
+            className="px-4 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] text-white shadow-md transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-lg flex items-center gap-2"
+          >
+            {i18n.language === "en" ? (
+              <>
+                <span>Tiếng Việt</span>
+              </>
+            ) : (
+              <>
+                <span>English</span>
+              </>
+            )}
+          </button>
+
           {!user ? (
             <Link to="/login">
               <button className="px-5 py-2 rounded-full border-2 border-[#3366FF] text-[#3366FF] font-bold transition hover:bg-[#3366FF] hover:text-white">
-                Login
+                {t("auth.login")}
               </button>
             </Link>
           ) : (
@@ -96,21 +123,21 @@ function Header() {
                     to="/my-account"
                     className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
                   >
-                    My Account
+                    {t("account.myAccount")}
                   </Link>
                   {isAdmin && (
                     <Link
-                      to="/admin-dashboard"
+                      to="/admin/dashboard"
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
                     >
-                      Admin Dashboard
+                      {t("account.adminDashboard")}
                     </Link>
                   )}
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#EF4444] transition"
                   >
-                    Logout
+                    {t("auth.logout")}
                   </button>
                 </div>
               )}
@@ -121,7 +148,7 @@ function Header() {
           <button className="group relative inline-flex h-[56px] items-center justify-center rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] px-6 font-bold text-white transition-all duration-300 ease-in-out overflow-hidden">
             <div className="absolute right-0 top-0 h-full w-0 bg-[#6699FF] opacity-0 transition-all duration-500 ease-in-out group-hover:w-full group-hover:opacity-80" />
             <span className="relative z-10 flex items-center gap-2">
-              GET IN TOUCH
+              {t("cta.getInTouch")}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5 md:h-6 md:w-6"
