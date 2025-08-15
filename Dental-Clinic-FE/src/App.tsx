@@ -8,6 +8,7 @@ import ChangePassword from "./Pages/User/ChangePassword";
 import AdminLayout from "./Pages/Admin/AdminLayouts";
 import AdminDashboardPage from "./Pages/Admin/Dashboard/AdminDashboardPage";
 import ProtectedRouteAdmin from "./components/ProtectedRouteAdmin";
+import AppointmentList from "./Pages/Admin/Appointments/AppointmentList";
 
 function App() {
   return (
@@ -21,9 +22,11 @@ function App() {
         <Route path="/change-password" element={<ChangePassword />} />
 
         <Route path="/admin" element={<ProtectedRouteAdmin />}>
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route path="dashboard" element={<AdminDashboardPage />} />
-        </Route>
+          <Route element={<AdminLayout />}>
+            <Route index element={<AdminDashboardPage />} />{" "}
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="appointments" element={<AppointmentList />} />
+          </Route>
         </Route>
       </Routes>
     </Router>

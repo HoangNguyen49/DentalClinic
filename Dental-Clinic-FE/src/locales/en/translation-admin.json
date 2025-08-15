@@ -1,0 +1,30 @@
+{
+  
+  "nav": {
+    "dashboard": "Dashboard",
+    "appointments": "Appointments",
+    "treatments": "Treatments",
+    "rooms": "Rooms",
+    "invoices": "Invoices",
+    "medicalRecords": "Medical Records",
+    "inventory": "Inventory",
+    "reports": "Reports",
+    "staff": "Staff",
+    "crm": "CRM",
+    "backToWebsite": "Back to Website"
+  },
+  "pageTitles": {
+    "adminDashboard": "Admin Dashboard",
+    "appointmentList": "Appointment List"
+  },
+  "tableHeaders": {
+    "appointmentDateTime": "Date & Time",
+    "patient": "Patient",
+    "doctor": "Doctor",
+    "service": "Service",
+    "room": "Room",
+    "chair": "Chair",
+    "status": "Status",
+    "note": "Note"
+  }
+}

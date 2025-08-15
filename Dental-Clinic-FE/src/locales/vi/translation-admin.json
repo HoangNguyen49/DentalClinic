@@ -1,0 +1,29 @@
+{
+  "nav": {
+    "dashboard": "Tổng quan",
+    "appointments": "Lịch hẹn",
+    "treatments": "Điều trị",
+    "rooms": "Phòng khám",
+    "invoices": "Hóa đơn",
+    "medicalRecords": "Bệnh án",
+    "inventory": "Kho vật tư",
+    "reports": "Báo cáo",
+    "staff": "Nhân viên",
+    "crm": "Chăm sóc khách hàng",
+    "backToWebsite": "Về trang web"
+  },
+  "pageTitles": {
+    "adminDashboard": "Trang quản trị",
+    "appointmentList": "Danh sách lịch hẹn"
+  },
+  "tableHeaders": {
+    "appointmentDateTime": "Ngày giờ",
+    "patient": "Bệnh nhân",
+    "doctor": "Bác sĩ",
+    "service": "Dịch vụ",
+    "room": "Phòng",
+    "chair": "Ghế",
+    "status": "Trạng thái",
+    "note": "Ghi chú"
+  }
+}
