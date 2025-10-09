@@ -2,10 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
-// Update the import path if Header is located elsewhere, for example:
-import Header from "../../components/Header";
-// Or, if the file is named 'Header.tsx' or 'Header/index.tsx', ensure the file exists at '../../components/Header'
-import Footer from "../../components/Footer";
+import Header from "../../widgets/Header/Header";
+import Footer from "../../widgets/Footer/Footer";
 import "react-toastify/dist/ReactToastify.css";
 
 function ChangePassword() {

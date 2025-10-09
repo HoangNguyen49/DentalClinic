@@ -1,4 +1,4 @@
-import doctorImg from "../../assets/images/doctor.png";
+import doctorImg from "../../../assets/images/doctor.png";
 import { useTranslation } from "react-i18next";
 
 function TeamSection() {

@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
-import logo from "../assets/images/logo.png";
+import logo from "../../assets/images/logo.png";
 import { useEffect, useState } from "react";
-import i18n from "../i18n";
+import i18n from "../../app/providers/i18n";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 

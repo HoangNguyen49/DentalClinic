@@ -2,7 +2,7 @@ import { useTranslation } from "react-i18next";
 
 function TrustedBySection() {
   const { t } = useTranslation();
-  const logoImports = import.meta.glob("../../assets/images/slider-logo*.png", {
+  const logoImports = import.meta.glob("../../../assets/images/slider-logo*.png", {
     eager: true,
   });
   const logos = Object.values(logoImports).map(

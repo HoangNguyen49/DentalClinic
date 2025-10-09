@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import patient1 from "../../assets/images/patient1.png";
-import patient2 from "../../assets/images/patient2.png";
-import patient3 from "../../assets/images/patient3.png";
+import patient1 from "../../../assets/images/patient1.png";
+import patient2 from "../../../assets/images/patient2.png";
+import patient3 from "../../../assets/images/patient3.png";
 
 const feedbacks = [
   {

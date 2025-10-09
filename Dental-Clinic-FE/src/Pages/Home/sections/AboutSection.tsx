@@ -1,4 +1,4 @@
-import toothlogo from "../../assets/images/tooth-logo.png";
+import toothlogo from "../../../assets/images/tooth-logo.png";
 import { useTranslation } from "react-i18next";
 
 function AboutSection() {

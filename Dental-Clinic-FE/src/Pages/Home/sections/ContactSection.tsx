@@ -1,4 +1,4 @@
-import toothImage from "../../assets/images/contact-tooth.png";
+import toothImage from "../../../assets/images/contact-tooth.png";
 import { useTranslation } from "react-i18next";
 
 function ContactSection() {

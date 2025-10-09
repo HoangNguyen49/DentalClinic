@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import toothlogo from "../assets/images/tooth-logo.png";
+import toothlogo from "../../assets/images/tooth-logo.png";
 import { FiInstagram, FiFacebook, FiLinkedin } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 
