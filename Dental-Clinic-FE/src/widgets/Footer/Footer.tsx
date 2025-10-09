@@ -31,7 +31,7 @@ function Footer() {
           <div className="flex flex-col space-y-3">
             <Link to="/" className="hover:text-[#3366FF]">{t("nav.home")}</Link>
             <a href="#" className="hover:text-[#3366FF]">{t("footer.doctors")}</a>
-            <a href="#" className="hover:text-[#3366FF]">{t("nav.services")}</a>
+            <a href="/service" className="hover:text-[#3366FF]">{t("nav.services")}</a>
             <a href="#" className="hover:text-[#3366FF]">{t("nav.contact")}</a>
             <a href="#" className="hover:text-[#3366FF]">{t("footer.license")}</a>
             <a href="#" className="hover:text-[#3366FF]">{t("footer.about")}</a>
@@ -52,9 +52,9 @@ function Footer() {
         {/* Copyright */}
         <div className="border-t pt-4 text-center text-sm text-gray-500">
           <p>
-            {t("footer.copyright")} © Confident 2024 | {t("footer.poweredBy")}{" "}
+            {t("footer.copyright")} © Hoang Nguyen sv FPT Aptech 2025 | {t("footer.poweredBy")}{" "}
             <a href="https://webflow.com" target="_blank" rel="noopener noreferrer" className="text-[#3366FF] hover:underline">
-              Webflow
+              Hoang Nguyen
             </a>
           </p>
         </div>

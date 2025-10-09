@@ -63,7 +63,7 @@ function Header() {
           <Link to="/" className="hover:text-blue-600">
             {t("nav.home")}
           </Link>
-          <a href="#" className="hover:text-blue-600">
+          <a href="/service" className="hover:text-blue-600">
             {t("nav.services")}
           </a>
           <a href="#" className="hover:text-blue-600">
