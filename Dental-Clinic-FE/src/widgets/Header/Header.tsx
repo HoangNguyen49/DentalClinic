@@ -66,10 +66,10 @@ function Header() {
           <a href="/service" className="hover:text-blue-600">
             {t("nav.services")}
           </a>
-          <a href="#" className="hover:text-blue-600">
+          <a href="/about" className="hover:text-blue-600">
             {t("nav.about")}
           </a>
-          <a href="#" className="hover:text-blue-600">
+          <a href="/contact" className="hover:text-blue-600">
             {t("nav.contact")}
           </a>
         </nav>

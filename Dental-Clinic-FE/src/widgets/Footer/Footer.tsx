@@ -32,9 +32,9 @@ function Footer() {
             <Link to="/" className="hover:text-[#3366FF]">{t("nav.home")}</Link>
             <a href="#" className="hover:text-[#3366FF]">{t("footer.doctors")}</a>
             <a href="/service" className="hover:text-[#3366FF]">{t("nav.services")}</a>
-            <a href="#" className="hover:text-[#3366FF]">{t("nav.contact")}</a>
+            <a href="/contact" className="hover:text-[#3366FF]">{t("nav.contact")}</a>
             <a href="#" className="hover:text-[#3366FF]">{t("footer.license")}</a>
-            <a href="#" className="hover:text-[#3366FF]">{t("footer.about")}</a>
+            <a href="/about" className="hover:text-[#3366FF]">{t("footer.about")}</a>
           </div>
           <div className="mt-6 md:mt-0 text-right flex flex-col items-end space-y-2">
             <div

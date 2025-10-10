@@ -10,6 +10,8 @@ import AdminDashboardPage from "../pages/Admin/Dashboard/AdminDashboardPage";
 import ProtectedRouteAdmin from "../app/routes/ProtectedRouteAdmin";
 import AppointmentList from "../pages/Admin/Appointments/AppointmentList";
 import Service from "../pages/Service";
+import About from "../pages/About";
+import ContactPage from "../pages/Contact";
 
 function App() {
   return (
@@ -17,6 +19,8 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/service" element={<Service />} />
+        <Route path="/contact" element={<ContactPage />} />
+        <Route path="/about" element={<About />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<SignUp />} />
         <Route path="/google-success" element={<OAuthSuccessHandler />} />
