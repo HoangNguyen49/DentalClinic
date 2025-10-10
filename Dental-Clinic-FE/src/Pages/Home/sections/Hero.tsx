@@ -7,6 +7,7 @@ import {
   Cog6ToothIcon,
 } from "@heroicons/react/24/solid";
 import { useTranslation } from "react-i18next";
+import { Link } from "react-router-dom";
 
 function Hero() {
   const { t } = useTranslation();
@@ -14,7 +15,6 @@ function Hero() {
   return (
     <section className="pt-24 pb-16 px-0">
       <div className="max-w-7xl mx-auto px-6 border-1 border-[#D1E3FF] rounded-[80px] py-6 md:py-10 bg-gradient-to-b from-[#f7f7f7] via-[#e6eaf2] to-[#afd9f6] relative">
-        {/* H1 */}
         <div className="max-w-4xl mx-auto flex flex-col items-center text-center mb-12">
           <h1
             className="text-[48px] md:text-[72px] font-bold bg-clip-text text-transparent leading-[1.2] tracking-[-0.02em] max-w-3xl pb-2"
@@ -46,12 +46,15 @@ function Hero() {
 
           {/* CTA Button */}
           <div className="flex justify-center">
-            <button className="group relative inline-flex h-[48px] items-center justify-center rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] px-6 font-bold text-white transition-all duration-300 ease-in-out overflow-hidden">
+            <Link
+              to="/about"
+              className="group relative inline-flex h-[48px] items-center justify-center rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] px-6 font-bold text-white transition-all duration-300 ease-in-out overflow-hidden"
+            >
               <div className="absolute right-0 top-0 h-full w-0 bg-[#6699FF] opacity-0 transition-all duration-500 ease-in-out group-hover:w-full group-hover:opacity-80"></div>
               <span className="relative z-10 flex items-center gap-2">
                 {t("hero.cta")}
               </span>
-            </button>
+            </Link>
           </div>
 
           {/* Avatar Right */}
