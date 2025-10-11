@@ -16,7 +16,6 @@ const defaultAvatars = [
 
 function SignUp() {
   const navigate = useNavigate();
-  const [role, setRole] = useState("User");
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -84,7 +83,6 @@ function SignUp() {
           password,
           email,
           phone,
-          role,
           avatarUrl: customAvatar ? undefined : initialAvatarUrl,
         }
       );
@@ -200,17 +198,6 @@ function SignUp() {
                 type="email"
               />
               <InputField label="Phone" value={phone} setValue={setPhone} />
-              <div>
-                <label className="block mb-1 text-sm font-medium">Role</label>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="w-full border rounded px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#3366FF] text-base"
-                >
-                  <option value="User">Patient</option>
-                  <option value="Doctor">Doctor</option>
-                </select>
-              </div>
               <PasswordField
                 label="Password"
                 value={password}
