@@ -158,7 +158,6 @@ function MyAccount() {
                 className="w-full p-2 border rounded"
               />
             </div>
-
             <div>
               <label className="block font-semibold mb-1">Phone</label>
               <input
