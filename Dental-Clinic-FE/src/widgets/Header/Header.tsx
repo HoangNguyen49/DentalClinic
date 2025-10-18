@@ -79,7 +79,7 @@ function Header() {
             onClick={changeLang}
             className="px-4 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] text-white shadow-md transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-lg flex items-center gap-2"
           >
-            {i18n.language === "en" ? <span>Tiếng Việt</span> : <span>English</span>}
+            {i18n.language === "en" ? <span>VN</span> : <span>EN</span>}
           </button>
 
           {!user ? (
