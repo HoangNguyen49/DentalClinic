@@ -1,0 +1,33 @@
+{
+  "nav": {
+    "home": "Trang chủ",
+    "services": "Dịch vụ",
+    "about": "Giới thiệu",
+    "contact": "Liên hệ"
+  },
+  "auth": {
+    "login": "Đăng nhập",
+    "logout": "Đăng xuất"
+  },
+  "account": {
+    "myAccount": "Tài khoản của tôi",
+    "adminDashboard": "Bảng quản trị"
+  },
+  "cta": {
+    "getInTouch": "Liên hệ ngay"
+  },
+  "footer": {
+    "address": "40 đường Sanguin, Oklahoma, Hoa Kỳ",
+    "slogan": "Tỏa sáng nụ cười, sống tốt hơn",
+    "doctors": "Bác sĩ",
+    "license": "Giấy phép",
+    "about": "Về chúng tôi",
+    "workingHours": {
+      "title": "Giờ làm việc",
+      "weekday": "Thứ 2 - Thứ 6: 09:00 - 18:00",
+      "weekend": "Thứ 7 - Chủ nhật: 09:00 - 16:00"
+    },
+    "poweredBy": "Vận hành bởi",
+    "copyright": "Bản quyền"
+  }
+}

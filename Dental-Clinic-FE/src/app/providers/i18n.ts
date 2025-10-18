@@ -1,30 +1,29 @@
-import i18n from 'i18next';
-import { initReactI18next } from 'react-i18next';
+import i18n from "i18next";
+import { initReactI18next } from "react-i18next";
+import resourcesToBackend from "i18next-resources-to-backend";
 
-import enWeb from '../../locales/en/translation-web.json';
-import viWeb from '../../locales/vi/translation-web.json';
-import enAdmin from '../../locales/en/translation-admin.json';
-import viAdmin from '../../locales/vi/translation-admin.json';
+
+export const APP_NAMESPACES = ["web", "home", "services", "about", "contact", "admin"] as const;
 
 i18n
   .use(initReactI18next)
+  .use(
+    
+    resourcesToBackend((lng: string, ns: string) => {
+      return import(`../../locales/${lng}/${ns}.json`);
+    })
+  )
   .init({
-    resources: {
-      en: {
-        web: enWeb,
-        admin: enAdmin,
-      },
-      vi: {
-        web: viWeb,
-        admin: viAdmin,
-      },
-    },
-    lng: localStorage.getItem('lang') || 'en',
-    fallbackLng: 'en',
-    ns: ['web', 'admin'], 
-    defaultNS: 'web', 
+    // 🔹 Lấy ngôn ngữ đang lưu trong localStorage, mặc định 'en'
+    lng: localStorage.getItem("lang") || "en",
+    fallbackLng: "en",
+
+    // 🔹 Khai báo các namespace
+    ns: APP_NAMESPACES as unknown as string[],
+    defaultNS: "web",
+
     interpolation: {
-      escapeValue: false,
+      escapeValue: false, // React đã xử lý XSS rồi
     },
   });
 

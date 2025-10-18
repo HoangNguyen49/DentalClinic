@@ -1,59 +1,5 @@
 {
-  "nav": {
-    "home": "Home",
-    "services": "Services",
-    "about": "About",
-    "contact": "Contact"
-  },
-  "auth": {
-    "login": "Login",
-    "logout": "Logout"
-  },
-  "account": {
-    "myAccount": "My Account",
-    "adminDashboard": "Admin Dashboard"
-  },
-  "cta": {
-    "getInTouch": "Get In Touch"
-  },
-  "footer": {
-    "address": "Ở ĐÂU CÒN LÂU MỚI NÓI VÌ CHƯA CODE XONG",
-    "slogan": "Smile Bright, Live Better",
-    "doctors": "Doctors",
-    "license": "License",
-    "about": "About Us",
-    "workingHours": {
-      "title": "Working Hours",
-      "weekday": "Mon - Fri: 09:00 AM - 18:00 PM",
-      "weekend": "Sat - Sun: 09:00 AM - 16:00 PM"
-    },
-    "poweredBy": "Powered by",
-    "copyright": "Copyright"
-  },
-  "about": {
-    "heading": {
-      "part1": "We are Professionally Dedicated to Ensuring Your",
-      "part2": "Oral Health",
-      "part3": "to Maintain a",
-      "part4": "Healthy Smile"
-    },
-    "stats": {
-      "years": "Years in Services",
-      "employees": "Total Employees",
-      "branches": "Total Branch Offices"
-    }
-},
-"contact": {
-    "title": "Let’s Get in Touch With Us",
-    "form": {
-      "name": "Name",
-      "email": "Email",
-      "subject": "Subject",
-      "message": "Messages",
-      "send": "SEND MESSAGES"
-    }
-},
-"hero": {
+  "hero": {
     "heading": "Gorgeous Smile for a Brighter Life",
     "avatarLeft": {
       "line1": "Hi, Welcome to",
@@ -91,13 +37,37 @@
     "quote1": "Dr. Huston is the best! The office is clean, the staff is kind, and my appointment was quick and stress-free. I’ll definitely be back!",
     "name1": "Liam Elias",
     "detail1": "Routine check-ups and cleanings",
-
     "quote2": "Amazing experience! The team at Confident is friendly, and Dr. Olivia made sure I felt comfortable throughout my treatment. I’m very happy with the results.",
     "name2": "Catherine Reiss",
     "detail2": "Routine check-ups and cleanings",
-
     "quote3": "I had a great experience with Dr. Peter and the team. They were kind, professional, and made my visit as comfortable as possible. Highly recommend!",
     "name3": "Jason Mcarter",
     "detail3": "Routine check-ups and cleanings"
+  },
+
+   "aboutSection": {
+    "heading": {
+      "part1": "We are Professionally Dedicated to Ensuring Your",
+      "part2": "Oral Health",
+      "part3": "to Maintain a",
+      "part4": "Healthy Smile"
+    },
+    "stats": {
+      "years": "Years in Services",
+      "employees": "Total Employees",
+      "branches": "Total Branch Offices"
+    }
+},
+
+"contact": {
+  "title": "Let's Get in Touch With Us",
+  "form": {
+    "name": "Name",
+    "email": "Email",
+    "subject": "Subject",
+    "message": "Message",
+    "send": "SEND MESSAGE"
   }
+}
+
 }
