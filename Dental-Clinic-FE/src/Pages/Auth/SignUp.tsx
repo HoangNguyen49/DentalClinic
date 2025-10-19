@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { useTranslation } from "react-i18next";
 
 const defaultAvatars = [
   "/assets/avatars/avatar1.png",
@@ -15,7 +16,9 @@ const defaultAvatars = [
 ];
 
 function SignUp() {
+  const { t } = useTranslation(["signup", "web"]);
   const navigate = useNavigate();
+
   const [fullName, setFullName] = useState("");
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
@@ -49,32 +52,25 @@ function SignUp() {
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (
-      !fullName ||
-      !username ||
-      !email ||
-      !password ||
-      !confirmPassword ||
-      !phone
-    ) {
-      toast.error("Please fill in all fields.");
+    if (!fullName || !username || !email || !password || !confirmPassword || !phone) {
+      toast.error(t("signup:errors.fillAll"));
       return;
     }
 
     if (password !== confirmPassword) {
-      toast.error("Passwords do not match.");
+      toast.error(t("signup:errors.passwordMismatch"));
       return;
     }
 
     setLoading(true);
     try {
-      // Nếu chọn avatar mặc định (trong public/assets/avatars), thì gán đường dẫn tương đối
+      // Nếu chọn avatar mặc định (public/assets/avatars), gán URL tuyệt đối
       let initialAvatarUrl = "";
       if (avatarUrl) {
         initialAvatarUrl = `${window.location.origin}${avatarUrl}`;
       }
 
-      // Gửi request tạo user (avatarUrl chỉ có khi là avatar sẵn)
+      // Tạo user
       const res = await axios.post<UserResponse>(
         `${import.meta.env.VITE_API_URL}/users`,
         {
@@ -88,11 +84,12 @@ function SignUp() {
       );
 
       const userId = res.data.userId;
-      if (!userId) throw new Error("User ID not returned from server.");
+      if (!userId) throw new Error(t("signup:errors.idMissing"));
 
-      // Nếu có upload ảnh custom → gửi PATCH avatar riêng
+      // Nếu có upload avatar custom → PATCH avatar
       if (customAvatar) {
-        const token = localStorage.getItem("accessToken");
+        // ⚠️ Fix tên key token cho khớp với LoginPage (access_token)
+        const token = localStorage.getItem("access_token");
         const formData = new FormData();
         formData.append("file", customAvatar);
 
@@ -102,20 +99,20 @@ function SignUp() {
           {
             headers: {
               "Content-Type": "multipart/form-data",
-              Authorization: `Bearer ${token}`,
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
             },
           }
         );
       }
 
-      toast.success("Registration successful, redirecting to login...");
+      toast.success(t("signup:success.registered"));
       setTimeout(() => navigate("/login"), 2000);
     } catch (err: any) {
       const errorMessage = err.response?.data?.message;
       if (Array.isArray(errorMessage)) {
         errorMessage.forEach((msg: string) => toast.error(msg));
       } else {
-        toast.error(errorMessage || "Registration failed.");
+        toast.error(errorMessage || t("signup:errors.failed"));
       }
     } finally {
       setLoading(false);
@@ -128,9 +125,11 @@ function SignUp() {
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="min-h-screen flex items-center justify-center bg-white p-10">
         <div className="flex w-full max-w-7xl rounded-3xl shadow-2xl border-4 border-gray-300 overflow-hidden">
+          {/* Left: avatar chooser */}
           <div className="hidden md:flex w-1/2 bg-gradient-to-br from-[#0D1B3E] to-[#3366FF] items-center justify-center text-white p-10">
             <div className="space-y-6 w-full flex flex-col items-center">
-              <h2 className="text-3xl font-bold mb-4">Choose your Avatar</h2>
+              <h2 className="text-3xl font-bold mb-4">{t("signup:leftTitle")}</h2>
+
               <div className="grid grid-cols-2 gap-4 w-2/3">
                 {defaultAvatars.map((url, index) => (
                   <img
@@ -138,9 +137,7 @@ function SignUp() {
                     src={url}
                     alt="avatar"
                     className={`w-36 h-36 rounded-full cursor-pointer object-cover transition duration-300 transform hover:scale-110 shadow-lg ${
-                      avatarUrl === url
-                        ? "ring-4 ring-yellow-400"
-                        : "ring-2 ring-transparent"
+                      avatarUrl === url ? "ring-4 ring-yellow-400" : "ring-2 ring-transparent"
                     }`}
                     onClick={() => {
                       setAvatarUrl(url);
@@ -150,13 +147,14 @@ function SignUp() {
                   />
                 ))}
               </div>
+
               <div className="text-sm mt-6 text-center">
                 <label className="block mb-3 text-base font-medium text-white">
-                  Or upload your own
+                  {t("signup:leftOrUpload")}
                 </label>
                 <div className="relative w-full flex justify-center">
                   <label className="bg-white text-[#3366FF] font-semibold px-4 py-2 rounded cursor-pointer hover:bg-gray-200 transition shadow-md">
-                    Choose File
+                    {t("signup:leftChooseFile")}
                     <input
                       type="file"
                       accept="image/*"
@@ -168,7 +166,7 @@ function SignUp() {
                 {previewUrl && (
                   <img
                     src={previewUrl}
-                    alt="Preview"
+                    alt={t("signup:previewAlt")}
                     className="mt-4 w-36 h-36 rounded-full object-cover shadow-lg mx-auto"
                   />
                 )}
@@ -176,54 +174,46 @@ function SignUp() {
             </div>
           </div>
 
+          {/* Right: form */}
           <div className="w-full md:w-1/2 p-8 md:p-16 bg-white flex flex-col justify-center">
             <form onSubmit={handleSignUp} className="space-y-6">
               <h2 className="text-3xl font-bold text-center">
-                Create your account
+                {t("signup:createTitle")}
               </h2>
-              <InputField
-                label="Full Name"
-                value={fullName}
-                setValue={setFullName}
-              />
-              <InputField
-                label="Username"
-                value={username}
-                setValue={setUsername}
-              />
-              <InputField
-                label="Email"
-                value={email}
-                setValue={setEmail}
-                type="email"
-              />
-              <InputField label="Phone" value={phone} setValue={setPhone} />
+
+              <InputField label={t("signup:fields.fullName")} value={fullName} setValue={setFullName} />
+              <InputField label={t("signup:fields.username")} value={username} setValue={setUsername} />
+              <InputField label={t("signup:fields.email")} value={email} setValue={setEmail} type="email" />
+              <InputField label={t("signup:fields.phone")} value={phone} setValue={setPhone} />
+
               <PasswordField
-                label="Password"
+                label={t("signup:fields.password")}
                 value={password}
                 setValue={setPassword}
                 visible={showPassword}
                 setVisible={setShowPassword}
               />
               <PasswordField
-                label="Confirm Password"
+                label={t("signup:fields.confirmPassword")}
                 value={confirmPassword}
                 setValue={setConfirmPassword}
                 visible={showConfirmPassword}
                 setVisible={setShowConfirmPassword}
               />
+
               <button
                 type="submit"
                 disabled={loading}
                 className="w-full bg-[#3366FF] text-white font-semibold py-3 rounded hover:bg-[#254EDB] transition text-base"
               >
-                {loading ? "Signing up..." : "Sign Up"}
+                {loading ? t("signup:buttons.signingUp") : t("signup:buttons.signUp")}
               </button>
+
               <p className="text-center text-sm">
-                Already have an account?{" "}
-                <a href="/login" className="text-[#3366FF] hover:underline">
-                  Login
-                </a>
+                {t("signup:bottom.haveAccount")}{" "}
+                <Link to="/login" className="text-[#3366FF] hover:underline">
+                  {t("signup:bottom.login")}
+                </Link>
               </p>
             </form>
           </div>

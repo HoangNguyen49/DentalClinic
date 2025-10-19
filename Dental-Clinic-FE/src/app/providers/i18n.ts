@@ -3,7 +3,7 @@ import { initReactI18next } from "react-i18next";
 import resourcesToBackend from "i18next-resources-to-backend";
 
 
-export const APP_NAMESPACES = ["web", "home", "services", "about", "contact", "admin"] as const;
+export const APP_NAMESPACES = ["web", "home", "services", "about", "contact", "admin", "login","signup"] as const;
 
 i18n
   .use(initReactI18next)
@@ -14,16 +14,16 @@ i18n
     })
   )
   .init({
-    // 🔹 Lấy ngôn ngữ đang lưu trong localStorage, mặc định 'en'
+    
     lng: localStorage.getItem("lang") || "en",
     fallbackLng: "en",
 
-    // 🔹 Khai báo các namespace
+ 
     ns: APP_NAMESPACES as unknown as string[],
     defaultNS: "web",
 
     interpolation: {
-      escapeValue: false, // React đã xử lý XSS rồi
+      escapeValue: false, 
     },
   });
 
