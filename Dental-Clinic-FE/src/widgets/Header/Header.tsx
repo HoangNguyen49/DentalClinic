@@ -66,6 +66,9 @@ function Header() {
           <a href="/service" className="hover:text-blue-600">
             {t("nav.services")}
           </a>
+          <a href="/products" className="hover:text-blue-600">
+            {t("nav.products")}
+          </a>
           <a href="/about" className="hover:text-blue-600">
             {t("nav.about")}
           </a>

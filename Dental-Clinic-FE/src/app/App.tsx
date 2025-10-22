@@ -12,6 +12,7 @@ import AppointmentList from "../pages/Admin/Appointments/AppointmentList";
 import Service from "../pages/Service";
 import About from "../pages/About";
 import ContactPage from "../pages/Contact";
+import Product from "../pages/Product";
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/service" element={<Service />} />
+        <Route path="/products" element={<Product />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<LoginPage />} />
