@@ -15,18 +15,25 @@ const defaultAvatars = [
   "/assets/avatars/avatar4.png",
 ];
 
+type SignUpResponse = {
+  userId: number;
+  patientId: number;
+  patientCode: string;
+  avatarUrl: string | null;
+};
+
 function SignUp() {
-  const { t } = useTranslation(["signup", "web"]);
+  const { t, i18n } = useTranslation(["signup", "web"]);
   const navigate = useNavigate();
 
   const [fullName, setFullName] = useState("");
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState(""); 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [phone, setPhone] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("");
-  const [customAvatar, setCustomAvatar] = useState<File | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState(""); 
+  const [customAvatar, setCustomAvatar] = useState<File | null>(null); 
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -37,17 +44,12 @@ function SignUp() {
     if (file) {
       setCustomAvatar(file);
       setPreviewUrl(URL.createObjectURL(file));
-      setAvatarUrl("");
+      setAvatarUrl(""); 
     } else {
       setCustomAvatar(null);
       setPreviewUrl(null);
     }
   };
-
-  interface UserResponse {
-    userId: number;
-    avatarUrl: string;
-  }
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -56,7 +58,6 @@ function SignUp() {
       toast.error(t("signup:errors.fillAll"));
       return;
     }
-
     if (password !== confirmPassword) {
       toast.error(t("signup:errors.passwordMismatch"));
       return;
@@ -64,37 +65,39 @@ function SignUp() {
 
     setLoading(true);
     try {
-      // Nếu chọn avatar mặc định (public/assets/avatars), gán URL tuyệt đối
       let initialAvatarUrl = "";
       if (avatarUrl) {
         initialAvatarUrl = `${window.location.origin}${avatarUrl}`;
       }
 
-      // Tạo user
-      const res = await axios.post<UserResponse>(
-        `${import.meta.env.VITE_API_URL}/users`,
+    
+      const res = await axios.post<SignUpResponse>(
+        `${import.meta.env.VITE_API_URL}/api/auth/sign-up`,
         {
           fullName,
-          username,
-          password,
+          username,       // optional ở BE, FE vẫn gửi nếu có
           email,
           phone,
-          avatarUrl: customAvatar ? undefined : initialAvatarUrl,
+          password,
+          avatarUrl: customAvatar ? undefined : initialAvatarUrl, 
+          clinicId: undefined,                                    
+          locale: i18n?.language ?? "en",
         }
       );
 
-      const userId = res.data.userId;
-      if (!userId) throw new Error(t("signup:errors.idMissing"));
+      const { userId, patientCode } = res.data || {};
+      if (!userId) {
+        throw new Error(t("signup:errors.idMissing"));
+      }
 
-      // Nếu có upload avatar custom → PATCH avatar
+    
       if (customAvatar) {
-        // ⚠️ Fix tên key token cho khớp với LoginPage (access_token)
-        const token = localStorage.getItem("access_token");
+        const token = localStorage.getItem("access_token"); 
         const formData = new FormData();
         formData.append("file", customAvatar);
 
         await axios.patch(
-          `${import.meta.env.VITE_API_URL}/users/${userId}/avatar`,
+          `${import.meta.env.VITE_API_URL}/api/users/${userId}/avatar`,
           formData,
           {
             headers: {
@@ -105,10 +108,16 @@ function SignUp() {
         );
       }
 
-      toast.success(t("signup:success.registered"));
+      // Hiển thị mã bệnh nhân (nếu muốn show cho user biết)
+      if (patientCode) {
+        toast.success(`${t("signup:success.registered")} — ${t("signup:labels.patientCode")}: ${patientCode}`);
+      } else {
+        toast.success(t("signup:success.registered"));
+      }
+
       setTimeout(() => navigate("/login"), 2000);
     } catch (err: any) {
-      const errorMessage = err.response?.data?.message;
+      const errorMessage = err?.response?.data?.message;
       if (Array.isArray(errorMessage)) {
         errorMessage.forEach((msg: string) => toast.error(msg));
       } else {
