@@ -11,13 +11,13 @@ import { useTranslation } from "react-i18next";
 
 type LoginResponse = {
   accessToken: string;
-  tokenType: string;        // "Bearer"
+  tokenType: string; // "Bearer"
   expiresInSeconds: number;
   userId: number;
   fullName?: string;
   email?: string;
   avatarUrl?: string;
-  roles: string[];          
+  roles: string[];
 };
 
 function LoginPage() {
@@ -43,8 +43,15 @@ function LoginPage() {
         { withCredentials: false } // JWT Bearer không cần cookie
       );
 
+      const normalizedRoles = (data.roles ?? []).map((r) =>
+        r
+          ?.toString()
+          .replace(/^ROLE_/i, "")
+          .toUpperCase()
+      );
+
       localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("roles", JSON.stringify(data.roles ?? []));
+      localStorage.setItem("roles", JSON.stringify(normalizedRoles));
       localStorage.setItem(
         "user",
         JSON.stringify({
@@ -55,12 +62,14 @@ function LoginPage() {
         })
       );
 
-      axios.defaults.headers.common["Authorization"] = `Bearer ${data.accessToken}`;
+      axios.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${data.accessToken}`;
 
       toast.success(t("login:loginSuccess"));
       setTimeout(() => {
-        if (data.roles?.includes("ROLE_ADMIN")) navigate("/admin");
-        else navigate("/"); 
+        if (normalizedRoles.includes("ADMIN")) navigate("/admin");
+        else navigate("/");
       }, 2000);
     } catch (err: any) {
       const msg = err?.response?.data?.message;
@@ -122,7 +131,11 @@ function LoginPage() {
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label="toggle-password"
                   >
-                    {showPassword ? <FiEyeOff size={20} /> : <FiEye size={20} />}
+                    {showPassword ? (
+                      <FiEyeOff size={20} />
+                    ) : (
+                      <FiEye size={20} />
+                    )}
                   </div>
                 </div>
               </div>
@@ -139,7 +152,9 @@ function LoginPage() {
               <button
                 type="button"
                 onClick={() =>
-                  (window.location.href = `${import.meta.env.VITE_API_URL}/api/auth/google`)
+                  (window.location.href = `${
+                    import.meta.env.VITE_API_URL
+                  }/api/auth/google`)
                 }
                 className="w-full flex items-center justify-center border rounded py-3 bg-white hover:bg-gray-100 transition text-base shadow"
               >
