@@ -15,7 +15,7 @@ function Header() {
   const avatarSrc =
     user?.avatarUrl && user.avatarUrl.trim() !== ""
       ? user.avatarUrl
-      : `${import.meta.env.VITE_API_URL}/uploads/default-avatar.png`;
+      : `${import.meta.env.VITE_API_URL}/uploads_avatar/default-avatar.png`;
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");

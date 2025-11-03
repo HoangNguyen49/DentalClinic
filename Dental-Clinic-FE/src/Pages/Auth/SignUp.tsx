@@ -92,7 +92,7 @@ function SignUp() {
 
     
       if (customAvatar) {
-        const token = localStorage.getItem("access_token"); 
+        const token = localStorage.getItem("accessToken"); 
         const formData = new FormData();
         formData.append("file", customAvatar);
 
@@ -108,7 +108,7 @@ function SignUp() {
         );
       }
 
-      // Hiển thị mã bệnh nhân (nếu muốn show cho user biết)
+      // Hiển thị mã bệnh nhân
       if (patientCode) {
         toast.success(`${t("signup:success.registered")} — ${t("signup:labels.patientCode")}: ${patientCode}`);
       } else {
