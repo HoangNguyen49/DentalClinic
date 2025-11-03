@@ -1,0 +1,38 @@
+{
+  "leftTitle": "Chọn ảnh đại diện",
+  "leftOrUpload": "Hoặc tải ảnh của bạn lên",
+  "leftChooseFile": "Chọn tệp",
+  "previewAlt": "Xem trước",
+
+  "createTitle": "Tạo tài khoản của bạn",
+
+  "fields": {
+    "fullName": "Họ và tên",
+    "username": "Tên đăng nhập",
+    "email": "Email",
+    "phone": "Số điện thoại",
+    "password": "Mật khẩu",
+    "confirmPassword": "Xác nhận mật khẩu"
+  },
+
+  "buttons": {
+    "signUp": "Đăng ký",
+    "signingUp": "Đang đăng ký..."
+  },
+
+  "bottom": {
+    "haveAccount": "Đã có tài khoản?",
+    "login": "Đăng nhập"
+  },
+
+  "errors": {
+    "fillAll": "Vui lòng nhập đầy đủ thông tin.",
+    "passwordMismatch": "Mật khẩu không khớp.",
+    "idMissing": "Máy chủ không trả về User ID.",
+    "failed": "Đăng ký thất bại."
+  },
+
+  "success": {
+    "registered": "Đăng ký thành công, đang chuyển sang đăng nhập..."
+  }
+}

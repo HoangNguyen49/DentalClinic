@@ -23,7 +23,7 @@ function App() {
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<SignUp />} />
-        <Route path="/google-success" element={<OAuthSuccessHandler />} />
+        <Route path="/oauth/success" element={<OAuthSuccessHandler />} />
         <Route path="/my-account" element={<MyAccount />} />
         <Route path="/change-password" element={<ChangePassword />} />
 

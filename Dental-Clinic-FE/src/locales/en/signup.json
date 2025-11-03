@@ -1,0 +1,38 @@
+{
+  "leftTitle": "Choose your Avatar",
+  "leftOrUpload": "Or upload your own",
+  "leftChooseFile": "Choose File",
+  "previewAlt": "Preview",
+
+  "createTitle": "Create your account",
+
+  "fields": {
+    "fullName": "Full Name",
+    "username": "Username",
+    "email": "Email",
+    "phone": "Phone",
+    "password": "Password",
+    "confirmPassword": "Confirm Password"
+  },
+
+  "buttons": {
+    "signUp": "Sign Up",
+    "signingUp": "Signing up..."
+  },
+
+  "bottom": {
+    "haveAccount": "Already have an account?",
+    "login": "Login"
+  },
+
+  "errors": {
+    "fillAll": "Please fill in all fields.",
+    "passwordMismatch": "Passwords do not match.",
+    "idMissing": "User ID not returned from server.",
+    "failed": "Registration failed."
+  },
+
+  "success": {
+    "registered": "Registration successful, redirecting to login..."
+  }
+}

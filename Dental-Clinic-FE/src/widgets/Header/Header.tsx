@@ -7,9 +7,11 @@ import { useTranslation } from "react-i18next";
 
 function Header() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  // yêu cầu namespace 'web' (đúng với web.json)
+  const { t } = useTranslation(["web"]);
   const [user, setUser] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
   const avatarSrc =
     user?.avatarUrl && user.avatarUrl.trim() !== ""
       ? user.avatarUrl
@@ -17,9 +19,7 @@ function Header() {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    if (storedUser) setUser(JSON.parse(storedUser));
   }, []);
 
   const handleLogout = () => {
@@ -33,9 +33,7 @@ function Header() {
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
-      if (!target.closest("#user-dropdown")) {
-        setIsDropdownOpen(false);
-      }
+      if (!target.closest("#user-dropdown")) setIsDropdownOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -46,7 +44,7 @@ function Header() {
     await axios.get(`${import.meta.env.VITE_API_URL}/locale?lang=${newLang}`, {
       withCredentials: true,
     });
-    i18n.changeLanguage(newLang);
+    await i18n.changeLanguage(newLang);
     localStorage.setItem("lang", newLang);
   };
 
@@ -63,15 +61,15 @@ function Header() {
           <Link to="/" className="hover:text-blue-600">
             {t("nav.home")}
           </Link>
-          <a href="/service" className="hover:text-blue-600">
+          <Link to="/service" className="hover:text-blue-600">
             {t("nav.services")}
-          </a>
-          <a href="/about" className="hover:text-blue-600">
+          </Link>
+          <Link to="/about" className="hover:text-blue-600">
             {t("nav.about")}
-          </a>
-          <a href="/contact" className="hover:text-blue-600">
+          </Link>
+          <Link to="/contact" className="hover:text-blue-600">
             {t("nav.contact")}
-          </a>
+          </Link>
         </nav>
 
         {/* CTA */}
@@ -81,15 +79,7 @@ function Header() {
             onClick={changeLang}
             className="px-4 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] text-white shadow-md transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-lg flex items-center gap-2"
           >
-            {i18n.language === "en" ? (
-              <>
-                <span>Tiếng Việt</span>
-              </>
-            ) : (
-              <>
-                <span>English</span>
-              </>
-            )}
+            {i18n.language === "en" ? <span>VN</span> : <span>EN</span>}
           </button>
 
           {!user ? (
@@ -156,12 +146,7 @@ function Header() {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
             </span>
           </button>
