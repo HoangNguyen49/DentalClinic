@@ -8,7 +8,7 @@ import ChangePassword from "../pages/Account/ChangePassword";
 import AdminLayout from "../app/layout/AdminLayouts";
 import AdminDashboardPage from "../pages/Admin/Dashboard/AdminDashboardPage";
 import ProtectedRouteAdmin from "../app/routes/ProtectedRouteAdmin";
-import AppointmentList from "../pages/Admin/Appointments/AppointmentCalendar";
+import AppointmentList from "../pages/Admin/Appointments/AppointmentList";
 import Service from "../pages/Service";
 import About from "../pages/About";
 import ContactPage from "../pages/Contact";
