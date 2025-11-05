@@ -68,7 +68,7 @@ function LoginPage() {
 
       toast.success(t("login:loginSuccess"));
       setTimeout(() => {
-        if (normalizedRoles.includes("ADMIN")) navigate("/admin");
+        if (normalizedRoles.includes("ADMIN")) navigate("/");
         else navigate("/");
       }, 2000);
     } catch (err: any) {

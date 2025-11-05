@@ -13,38 +13,44 @@ type UserInfo = {
   phone?: string;
   username?: string;
   avatarUrl?: string;
-  roles?: string[];
+  hasPassword?: boolean;
 };
 
 function MyAccount() {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [newAvatar, setNewAvatar] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
   const API = import.meta.env.VITE_API_URL;
 
   // ===== Lấy thông tin user hiện tại =====
   useEffect(() => {
+  const fetchUser = async () => {
     const token = localStorage.getItem("accessToken");
     if (!token) {
       navigate("/login");
       return;
     }
 
-    axios
-      .get<UserInfo>(`${API}/api/users/me`, {
+    try {
+      const res = await axios.get<UserInfo>(`${API}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` },
-      })
-      .then((res) => {
-        setUser(res.data);
-        localStorage.setItem("user", JSON.stringify(res.data));
-      })
-      .catch((err) => {
-        console.error(err);
-        navigate("/login");
       });
-  }, [API, navigate]);
+      setUser(res.data);
+      localStorage.setItem("user", JSON.stringify(res.data));
+    } catch (err) {
+      console.error(err);
+      navigate("/login");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchUser();
+}, [API, navigate]);
+
 
   const avatarSrc =
     previewUrl ||
@@ -117,12 +123,23 @@ function MyAccount() {
       setUser(data);
       localStorage.setItem("user", JSON.stringify(data));
       toast.success("Profile updated successfully!");
-      
     } catch (error) {
       console.error(error);
       toast.error("Failed to update profile.");
     }
   };
+
+  if (loading) {
+    return (
+      <>
+        <Header />
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+          <div className="text-gray-600">Loading...</div>
+        </div>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>
@@ -179,12 +196,8 @@ function MyAccount() {
             <p>
               <strong>Username:</strong> {user?.username || "-"}
             </p>
-            <p>
-              <strong>Roles:</strong>{" "}
-              {(user?.roles || []).join(", ") || "-"}
-            </p>
-
-            <div className="flex flex-wrap gap-4">
+            
+            <div className="flex flex-wrap gap-4 items-center">
               <button
                 onClick={handleSaveChanges}
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
@@ -192,17 +205,20 @@ function MyAccount() {
                 Save Changes
               </button>
 
-              <button
-                onClick={() => navigate("/change-password")}
-                className="px-4 py-2 bg-[#3366FF] text-white rounded hover:bg-[#254EDB] transition"
-              >
-                Change Password
-              </button>
+              {/* Chỉ hiện khi user có mật khẩu local */}
+              {user?.hasPassword && (
+                <button
+                  onClick={() => navigate("/change-password")}
+                  className="px-4 py-2 bg-[#3366FF] text-white rounded hover:bg-[#254EDB] transition"
+                >
+                  Change Password
+                </button>
+              )}
             </div>
           </div>
 
           {/* ===== Right: Avatar ===== */}
-          <div className="md:w-1/2 bg-gradient-to-br from-[#0D1B3E] to-[#3366FF] flex flex-col items-center justify-center p-10 gap-4">
+          <div className="md:w-1/2 bg-gradient-to-br from-[#0D1B3E] to-[#3366FF] flex flex-col items-center justify-center p-10 gap-4 rounded-2xl">
             <img
               src={avatarSrc}
               alt="Avatar"

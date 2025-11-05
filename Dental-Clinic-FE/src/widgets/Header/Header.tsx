@@ -7,7 +7,6 @@ import { useTranslation } from "react-i18next";
 
 function Header() {
   const navigate = useNavigate();
-  // yêu cầu namespace 'web' (đúng với web.json)
   const { t } = useTranslation(["web"]);
   const [user, setUser] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
