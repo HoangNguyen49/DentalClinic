@@ -1,0 +1,615 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import {
+  Search,
+  Filter,
+  UserPlus,
+  Eye,
+  Trash2,
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+} from "lucide-react";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
+type Employee = {
+  id: number;
+  code: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  username: string;
+  avatarUrl?: string;
+  isActive: boolean;
+  department?: { id: number; departmentName: string };
+  role?: { id: number; roleName: string };
+  clinic?: { id: number; clinicName: string };
+  roleAtClinic?: string;
+  createdAt?: string;
+  lastLoginAt?: string;
+};
+
+type PageResponse<T> = {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number;
+  first: boolean;
+  last: boolean;
+};
+
+type Department = {
+  id: number;
+  departmentName: string;
+};
+
+function EmployeesList() {
+  const navigate = useNavigate();
+  const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
+  const accessToken = localStorage.getItem("accessToken");
+
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+
+  // Lọc - filter
+  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [departmentId, setDepartmentId] = useState<number | null>(null);
+  const [roleId, setRoleId] = useState<number | null>(null);
+  const [isActive, setIsActive] = useState<boolean | null>(null);
+
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [roles, setRoles] = useState<{ id: number; roleName: string }[]>([]);
+  const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+
+  useEffect(() => {
+    fetchMasterData();
+  }, []);
+
+  useEffect(() => {
+    fetchEmployees();
+  }, [page, size, search, departmentId, roleId, isActive]);
+
+  // Lấy danh sách phòng ban và vai trò từ backend
+  const fetchMasterData = async () => {
+    try {
+      const departmentsRes = await axios.get<Department[]>(
+        `${apiBase}/api/hr/management/departments`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      setDepartments(departmentsRes.data || []);
+
+      const rolesRes = await axios.get<{ id: number; roleName: string }[]>(
+        `${apiBase}/api/hr/management/roles`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      setRoles(rolesRes.data || []);
+    } catch (err: any) {
+      console.error("Error fetching master data:", err);
+      // Báo lỗi khi không lấy được phòng ban/vai trò
+      let errorMsg = "Cannot load department/role data";
+
+      if (err?.response?.data) {
+        const errorData = err.response.data;
+        errorMsg = errorData.message || errorData.error || errorMsg;
+      } else if (err?.message) {
+        errorMsg = err.message;
+      }
+
+      toast.error(errorMsg);
+    }
+  };
+
+  // Lấy danh sách nhân viên từ backend và xử lý lỗi
+  const fetchEmployees = async () => {
+    if (!accessToken || !apiBase) {
+      toast.error("Please log in");
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const params: any = {
+        page,
+        size,
+      };
+      if (search && search.trim()) params.search = search.trim();
+      if (departmentId !== null && departmentId !== undefined) params.departmentId = Number(departmentId);
+      if (roleId !== null && roleId !== undefined) params.roleId = Number(roleId);
+      if (isActive !== null && isActive !== undefined) params.isActive = Boolean(isActive);
+
+      const response = await axios.get<PageResponse<Employee>>(
+        `${apiBase}/api/hr/employees`,
+        {
+          params,
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+
+      const employeesList = response.data.content || [];
+      let totalElementsValue = response.data.totalElements;
+      
+      // Nếu totalElements = 0 nhưng có content, có thể backend trả về sai
+      // Gọi statistics endpoint để lấy total chính xác (giống dashboard)
+      if ((!totalElementsValue || totalElementsValue === 0) && employeesList.length > 0) {
+        try {
+          const statsParams: any = {};
+          if (departmentId !== null && departmentId !== undefined) {
+            statsParams.departmentId = departmentId;
+          }
+          // Không truyền roleId và isActive vào statistics vì endpoint này không hỗ trợ
+          
+          const statsRes = await axios.get<{ totalEmployees?: number }>(
+            `${apiBase}/api/hr/employees/statistics`,
+            {
+              params: statsParams,
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }
+          );
+          
+          if (statsRes.data?.totalEmployees !== undefined && statsRes.data.totalEmployees > 0) {
+            totalElementsValue = statsRes.data.totalEmployees;
+            console.log("Using totalEmployees from statistics endpoint:", totalElementsValue);
+          }
+        } catch (statsErr) {
+          console.warn("Failed to fetch statistics, using totalElements from page response:", statsErr);
+        }
+      }
+
+      setEmployees(employeesList);
+      setTotalPages(response.data.totalPages || 0);
+      setTotalElements(totalElementsValue ?? 0);
+    } catch (err: any) {
+      console.error("Error fetching employees:", err);
+      // Báo lỗi khi không lấy được danh sách nhân viên
+      let errorMsg = "Cannot load employee list";
+
+      if (err?.response?.data) {
+        const errorData = err.response.data;
+        errorMsg = errorData.message || errorData.error || errorMsg;
+      } else if (err?.message) {
+        errorMsg = err.message;
+      }
+
+      toast.error(errorMsg);
+      // Reset về 0 khi có lỗi
+      setEmployees([]);
+      setTotalPages(0);
+      setTotalElements(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Xử lý tìm kiếm
+  const handleSearch = () => {
+    setSearch(searchInput);
+    setPage(0);
+  };
+
+  // Xử lý xóa tất cả filter
+  const handleResetFilters = () => {
+    setSearch("");
+    setSearchInput("");
+    setDepartmentId(null);
+    setRoleId(null);
+    setIsActive(null);
+    setPage(0);
+  };
+
+  // Đưa trang về đầu khi thay đổi filter
+  const handleFilterChange = () => {
+    setPage(0);
+  };
+
+  // Xử lý xóa nhân viên (confirm và truyền reason), xử lý lỗi trả về
+  const handleDelete = async (employeeId: number, employeeName: string) => {
+    if (!accessToken) {
+      toast.error("You need to log in to perform this action");
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to delete employee "${employeeName}"?\n\nNote: This action will lock this employee account.`;
+    if (!window.confirm(confirmMessage)) return;
+
+    const reason = prompt("Reason for deleting the employee:");
+    if (!reason || reason.trim() === "") {
+      toast.warning("Please enter a reason for deleting the employee");
+      return;
+    }
+
+    try {
+      const response = await axios.delete(
+        `${apiBase}/api/hr/employees/${employeeId}`,
+        {
+          params: { reason: reason.trim() },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      toast.success("Delete employee successfully");
+      fetchEmployees();
+    } catch (err: any) {
+      console.error("Error deleting employee:", err);
+      let errorMsg = "Cannot delete employee";
+
+      if (err?.response?.data) {
+        const errorData = err.response.data;
+        if (typeof errorData === "string") {
+          errorMsg = errorData;
+        } else if (errorData.message) {
+          errorMsg = errorData.message;
+        } else if (errorData.error) {
+          errorMsg = errorData.error;
+        }
+      } else if (err?.response?.status === 401) {
+        errorMsg = "Session expired. Please log in again.";
+      } else if (err?.response?.status === 403) {
+        errorMsg = "You do not have permission to perform this action.";
+      } else if (err?.response?.status === 404) {
+        errorMsg = "This employee does not exist.";
+      } else if (err?.message) {
+        errorMsg = err.message;
+      }
+
+      toast.error(errorMsg);
+    }
+  };
+
+  return (
+    <>
+      <ToastContainer position="top-right" autoClose={3000} />
+      <div className="p-6 min-h-screen bg-gray-100">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-3xl font-bold text-[#0D1B3E] mb-2">
+                Employee Management
+              </h1>
+              <p className="text-gray-600 text-base">
+                Total: <span className="font-extrabold text-gray-900">{(totalElements || 0).toLocaleString()}</span> employees
+              </p>
+            </div>
+            <button
+              onClick={() => navigate("/hr/employees/create")}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
+            >
+              <UserPlus className="w-5 h-5" />
+              Add Employee
+            </button>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
+            <div className="flex items-center gap-2 mb-4">
+              <Filter className="w-5 h-5 text-gray-600" />
+              <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Search (Name/Email)
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
+                    placeholder="Enter name or email..."
+                    className="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <button
+                    onClick={handleSearch}
+                    className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+                    title="Search"
+                    aria-label="Search"
+                  >
+                    <Search className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Department
+                </label>
+                <select
+                  value={departmentId ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setDepartmentId(value ? Number(value) : null);
+                    handleFilterChange();
+                  }}
+                  className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Filter by department"
+                >
+                  <option value="">All</option>
+                  {departments.map((dept) => (
+                    <option key={dept.id} value={dept.id}>
+                      {dept.departmentName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Role
+                </label>
+                <select
+                  value={roleId ?? ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setRoleId(value ? Number(value) : null);
+                    handleFilterChange();
+                  }}
+                  className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Filter by role"
+                >
+                  <option value="">All</option>
+                  {roles.map((role) => (
+                    <option key={role.id} value={role.id}>
+                      {role.roleName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Status
+                </label>
+                <select
+                  value={isActive === null ? "" : isActive ? "true" : "false"}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const newValue = value === "" ? null : value === "true";
+                    setIsActive(newValue);
+                    handleFilterChange();
+                  }}
+                  className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  aria-label="Filter by status"
+                >
+                  <option value="">All</option>
+                  <option value="true">Active</option>
+                  <option value="false">Locked</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mt-4">
+              <button
+                onClick={handleResetFilters}
+                className="px-4 py-2 text-gray-700 border rounded hover:bg-gray-100"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+            {loading ? (
+              <div className="p-8 text-center text-gray-500">Loading...</div>
+            ) : employees.length === 0 ? (
+              <div className="p-8 text-center text-gray-500">
+                No employee found
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b border-gray-200">
+                      <tr>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Name
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Department
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Position
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Join Date
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {employees.map((employee) => {
+                        const isDropdownOpen = openDropdown === employee.id;
+
+                        return (
+                          <tr
+                            key={employee.id}
+                            className="hover:bg-gray-50 transition-colors"
+                          >
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0">
+                                  {employee.avatarUrl ? (
+                                    <img
+                                      src={`${apiBase}${employee.avatarUrl}`}
+                                      alt={employee.fullName}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <span className="text-gray-500 text-xs font-medium">
+                                      {employee.fullName.charAt(0).toUpperCase()}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-sm font-medium text-gray-900">
+                                  {employee.fullName}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {employee.department?.departmentName || "-"}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {(employee.role as any)?.roleName || "-"}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap">
+                              <span
+                                className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${
+                                  employee.isActive
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-red-100 text-red-700"
+                                }`}
+                              >
+                                {employee.isActive ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {employee.createdAt
+                                ? new Date(employee.createdAt).toLocaleDateString("en-CA", {
+                                    year: "numeric",
+                                    month: "2-digit",
+                                    day: "2-digit",
+                                  })
+                                : "-"}
+                            </td>
+                            <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="relative">
+                                <button
+                                  onClick={() => setOpenDropdown(isDropdownOpen ? null : employee.id)}
+                                  className="p-1 rounded hover:bg-gray-100 transition-colors"
+                                  title="More actions"
+                                >
+                                  <MoreVertical className="w-4 h-4 text-gray-600" />
+                                </button>
+
+                                {isDropdownOpen && (
+                                  <>
+                                    <div
+                                      className="fixed inset-0 z-10"
+                                      onClick={() => setOpenDropdown(null)}
+                                    ></div>
+                                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
+                                      <button
+                                        onClick={() => {
+                                          navigate(`/hr/employees/${employee.id}`);
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                        View Profile
+                                      </button>
+                                      <button
+                                        onClick={() => {
+                                          handleDelete(employee.id, employee.fullName);
+                                          setOpenDropdown(null);
+                                        }}
+                                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                        Delete Employee
+                                      </button>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-700">
+                      Show{" "}
+                      <select
+                        value={size}
+                        onChange={(e) => {
+                          setSize(Number(e.target.value));
+                          setPage(0);
+                        }}
+                        className="border rounded px-2 py-1 mx-1"
+                        aria-label="Items per page"
+                      >
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                      </select>
+                      of {totalElements} results
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPage(0)}
+                      disabled={page === 0}
+                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                      title="First page"
+                      aria-label="First page"
+                    >
+                      First
+                    </button>
+                    <button
+                      onClick={() => setPage(page - 1)}
+                      disabled={page === 0}
+                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                      title="Previous page"
+                      aria-label="Previous page"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <span className="px-3 py-1 text-sm text-gray-700">
+                      Page {page + 1} / {totalPages || 1}
+                    </span>
+                    <button
+                      onClick={() => setPage(page + 1)}
+                      disabled={page >= totalPages - 1}
+                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                      title="Next page"
+                      aria-label="Next page"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setPage(totalPages - 1)}
+                      disabled={page >= totalPages - 1}
+                      className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+                      title="Last page"
+                      aria-label="Last page"
+                    >
+                      Last
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+export default EmployeesList;
+
