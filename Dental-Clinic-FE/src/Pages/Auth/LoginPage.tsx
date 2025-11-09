@@ -104,7 +104,7 @@ function LoginPage() {
 
               <div>
                 <label className="block mb-1 text-sm font-medium">
-                  {t("login:email")}
+                  {t("login:Email")}
                 </label>
                 <input
                   type="email"
