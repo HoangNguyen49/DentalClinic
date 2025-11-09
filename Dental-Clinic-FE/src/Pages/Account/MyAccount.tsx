@@ -24,39 +24,39 @@ function MyAccount() {
 
   const navigate = useNavigate();
   const API = import.meta.env.VITE_API_URL;
+  const DEFAULT_AVATAR =
+    import.meta.env.VITE_DEFAULT_AVATAR_URL ||
+    "https://res.cloudinary.com/dchzko3lj/image/upload/v1762616672/default-avatar_brvdfn.png";
 
   // ===== Lấy thông tin user hiện tại =====
   useEffect(() => {
-  const fetchUser = async () => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
+    const fetchUser = async () => {
+      const token = localStorage.getItem("accessToken");
+      if (!token) {
+        navigate("/login");
+        return;
+      }
 
-    try {
-      const res = await axios.get<UserInfo>(`${API}/api/users/me`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setUser(res.data);
-      localStorage.setItem("user", JSON.stringify(res.data));
-    } catch (err) {
-      console.error(err);
-      navigate("/login");
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        const res = await axios.get<UserInfo>(`${API}/api/users/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUser(res.data);
+        localStorage.setItem("user", JSON.stringify(res.data));
+      } catch (err) {
+        console.error(err);
+        navigate("/login");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchUser();
-}, [API, navigate]);
-
+    fetchUser();
+  }, [API, navigate]);
 
   const avatarSrc =
     previewUrl ||
-    (user?.avatarUrl && user.avatarUrl.trim() !== ""
-      ? user.avatarUrl
-      : `${API}/uploads_avatar/default-avatar.png`);
+    (user?.avatarUrl && user.avatarUrl.trim() !== "" ? user.avatarUrl : DEFAULT_AVATAR);
 
   // ===== Chọn file avatar mới =====
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -80,7 +80,7 @@ function MyAccount() {
       const formData = new FormData();
       formData.append("file", newAvatar);
 
-      const res = await axios.patch<{ userId: number; avatarUrl: string }>(
+      const res = await axios.patch<{ userId: number; avatarUrl: string; avatarPublicId?: string }>(
         `${API}/api/users/${user.userId}/avatar`,
         formData,
         {
@@ -94,12 +94,13 @@ function MyAccount() {
       const updatedUser = { ...user, avatarUrl: res.data.avatarUrl };
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
+      window.dispatchEvent(new Event("avatarUpdated"));
       setNewAvatar(null);
       setPreviewUrl(null);
       toast.success("Avatar updated successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Failed to update avatar.");
+      toast.error(error?.response?.data?.message || "Failed to update avatar.");
     }
   };
 
@@ -116,16 +117,16 @@ function MyAccount() {
       const { fullName, email, phone } = user;
       const { data } = await axios.patch<UserInfo>(
         `${API}/api/users/${user.userId}`,
-        { fullName, email, phone },
+        { fullName, email, phone }, // để BE validate
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setUser(data);
       localStorage.setItem("user", JSON.stringify(data));
       toast.success("Profile updated successfully!");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      toast.error("Failed to update profile.");
+      toast.error(error?.response?.data?.message || "Failed to update profile.");
     }
   };
 
@@ -196,7 +197,7 @@ function MyAccount() {
             <p>
               <strong>Username:</strong> {user?.username || "-"}
             </p>
-            
+
             <div className="flex flex-wrap gap-4 items-center">
               <button
                 onClick={handleSaveChanges}
@@ -204,8 +205,6 @@ function MyAccount() {
               >
                 Save Changes
               </button>
-
-              {/* Chỉ hiện khi user có mật khẩu local */}
               {user?.hasPassword && (
                 <button
                   onClick={() => navigate("/change-password")}

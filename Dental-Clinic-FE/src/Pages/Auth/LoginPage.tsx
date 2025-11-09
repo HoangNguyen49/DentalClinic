@@ -59,6 +59,7 @@ function LoginPage() {
           fullName: data.fullName,
           email: data.email,
           avatarUrl: data.avatarUrl,
+          roles: normalizedRoles
         })
       );
 
