@@ -1,3 +1,4 @@
+import { Routes, Route } from "react-router-dom";
 import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
 import GetAllProducts from "./sections/GetAllProducts/GetAllProducts";
@@ -7,16 +8,10 @@ function Product() {
   return (
     <>
       <Header />
-
-      {/* bỏ sau khi thiết kế UX */}
-      <h1>Products (raw)</h1>
-
-      <GetAllProducts />
-
-      {/* bỏ sau khi thiết kế UX */}
-      <hr />
-      
-      <GetProductById />
+      <Routes>
+        <Route index element={<GetAllProducts />} />
+        <Route path=":id" element={<GetProductById />} />
+      </Routes>
       <Footer />
     </>
   );

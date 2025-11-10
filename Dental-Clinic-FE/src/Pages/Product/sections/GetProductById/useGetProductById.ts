@@ -8,24 +8,27 @@ export default function useGetProductById() {
   const [msg, setMsg] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
 
-  const handleLoad = async () => {
-    setMsg('');
-    setErrorMsg('');
-    if (!idInput) {
-      setMsg('Please enter an ID');
-      return;
-    }
-    setLoading(true);
-    try {
-      const data = await fetchProductById(idInput);
-      setDetail(data);
-    } catch (err: any) {
-      setErrorMsg(err?.message ?? 'Request failed');
-      setDetail(null);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const handleLoad = async (overrideId?: string) => {
+  setMsg('');
+  setErrorMsg('');
+  const targetId = (overrideId ?? idInput).trim();
+  if (!targetId) {
+    setMsg('Please enter an ID');
+    return;
+  }
+  setLoading(true);
+  try {
+    const data = await fetchProductById(targetId);
+    setDetail(data);
+    setIdInput(targetId);
+  } catch (err: any) {
+    setErrorMsg(err?.message ?? 'Request failed');
+    setDetail(null);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return { idInput, setIdInput, detail, loading, msg, errorMsg, handleLoad };
 }

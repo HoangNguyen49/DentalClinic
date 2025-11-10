@@ -5,6 +5,8 @@ const axiosClient = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+export const API_BASE_URL = import.meta.env.VITE_API_URL?.replace(/\/+$/, '') ?? '';
+
 axiosClient.interceptors.request.use((config) => {
   // ném log từ request
   const fullUrl = `${config.baseURL ?? ''}${config.url ?? ''}`;
