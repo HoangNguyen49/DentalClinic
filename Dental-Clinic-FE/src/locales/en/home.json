@@ -100,5 +100,31 @@
     "quote3": "I had a great experience with Dr. Peter and the team. They were kind, professional, and made my visit as comfortable as possible. Highly recommend!",
     "name3": "Jason Mcarter",
     "detail3": "Routine check-ups and cleanings"
+  },
+
+   "aboutSection": {
+    "heading": {
+      "part1": "We are Professionally Dedicated to Ensuring Your",
+      "part2": "Oral Health",
+      "part3": "to Maintain a",
+      "part4": "Healthy Smile"
+    },
+    "stats": {
+      "years": "Years in Services",
+      "employees": "Total Employees",
+      "branches": "Total Branch Offices"
+    }
+},
+
+"contact": {
+  "title": "Let's Get in Touch With Us",
+  "form": {
+    "name": "Name",
+    "email": "Email",
+    "subject": "Subject",
+    "message": "Message",
+    "send": "SEND MESSAGE"
   }
+}
+
 }

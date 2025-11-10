@@ -2,7 +2,7 @@ import toothImage from "../../../assets/images/contact-tooth.png";
 import { useTranslation } from "react-i18next";
 
 function ContactSection() {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['home','web']);
 
   return (
     <section className="bg-white py-16 font-instrument">

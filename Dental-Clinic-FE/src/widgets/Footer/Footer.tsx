@@ -53,7 +53,7 @@ function Footer() {
         <div className="border-t pt-4 text-center text-sm text-gray-500">
           <p>
             {t("footer.copyright")} © Hoang Nguyen sv FPT Aptech 2025 | {t("footer.poweredBy")}{" "}
-            <a href="https://webflow.com" target="_blank" rel="noopener noreferrer" className="text-[#3366FF] hover:underline">
+            <a href="" target="_blank" rel="noopener noreferrer" className="text-[#3366FF] hover:underline">
               Hoang Nguyen
             </a>
           </p>

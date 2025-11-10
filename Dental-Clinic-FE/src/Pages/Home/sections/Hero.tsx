@@ -10,7 +10,7 @@ import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 
 function Hero() {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['home','web']);
 
   return (
     <section className="pt-24 pb-16 px-0">

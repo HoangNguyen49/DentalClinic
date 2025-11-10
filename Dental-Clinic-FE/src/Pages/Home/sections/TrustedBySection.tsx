@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
 
 function TrustedBySection() {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['home','web']);
   const logoImports = import.meta.glob("../../../assets/images/slider-logo*.png", {
     eager: true,
   });

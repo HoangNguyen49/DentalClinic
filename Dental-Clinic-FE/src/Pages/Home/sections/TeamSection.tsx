@@ -2,7 +2,7 @@ import doctorImg from "../../../assets/images/doctor.png";
 import { useTranslation } from "react-i18next";
 
 function TeamSection() {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['home', 'web']);
 
   return (
     <section className="bg-white py-16 font-instrument">

@@ -1,0 +1,33 @@
+{
+  "nav": {
+    "home": "Home",
+    "services": "Services",
+    "about": "About",
+    "contact": "Contact"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout"
+  },
+  "account": {
+    "myAccount": "My Account",
+    "adminDashboard": "Admin Dashboard"
+  },
+  "cta": {
+    "getInTouch": "Get In Touch"
+  },
+  "footer": {
+    "address": "Ở ĐÂU CÒN LÂU MỚI NÓI VÌ CHƯA CODE XONG",
+    "slogan": "Smile Bright, Live Better",
+    "doctors": "Doctors",
+    "license": "License",
+    "about": "About Us",
+    "workingHours": {
+      "title": "Working Hours",
+      "weekday": "Mon - Fri: 09:00 AM - 18:00 PM",
+      "weekend": "Sat - Sun: 09:00 AM - 16:00 PM"
+    },
+    "poweredBy": "Powered by",
+    "copyright": "Copyright"
+  }
+}
