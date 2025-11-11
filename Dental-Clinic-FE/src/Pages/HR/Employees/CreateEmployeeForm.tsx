@@ -4,6 +4,7 @@ import axios from "axios";
 import { X, Save, User, ArrowLeft, Plus } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useTranslation } from "react-i18next";
 
 type Department = {
   id: number;
@@ -23,6 +24,7 @@ type Room = {
 };
 
 function CreateEmployeeForm() {
+  const { t } = useTranslation("employees");
   const navigate = useNavigate();
   const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
   const accessToken = localStorage.getItem("accessToken");
@@ -94,7 +96,7 @@ function CreateEmployeeForm() {
       console.error("Error fetching options:", err);
 
       // Tất cả lỗi phải được xử lý từ backend
-      let errorMsg = "Failed to load drop-down data";
+      let errorMsg = t("create.messages.failedToLoad");
 
       if (err?.response?.data) {
         const errorData = err.response.data;
@@ -104,7 +106,7 @@ function CreateEmployeeForm() {
           errorMsg = errorData.error + (errorData.message ? `: ${errorData.message}` : "");
         }
       } else if (err?.message) {
-        errorMsg = `Connection error: ${err.message}`;
+        errorMsg = `${t("create.messages.connectionError")} ${err.message}`;
       }
 
       toast.error(errorMsg);
@@ -119,12 +121,12 @@ function CreateEmployeeForm() {
     if (!file) return;
 
     if (!file.type.startsWith("image/")) {
-      toast.error("Please select an image file");
+      toast.error(t("create.validation.selectImage"));
       return;
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image size must not exceed 5MB");
+      toast.error(t("create.validation.imageSize"));
       return;
     }
 
@@ -149,7 +151,7 @@ function CreateEmployeeForm() {
 
     // Chỉ kiểm tra cơ bản ở frontend, validation thực sự sẽ từ backend
     if (!fullName || !email || !roleId) {
-      toast.error("Please fill in all required information");
+      toast.error(t("create.validation.fillRequired"));
       return;
     }
 
@@ -201,7 +203,7 @@ function CreateEmployeeForm() {
           console.error("Error uploading avatar:", avatarErr);
           // Xử lý lỗi avatar từ backend
           const avatarErrorData = avatarErr?.response?.data;
-          let avatarErrorMsg = "Employee was created but failed to upload avatar";
+          let avatarErrorMsg = t("create.messages.avatarUploadFailed");
 
           if (avatarErrorData) {
             if (avatarErrorData.errors && typeof avatarErrorData.errors === 'object') {
@@ -225,28 +227,28 @@ function CreateEmployeeForm() {
         }
       }
 
-      toast.success("Employee created successfully!");
+      toast.success(t("create.messages.createdSuccess"));
       navigate("/hr/employees");
     } catch (err: any) {
       console.error("Error creating employee:", err);
 
       // Hiển thị lỗi trả về từ backend
-      let errorMsg = "Failed to create employee";
+      let errorMsg = t("create.messages.failedToCreate");
 
       if (err?.response?.data) {
         const errorData = err.response.data;
         if (errorData.errors && typeof errorData.errors === 'object' && !Array.isArray(errorData.errors)) {
           const errorMessages = Object.entries(errorData.errors)
             .map(([field, message]) => {
-              // Map các field sang tiếng Việt cho hiển thị
+              // Map các field sang translation
               const fieldMap: { [key: string]: string } = {
-                fullName: "Full name",
-                email: "Email",
-                phone: "Phone number",
-                password: "Password",
-                roleId: "Role",
-                departmentId: "Department",
-                roomId: "Room",
+                fullName: t("create.fieldMap.fullName"),
+                email: t("create.fieldMap.email"),
+                phone: t("create.fieldMap.phone"),
+                password: t("create.fieldMap.password"),
+                roleId: t("create.fieldMap.roleId"),
+                departmentId: t("create.fieldMap.departmentId"),
+                roomId: t("create.fieldMap.roomId"),
               };
               const fieldName = fieldMap[field] || field;
               return `${fieldName}: ${message}`;
@@ -267,7 +269,7 @@ function CreateEmployeeForm() {
           errorMsg = errorData.error + (errorData.message ? `: ${errorData.message}` : "");
         }
       } else if (err?.message) {
-        errorMsg = `Connection error: ${err.message}`;
+        errorMsg = `${t("create.messages.connectionError")} ${err.message}`;
       }
 
       toast.error(errorMsg, { autoClose: 7000 });
@@ -279,7 +281,7 @@ function CreateEmployeeForm() {
   if (loadingOptions) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading data...</div>
+        <div className="text-gray-500">{t("create.loading")}</div>
       </div>
     );
   }
@@ -294,10 +296,10 @@ function CreateEmployeeForm() {
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors mb-3"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Back</span>
+            <span>{t("create.back")}</span>
           </button>
           <h1 className="text-3xl font-semibold">
-            <span className="text-gray-400 font-normal">New Employee</span>
+            <span className="text-gray-400 font-normal">{t("create.title")}</span>
           </h1>
         </div>
 
@@ -312,13 +314,13 @@ function CreateEmployeeForm() {
                     alt="Preview"
                     className="w-32 h-32 rounded-full object-cover border-2 border-gray-200"
                   />
-                  <label className="absolute bottom-0 right-0 cursor-pointer" title="Upload avatar" aria-label="Upload avatar">
+                  <label className="absolute bottom-0 right-0 cursor-pointer" title={t("create.avatar.upload")} aria-label={t("create.avatar.upload")}>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleAvatarChange}
                       className="hidden"
-                      aria-label="Upload avatar"
+                      aria-label={t("create.avatar.upload")}
                     />
                     <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md border-2 border-white">
                       <Plus className="w-5 h-5" />
@@ -328,8 +330,8 @@ function CreateEmployeeForm() {
                     type="button"
                     onClick={removeAvatar}
                     className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 shadow-md"
-                    title="Remove avatar"
-                    aria-label="Remove avatar"
+                    title={t("create.avatar.remove")}
+                    aria-label={t("create.avatar.remove")}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -339,13 +341,13 @@ function CreateEmployeeForm() {
                   <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200">
                     <User className="w-16 h-16 text-gray-400" />
                   </div>
-                  <label className="absolute bottom-0 right-0 cursor-pointer" title="Upload avatar" aria-label="Upload avatar">
+                  <label className="absolute bottom-0 right-0 cursor-pointer" title={t("create.avatar.upload")} aria-label={t("create.avatar.upload")}>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleAvatarChange}
                       className="hidden"
-                      aria-label="Upload avatar"
+                      aria-label={t("create.avatar.upload")}
                     />
                     <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md border-2 border-white">
                       <Plus className="w-5 h-5" />
@@ -359,68 +361,68 @@ function CreateEmployeeForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Employee Code
+                {t("create.form.employeeCode.label")}
               </label>
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter employee code"
-                aria-label="Employee code"
+                placeholder={t("create.form.employeeCode.placeholder")}
+                aria-label={t("create.form.employeeCode.label")}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Full Name <span className="text-red-500">*</span>
+                {t("create.form.fullName.label")} <span className="text-red-500">{t("create.form.fullName.required")}</span>
               </label>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter full name"
-                aria-label="Full name"
+                placeholder={t("create.form.fullName.placeholder")}
+                aria-label={t("create.form.fullName.label")}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email <span className="text-red-500">*</span>
+                {t("create.form.email.label")} <span className="text-red-500">{t("create.form.email.required")}</span>
               </label>
               <input
                 type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter email address"
-                aria-label="Email"
+                placeholder={t("create.form.email.placeholder")}
+                aria-label={t("create.form.email.label")}
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Phone Number
+                {t("create.form.phone.label")}
               </label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter phone number"
+                placeholder={t("create.form.phone.placeholder")}
               />
             </div>
           </div>
 
           <div className="border-t pt-6">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Assignment
+              {t("create.form.assignment")}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Role <span className="text-red-500">*</span>
+                  {t("create.form.role.label")} <span className="text-red-500">{t("create.form.role.required")}</span>
                 </label>
                 <select
                   value={roleId || ""}
@@ -428,9 +430,9 @@ function CreateEmployeeForm() {
                     setRoleId(e.target.value ? Number(e.target.value) : null)
                   }
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3E%3Cpath stroke=%27%236b7280%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27m6 8 4 4 4-4%27/%3E%3C/svg%3E')] bg-no-repeat bg-right-2.5 bg-[length:1.5em_1.5em] pr-10"
-                  aria-label="Select role"
+                  aria-label={t("create.form.role.label")}
                 >
-                  <option value="">Select role</option>
+                  <option value="">{t("create.form.role.placeholder")}</option>
                   {roles.map((role) => (
                     <option key={role.id} value={role.id}>
                       {role.roleName}
@@ -441,7 +443,7 @@ function CreateEmployeeForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Department
+                  {t("create.form.department.label")}
                 </label>
                 <select
                   value={departmentId || ""}
@@ -451,9 +453,9 @@ function CreateEmployeeForm() {
                     )
                   }
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3E%3Cpath stroke=%27%236b7280%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27m6 8 4 4 4-4%27/%3E%3C/svg%3E')] bg-no-repeat bg-right-2.5 bg-[length:1.5em_1.5em] pr-10"
-                  aria-label="Select department"
+                  aria-label={t("create.form.department.label")}
                 >
-                  <option value="">Select department</option>
+                  <option value="">{t("create.form.department.placeholder")}</option>
                   {departments.map((dept) => (
                     <option key={dept.id} value={dept.id}>
                       {dept.departmentName}
@@ -464,7 +466,7 @@ function CreateEmployeeForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Room
+                  {t("create.form.room.label")}
                 </label>
                 <select
                   value={roomId || ""}
@@ -474,9 +476,9 @@ function CreateEmployeeForm() {
                     )
                   }
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3E%3Cpath stroke=%27%236b7280%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27m6 8 4 4 4-4%27/%3E%3C/svg%3E')] bg-no-repeat bg-right-2.5 bg-[length:1.5em_1.5em] pr-10"
-                  aria-label="Select room"
+                  aria-label={t("create.form.room.label")}
                 >
-                  <option value="">Select room</option>
+                  <option value="">{t("create.form.room.placeholder")}</option>
                   {rooms.map((room) => (
                     <option key={room.id} value={room.id}>
                       {room.roomName}{room.clinicName ? ` - ${room.clinicName}` : ""}
@@ -493,7 +495,7 @@ function CreateEmployeeForm() {
               onClick={() => navigate("/hr/employees")}
               className="px-6 py-2 text-gray-700 border rounded-lg hover:bg-gray-100"
             >
-              Cancel
+              {t("create.form.cancel")}
             </button>
             <button
               type="submit"
@@ -501,7 +503,7 @@ function CreateEmployeeForm() {
               className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
             >
               <Save className="w-5 h-5" />
-              {loading ? "Creating..." : "Create Employee"}
+              {loading ? t("create.form.creating") : t("create.form.create")}
             </button>
           </div>
           </form>

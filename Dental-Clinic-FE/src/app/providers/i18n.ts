@@ -3,7 +3,7 @@ import { initReactI18next } from "react-i18next";
 import resourcesToBackend from "i18next-resources-to-backend";
 
 
-export const APP_NAMESPACES = ["web", "home", "services", "about", "contact", "admin", "login","signup"] as const;
+export const APP_NAMESPACES = ["web", "home", "services", "about", "contact", "admin", "login","signup", "attendance", "hr-dashboard", "employees", "schedules"] as const;
 
 i18n
   .use(initReactI18next)

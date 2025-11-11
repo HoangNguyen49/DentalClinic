@@ -10,11 +10,19 @@
     "reports": "Báo cáo",
     "staff": "Nhân viên",
     "crm": "Chăm sóc khách hàng",
+    "attendance": "Chấm công",
+    "clinics": "Cơ sở",
     "backToWebsite": "Về trang web"
   },
   "pageTitles": {
     "adminDashboard": "Trang quản trị",
-    "appointmentList": "Danh sách lịch hẹn"
+    "appointmentList": "Danh sách lịch hẹn",
+    "clinicManagement": "Quản lý cơ sở",
+    "attendanceManagement": "Quản lý chấm công",
+    "staffManagement": "Quản lý nhân viên"
+  },
+  "pageDescriptions": {
+    "clinicManagement": "Xem và điều chỉnh trạng thái hoạt động của từng cơ sở. Cơ sở bị tắt sẽ không xuất hiện khi lập lịch."
   },
   "tableHeaders": {
     "appointmentDateTime": "Ngày giờ",
@@ -24,6 +32,125 @@
     "room": "Phòng",
     "chair": "Ghế",
     "status": "Trạng thái",
-    "note": "Ghi chú"
+    "note": "Ghi chú",
+    "clinicList": "Danh sách cơ sở",
+    "clinicCode": "Mã cơ sở",
+    "clinicName": "Tên cơ sở",
+    "address": "Địa chỉ",
+    "contact": "Liên hệ",
+    "openingHours": "Giờ mở cửa",
+    "actions": "Thao tác"
+  },
+  "actions": {
+    "refresh": "Làm mới",
+    "updating": "Đang cập nhật...",
+    "setInactive": "Tắt hoạt động",
+    "setActive": "Kích hoạt",
+    "approveLate": "Chấp nhận đi trễ",
+    "approveLeave": "Chấp nhận nghỉ",
+    "noAction": "—"
+  },
+  "status": {
+    "active": "Đang hoạt động",
+    "inactive": "Ngừng hoạt động",
+    "ON_TIME": "Đúng giờ",
+    "LATE": "Đi trễ",
+    "ABSENT": "Vắng mặt",
+    "APPROVED_ABSENCE": "Nghỉ được duyệt",
+    "UNKNOWN": "Không xác định"
+  },
+  "messages": {
+    "loading": "Đang tải danh sách cơ sở...",
+    "noClinics": "Không có cơ sở nào",
+    "noAccessToken": "Thiếu access token",
+    "loadClinicsFailed": "Không thể tải danh sách cơ sở",
+    "clinicActivated": "Đã kích hoạt cơ sở",
+    "clinicDeactivated": "Đã tắt hoạt động cơ sở",
+    "updateClinicFailed": "Không thể cập nhật cơ sở",
+    "loadFailed": "Không thể tải danh sách chấm công",
+    "updateSuccess": "Đã cập nhật chấm công",
+    "updateFailed": "Không thể cập nhật chấm công",
+    "confirmApproveLate": "Bạn có chắc chắn chấp nhận đi trễ và đánh dấu đúng giờ?",
+    "confirmApproveLeave": "Bạn có chắc chắn chấp nhận yêu cầu nghỉ?",
+    "enterAdminNote": "Nhập ghi chú phê duyệt (không bắt buộc)",
+    "loadingAttendance": "Đang tải danh sách chấm công...",
+    "noData": "Không có dữ liệu chấm công"
+  },
+  "attendance": {
+    "pageDescription": "Xem và phê duyệt các trường hợp đi trễ hoặc xin nghỉ do nhân viên gửi lên, cập nhật trạng thái và thêm ghi chú quản trị.",
+    "filters": {
+      "date": "Ngày",
+      "clinic": "Cơ sở",
+      "status": "Trạng thái",
+      "allClinics": "Tất cả cơ sở",
+      "allStatus": "Tất cả trạng thái"
+    },
+    "status": {
+      "ON_TIME": "Đúng giờ",
+      "LATE": "Đi trễ",
+      "ABSENT": "Vắng mặt",
+      "APPROVED_ABSENCE": "Nghỉ được duyệt",
+      "UNKNOWN": "Không xác định"
+    },
+    "table": {
+      "employee": "Nhân viên",
+      "clinic": "Cơ sở",
+      "workDate": "Ngày làm việc",
+      "checkIn": "Giờ vào",
+      "checkOut": "Giờ ra",
+      "status": "Trạng thái",
+      "note": "Ghi chú",
+      "actions": "Thao tác",
+      "noNote": "Không có ghi chú",
+      "unknownClinic": "Không rõ cơ sở"
+    },
+    "actions": {
+      "approveLate": "Chấp nhận đi trễ",
+      "approveLeave": "Chấp nhận nghỉ",
+      "noAction": "—"
+    },
+    "messages": {
+      "noAccessToken": "Thiếu access token",
+      "loadClinicsFailed": "Không thể tải danh sách cơ sở",
+      "loadFailed": "Không thể tải danh sách chấm công",
+      "updateSuccess": "Đã cập nhật chấm công",
+      "updateFailed": "Không thể cập nhật chấm công",
+      "confirmApproveLate": "Bạn có chắc chắn chấp nhận đi trễ và đánh dấu đúng giờ?",
+      "confirmApproveLeave": "Bạn có chắc chắn chấp nhận yêu cầu nghỉ?",
+      "enterAdminNote": "Nhập ghi chú phê duyệt (không bắt buộc)",
+      "loading": "Đang tải danh sách chấm công...",
+      "noData": "Không có dữ liệu chấm công"
+    }
+  },
+  "staff": {
+    "pageDescription": "Tổng quan tất cả nhân viên trong hệ thống cùng vai trò, phòng ban và cơ sở đang làm việc.",
+    "filters": {
+      "search": "Tìm kiếm",
+      "searchPlaceholder": "Tìm theo tên, email, số điện thoại hoặc mã nhân viên"
+    },
+    "actions": {
+      "search": "Tìm kiếm",
+      "clear": "Đặt lại"
+    },
+    "table": {
+      "employee": "Nhân viên",
+      "department": "Phòng ban",
+      "roles": "Vai trò",
+      "clinics": "Cơ sở",
+      "contact": "Liên hệ",
+      "status": "Trạng thái",
+      "createdAt": "Ngày tạo",
+      "lastLogin": "Đăng nhập gần nhất",
+      "noDepartment": "Chưa phân phòng ban",
+      "noRole": "Chưa có vai trò",
+      "noClinic": "Chưa phân cơ sở",
+      "active": "Đang hoạt động",
+      "inactive": "Ngừng hoạt động"
+    },
+    "messages": {
+      "loading": "Đang tải danh sách nhân viên...",
+      "noData": "Không tìm thấy nhân viên nào",
+      "loadFailed": "Không thể tải danh sách nhân viên"
+    }
   }
 }

@@ -1,25 +1,29 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "../pages/Home/index";
-import LoginPage from "../pages/Auth/LoginPage";
-import SignUp from "../pages/Auth/SignUp";
-import OAuthSuccessHandler from "../pages/Auth/OAuthSuccessHandler";
-import MyAccount from "../pages/Account/MyAccount";
-import ChangePassword from "../pages/Account/ChangePassword";
+import HomePage from "../Pages/Home/index";
+import LoginPage from "../Pages/Auth/LoginPage";
+import SignUp from "../Pages/Auth/SignUp";
+import OAuthSuccessHandler from "../Pages/Auth/OAuthSuccessHandler";
+import MyAccount from "../Pages/Account/MyAccount";
+import ChangePassword from "../Pages/Account/ChangePassword";
 import AdminLayout from "../app/layout/AdminLayouts";
 import HRLayout from "../app/layout/HrLayout";
-import AdminDashboardPage from "../pages/Admin/Dashboard/AdminDashboardPage";
+import AdminDashboardPage from "../Pages/Admin/Dashboard/AdminDashboardPage";
 import ProtectedRouteAdmin from "../app/routes/ProtectedRouteAdmin";
 import ProtectedRouteHR from "../app/routes/ProtectedRouteHR";
-import AppointmentList from "../pages/Admin/Appointments/AppointmentList";
-import HrDashboardPage from "../pages/HR/Dashboard/HrDashboardPage";
-import ScheduleList from "../pages/HR/Schedules/ScheduleList";
-import CreateScheduleForm from "../pages/HR/Schedules/CreateScheduleForm";
-import EmployeesList from "../pages/HR/Employees/EmployeesList";
-import CreateEmployeeForm from "../pages/HR/Employees/CreateEmployeeForm";
-import EmployeeDetail from "../pages/HR/Employees/EmployeeDetail";
-import Service from "../pages/Service";
-import About from "../pages/About";
-import ContactPage from "../pages/Contact";
+import AppointmentList from "../Pages/Admin/Appointments/AppointmentList";
+import HrDashboardPage from "../Pages/HR/Dashboard/HrDashboardPage";
+import ScheduleList from "../Pages/HR/Schedules/ScheduleList";
+import CreateScheduleForm from "../Pages/HR/Schedules/CreateScheduleForm";
+import EmployeesList from "../Pages/HR/Employees/EmployeesList";
+import CreateEmployeeForm from "../Pages/HR/Employees/CreateEmployeeForm";
+import EmployeeDetail from "../Pages/HR/Employees/EmployeeDetail";
+import DailyAttendanceView from "../Pages/HR/Attendance/DailyAttendanceView";
+import Service from "../Pages/Service";
+import About from "../Pages/About";
+import ContactPage from "../Pages/Contact";
+import ClinicManagement from "../Pages/Admin/Clinics/ClinicManagement";
+import AdminAttendanceManagement from "../Pages/Admin/Attendance/AdminAttendanceManagement";
+import AdminStaffManagement from "../Pages/Admin/Staff/AdminStaffManagement";
 
 function App() {
   return (
@@ -40,6 +44,9 @@ function App() {
             <Route index element={<AdminDashboardPage />} />{" "}
             <Route path="dashboard" element={<AdminDashboardPage />} />
             <Route path="appointments" element={<AppointmentList />} />
+            <Route path="attendance" element={<AdminAttendanceManagement />} />
+            <Route path="clinics" element={<ClinicManagement />} />
+            <Route path="staff" element={<AdminStaffManagement />} />
           </Route>
         </Route>
         
@@ -49,6 +56,7 @@ function App() {
             <Route path="employees" element={<EmployeesList />} />
             <Route path="employees/create" element={<CreateEmployeeForm />} />
             <Route path="employees/:id" element={<EmployeeDetail />} />
+            <Route path="attendance" element={<DailyAttendanceView />} />
             <Route path="schedules" element={<ScheduleList />} />
             <Route path="schedules/create" element={<CreateScheduleForm />} />
           </Route>

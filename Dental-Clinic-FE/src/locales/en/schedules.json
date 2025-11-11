@@ -1,0 +1,138 @@
+{
+  "list": {
+    "title": "Work Schedule",
+    "loading": "Loading work schedules...",
+    "createNewSchedule": "Create New Schedule",
+    "previousWeek": "Previous week",
+    "nextWeek": "Next week",
+    "previousDay": "Previous day",
+    "nextDay": "Next day",
+    "viewMode": {
+      "daily": "Daily",
+      "weekly": "Weekly"
+    },
+    "selectDate": "Select date",
+    "noSchedules": "No work schedules for this week",
+    "noSchedulesForDate": "No work schedules for this date",
+    "noSessions": "No Sessions",
+    "off": "Off",
+    "unableToLoad": "Unable to load schedules",
+    "days": {
+      "mon": "MON",
+      "tue": "TUE",
+      "wed": "WED",
+      "thu": "THU",
+      "fri": "FRI",
+      "sat": "SAT",
+      "sun": "SUN"
+    },
+    "months": {
+      "january": "January",
+      "february": "February",
+      "march": "March",
+      "april": "April",
+      "may": "May",
+      "june": "June",
+      "july": "July",
+      "august": "August",
+      "september": "September",
+      "october": "October",
+      "november": "November",
+      "december": "December"
+    },
+    "shortMonths": {
+      "jan": "Jan",
+      "feb": "Feb",
+      "mar": "Mar",
+      "apr": "Apr",
+      "may": "May",
+      "jun": "Jun",
+      "jul": "Jul",
+      "aug": "Aug",
+      "sep": "Sep",
+      "oct": "Oct",
+      "nov": "Nov",
+      "dec": "Dec"
+    },
+    "shifts": {
+      "morning": "Morning",
+      "afternoon": "Afternoon"
+    }
+  },
+  "create": {
+    "title": "Create Weekly Schedule",
+    "subtitle": "Assign work schedule for doctors by week",
+    "back": "Back",
+    "cancel": "Cancel",
+    "startWeek": {
+      "label": "Start week (Monday)",
+      "button": "Next week",
+      "hint": "Select Monday of the week to create schedule for. Only allowed for next week and later (current week is already scheduled).",
+      "selectMonday": "Please select a Monday. Automatically adjusted...",
+      "onlyNextWeek": "Only allowed to schedule for next week and later. Defaulted to next week."
+    },
+    "assignClinics": {
+      "title": "Assign clinics",
+      "description": "Specify clinic and shift for each doctor per day. Each doctor can have multiple shifts per day, with different clinics for each shift."
+    },
+    "table": {
+      "no": "No.",
+      "doctor": "Doctor",
+      "doctorName": "Doctor Name",
+      "selectClinic": "-- Select clinic --",
+      "loadingDoctors": "Loading doctors...",
+      "doctors": "doctors",
+      "uncategorized": "Uncategorized",
+      "addShift": "Add Shift",
+      "removeShift": "Remove Shift"
+    },
+    "note": {
+      "label": "General note (optional)",
+      "placeholder": "Notes about this work schedule..."
+    },
+    "buttons": {
+      "validate": "Validate schedule",
+      "validating": "Validating...",
+      "create": "Create schedule",
+      "creating": "Creating..."
+    },
+    "validation": {
+      "assignAtLeastOne": "Please assign at least one doctor at one clinic for at least one day",
+      "noAssignments": "No doctors have been assigned. Please assign at least one doctor at one clinic for one day in the week.",
+      "dayNoDoctors": "{{day}} ({{date}}): No doctors have been assigned for this day.",
+      "clinicNoDoctors": "{{day}} ({{date}}): Clinic \"{{clinic}}\" has no doctors assigned.",
+      "scheduleValid": "Schedule is valid!",
+      "foundErrors": "Found {{count}} errors:",
+      "andMore": "... and {{count}} more errors.",
+      "errorDuringValidation": "Error during validation",
+      "mustBeExactly2Clinics": "There must be exactly 2 clinics. Currently there are {{count}}.",
+      "lacksDoctor": "{{day}} ({{date}}): Department \"{{dept}}\" lacks doctor at {{clinic}}."
+    },
+    "messages": {
+      "pleaseLogin": "Please login and check API URL",
+      "cannotLoadDoctors": "Cannot load doctors list",
+      "cannotLoadClinics": "Cannot load clinics list",
+      "errorLoadingData": "Error occurred while loading data",
+      "successCreated": "Successfully created {{count}} work shifts!",
+      "cannotCreate": "Cannot create work schedule"
+    },
+    "days": {
+      "sunday": "Sunday",
+      "monday": "Monday",
+      "tuesday": "Tuesday",
+      "wednesday": "Wednesday",
+      "thursday": "Thursday",
+      "friday": "Friday",
+      "saturday": "Saturday"
+    },
+    "shifts": {
+      "morning": "Morning",
+      "afternoon": "Afternoon"
+    }
+  },
+  "common": {
+    "doctor": "Doctor",
+    "clinic": "Clinic"
+  }
+}
+

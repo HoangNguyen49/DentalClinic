@@ -1,0 +1,172 @@
+{
+  "list": {
+    "title": "Employee Management",
+    "total": "Total:",
+    "employees": "employees",
+    "addEmployee": "Add Employee",
+    "filters": "Filters",
+    "search": {
+      "label": "Search (Name/Email)",
+      "placeholder": "Enter name or email...",
+      "button": "Search"
+    },
+    "department": {
+      "label": "Department",
+      "all": "All"
+    },
+    "role": {
+      "label": "Role",
+      "all": "All"
+    },
+    "status": {
+      "label": "Status",
+      "all": "All",
+      "active": "Active",
+      "locked": "Locked"
+    },
+    "clearFilters": "Clear Filters",
+    "table": {
+      "name": "Name",
+      "department": "Department",
+      "position": "Position",
+      "status": "Status",
+      "joinDate": "Join Date",
+      "actions": "Actions",
+      "viewProfile": "View Profile",
+      "deleteEmployee": "Delete Employee",
+      "moreActions": "More actions"
+    },
+    "pagination": {
+      "show": "Show",
+      "of": "of",
+      "results": "results",
+      "first": "First",
+      "previous": "Previous",
+      "next": "Next",
+      "last": "Last",
+      "page": "Page",
+      "itemsPerPage": "Items per page"
+    },
+    "loading": "Loading...",
+    "noEmployeeFound": "No employee found"
+  },
+  "create": {
+    "title": "New Employee",
+    "back": "Back",
+    "loading": "Loading data...",
+    "avatar": {
+      "upload": "Upload avatar",
+      "remove": "Remove avatar"
+    },
+    "form": {
+      "employeeCode": {
+        "label": "Employee Code",
+        "placeholder": "Enter employee code"
+      },
+      "fullName": {
+        "label": "Full Name",
+        "placeholder": "Enter full name",
+        "required": "*"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "Enter email address",
+        "required": "*"
+      },
+      "phone": {
+        "label": "Phone Number",
+        "placeholder": "Enter phone number"
+      },
+      "assignment": "Assignment",
+      "role": {
+        "label": "Role",
+        "placeholder": "Select role",
+        "required": "*"
+      },
+      "department": {
+        "label": "Department",
+        "placeholder": "Select department"
+      },
+      "room": {
+        "label": "Room",
+        "placeholder": "Select room"
+      },
+      "cancel": "Cancel",
+      "create": "Create Employee",
+      "creating": "Creating..."
+    },
+    "validation": {
+      "fillRequired": "Please fill in all required information",
+      "selectImage": "Please select an image file",
+      "imageSize": "Image size must not exceed 5MB"
+    },
+    "messages": {
+      "failedToLoad": "Failed to load drop-down data",
+      "connectionError": "Connection error:",
+      "createdSuccess": "Employee created successfully!",
+      "failedToCreate": "Failed to create employee",
+      "avatarUploadFailed": "Employee was created but failed to upload avatar"
+    },
+    "fieldMap": {
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone number",
+      "password": "Password",
+      "roleId": "Role",
+      "departmentId": "Department",
+      "roomId": "Room"
+    }
+  },
+  "detail": {
+    "back": "Back",
+    "profile": "PROFILE",
+    "loading": "Loading employee information...",
+    "notFound": "Employee not found",
+    "pleaseLogin": "Please log in",
+    "cannotLoad": "Cannot load employee information",
+    "editAvatar": "Edit avatar",
+    "employee": "Employee",
+    "sections": {
+      "journey": "Journey",
+      "registration": "Registration",
+      "admissionDate": "Admission date",
+      "position": "Position",
+      "department": "Department",
+      "personalData": "Personal data",
+      "contact": "Contact",
+      "editPersonalData": "Edit personal data",
+      "editContact": "Edit contact information"
+    },
+    "fields": {
+      "fullName": "Full name",
+      "username": "Username",
+      "employeeCode": "Employee Code",
+      "email": "E-mail",
+      "phone": "Phone"
+    }
+  },
+  "delete": {
+    "confirm": "Are you sure you want to delete employee \"{name}\"?\n\nNote: This action will lock this employee account.",
+    "reason": "Reason for deleting the employee:",
+    "enterReason": "Please enter a reason for deleting the employee",
+    "success": "Delete employee successfully",
+    "failed": "Cannot delete employee",
+    "sessionExpired": "Session expired. Please log in again.",
+    "noPermission": "You do not have permission to perform this action.",
+    "notExist": "This employee does not exist.",
+    "needLogin": "You need to log in to perform this action"
+  },
+  "messages": {
+    "pleaseLogin": "Please log in",
+    "cannotLoadMasterData": "Cannot load department/role data",
+    "cannotLoadList": "Cannot load employee list"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "common": {
+    "na": "N/A"
+  }
+}
+

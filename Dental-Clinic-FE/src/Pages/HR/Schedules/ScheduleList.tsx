@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import { Calendar, Plus, ChevronLeft, ChevronRight, Clock, Building2 } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useTranslation } from "react-i18next";
+import DailyScheduleView from "./DailyScheduleView";
+import WeeklyScheduleView from "./WeeklyScheduleView";
 
 type HrDocDto = {
   id: number;
@@ -39,34 +42,25 @@ type ScheduleItem = {
   note?: string;
 };
 
-// Lấy màu cho các block lịch làm việc
-const getScheduleColor = (index: number): string => {
-  const colors = [
-    "bg-blue-100 text-blue-800 border-blue-200",
-    "bg-orange-100 text-orange-800 border-orange-200",
-    "bg-green-100 text-green-800 border-green-200",
-    "bg-gray-100 text-gray-800 border-gray-200",
-    "bg-purple-100 text-purple-800 border-purple-200",
-    "bg-pink-100 text-pink-800 border-pink-200",
-  ];
-  return colors[index % colors.length];
-};
-
 function ScheduleList() {
+  const { t, i18n } = useTranslation("schedules");
   const navigate = useNavigate();
+  const location = useLocation();
   const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
   const accessToken = localStorage.getItem("accessToken");
 
   const [schedules, setSchedules] = useState<ScheduleItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentWeekStart, setCurrentWeekStart] = useState<string>("");
-  const [allClinics, setAllClinics] = useState<ClinicResponse[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [viewMode, setViewMode] = useState<"daily" | "weekly">("daily");
+  const [doctorDepartmentMap, setDoctorDepartmentMap] = useState<Map<number, string>>(new Map());
 
   useEffect(() => {
-    // Hàm fetch toàn bộ clinics
+    // Lấy danh sách clinic cho các ứng dụng liên quan
     const fetchClinics = async () => {
       try {
-        const response = await axios.get<ClinicResponse[]>(
+        await axios.get<ClinicResponse[]>(
           `${apiBase}/api/hr/management/clinics`,
           {
             headers: {
@@ -74,13 +68,83 @@ function ScheduleList() {
             },
           }
         );
-        setAllClinics(response.data || []);
       } catch (err) {
         console.error("Error fetching clinics:", err);
       }
     };
 
-    // Hàm lấy ngày thứ 2 đầu tuần hiện tại
+    // Lấy thông tin bác sĩ và map về phòng ban của từng bác sĩ
+    const fetchDoctors = async () => {
+      try {
+        // Backend limit per page = 100, nên xử lý fetch nhiều trang nếu vượt quá
+        const response = await axios.get<{
+          content: Array<{
+            id: number;
+            department?: { id: number; departmentName: string };
+          }>;
+          totalElements: number;
+        }>(`${apiBase}/api/hr/employees`, {
+          params: {
+            page: 0,
+            size: 100,
+            isActive: true
+          },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        });
+
+        const doctors = response.data?.content || [];
+        const deptMap = new Map<number, string>();
+        doctors.forEach((doctor: any) => {
+          const deptName =
+            doctor.department?.departmentName ||
+            doctor.department?.name ||
+            t("create.table.uncategorized");
+          deptMap.set(doctor.id, deptName);
+        });
+
+        const totalElements = response.data?.totalElements || 0;
+        if (totalElements > 100) {
+          const totalPages = Math.ceil(totalElements / 100);
+          for (let page = 1; page < totalPages; page++) {
+            try {
+              const nextResponse = await axios.get<{
+                content: Array<{
+                  id: number;
+                  department?: { id: number; departmentName: string };
+                }>;
+              }>(`${apiBase}/api/hr/employees`, {
+                params: {
+                  page,
+                  size: 100,
+                  isActive: true
+                },
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                },
+              });
+
+              nextResponse.data?.content?.forEach((doctor: any) => {
+                const deptName =
+                  doctor.department?.departmentName ||
+                  doctor.department?.name ||
+                  t("create.table.uncategorized");
+                deptMap.set(doctor.id, deptName);
+              });
+            } catch (err) {
+              console.error(`Error fetching doctors page ${page}:`, err);
+            }
+          }
+        }
+
+        setDoctorDepartmentMap(deptMap);
+      } catch (err) {
+        console.error("Error fetching doctors:", err);
+      }
+    };
+
+    // Lấy ngày thứ hai của tuần từ một ngày bất kỳ (dùng để xác định tuần hiện tại)
     const getMondayOfWeek = (date: Date): string => {
       const d = new Date(date);
       const day = d.getDay();
@@ -89,28 +153,87 @@ function ScheduleList() {
       return monday.toISOString().split("T")[0];
     };
 
-    const monday = getMondayOfWeek(new Date());
+    const today = new Date();
+    const todayStr = today.toISOString().split("T")[0];
+    const monday = getMondayOfWeek(today);
     setCurrentWeekStart(monday);
+    setSelectedDate(todayStr);
     fetchClinics();
-    fetchSchedule(monday);
+    fetchDoctors();
+    // Ưu tiên hiển thị lịch theo ngày
+    fetchSchedule(todayStr, "daily");
   }, []);
 
-  // Gọi API lấy schedule cho 1 tuần, truyền vào là ngày đầu tuần (thứ 2)
-  const fetchSchedule = async (weekStart: string) => {
+  useEffect(() => {
+    // Kiểm tra refresh khi quay lại từ trang tạo mới
+    const state = location.state as { refresh?: boolean; weekStart?: string } | null;
+
+    if (state?.refresh) {
+      // Nếu có weekStart từ trang tạo mới thì load lại tuần đó và bật weekly view
+      if (state.weekStart) {
+        setCurrentWeekStart(state.weekStart);
+        setViewMode("weekly");
+        setLoading(true);
+        axios
+          .get<ScheduleItem[]>(
+            `${apiBase}/api/hr/schedules/${state.weekStart}`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          )
+          .then((response) => {
+            setSchedules(response.data || []);
+            setLoading(false);
+          })
+          .catch((err) => {
+            console.error("Error fetching schedule:", err);
+            const errorMsg =
+              err?.response?.data?.message ||
+              err?.response?.data?.error ||
+              err?.message ||
+              t("list.unableToLoad");
+            toast.error(errorMsg);
+            setSchedules([]);
+            setLoading(false);
+          });
+      } else {
+        // Nếu không có weekStart thì refresh lại chế độ hiện tại
+        if (viewMode === "weekly" && currentWeekStart) {
+          fetchSchedule(currentWeekStart, "weekly");
+        } else if (viewMode === "daily" && selectedDate) {
+          fetchSchedule(selectedDate, "daily");
+        }
+      }
+      window.history.replaceState({}, document.title);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.state]);
+
+  // Lấy dữ liệu lịch làm việc
+  const fetchSchedule = async (date: string, mode: "daily" | "weekly") => {
     setLoading(true);
     try {
-      const response = await axios.get<ScheduleItem[]>(
-        `${apiBase}/api/hr/schedules/${weekStart}`,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      let url = "";
+      if (mode === "daily") {
+        url = `${apiBase}/api/hr/schedules/date/${date}`;
+      } else {
+        url = `${apiBase}/api/hr/schedules/${date}`;
+      }
+      const response = await axios.get<ScheduleItem[]>(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
       setSchedules(response.data || []);
     } catch (err: any) {
       console.error("Error fetching schedule:", err);
-      const errorMsg = err?.response?.data?.message || err?.response?.data?.error || err?.message || "Unable to load schedules";
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        t("list.unableToLoad");
       toast.error(errorMsg);
       setSchedules([]);
     } finally {
@@ -118,25 +241,61 @@ function ScheduleList() {
     }
   };
 
-  // Hàm chuyển đổi tuần (prev/next)
+  // Chuyển sang tuần trước/tuần sau
   const navigateWeek = (direction: "prev" | "next") => {
     const current = new Date(currentWeekStart);
     const newDate = new Date(current);
     newDate.setDate(current.getDate() + (direction === "next" ? 7 : -7));
     const newWeekStart = newDate.toISOString().split("T")[0];
     setCurrentWeekStart(newWeekStart);
-    fetchSchedule(newWeekStart);
+    fetchSchedule(newWeekStart, "weekly");
   };
 
-  // Hàm lấy danh sách ngày trong 1 tuần (Thứ 2 - Chủ Nhật)
-  const getDaysOfWeek = (weekStart: string): Array<{ date: string; dayName: string; dayNum: number; isToday: boolean }> => {
+  // Chuyển sang ngày trước/ngày sau
+  const navigateDay = (direction: "prev" | "next") => {
+    const current = new Date(selectedDate);
+    const newDate = new Date(current);
+    newDate.setDate(current.getDate() + (direction === "next" ? 1 : -1));
+    const newDateStr = newDate.toISOString().split("T")[0];
+    setSelectedDate(newDateStr);
+    fetchSchedule(newDateStr, "daily");
+  };
+
+  // Đổi kiểu xem giữa daily/weekly
+  const handleViewModeChange = (mode: "daily" | "weekly") => {
+    setViewMode(mode);
+    if (mode === "daily") {
+      fetchSchedule(selectedDate, "daily");
+    } else {
+      fetchSchedule(currentWeekStart, "weekly");
+    }
+  };
+
+  // Chọn ngày trong daily view
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+    fetchSchedule(date, "daily");
+  };
+
+  // Trả về danh sách các ngày trong một tuần (bắt đầu từ thứ Hai)
+  const getDaysOfWeek = (
+    weekStart: string
+  ): Array<{ date: string; dayName: string; dayNum: number; isToday: boolean }> => {
     const [year, month, day] = weekStart.split("-").map(Number);
     const start = new Date(year, month - 1, day);
     const days: Array<{ date: string; dayName: string; dayNum: number; isToday: boolean }> = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const dayNames = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
+    const dayNames = [
+      t("list.days.mon"),
+      t("list.days.tue"),
+      t("list.days.wed"),
+      t("list.days.thu"),
+      t("list.days.fri"),
+      t("list.days.sat"),
+      t("list.days.sun"),
+    ];
 
     for (let i = 0; i < 7; i++) {
       const date = new Date(start);
@@ -166,46 +325,148 @@ function ScheduleList() {
 
   const weekDays = currentWeekStart ? getDaysOfWeek(currentWeekStart) : [];
 
-  // Gom lịch theo ngày
-  const schedulesByDate = schedules.reduce((acc, schedule) => {
-    const date = schedule.workDate;
-    if (!acc[date]) {
-      acc[date] = [];
-    }
-    acc[date].push(schedule);
+  // Trả về thông tin ngày đang chọn cho daily view
+  const getSelectedDayInfo = () => {
+    if (!selectedDate) return null;
+    const date = new Date(selectedDate);
+    const dayNames = [
+      t("list.days.mon"),
+      t("list.days.tue"),
+      t("list.days.wed"),
+      t("list.days.thu"),
+      t("list.days.fri"),
+      t("list.days.sat"),
+      t("list.days.sun"),
+    ];
+    const dayOfWeek = date.getDay();
+    const dayName = dayNames[dayOfWeek === 0 ? 6 : dayOfWeek - 1];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dateOnly = new Date(date);
+    dateOnly.setHours(0, 0, 0, 0);
+    const isToday = dateOnly.getTime() === today.getTime();
+
+    return {
+      date: selectedDate,
+      dayName,
+      dayNum: date.getDate(),
+      isToday,
+    };
+  };
+
+  const selectedDayInfo = getSelectedDayInfo();
+
+  // Gom lịch theo ngày và bác sĩ
+  type DoctorDaySchedule = {
+    doctor: HrDocDto | null;
+    morning?: ScheduleItem;
+    afternoon?: ScheduleItem;
+  };
+
+  const schedulesByDateAndDoctor = schedules.reduce(
+    (acc, schedule) => {
+      const date = schedule.workDate;
+      const doctorId = schedule.doctor?.id || schedule.id;
+
+      if (!acc[date]) {
+        acc[date] = {};
+      }
+      if (!acc[date][doctorId]) {
+        acc[date][doctorId] = {
+          doctor: schedule.doctor,
+          morning: undefined,
+          afternoon: undefined,
+        };
+      }
+
+      // Phân loại ca sáng hoặc chiều dựa theo giờ bắt đầu
+      const startTime = schedule.startTime || "00:00";
+      if (startTime < "12:00") {
+        acc[date][doctorId].morning = schedule;
+      } else {
+        acc[date][doctorId].afternoon = schedule;
+      }
+
+      return acc;
+    },
+    {} as Record<string, Record<number, DoctorDaySchedule>>
+  );
+
+  // Nhóm lịch theo department trong weekly view
+  const schedulesByDate = Object.keys(schedulesByDateAndDoctor).reduce((acc, date) => {
+    const doctorSchedules = Object.values(schedulesByDateAndDoctor[date]);
+
+    // Gom nhóm theo phòng ban
+    const schedulesByDept = doctorSchedules.reduce((deptAcc, docSchedule) => {
+      const doctorId = docSchedule.doctor?.id;
+      const deptName =
+        doctorId
+          ? doctorDepartmentMap.get(doctorId) || t("create.table.uncategorized")
+          : t("create.table.uncategorized");
+
+      if (!deptAcc[deptName]) {
+        deptAcc[deptName] = [];
+      }
+      deptAcc[deptName].push(docSchedule);
+      return deptAcc;
+    }, {} as Record<string, DoctorDaySchedule[]>);
+
+    acc[date] = Object.keys(schedulesByDept)
+      .sort()
+      .flatMap((deptName) => schedulesByDept[deptName]);
+
     return acc;
-  }, {} as Record<string, ScheduleItem[]>);
+  }, {} as Record<string, DoctorDaySchedule[]>);
 
-  // Sắp xếp schedule mỗi ngày theo thời gian
-  Object.keys(schedulesByDate).forEach((date) => {
-    schedulesByDate[date].sort((a, b) => {
-      const timeA = a.startTime || "00:00";
-      const timeB = b.startTime || "00:00";
-      return timeA.localeCompare(timeB);
-    });
-  });
-
-  // Lấy tên/tháng hiện tại để hiển thị ở header
-  const getMonthAndDate = (weekStart: string): { month: string; shortMonth: string; date: string } => {
+  // Lấy thông tin tên tháng, ngày đầy đủ để hiển thị ở header
+  const getMonthAndDate = (
+    weekStart: string
+  ): { month: string; shortMonth: string; date: string } => {
     const date = new Date(weekStart);
     const months = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      t("list.months.january"),
+      t("list.months.february"),
+      t("list.months.march"),
+      t("list.months.april"),
+      t("list.months.may"),
+      t("list.months.june"),
+      t("list.months.july"),
+      t("list.months.august"),
+      t("list.months.september"),
+      t("list.months.october"),
+      t("list.months.november"),
+      t("list.months.december"),
     ];
     const shortMonths = [
-      "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+      t("list.shortMonths.jan"),
+      t("list.shortMonths.feb"),
+      t("list.shortMonths.mar"),
+      t("list.shortMonths.apr"),
+      t("list.shortMonths.may"),
+      t("list.shortMonths.jun"),
+      t("list.shortMonths.jul"),
+      t("list.shortMonths.aug"),
+      t("list.shortMonths.sep"),
+      t("list.shortMonths.oct"),
+      t("list.shortMonths.nov"),
+      t("list.shortMonths.dec"),
     ];
     return {
       month: months[date.getMonth()],
       shortMonth: shortMonths[date.getMonth()],
-      date: `${shortMonths[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`,
+      date: date.toLocaleDateString(i18n.language === "vi" ? "vi-VN" : "en-US", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      }),
     };
   };
 
-  const { month, date: headerDate } = currentWeekStart ? getMonthAndDate(currentWeekStart) : { month: "", date: "" };
+  const { month, date: headerDate } = currentWeekStart
+    ? getMonthAndDate(currentWeekStart)
+    : { month: "", date: "" };
 
-  // Định dạng lại giờ để hiển thị
+  // Định dạng giờ hợp lệ cho giao diện
   const formatTime = (time: string): string => {
     if (!time) return "";
     const [hours, minutes] = time.split(":");
@@ -220,7 +481,7 @@ function ScheduleList() {
       <div className="p-6 min-h-screen bg-white flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading work schedules...</p>
+          <p className="mt-4 text-gray-600">{t("list.loading")}</p>
         </div>
       </div>
     );
@@ -234,195 +495,128 @@ function ScheduleList() {
           <div className="mb-6 flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div>
-                <div className="text-2xl font-semibold text-gray-900">{month}</div>
-                <div className="text-sm text-gray-600">{headerDate}</div>
+                <div className="text-2xl font-semibold text-gray-900">
+                  {viewMode === "weekly"
+                    ? month
+                    : selectedDayInfo
+                    ? `${selectedDayInfo.dayName}, ${selectedDayInfo.dayNum}`
+                    : ""}
+                </div>
+                <div className="text-sm text-gray-600">
+                  {viewMode === "weekly"
+                    ? headerDate
+                    : selectedDayInfo
+                    ? new Date(selectedDate).toLocaleDateString(
+                        i18n.language === "vi" ? "vi-VN" : "en-US",
+                        {
+                          day: "numeric",
+                          month: "long",
+                          year: "numeric",
+                        }
+                      )
+                    : ""}
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => navigateWeek("prev")}
-                  className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                  aria-label="Previous week"
-                >
-                  <ChevronLeft className="w-5 h-5 text-gray-600" />
-                </button>
-                <button
-                  onClick={() => navigateWeek("next")}
-                  className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                  aria-label="Next week"
-                >
-                  <ChevronRight className="w-5 h-5 text-gray-600" />
-                </button>
+                {viewMode === "weekly" ? (
+                  <>
+                    <button
+                      onClick={() => navigateWeek("prev")}
+                      className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      aria-label={t("list.previousWeek")}
+                      title={t("list.previousWeek")}
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => navigateWeek("next")}
+                      className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      aria-label={t("list.nextWeek")}
+                      title={t("list.nextWeek")}
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => navigateDay("prev")}
+                      className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      aria-label={t("list.previousDay")}
+                      title={t("list.previousDay")}
+                    >
+                      <ChevronLeft className="w-5 h-5 text-gray-600" />
+                    </button>
+                    <button
+                      onClick={() => navigateDay("next")}
+                      className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      aria-label={t("list.nextDay")}
+                      title={t("list.nextDay")}
+                    >
+                      <ChevronRight className="w-5 h-5 text-gray-600" />
+                    </button>
+                  </>
+                )}
               </div>
             </div>
-            <button
-              onClick={() => navigate("/hr/schedules/create")}
-              className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-sm"
-            >
-              <Plus className="w-5 h-5" />
-              Create New Schedule
-            </button>
-          </div>
-
-          {weekDays.length === 0 ? (
-            <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
-              <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-500 text-lg mb-2">
-                No work schedules for this week
-              </p>
+            <div className="flex items-center gap-4">
+              {/* Chuyển đổi giữa daily/weekly view */}
+              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => handleViewModeChange("daily")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === "daily"
+                      ? "bg-white text-purple-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {t("list.viewMode.daily")}
+                </button>
+                <button
+                  onClick={() => handleViewModeChange("weekly")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === "weekly"
+                      ? "bg-white text-purple-600 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  {t("list.viewMode.weekly")}
+                </button>
+              </div>
+              {viewMode === "daily" && (
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => handleDateChange(e.target.value)}
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  title={t("list.selectDate")}
+                />
+              )}
               <button
                 onClick={() => navigate("/hr/schedules/create")}
-                className="mt-4 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
+                className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-sm"
               >
-                Create New Schedule
+                <Plus className="w-5 h-5" />
+                {t("list.createNewSchedule")}
               </button>
             </div>
+          </div>
+
+          {viewMode === "daily" ? (
+            <DailyScheduleView
+              selectedDate={selectedDate}
+              selectedDayInfo={selectedDayInfo}
+              schedulesByDate={schedulesByDate}
+              doctorDepartmentMap={doctorDepartmentMap}
+              formatTime={formatTime}
+            />
           ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-              <div className="grid grid-cols-7 gap-0">
-                {weekDays.map((day) => (
-                  <div
-                    key={day.date}
-                    className="border-r border-gray-200 last:border-r-0 p-3 bg-gray-50"
-                  >
-                    <div className="text-center">
-                      <div className="text-xs font-semibold text-gray-500 mb-1">
-                        {day.dayName}
-                      </div>
-                      <div
-                        className={`text-sm font-medium ${
-                          day.isToday
-                            ? "text-purple-600 border-b-2 border-purple-600 pb-1 inline-block"
-                            : "text-gray-900"
-                        }`}
-                      >
-                        {day.dayNum}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-
-                {weekDays.map((day) => {
-                  const daySchedules = schedulesByDate[day.date] || [];
-                  const isWeekend = day.dayName === "SAT" || day.dayName === "SUN";
-                  // Lấy các clinic trong ngày đang làm việc
-                  const workingClinicIds = new Set(
-                    daySchedules
-                      .map((s) => s.clinic?.id)
-                      .filter((id): id is number => id !== null && id !== undefined)
-                  );
-                  // Tìm clinics đang đóng cửa trong ngày
-                  const closedClinics = allClinics.filter(
-                    (clinic) => !workingClinicIds.has(clinic.id)
-                  );
-
-                  return (
-                    <div
-                      key={day.date}
-                      className="border-r border-t border-gray-200 last:border-r-0 min-h-[400px] bg-white relative"
-                    >
-                      {daySchedules.length === 0 ? (
-                        isWeekend ? (
-                          <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center text-gray-400 text-sm font-semibold">
-                            No Sessions
-                          </div>
-                        ) : closedClinics.length === allClinics.length && allClinics.length > 0 ? (
-                          <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center text-gray-400 text-sm font-semibold">
-                            No Sessions
-                          </div>
-                        ) : closedClinics.length > 0 ? (
-                          <div className="absolute left-0 right-0 top-[75%] -translate-y-1/2 flex justify-center">
-                            <div className="text-center">
-                              {closedClinics.map((clinic) => (
-                                <div
-                                  key={clinic.id}
-                                  className="text-gray-400 text-sm font-semibold"
-                                >
-                                  {clinic.clinicName} - Off
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-gray-300 text-sm"></div>
-                        )
-                      ) : closedClinics.length > 0 ? (
-                        <div className="p-2 flex flex-col gap-2">
-                          {daySchedules.map((schedule, index) => (
-                            <div
-                              key={schedule.id}
-                              className={`rounded-lg p-3 border ${getScheduleColor(index)} shadow-sm hover:shadow-md transition-shadow cursor-pointer`}
-                            >
-                              <div className="font-semibold text-sm mb-1 truncate">
-                                {schedule.doctor?.fullName || `Doctor #${schedule.id}`}
-                              </div>
-                              <div className="text-xs mb-1 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>
-                                  {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
-                                </span>
-                              </div>
-                              {schedule.clinic && (
-                                <div className="text-xs mb-1 flex items-center gap-1 truncate">
-                                  <Building2 className="w-3 h-3" />
-                                  <span className="truncate">{schedule.clinic.clinicName}</span>
-                                </div>
-                              )}
-                              {schedule.room && (
-                                <div className="text-xs text-gray-600 truncate">
-                                  {schedule.room.roomName}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                          <div className="absolute left-0 right-0 top-[75%] -translate-y-1/2 flex justify-center pointer-events-none">
-                            <div className="text-center">
-                              {closedClinics.map((clinic) => (
-                                <div
-                                  key={clinic.id}
-                                  className="text-gray-400 text-sm font-semibold"
-                                >
-                                  {clinic.clinicName} - Off
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="p-2 flex flex-col gap-2">
-                          {daySchedules.map((schedule, index) => (
-                            <div
-                              key={schedule.id}
-                              className={`rounded-lg p-3 border ${getScheduleColor(index)} shadow-sm hover:shadow-md transition-shadow cursor-pointer`}
-                            >
-                              <div className="font-semibold text-sm mb-1 truncate">
-                                {schedule.doctor?.fullName || `Doctor #${schedule.id}`}
-                              </div>
-                              <div className="text-xs mb-1 flex items-center gap-1">
-                                <Clock className="w-3 h-3" />
-                                <span>
-                                  {formatTime(schedule.startTime)} - {formatTime(schedule.endTime)}
-                                </span>
-                              </div>
-                              {schedule.clinic && (
-                                <div className="text-xs mb-1 flex items-center gap-1 truncate">
-                                  <Building2 className="w-3 h-3" />
-                                  <span className="truncate">{schedule.clinic.clinicName}</span>
-                                </div>
-                              )}
-                              {schedule.room && (
-                                <div className="text-xs text-gray-600 truncate">
-                                  {schedule.room.roomName}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <WeeklyScheduleView
+              weekDays={weekDays}
+              schedulesByDateAndDoctor={schedulesByDateAndDoctor}
+              doctorDepartmentMap={doctorDepartmentMap}
+              formatTime={formatTime}
+            />
           )}
         </div>
       </div>

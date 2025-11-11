@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useTranslation } from "react-i18next";
 
 type Employee = {
   id: number;
@@ -28,6 +29,7 @@ type Employee = {
 };
 
 function EmployeeDetail() {
+  const { t, i18n } = useTranslation("employees");
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
@@ -44,7 +46,7 @@ function EmployeeDetail() {
 
   const fetchEmployeeDetail = async () => {
     if (!accessToken || !apiBase || !id) {
-      toast.error("Vui lòng đăng nhập");
+      toast.error(t("detail.pleaseLogin"));
       setLoading(false);
       return;
     }
@@ -60,7 +62,7 @@ function EmployeeDetail() {
       setEmployee(response.data);
     } catch (err: any) {
       console.error("Error fetching employee:", err);
-      let errorMsg = "Không thể tải thông tin nhân viên";
+      let errorMsg = t("detail.cannotLoad");
 
       if (err?.response?.data) {
         const errorData = err.response.data;
@@ -79,10 +81,10 @@ function EmployeeDetail() {
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return "-";
+    if (!dateString) return t("common.na");
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString("vi-VN", {
+      return date.toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
@@ -95,7 +97,7 @@ function EmployeeDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Đang tải thông tin nhân viên...</div>
+        <div className="text-gray-500">{t("detail.loading")}</div>
       </div>
     );
   }
@@ -103,7 +105,7 @@ function EmployeeDetail() {
   if (!employee) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">Không tìm thấy nhân viên</div>
+        <div className="text-red-500">{t("detail.notFound")}</div>
       </div>
     );
   }
@@ -119,10 +121,10 @@ function EmployeeDetail() {
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors mb-3"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Quay lại</span>
+            <span>{t("detail.back")}</span>
           </button>
           <h1 className="text-3xl font-semibold">
-            <span className="text-gray-400 font-normal">PROFILE</span>
+            <span className="text-gray-400 font-normal">{t("detail.profile")}</span>
             <span className="text-gray-400 font-normal ml-4">{employee.fullName}</span>
           </h1>
         </div>
@@ -149,7 +151,7 @@ function EmployeeDetail() {
                   <button
                     onClick={() => navigate(`/hr/employees/${employee.id}/edit`)}
                     className="absolute top-0 right-0 lg:right-auto lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:top-full lg:mt-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 border border-gray-200"
-                    title="Edit avatar"
+                    title={t("detail.editAvatar")}
                   >
                     <Edit className="w-4 h-4 text-gray-600" />
                   </button>
@@ -163,7 +165,7 @@ function EmployeeDetail() {
                 {/* Role Badge */}
                 <div className="flex justify-center mb-6">
                   <span className="inline-flex px-4 py-1 rounded-full text-sm font-medium bg-blue-500 text-white">
-                    {(employee.role as any)?.roleName || "Employee"}
+                    {(employee.role as any)?.roleName || t("detail.employee")}
                   </span>
                 </div>
 
@@ -171,7 +173,7 @@ function EmployeeDetail() {
                 <div className="space-y-3">
                   {employee.roleAtClinic && (
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Journey</div>
+                      <div className="text-xs text-gray-500 mb-1">{t("detail.sections.journey")}</div>
                       <div className="text-sm font-medium text-gray-900">
                         {employee.roleAtClinic}
                       </div>
@@ -179,7 +181,7 @@ function EmployeeDetail() {
                   )}
                   {employee.code && (
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Registration</div>
+                      <div className="text-xs text-gray-500 mb-1">{t("detail.sections.registration")}</div>
                       <div className="text-sm font-medium text-gray-900">
                         {employee.code}
                       </div>
@@ -187,7 +189,7 @@ function EmployeeDetail() {
                   )}
                   {employee.createdAt && (
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Admission date</div>
+                      <div className="text-xs text-gray-500 mb-1">{t("detail.sections.admissionDate")}</div>
                       <div className="text-sm font-medium text-gray-900">
                         {formatDate(employee.createdAt)}
                       </div>
@@ -195,7 +197,7 @@ function EmployeeDetail() {
                   )}
                   {(employee.role as any)?.roleName && (
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Position</div>
+                      <div className="text-xs text-gray-500 mb-1">{t("detail.sections.position")}</div>
                       <div className="text-sm font-medium text-gray-900">
                         {(employee.role as any).roleName}
                       </div>
@@ -203,7 +205,7 @@ function EmployeeDetail() {
                   )}
                   {(employee.department as any)?.departmentName && (
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Department</div>
+                      <div className="text-xs text-gray-500 mb-1">{t("detail.sections.department")}</div>
                       <div className="text-sm font-medium text-gray-900">
                         {(employee.department as any).departmentName}
                       </div>
@@ -223,13 +225,13 @@ function EmployeeDetail() {
                       <div>
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-xl font-bold text-gray-900">
-                            Personal data
+                            {t("detail.sections.personalData")}
                           </h3>
                           <button
                             onClick={() => navigate(`/hr/employees/${employee.id}/edit`)}
                             className="p-1 hover:bg-gray-100 rounded transition-colors"
-                            title="Edit personal data"
-                            aria-label="Edit personal data"
+                            title={t("detail.sections.editPersonalData")}
+                            aria-label={t("detail.sections.editPersonalData")}
                           >
                             <Edit className="w-5 h-5 text-gray-600" />
                           </button>
@@ -238,18 +240,18 @@ function EmployeeDetail() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="text-xs text-gray-500 mb-1 block">
-                                Full name
+                                {t("detail.fields.fullName")}
                               </label>
                               <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                 <span className="text-sm font-medium text-gray-900">
-                                  {employee.fullName || "-"}
+                                  {employee.fullName || t("common.na")}
                                 </span>
                               </div>
                             </div>
                             {employee.username && (
                               <div>
                                 <label className="text-xs text-gray-500 mb-1 block">
-                                  Username
+                                  {t("detail.fields.username")}
                                 </label>
                                 <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                   <span className="text-sm font-medium text-gray-900">
@@ -261,7 +263,7 @@ function EmployeeDetail() {
                             {employee.code && (
                               <div>
                                 <label className="text-xs text-gray-500 mb-1 block">
-                                  Employee Code
+                                  {t("detail.fields.employeeCode")}
                                 </label>
                                 <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                   <span className="text-sm font-medium text-gray-900">
@@ -277,12 +279,12 @@ function EmployeeDetail() {
                       {/* Contact Section */}
                       <div>
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xl font-bold text-gray-900">Contact</h3>
+                          <h3 className="text-xl font-bold text-gray-900">{t("detail.sections.contact")}</h3>
                           <button
                             onClick={() => navigate(`/hr/employees/${employee.id}/edit`)}
                             className="p-1 hover:bg-gray-100 rounded transition-colors"
-                            title="Edit contact information"
-                            aria-label="Edit contact information"
+                            title={t("detail.sections.editContact")}
+                            aria-label={t("detail.sections.editContact")}
                           >
                             <Edit className="w-5 h-5 text-gray-600" />
                           </button>
@@ -291,18 +293,18 @@ function EmployeeDetail() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="text-xs text-gray-500 mb-1 block">
-                                E-mail
+                                {t("detail.fields.email")}
                               </label>
                               <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                 <span className="text-sm font-medium text-gray-900">
-                                  {employee.email || "-"}
+                                  {employee.email || t("common.na")}
                                 </span>
                               </div>
                             </div>
                             {employee.phone && (
                               <div>
                                 <label className="text-xs text-gray-500 mb-1 block">
-                                  Phone
+                                  {t("detail.fields.phone")}
                                 </label>
                                 <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                   <span className="text-sm font-medium text-gray-900">

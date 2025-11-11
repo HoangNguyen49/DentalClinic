@@ -1,0 +1,138 @@
+{
+  "list": {
+    "title": "Lịch Làm Việc",
+    "loading": "Đang tải lịch làm việc...",
+    "createNewSchedule": "Tạo Lịch Mới",
+    "previousWeek": "Tuần trước",
+    "nextWeek": "Tuần sau",
+    "previousDay": "Ngày trước",
+    "nextDay": "Ngày sau",
+    "viewMode": {
+      "daily": "Theo Ngày",
+      "weekly": "Theo Tuần"
+    },
+    "selectDate": "Chọn ngày",
+    "noSchedules": "Không có lịch làm việc cho tuần này",
+    "noSchedulesForDate": "Không có lịch làm việc cho ngày này",
+    "noSessions": "Không có ca",
+    "off": "Nghỉ",
+    "unableToLoad": "Không thể tải lịch làm việc",
+    "days": {
+      "mon": "T2",
+      "tue": "T3",
+      "wed": "T4",
+      "thu": "T5",
+      "fri": "T6",
+      "sat": "T7",
+      "sun": "CN"
+    },
+    "months": {
+      "january": "Tháng Một",
+      "february": "Tháng Hai",
+      "march": "Tháng Ba",
+      "april": "Tháng Tư",
+      "may": "Tháng Năm",
+      "june": "Tháng Sáu",
+      "july": "Tháng Bảy",
+      "august": "Tháng Tám",
+      "september": "Tháng Chín",
+      "october": "Tháng Mười",
+      "november": "Tháng Mười Một",
+      "december": "Tháng Mười Hai"
+    },
+    "shortMonths": {
+      "jan": "T1",
+      "feb": "T2",
+      "mar": "T3",
+      "apr": "T4",
+      "may": "T5",
+      "jun": "T6",
+      "jul": "T7",
+      "aug": "T8",
+      "sep": "T9",
+      "oct": "T10",
+      "nov": "T11",
+      "dec": "T12"
+    },
+    "shifts": {
+      "morning": "Ca Sáng",
+      "afternoon": "Ca Chiều"
+    }
+  },
+  "create": {
+    "title": "Tạo Lịch Làm Việc Hàng Tuần",
+    "subtitle": "Phân công lịch làm việc cho bác sĩ theo tuần",
+    "back": "Quay lại",
+    "cancel": "Hủy",
+    "startWeek": {
+      "label": "Tuần bắt đầu (Thứ Hai)",
+      "button": "Tuần tiếp theo",
+      "hint": "Chọn Thứ Hai của tuần để tạo lịch. Chỉ được phép cho tuần tiếp theo trở đi (tuần hiện tại đã được lên lịch).",
+      "selectMonday": "Vui lòng chọn Thứ Hai. Đã tự động điều chỉnh...",
+      "onlyNextWeek": "Chỉ được phép lên lịch cho tuần tiếp theo trở đi. Đã mặc định về tuần tiếp theo."
+    },
+    "assignClinics": {
+      "title": "Phân công cơ sở",
+      "description": "Chỉ định cơ sở và ca làm việc cho mỗi bác sĩ mỗi ngày. Mỗi bác sĩ có thể có nhiều ca trong một ngày, với các cơ sở khác nhau cho mỗi ca."
+    },
+    "table": {
+      "no": "STT",
+      "doctor": "Bác Sĩ",
+      "doctorName": "Tên Bác Sĩ",
+      "selectClinic": "-- Chọn cơ sở --",
+      "loadingDoctors": "Đang tải bác sĩ...",
+      "doctors": "bác sĩ",
+      "uncategorized": "Chưa phân loại",
+      "addShift": "Thêm Ca",
+      "removeShift": "Xóa Ca"
+    },
+    "note": {
+      "label": "Ghi chú chung (tùy chọn)",
+      "placeholder": "Ghi chú về lịch làm việc này..."
+    },
+    "buttons": {
+      "validate": "Kiểm tra lịch",
+      "validating": "Đang kiểm tra...",
+      "create": "Tạo lịch",
+      "creating": "Đang tạo..."
+    },
+    "validation": {
+      "assignAtLeastOne": "Vui lòng phân công ít nhất một bác sĩ tại một cơ sở cho ít nhất một ngày",
+      "noAssignments": "Chưa có bác sĩ nào được phân công. Vui lòng chọn ít nhất một bác sĩ tại một cơ sở cho một ngày trong tuần.",
+      "dayNoDoctors": "{{day}} ({{date}}): Chưa có bác sĩ nào được phân công cho ngày này.",
+      "clinicNoDoctors": "{{day}} ({{date}}): Cơ sở \"{{clinic}}\" chưa có bác sĩ nào được phân công.",
+      "scheduleValid": "Lịch hợp lệ!",
+      "foundErrors": "Tìm thấy {{count}} lỗi:",
+      "andMore": "... và {{count}} lỗi nữa.",
+      "errorDuringValidation": "Lỗi trong quá trình kiểm tra",
+      "mustBeExactly2Clinics": "Phải có chính xác 2 cơ sở. Hiện tại có {{count}}.",
+      "lacksDoctor": "{{day}} ({{date}}): Phòng ban \"{{dept}}\" thiếu bác sĩ tại {{clinic}}."
+    },
+    "messages": {
+      "pleaseLogin": "Vui lòng đăng nhập và kiểm tra API URL",
+      "cannotLoadDoctors": "Không thể tải danh sách bác sĩ",
+      "cannotLoadClinics": "Không thể tải danh sách cơ sở",
+      "errorLoadingData": "Đã xảy ra lỗi khi tải dữ liệu",
+      "successCreated": "Đã tạo thành công {{count}} ca làm việc!",
+      "cannotCreate": "Không thể tạo lịch làm việc"
+    },
+    "days": {
+      "sunday": "Chủ Nhật",
+      "monday": "Thứ Hai",
+      "tuesday": "Thứ Ba",
+      "wednesday": "Thứ Tư",
+      "thursday": "Thứ Năm",
+      "friday": "Thứ Sáu",
+      "saturday": "Thứ Bảy"
+    },
+    "shifts": {
+      "morning": "Ca Sáng",
+      "afternoon": "Ca Chiều"
+    }
+  },
+  "common": {
+    "doctor": "Bác Sĩ",
+    "clinic": "Cơ Sở"
+  }
+}
+

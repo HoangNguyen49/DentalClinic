@@ -1,5 +1,4 @@
 {
-  
   "nav": {
     "dashboard": "Dashboard",
     "appointments": "Appointments",
@@ -11,11 +10,19 @@
     "reports": "Reports",
     "staff": "Staff",
     "crm": "CRM",
+    "attendance": "Attendance",
+    "clinics": "Clinics",
     "backToWebsite": "Back to Website"
   },
   "pageTitles": {
     "adminDashboard": "Admin Dashboard",
-    "appointmentList": "Appointment List"
+    "appointmentList": "Appointment List",
+    "clinicManagement": "Clinic Management",
+    "attendanceManagement": "Attendance Management",
+    "staffManagement": "Staff Management"
+  },
+  "pageDescriptions": {
+    "clinicManagement": "View and control the activity status of each clinic. Clinics marked as inactive will not appear in scheduling."
   },
   "tableHeaders": {
     "appointmentDateTime": "Date & Time",
@@ -25,6 +32,123 @@
     "room": "Room",
     "chair": "Chair",
     "status": "Status",
-    "note": "Note"
+    "note": "Note",
+    "clinicList": "Clinic List",
+    "clinicCode": "Code",
+    "clinicName": "Clinic",
+    "address": "Address",
+    "contact": "Contact",
+    "openingHours": "Opening Hours",
+    "actions": "Actions"
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "updating": "Updating...",
+    "setInactive": "Set inactive",
+    "setActive": "Set active",
+    "approveLate": "Approve Late",
+    "approveLeave": "Approve Leave",
+    "noAction": "No action"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "ON_TIME": "On Time",
+    "LATE": "Late",
+    "ABSENT": "Absent",
+    "APPROVED_ABSENCE": "Approved Leave",
+    "UNKNOWN": "Unknown"
+  },
+  "messages": {
+    "loading": "Loading clinics...",
+    "noClinics": "No clinics found",
+    "noAccessToken": "Missing access token",
+    "loadClinicsFailed": "Unable to load clinics",
+    "clinicActivated": "Clinic activated",
+    "clinicDeactivated": "Clinic deactivated",
+    "updateClinicFailed": "Unable to update clinic",
+    "loadFailed": "Unable to load attendance records",
+    "updateSuccess": "Attendance updated",
+    "updateFailed": "Unable to update attendance",
+    "enterAdminNote": "Enter approval note (optional)",
+    "loadingAttendance": "Loading attendance records...",
+    "noData": "No attendance records found"
+  },
+  "attendance": {
+    "pageDescription": "Review late check-ins or leave requests submitted by employees, update their status, and append admin notes.",
+    "filters": {
+      "date": "Date",
+      "clinic": "Clinic",
+      "status": "Status",
+      "allClinics": "All clinics",
+      "allStatus": "All statuses"
+    },
+    "status": {
+      "ON_TIME": "On Time",
+      "LATE": "Late",
+      "ABSENT": "Absent",
+      "APPROVED_ABSENCE": "Approved Leave",
+      "UNKNOWN": "Unknown"
+    },
+    "table": {
+      "employee": "Employee",
+      "clinic": "Clinic",
+      "workDate": "Work Date",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "status": "Status",
+      "note": "Note",
+      "actions": "Actions",
+      "noNote": "No note provided",
+      "unknownClinic": "Unknown clinic"
+    },
+    "actions": {
+      "approveLate": "Approve Late",
+      "approveLeave": "Approve Leave",
+      "noAction": "—"
+    },
+    "messages": {
+      "noAccessToken": "Missing access token",
+      "loadClinicsFailed": "Unable to load clinics",
+      "loadFailed": "Unable to load attendance records",
+      "updateSuccess": "Attendance updated",
+      "updateFailed": "Unable to update attendance",
+      "confirmApproveLate": "Approve late check-in and mark as on time?",
+      "confirmApproveLeave": "Approve absence request?",
+      "enterAdminNote": "Enter approval note (optional)",
+      "loading": "Loading attendance records...",
+      "noData": "No attendance records found"
+    }
+  },
+  "staff": {
+    "pageDescription": "Overview of all employees in the organization, including their roles, departments, and clinic assignments.",
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Search by name, email, phone, or code"
+    },
+    "actions": {
+      "search": "Search",
+      "clear": "Clear"
+    },
+    "table": {
+      "employee": "Employee",
+      "department": "Department",
+      "roles": "Roles",
+      "clinics": "Clinics",
+      "contact": "Contact",
+      "status": "Status",
+      "createdAt": "Created At",
+      "lastLogin": "Last Login",
+      "noDepartment": "Not assigned",
+      "noRole": "N/A",
+      "noClinic": "N/A",
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "messages": {
+      "loading": "Loading staff...",
+      "noData": "No staff found",
+      "loadFailed": "Unable to load staff"
+    }
   }
 }

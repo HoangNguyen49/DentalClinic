@@ -1,0 +1,172 @@
+{
+  "list": {
+    "title": "Quản Lý Nhân Viên",
+    "total": "Tổng:",
+    "employees": "nhân viên",
+    "addEmployee": "Thêm Nhân Viên",
+    "filters": "Bộ Lọc",
+    "search": {
+      "label": "Tìm kiếm (Tên/Email)",
+      "placeholder": "Nhập tên hoặc email...",
+      "button": "Tìm kiếm"
+    },
+    "department": {
+      "label": "Phòng Ban",
+      "all": "Tất cả"
+    },
+    "role": {
+      "label": "Vai Trò",
+      "all": "Tất cả"
+    },
+    "status": {
+      "label": "Trạng Thái",
+      "all": "Tất cả",
+      "active": "Đang hoạt động",
+      "locked": "Đã khóa"
+    },
+    "clearFilters": "Xóa Bộ Lọc",
+    "table": {
+      "name": "Tên",
+      "department": "Phòng Ban",
+      "position": "Vị Trí",
+      "status": "Trạng Thái",
+      "joinDate": "Ngày Tham Gia",
+      "actions": "Thao Tác",
+      "viewProfile": "Xem Hồ Sơ",
+      "deleteEmployee": "Xóa Nhân Viên",
+      "moreActions": "Thêm thao tác"
+    },
+    "pagination": {
+      "show": "Hiển thị",
+      "of": "của",
+      "results": "kết quả",
+      "first": "Đầu",
+      "previous": "Trước",
+      "next": "Tiếp",
+      "last": "Cuối",
+      "page": "Trang",
+      "itemsPerPage": "Số mục mỗi trang"
+    },
+    "loading": "Đang tải...",
+    "noEmployeeFound": "Không tìm thấy nhân viên"
+  },
+  "create": {
+    "title": "Nhân Viên Mới",
+    "back": "Quay lại",
+    "loading": "Đang tải dữ liệu...",
+    "avatar": {
+      "upload": "Tải lên ảnh đại diện",
+      "remove": "Xóa ảnh đại diện"
+    },
+    "form": {
+      "employeeCode": {
+        "label": "Mã Nhân Viên",
+        "placeholder": "Nhập mã nhân viên"
+      },
+      "fullName": {
+        "label": "Họ và Tên",
+        "placeholder": "Nhập họ và tên",
+        "required": "*"
+      },
+      "email": {
+        "label": "Email",
+        "placeholder": "Nhập địa chỉ email",
+        "required": "*"
+      },
+      "phone": {
+        "label": "Số Điện Thoại",
+        "placeholder": "Nhập số điện thoại"
+      },
+      "assignment": "Phân Công",
+      "role": {
+        "label": "Vai Trò",
+        "placeholder": "Chọn vai trò",
+        "required": "*"
+      },
+      "department": {
+        "label": "Phòng Ban",
+        "placeholder": "Chọn phòng ban"
+      },
+      "room": {
+        "label": "Phòng",
+        "placeholder": "Chọn phòng"
+      },
+      "cancel": "Hủy",
+      "create": "Tạo Nhân Viên",
+      "creating": "Đang tạo..."
+    },
+    "validation": {
+      "fillRequired": "Vui lòng điền đầy đủ thông tin bắt buộc",
+      "selectImage": "Vui lòng chọn file ảnh",
+      "imageSize": "Kích thước ảnh không được vượt quá 5MB"
+    },
+    "messages": {
+      "failedToLoad": "Tải dữ liệu dropdown thất bại",
+      "connectionError": "Lỗi kết nối:",
+      "createdSuccess": "Tạo nhân viên thành công!",
+      "failedToCreate": "Tạo nhân viên thất bại",
+      "avatarUploadFailed": "Nhân viên đã được tạo nhưng tải ảnh đại diện thất bại"
+    },
+    "fieldMap": {
+      "fullName": "Họ và tên",
+      "email": "Email",
+      "phone": "Số điện thoại",
+      "password": "Mật khẩu",
+      "roleId": "Vai trò",
+      "departmentId": "Phòng ban",
+      "roomId": "Phòng"
+    }
+  },
+  "detail": {
+    "back": "Quay lại",
+    "profile": "HỒ SƠ",
+    "loading": "Đang tải thông tin nhân viên...",
+    "notFound": "Không tìm thấy nhân viên",
+    "pleaseLogin": "Vui lòng đăng nhập",
+    "cannotLoad": "Không thể tải thông tin nhân viên",
+    "editAvatar": "Chỉnh sửa ảnh đại diện",
+    "employee": "Nhân viên",
+    "sections": {
+      "journey": "Hành trình",
+      "registration": "Đăng ký",
+      "admissionDate": "Ngày nhận việc",
+      "position": "Vị trí",
+      "department": "Phòng ban",
+      "personalData": "Dữ liệu cá nhân",
+      "contact": "Liên hệ",
+      "editPersonalData": "Chỉnh sửa dữ liệu cá nhân",
+      "editContact": "Chỉnh sửa thông tin liên hệ"
+    },
+    "fields": {
+      "fullName": "Họ và tên",
+      "username": "Tên đăng nhập",
+      "employeeCode": "Mã Nhân Viên",
+      "email": "E-mail",
+      "phone": "Số điện thoại"
+    }
+  },
+  "delete": {
+    "confirm": "Bạn có chắc chắn muốn xóa nhân viên \"{name}\"?\n\nLưu ý: Hành động này sẽ khóa tài khoản nhân viên này.",
+    "reason": "Lý do xóa nhân viên:",
+    "enterReason": "Vui lòng nhập lý do xóa nhân viên",
+    "success": "Xóa nhân viên thành công",
+    "failed": "Không thể xóa nhân viên",
+    "sessionExpired": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+    "noPermission": "Bạn không có quyền thực hiện hành động này.",
+    "notExist": "Nhân viên này không tồn tại.",
+    "needLogin": "Bạn cần đăng nhập để thực hiện hành động này"
+  },
+  "messages": {
+    "pleaseLogin": "Vui lòng đăng nhập",
+    "cannotLoadMasterData": "Không thể tải dữ liệu phòng ban/vai trò",
+    "cannotLoadList": "Không thể tải danh sách nhân viên"
+  },
+  "status": {
+    "active": "Đang hoạt động",
+    "inactive": "Không hoạt động"
+  },
+  "common": {
+    "na": "N/A"
+  }
+}
+

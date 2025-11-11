@@ -1,0 +1,68 @@
+{
+  "header": {
+    "title": "Bảng Điều Khiển HR",
+    "subtitle": "Quản lý nhân sự, lịch làm việc và báo cáo"
+  },
+  "stats": {
+    "totalEmployees": "Tổng nhân viên",
+    "active": "Đang hoạt động",
+    "inactive": "Không hoạt động",
+    "schedulesThisWeek": "Lịch tuần này"
+  },
+  "quickActions": {
+    "title": "Thao Tác Nhanh",
+    "employeeList": {
+      "title": "Danh sách nhân viên",
+      "description": "Xem và quản lý tất cả nhân viên"
+    },
+    "addNewEmployee": {
+      "title": "Thêm nhân viên mới",
+      "description": "Tạo tài khoản nhân viên mới"
+    },
+    "workScheduleManagement": {
+      "title": "Quản lý lịch làm việc",
+      "description": "Xem và tạo lịch làm việc của bác sĩ"
+    },
+    "createNewSchedule": {
+      "title": "Tạo lịch mới",
+      "description": "Thiết lập lịch làm việc cho tuần mới"
+    },
+    "statisticsReports": {
+      "title": "Thống Kê & Báo Cáo",
+      "description": "Xem báo cáo HR chi tiết"
+    }
+  },
+  "recentEmployees": {
+    "title": "Nhân viên gần đây",
+    "viewAll": "Xem tất cả →",
+    "noEmployees": "Chưa có nhân viên"
+  },
+  "schedules": {
+    "title": "Lịch làm việc tuần này",
+    "viewDetails": "Xem chi tiết →",
+    "noSchedule": "Không có lịch cho tuần này",
+    "createSchedule": "Tạo lịch"
+  },
+  "allocation": {
+    "title": "Phân bổ nhân sự",
+    "byDepartment": "Theo Phòng Ban",
+    "byRole": "Theo Vai Trò",
+    "byClinic": "Theo Cơ Sở"
+  },
+  "status": {
+    "active": "Đang hoạt động",
+    "inactive": "Không hoạt động"
+  },
+  "messages": {
+    "loading": "Đang tải dữ liệu...",
+    "missingApiUrl": "API URL chưa được cấu hình. Vui lòng kiểm tra file .env",
+    "notLoggedIn": "Bạn chưa đăng nhập. Vui lòng đăng nhập lại.",
+    "unableToLoad": "Không thể tải dữ liệu dashboard",
+    "missingApiUrlOrToken": "Thiếu API URL hoặc token",
+    "reloadPage": "Tải lại trang"
+  },
+  "common": {
+    "na": "N/A"
+  }
+}
+
