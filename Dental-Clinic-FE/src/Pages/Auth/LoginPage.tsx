@@ -59,6 +59,7 @@ function LoginPage() {
           fullName: data.fullName,
           email: data.email,
           avatarUrl: data.avatarUrl,
+          roles: normalizedRoles
         })
       );
 
@@ -68,7 +69,7 @@ function LoginPage() {
 
       toast.success(t("login:loginSuccess"));
       setTimeout(() => {
-        if (normalizedRoles.includes("ADMIN")) navigate("/admin");
+        if (normalizedRoles.includes("ADMIN")) navigate("/");
         else navigate("/");
       }, 2000);
     } catch (err: any) {
@@ -103,7 +104,7 @@ function LoginPage() {
 
               <div>
                 <label className="block mb-1 text-sm font-medium">
-                  {t("login:email")}
+                  {t("login:Email")}
                 </label>
                 <input
                   type="email"

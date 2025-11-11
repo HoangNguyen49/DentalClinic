@@ -7,37 +7,74 @@ import { useTranslation } from "react-i18next";
 
 function Header() {
   const navigate = useNavigate();
-  // yêu cầu namespace 'web' (đúng với web.json)
   const { t } = useTranslation(["web"]);
   const [user, setUser] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
+  const DEFAULT_AVATAR =
+    import.meta.env.VITE_DEFAULT_AVATAR_URL ||
+    "https://res.cloudinary.com/dchzko3lj/image/upload/v1762616672/default-avatar_brvdfn.png";
+
   const avatarSrc =
     user?.avatarUrl && user.avatarUrl.trim() !== ""
       ? user.avatarUrl
-      : `${import.meta.env.VITE_API_URL}/uploads_avatar/default-avatar.png`;
+      : DEFAULT_AVATAR;
 
-  useEffect(() => {
+  // đọc user từ localStorage
+  const loadUserFromStorage = () => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem("user");
-    setUser(null);
-    navigate("/login");
+    else setUser(null);
   };
 
-  const isAdmin = user?.role === "admin";
-
   useEffect(() => {
+    loadUserFromStorage();
+
+    // Cập nhật khi chuyển tab quay lại hoặc khi app lấy lại focus
+    const onFocus = () => loadUserFromStorage();
+    window.addEventListener("focus", onFocus);
+
+    // Cập nhật lại trang khi User upload avatar
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) setUser(JSON.parse(storedUser));
+    
+    const handleAvatarUpdate = () => {
+    const updatedUser = localStorage.getItem("user");
+    if (updatedUser) setUser(JSON.parse(updatedUser));
+    };
+
+    // Đồng bộ khi localStorage thay đổi (khác tab)
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "user") loadUserFromStorage();
+    };
+    window.addEventListener("storage", onStorage);
+
+    // Đóng dropdown khi click ra ngoài
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest("#user-dropdown")) setIsDropdownOpen(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      window.addEventListener("avatarUpdated", handleAvatarUpdate);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("storage", onStorage);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
+    setUser(null);
+    navigate("/login");
+  };
+
+  // check role ADMIN
+  const isAdmin = Array.isArray(user?.roles)
+    ? user.roles.includes("ADMIN")
+    : user?.role === "ADMIN";
 
   const changeLang = async () => {
     const newLang = i18n.language === "en" ? "vi" : "en";
@@ -94,17 +131,14 @@ function Header() {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="focus:outline-none"
               >
-                {user.avatarUrl ? (
-                  <img
-                    src={avatarSrc}
-                    alt="Avatar"
-                    className="w-14 h-14 rounded-full border-2 border-[#3366FF] object-cover"
-                  />
-                ) : (
-                  <div className="w-14 h-14 rounded-full bg-gray-300 flex items-center justify-center text-[#3366FF] font-bold text-lg">
-                    {user.username?.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <img
+                  src={avatarSrc}
+                  alt="Avatar"
+                  className="w-14 h-14 rounded-full border-2 border-[#3366FF] object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR;
+                  }}
+                />
               </button>
 
               {isDropdownOpen && (
@@ -146,7 +180,12 @@ function Header() {
                 viewBox="0 0 24 24"
                 stroke="currentColor"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 7l5 5m0 0l-5 5m5-5H6"
+                />
               </svg>
             </span>
           </button>
