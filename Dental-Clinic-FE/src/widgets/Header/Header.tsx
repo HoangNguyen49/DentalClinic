@@ -7,46 +7,81 @@ import { useTranslation } from "react-i18next";
 
 function Header() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t } = useTranslation(["web"]);
   const [user, setUser] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const DEFAULT_AVATAR =
+    import.meta.env.VITE_DEFAULT_AVATAR_URL ||
+    "https://res.cloudinary.com/dchzko3lj/image/upload/v1762616672/default-avatar_brvdfn.png";
+
   const avatarSrc =
     user?.avatarUrl && user.avatarUrl.trim() !== ""
       ? user.avatarUrl
-      : `${import.meta.env.VITE_API_URL}/uploads/default-avatar.png`;
+      : DEFAULT_AVATAR;
+
+  // đọc user từ localStorage
+  const loadUserFromStorage = () => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) setUser(JSON.parse(storedUser));
+    else setUser(null);
+  };
 
   useEffect(() => {
+    loadUserFromStorage();
+
+    // Cập nhật khi chuyển tab quay lại hoặc khi app lấy lại focus
+    const onFocus = () => loadUserFromStorage();
+    window.addEventListener("focus", onFocus);
+
+    // Cập nhật lại trang khi User upload avatar
     const storedUser = localStorage.getItem("user");
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    if (storedUser) setUser(JSON.parse(storedUser));
+    
+    const handleAvatarUpdate = () => {
+    const updatedUser = localStorage.getItem("user");
+    if (updatedUser) setUser(JSON.parse(updatedUser));
+    };
+
+    // Đồng bộ khi localStorage thay đổi (khác tab)
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === "user") loadUserFromStorage();
+    };
+    window.addEventListener("storage", onStorage);
+
+    // Đóng dropdown khi click ra ngoài
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest("#user-dropdown")) setIsDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+
+    return () => {
+      window.addEventListener("avatarUpdated", handleAvatarUpdate);
+      window.removeEventListener("focus", onFocus);
+      window.removeEventListener("storage", onStorage);
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
   }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
     setUser(null);
     navigate("/login");
   };
 
-  const isAdmin = user?.role === "admin";
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest("#user-dropdown")) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // check role ADMIN
+  const isAdmin = Array.isArray(user?.roles)
+    ? user.roles.includes("ADMIN")
+    : user?.role === "ADMIN";
 
   const changeLang = async () => {
     const newLang = i18n.language === "en" ? "vi" : "en";
     await axios.get(`${import.meta.env.VITE_API_URL}/locale?lang=${newLang}`, {
       withCredentials: true,
     });
-    i18n.changeLanguage(newLang);
+    await i18n.changeLanguage(newLang);
     localStorage.setItem("lang", newLang);
   };
 
@@ -63,15 +98,15 @@ function Header() {
           <Link to="/" className="hover:text-blue-600">
             {t("nav.home")}
           </Link>
-          <a href="/service" className="hover:text-blue-600">
+          <Link to="/service" className="hover:text-blue-600">
             {t("nav.services")}
-          </a>
-          <a href="/about" className="hover:text-blue-600">
+          </Link>
+          <Link to="/about" className="hover:text-blue-600">
             {t("nav.about")}
-          </a>
-          <a href="/contact" className="hover:text-blue-600">
+          </Link>
+          <Link to="/contact" className="hover:text-blue-600">
             {t("nav.contact")}
-          </a>
+          </Link>
         </nav>
 
         {/* CTA */}
@@ -81,15 +116,7 @@ function Header() {
             onClick={changeLang}
             className="px-4 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] text-white shadow-md transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-lg flex items-center gap-2"
           >
-            {i18n.language === "en" ? (
-              <>
-                <span>Tiếng Việt</span>
-              </>
-            ) : (
-              <>
-                <span>English</span>
-              </>
-            )}
+            {i18n.language === "en" ? <span>VN</span> : <span>EN</span>}
           </button>
 
           {!user ? (
@@ -104,17 +131,14 @@ function Header() {
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 className="focus:outline-none"
               >
-                {user.avatarUrl ? (
-                  <img
-                    src={avatarSrc}
-                    alt="Avatar"
-                    className="w-14 h-14 rounded-full border-2 border-[#3366FF] object-cover"
-                  />
-                ) : (
-                  <div className="w-14 h-14 rounded-full bg-gray-300 flex items-center justify-center text-[#3366FF] font-bold text-lg">
-                    {user.username?.charAt(0).toUpperCase()}
-                  </div>
-                )}
+                <img
+                  src={avatarSrc}
+                  alt="Avatar"
+                  className="w-14 h-14 rounded-full border-2 border-[#3366FF] object-cover"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = DEFAULT_AVATAR;
+                  }}
+                />
               </button>
 
               {isDropdownOpen && (

@@ -27,7 +27,7 @@ const feedbacks = [
 
 function TestimonialsSection() {
   const [index, setIndex] = useState(0);
-  const { t } = useTranslation();
+  const { t } = useTranslation(['home','web']);
   const current = feedbacks[index];
 
   return (
