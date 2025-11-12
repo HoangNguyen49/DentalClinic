@@ -11,7 +11,71 @@
   },
   "account": {
     "myAccount": "My Account",
-    "adminDashboard": "Admin Dashboard"
+    "adminDashboard": "Admin Dashboard",
+    "myAttendance": "My Attendance"
+  },
+  "attendance": {
+    "hrDashboard": "HR Dashboard",
+    "title": "My Attendance",
+    "refresh": "Refresh",
+    "today": "Today",
+    "checkIn": "Check-in Time",
+    "checkOut": "Check-out Time",
+    "status": "Status",
+    "noAttendanceToday": "No attendance record for today",
+    "loading": "Loading...",
+    "explanationsNeeded": {
+      "title": "Attendance Explanations Needed",
+      "type": "Type",
+      "date": "Date",
+      "status": "Status",
+      "reason": "Reason",
+      "adminNote": "Admin Note",
+      "submit": "Submit Explanation",
+      "update": "Update Explanation",
+      "dialogTitle": "Submit Explanation",
+      "reasonLabel": "Explanation Reason *",
+      "reasonPlaceholder": "Please explain the reason...",
+      "cancel": "Cancel",
+      "submitButton": "Submit",
+      "submitting": "Submitting...",
+      "submitSuccess": "Explanation submitted successfully",
+      "submitFailed": "Failed to submit explanation",
+      "enterReason": "Please enter explanation reason"
+    },
+    "monthlyHistory": {
+      "title": "Monthly Attendance History",
+      "selectMonth": "Select Month",
+      "selectYear": "Select Year",
+      "month": "Month",
+      "date": "Date",
+      "checkIn": "Check-in",
+      "checkOut": "Check-out",
+      "status": "Status",
+      "note": "Note",
+      "noData": "No attendance data for this month",
+      "loading": "Loading...",
+      "loadFailed": "Unable to load attendance history. Please contact HR."
+    },
+    "status": {
+      "ON_TIME": "On Time",
+      "LATE": "Late",
+      "ABSENT": "Absent",
+      "APPROVED_ABSENCE": "Approved Leave",
+      "APPROVED_LATE": "Approved Late",
+      "UNKNOWN": "Unknown"
+    },
+    "explanationType": {
+      "LATE": "Late Arrival",
+      "ABSENT": "Absent",
+      "MISSING_CHECK_IN": "Missing Check-In",
+      "MISSING_CHECK_OUT": "Missing Check-Out"
+    },
+    "explanationStatus": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected"
+    }
   },
   "cta": {
     "getInTouch": "Get In Touch"

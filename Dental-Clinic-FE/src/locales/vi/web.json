@@ -11,7 +11,71 @@
   },
   "account": {
     "myAccount": "Tài khoản của tôi",
-    "adminDashboard": "Bảng quản trị"
+    "adminDashboard": "Bảng quản trị",
+    "myAttendance": "Chấm công của tôi"
+  },
+  "attendance": {
+    "hrDashboard": "Bảng điều khiển HR",
+    "title": "Chấm công của tôi",
+    "refresh": "Làm mới",
+    "today": "Hôm nay",
+    "checkIn": "Giờ vào",
+    "checkOut": "Giờ ra",
+    "status": "Trạng thái",
+    "noAttendanceToday": "Chưa có thông tin chấm công hôm nay",
+    "loading": "Đang tải...",
+    "explanationsNeeded": {
+      "title": "Cần giải trình chấm công",
+      "type": "Loại",
+      "date": "Ngày",
+      "status": "Trạng thái",
+      "reason": "Lý do",
+      "adminNote": "Ghi chú từ admin",
+      "submit": "Gửi giải trình",
+      "update": "Cập nhật giải trình",
+      "dialogTitle": "Gửi giải trình",
+      "reasonLabel": "Lý do giải trình *",
+      "reasonPlaceholder": "Vui lòng giải thích lý do...",
+      "cancel": "Hủy",
+      "submitButton": "Gửi",
+      "submitting": "Đang gửi...",
+      "submitSuccess": "Gửi giải trình thành công",
+      "submitFailed": "Gửi giải trình thất bại",
+      "enterReason": "Vui lòng nhập lý do giải trình"
+    },
+    "monthlyHistory": {
+      "title": "Lịch sử chấm công tháng",
+      "selectMonth": "Chọn tháng",
+      "selectYear": "Chọn năm",
+      "month": "Tháng",
+      "date": "Ngày",
+      "checkIn": "Giờ vào",
+      "checkOut": "Giờ ra",
+      "status": "Trạng thái",
+      "note": "Ghi chú",
+      "noData": "Không có dữ liệu chấm công trong tháng này",
+      "loading": "Đang tải...",
+      "loadFailed": "Không thể tải lịch sử chấm công. Vui lòng liên hệ HR."
+    },
+    "status": {
+      "ON_TIME": "Đúng giờ",
+      "LATE": "Đi trễ",
+      "ABSENT": "Vắng mặt",
+      "APPROVED_ABSENCE": "Nghỉ được duyệt",
+      "APPROVED_LATE": "Đi trễ được duyệt",
+      "UNKNOWN": "Không xác định"
+    },
+    "explanationType": {
+      "LATE": "Đi trễ",
+      "ABSENT": "Vắng mặt",
+      "MISSING_CHECK_IN": "Quên chấm vào",
+      "MISSING_CHECK_OUT": "Quên chấm ra"
+    },
+    "explanationStatus": {
+      "PENDING": "Chờ xử lý",
+      "APPROVED": "Đã duyệt",
+      "REJECTED": "Đã từ chối"
+    }
   },
   "cta": {
     "getInTouch": "Liên hệ ngay"

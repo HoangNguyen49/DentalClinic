@@ -75,6 +75,11 @@ function Header() {
   const isAdmin = Array.isArray(user?.roles)
     ? user.roles.includes("ADMIN")
     : user?.role === "ADMIN";
+  
+  // check role HR
+  const isHR = Array.isArray(user?.roles)
+    ? user.roles.includes("HR")
+    : user?.role === "HR";
 
   const changeLang = async () => {
     const newLang = i18n.language === "en" ? "vi" : "en";
@@ -149,6 +154,22 @@ function Header() {
                   >
                     {t("account.myAccount")}
                   </Link>
+                  {!isAdmin && (
+                    <Link
+                      to="/my-attendance"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                    >
+                      {t("account.myAttendance")}
+                    </Link>
+                  )}
+                  {isHR && (
+                    <Link
+                      to="/hr/dashboard"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                    >
+                      {t("attendance.hrDashboard", "HR Dashboard")}
+                    </Link>
+                  )}
                   {isAdmin && (
                     <Link
                       to="/admin/dashboard"

@@ -78,6 +78,10 @@
   },
   "attendance": {
     "pageDescription": "Xem và phê duyệt các trường hợp đi trễ hoặc xin nghỉ do nhân viên gửi lên, cập nhật trạng thái và thêm ghi chú quản trị.",
+    "tabs": {
+      "attendance": "Bản ghi chấm công",
+      "explanations": "Giải trình chờ xử lý"
+    },
     "filters": {
       "date": "Ngày",
       "clinic": "Cơ sở",
@@ -90,6 +94,7 @@
       "LATE": "Đi trễ",
       "ABSENT": "Vắng mặt",
       "APPROVED_ABSENCE": "Nghỉ được duyệt",
+      "APPROVED_LATE": "Đi trễ được duyệt",
       "UNKNOWN": "Không xác định"
     },
     "table": {
@@ -104,22 +109,45 @@
       "noNote": "Không có ghi chú",
       "unknownClinic": "Không rõ cơ sở"
     },
+    "explanation": {
+      "type": "Loại",
+      "reason": "Lý do",
+      "typeLate": "Đi trễ",
+      "typeAbsent": "Vắng mặt",
+      "typeMissingCheckIn": "Quên chấm vào",
+      "typeMissingCheckOut": "Quên chấm ra",
+      "status": {
+        "pending": "Chờ xử lý",
+        "approved": "Đã duyệt",
+        "rejected": "Đã từ chối"
+      }
+    },
     "actions": {
       "approveLate": "Chấp nhận đi trễ",
       "approveLeave": "Chấp nhận nghỉ",
+      "approve": "Duyệt",
+      "reject": "Từ chối",
+      "refresh": "Làm mới",
       "noAction": "—"
     },
     "messages": {
       "noAccessToken": "Thiếu access token",
       "loadClinicsFailed": "Không thể tải danh sách cơ sở",
       "loadFailed": "Không thể tải danh sách chấm công",
+      "loadExplanationsFailed": "Không thể tải danh sách giải trình",
       "updateSuccess": "Đã cập nhật chấm công",
       "updateFailed": "Không thể cập nhật chấm công",
       "confirmApproveLate": "Bạn có chắc chắn chấp nhận đi trễ và đánh dấu đúng giờ?",
       "confirmApproveLeave": "Bạn có chắc chắn chấp nhận yêu cầu nghỉ?",
       "enterAdminNote": "Nhập ghi chú phê duyệt (không bắt buộc)",
+      "enterApprovalNote": "Nhập ghi chú phê duyệt (không bắt buộc)",
+      "enterRejectionNote": "Nhập lý do từ chối (không bắt buộc)",
+      "explanationApproved": "Đã duyệt giải trình thành công",
+      "explanationRejected": "Đã từ chối giải trình",
+      "processFailed": "Không thể xử lý giải trình",
       "loading": "Đang tải danh sách chấm công...",
-      "noData": "Không có dữ liệu chấm công"
+      "noData": "Không có dữ liệu chấm công",
+      "noPendingExplanations": "Không có giải trình chờ xử lý"
     }
   },
   "staff": {

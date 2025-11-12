@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import {
@@ -46,6 +46,109 @@ type Department = {
   id: number;
   departmentName: string;
 };
+
+// Component để xử lý dropdown với auto-positioning
+function DropdownCell({ 
+  isOpen, 
+  onToggle, 
+  onViewProfile, 
+  onDelete, 
+  t 
+}: { 
+  isOpen: boolean; 
+  onToggle: () => void; 
+  onViewProfile: () => void; 
+  onDelete: () => void; 
+  t: (key: string) => string;
+}) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (isOpen && buttonRef.current && dropdownRef.current) {
+      // Đơn giản: kiểm tra xem button có ở cuối trang không
+      const updatePosition = () => {
+        if (!buttonRef.current || !dropdownRef.current) return;
+        
+        const btnRect = buttonRef.current.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const viewportWidth = window.innerWidth;
+        const margin = 4;
+        
+        // Kiểm tra xem button có ở cuối trang không (trong 200px cuối cùng của viewport)
+        const isNearBottom = btnRect.bottom > (viewportHeight - 200);
+        
+        if (isNearBottom) {
+          // Ở cuối trang → hiển thị lên trên bằng fixed positioning
+          dropdownRef.current.style.position = 'fixed';
+          dropdownRef.current.style.top = 'auto';
+          // bottom = khoảng cách từ đáy viewport đến đỉnh button
+          dropdownRef.current.style.bottom = `${viewportHeight - btnRect.top + margin}px`;
+          dropdownRef.current.style.right = `${viewportWidth - btnRect.right}px`;
+          dropdownRef.current.style.left = 'auto';
+          dropdownRef.current.style.marginBottom = '0';
+          dropdownRef.current.style.marginTop = '0';
+        } else {
+          // Ở đầu/giữa trang → hiển thị xuống dưới bằng absolute positioning
+          dropdownRef.current.style.position = 'absolute';
+          dropdownRef.current.style.top = '100%';
+          dropdownRef.current.style.bottom = 'auto';
+          dropdownRef.current.style.right = '0';
+          dropdownRef.current.style.left = 'auto';
+          dropdownRef.current.style.marginTop = `${margin}px`;
+          dropdownRef.current.style.marginBottom = '0';
+        }
+      };
+      
+      // Đợi DOM render xong
+      setTimeout(updatePosition, 0);
+    }
+  }, [isOpen]);
+
+  return (
+    <div className="relative">
+      <button
+        ref={buttonRef}
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggle();
+        }}
+        className="p-1 rounded hover:bg-gray-100 transition-colors"
+        title={t("list.table.moreActions")}
+      >
+        <MoreVertical className="w-4 h-4 text-gray-600" />
+      </button>
+
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-10"
+            onClick={onToggle}
+          ></div>
+          <div 
+            ref={dropdownRef}
+            className="absolute right-0 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-1"
+          >
+            <button
+              onClick={onViewProfile}
+              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+            >
+              <Eye className="w-4 h-4" />
+              {t("list.table.viewProfile")}
+            </button>
+            <button
+              onClick={onDelete}
+              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+            >
+              <Trash2 className="w-4 h-4" />
+              {t("list.table.deleteEmployee")}
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 function EmployeesList() {
   const { t, i18n } = useTranslation("employees");
@@ -404,7 +507,7 @@ function EmployeesList() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-md border border-gray-200">
             {loading ? (
               <div className="p-8 text-center text-gray-500">{t("list.loading")}</div>
             ) : employees.length === 0 ? (
@@ -413,7 +516,7 @@ function EmployeesList() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto overflow-y-visible">
                   <table className="w-full">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
@@ -451,9 +554,21 @@ function EmployeesList() {
                                 <div className="w-8 h-8 rounded-full bg-gray-200 overflow-hidden flex items-center justify-center flex-shrink-0">
                                   {employee.avatarUrl ? (
                                     <img
-                                      src={`${apiBase}${employee.avatarUrl}`}
+                                      src={employee.avatarUrl.startsWith('http') ? employee.avatarUrl : `${apiBase}${employee.avatarUrl.startsWith('/') ? employee.avatarUrl : '/' + employee.avatarUrl}`}
                                       alt={employee.fullName}
                                       className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        // Fallback to initial if image fails to load
+                                        const target = e.currentTarget as HTMLImageElement;
+                                        target.style.display = 'none';
+                                        const parent = target.parentElement;
+                                        if (parent && !parent.querySelector('span')) {
+                                          const fallback = document.createElement('span');
+                                          fallback.className = 'text-gray-500 text-xs font-medium';
+                                          fallback.textContent = employee.fullName.charAt(0).toUpperCase();
+                                          parent.appendChild(fallback);
+                                        }
+                                      }}
                                     />
                                   ) : (
                                     <span className="text-gray-500 text-xs font-medium">
@@ -493,46 +608,19 @@ function EmployeesList() {
                                 : t("common.na")}
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                              <div className="relative">
-                                <button
-                                  onClick={() => setOpenDropdown(isDropdownOpen ? null : employee.id)}
-                                  className="p-1 rounded hover:bg-gray-100 transition-colors"
-                                  title={t("list.table.moreActions")}
-                                >
-                                  <MoreVertical className="w-4 h-4 text-gray-600" />
-                                </button>
-
-                                {isDropdownOpen && (
-                                  <>
-                                    <div
-                                      className="fixed inset-0 z-10"
-                                      onClick={() => setOpenDropdown(null)}
-                                    ></div>
-                                    <div className="absolute right-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
-                                      <button
-                                        onClick={() => {
-                                          navigate(`/hr/employees/${employee.id}`);
-                                          setOpenDropdown(null);
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                                      >
-                                        <Eye className="w-4 h-4" />
-                                        {t("list.table.viewProfile")}
-                                      </button>
-                                      <button
-                                        onClick={() => {
-                                          handleDelete(employee.id, employee.fullName);
-                                          setOpenDropdown(null);
-                                        }}
-                                        className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                      >
-                                        <Trash2 className="w-4 h-4" />
-                                        {t("list.table.deleteEmployee")}
-                                      </button>
-                                    </div>
-                                  </>
-                                )}
-                              </div>
+                              <DropdownCell 
+                                isOpen={isDropdownOpen}
+                                onToggle={() => setOpenDropdown(isDropdownOpen ? null : employee.id)}
+                                onViewProfile={() => {
+                                  navigate(`/hr/employees/${employee.id}`);
+                                  setOpenDropdown(null);
+                                }}
+                                onDelete={() => {
+                                  handleDelete(employee.id, employee.fullName);
+                                  setOpenDropdown(null);
+                                }}
+                                t={t}
+                              />
                             </td>
                           </tr>
                         );

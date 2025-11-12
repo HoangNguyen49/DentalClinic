@@ -3,7 +3,6 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import {
   ArrowLeft,
-  Edit,
   User,
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
@@ -37,6 +36,7 @@ function EmployeeDetail() {
 
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -60,6 +60,7 @@ function EmployeeDetail() {
         }
       );
       setEmployee(response.data);
+      setAvatarError(false);
     } catch (err: any) {
       console.error("Error fetching employee:", err);
       let errorMsg = t("detail.cannotLoad");
@@ -135,26 +136,20 @@ function EmployeeDetail() {
             {/* Left Column - Profile Card */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                {/* Avatar with Edit Icon */}
+                {/* Avatar */}
                 <div className="relative mb-4">
                   <div className="w-32 h-32 rounded-lg bg-gray-200 overflow-hidden flex items-center justify-center mx-auto">
-                    {employee.avatarUrl ? (
+                    {employee.avatarUrl && !avatarError ? (
                       <img
-                        src={`${apiBase}${employee.avatarUrl}`}
+                        src={employee.avatarUrl.startsWith('http') ? employee.avatarUrl : `${apiBase}${employee.avatarUrl.startsWith('/') ? employee.avatarUrl : '/' + employee.avatarUrl}`}
                         alt={employee.fullName}
                         className="w-full h-full object-cover"
+                        onError={() => setAvatarError(true)}
                       />
                     ) : (
                       <User className="w-16 h-16 text-gray-400" />
                     )}
                   </div>
-                  <button
-                    onClick={() => navigate(`/hr/employees/${employee.id}/edit`)}
-                    className="absolute top-0 right-0 lg:right-auto lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:top-full lg:mt-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 border border-gray-200"
-                    title={t("detail.editAvatar")}
-                  >
-                    <Edit className="w-4 h-4 text-gray-600" />
-                  </button>
                 </div>
 
                 {/* Name */}
@@ -227,14 +222,6 @@ function EmployeeDetail() {
                           <h3 className="text-xl font-bold text-gray-900">
                             {t("detail.sections.personalData")}
                           </h3>
-                          <button
-                            onClick={() => navigate(`/hr/employees/${employee.id}/edit`)}
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
-                            title={t("detail.sections.editPersonalData")}
-                            aria-label={t("detail.sections.editPersonalData")}
-                          >
-                            <Edit className="w-5 h-5 text-gray-600" />
-                          </button>
                         </div>
                         <div className="bg-white rounded-lg border border-gray-200 p-6">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -280,14 +267,6 @@ function EmployeeDetail() {
                       <div>
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-xl font-bold text-gray-900">{t("detail.sections.contact")}</h3>
-                          <button
-                            onClick={() => navigate(`/hr/employees/${employee.id}/edit`)}
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
-                            title={t("detail.sections.editContact")}
-                            aria-label={t("detail.sections.editContact")}
-                          >
-                            <Edit className="w-5 h-5 text-gray-600" />
-                          </button>
                         </div>
                         <div className="bg-white rounded-lg border border-gray-200 p-6">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

@@ -76,6 +76,10 @@
   },
   "attendance": {
     "pageDescription": "Review late check-ins or leave requests submitted by employees, update their status, and append admin notes.",
+    "tabs": {
+      "attendance": "Attendance Records",
+      "explanations": "Pending Explanations"
+    },
     "filters": {
       "date": "Date",
       "clinic": "Clinic",
@@ -88,6 +92,7 @@
       "LATE": "Late",
       "ABSENT": "Absent",
       "APPROVED_ABSENCE": "Approved Leave",
+      "APPROVED_LATE": "Approved Late",
       "UNKNOWN": "Unknown"
     },
     "table": {
@@ -102,22 +107,45 @@
       "noNote": "No note provided",
       "unknownClinic": "Unknown clinic"
     },
+    "explanation": {
+      "type": "Type",
+      "reason": "Reason",
+      "typeLate": "Late Arrival",
+      "typeAbsent": "Absent",
+      "typeMissingCheckIn": "Missing Check-In",
+      "typeMissingCheckOut": "Missing Check-Out",
+      "status": {
+        "pending": "Pending",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      }
+    },
     "actions": {
       "approveLate": "Approve Late",
       "approveLeave": "Approve Leave",
+      "approve": "Approve",
+      "reject": "Reject",
+      "refresh": "Refresh",
       "noAction": "—"
     },
     "messages": {
       "noAccessToken": "Missing access token",
       "loadClinicsFailed": "Unable to load clinics",
       "loadFailed": "Unable to load attendance records",
+      "loadExplanationsFailed": "Unable to load pending explanations",
       "updateSuccess": "Attendance updated",
       "updateFailed": "Unable to update attendance",
       "confirmApproveLate": "Approve late check-in and mark as on time?",
       "confirmApproveLeave": "Approve absence request?",
       "enterAdminNote": "Enter approval note (optional)",
+      "enterApprovalNote": "Enter approval note (optional)",
+      "enterRejectionNote": "Enter rejection reason (optional)",
+      "explanationApproved": "Explanation approved successfully",
+      "explanationRejected": "Explanation rejected",
+      "processFailed": "Unable to process explanation",
       "loading": "Loading attendance records...",
-      "noData": "No attendance records found"
+      "noData": "No attendance records found",
+      "noPendingExplanations": "No pending explanations"
     }
   },
   "staff": {

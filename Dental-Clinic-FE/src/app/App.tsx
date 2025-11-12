@@ -5,6 +5,7 @@ import SignUp from "../Pages/Auth/SignUp";
 import OAuthSuccessHandler from "../Pages/Auth/OAuthSuccessHandler";
 import MyAccount from "../Pages/Account/MyAccount";
 import ChangePassword from "../Pages/Account/ChangePassword";
+import EmployeeAttendanceView from "../Pages/Account/EmployeeAttendanceView";
 import AdminLayout from "../app/layout/AdminLayouts";
 import HRLayout from "../app/layout/HrLayout";
 import AdminDashboardPage from "../Pages/Admin/Dashboard/AdminDashboardPage";
@@ -38,6 +39,7 @@ function App() {
         <Route path="/oauth/success" element={<OAuthSuccessHandler />} />
         <Route path="/my-account" element={<MyAccount />} />
         <Route path="/change-password" element={<ChangePassword />} />
+        <Route path="/my-attendance" element={<EmployeeAttendanceView />} />
 
         <Route path="/admin" element={<ProtectedRouteAdmin />}>
           <Route element={<AdminLayout />}>
