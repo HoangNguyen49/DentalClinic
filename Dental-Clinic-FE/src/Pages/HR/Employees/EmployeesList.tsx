@@ -28,6 +28,8 @@ type Employee = {
   role?: { id: number; roleName: string };
   clinic?: { id: number; clinicName: string };
   roleAtClinic?: string;
+  specialty?: string;
+  room?: { id: number; roomName: string; clinicId?: number; clinicName?: string };
   createdAt?: string;
   lastLoginAt?: string;
 };

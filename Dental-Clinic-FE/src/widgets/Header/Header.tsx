@@ -73,13 +73,21 @@ function Header() {
 
   // check role ADMIN
   const isAdmin = Array.isArray(user?.roles)
-    ? user.roles.includes("ADMIN")
-    : user?.role === "ADMIN";
+    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_ADMIN" || r.toUpperCase() === "ADMIN")
+    : user?.role?.toUpperCase() === "ADMIN";
   
   // check role HR
   const isHR = Array.isArray(user?.roles)
-    ? user.roles.includes("HR")
-    : user?.role === "HR";
+    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_HR" || r.toUpperCase() === "HR")
+    : user?.role?.toUpperCase() === "HR";
+  
+  // check role USER
+  const isUser = Array.isArray(user?.roles)
+    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_USER" || r.toUpperCase() === "USER")
+    : user?.role?.toUpperCase() === "USER";
+  
+  // Ẩn "My Attendance" nếu là USER hoặc ADMIN
+  const shouldHideMyAttendance = isUser || isAdmin;
 
   const changeLang = async () => {
     const newLang = i18n.language === "en" ? "vi" : "en";
@@ -154,7 +162,7 @@ function Header() {
                   >
                     {t("account.myAccount")}
                   </Link>
-                  {!isAdmin && (
+                  {!shouldHideMyAttendance && (
                     <Link
                       to="/my-attendance"
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"

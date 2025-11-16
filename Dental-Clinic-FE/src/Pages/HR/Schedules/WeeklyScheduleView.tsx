@@ -1,4 +1,3 @@
-import React from "react";
 import { Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -8,13 +7,22 @@ type HrDocDto = {
   fullName: string;
 };
 
+type RoomResponse = {
+  id: number;
+  roomName: string;
+  clinicId?: number;
+  clinicName?: string;
+};
+
 type ScheduleItem = {
   id: number;
   doctor: HrDocDto | null;
   clinic: any;
+  room: RoomResponse | null;
   workDate: string;
   startTime: string;
   endTime: string;
+  status?: string;
   note?: string;
 };
 
@@ -34,14 +42,12 @@ type WeekDay = {
 type WeeklyScheduleViewProps = {
   weekDays: WeekDay[];
   schedulesByDateAndDoctor: Record<string, Record<number, DoctorDaySchedule>>;
-  doctorDepartmentMap: Map<number, string>;
   formatTime: (time: string) => string;
 };
 
 export default function WeeklyScheduleView({
   weekDays,
   schedulesByDateAndDoctor,
-  doctorDepartmentMap,
   formatTime,
 }: WeeklyScheduleViewProps) {
   const { t } = useTranslation("schedules");
@@ -52,25 +58,25 @@ export default function WeeklyScheduleView({
       <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
         <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-500 text-lg mb-2">
-          {t("list.noSchedules")}
+          No work schedules for this week
         </p>
         <button
           onClick={() => navigate("/hr/schedules/create")}
           className="mt-4 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
         >
-          {t("list.createNewSchedule")}
+          Create new work schedule
         </button>
       </div>
     );
   }
 
-  // Tạo cấu trúc nhóm lịch theo khoa/phòng ban và bác sĩ
+  // Lấy toàn bộ danh sách bác sĩ duy nhất trong tuần và tạo cấu trúc lịch cho từng bác sĩ  
   type DoctorWeekSchedule = {
     doctor: { id: number; fullName: string } | null;
     daySchedules: Record<string, DoctorDaySchedule>;
   };
 
-  // Lấy danh sách tất cả bác sĩ từ các ngày được truyền vào, loại bỏ trùng lặp
+  // Tập hợp tất cả doctorId xuất hiện trong tuần
   const allDoctorIds = new Set<number>();
   Object.values(schedulesByDateAndDoctor).forEach((daySchedules) => {
     Object.values(daySchedules).forEach((docSchedule) => {
@@ -80,51 +86,30 @@ export default function WeeklyScheduleView({
     });
   });
 
-  // Nhóm bác sĩ theo department
-  const doctorsByDepartment: Record<string, DoctorWeekSchedule[]> = {};
-
+  // Tạo mảng thông tin bác sĩ với lịch theo từng ngày trong tuần
+  const allDoctors: DoctorWeekSchedule[] = [];
   allDoctorIds.forEach((doctorId) => {
-    const deptName = doctorDepartmentMap.get(doctorId) || t("create.table.uncategorized");
     const doctor = Object.values(schedulesByDateAndDoctor)
       .flatMap(daySchedules => Object.values(daySchedules))
       .find(ds => ds.doctor?.id === doctorId)?.doctor || null;
-
-    if (!doctorsByDepartment[deptName]) {
-      doctorsByDepartment[deptName] = [];
-    }
-
-    // Kiểm tra trùng lặp bác sĩ trong department
-    const existingDoctor = doctorsByDepartment[deptName].find(
-      d => d.doctor?.id === doctorId
-    );
-
-    if (!existingDoctor) {
-      // Duyệt từng ngày trong tuần để lấy lịch làm việc của bác sĩ này từng ngày
-      const daySchedules: Record<string, DoctorDaySchedule> = {};
-      weekDays.forEach((day) => {
-        const daySchedule = schedulesByDateAndDoctor[day.date]?.[doctorId];
-        if (daySchedule) {
-          daySchedules[day.date] = daySchedule;
-        }
-      });
-
-      doctorsByDepartment[deptName].push({
-        doctor,
-        daySchedules,
-      });
-    }
+    const daySchedules: Record<string, DoctorDaySchedule> = {};
+    weekDays.forEach((day) => {
+      const daySchedule = schedulesByDateAndDoctor[day.date]?.[doctorId];
+      if (daySchedule) {
+        daySchedules[day.date] = daySchedule;
+      }
+    });
+    allDoctors.push({
+      doctor,
+      daySchedules,
+    });
   });
 
-  // Lấy danh sách khoa/phòng ban (department) và sort tăng dần alphabet
-  const departmentNames = Object.keys(doctorsByDepartment).sort();
-
-  // Sắp xếp bác sĩ theo tên từng department
-  departmentNames.forEach(deptName => {
-    doctorsByDepartment[deptName].sort((a, b) => {
-      const nameA = a.doctor?.fullName || "";
-      const nameB = b.doctor?.fullName || "";
-      return nameA.localeCompare(nameB);
-    });
+  // Sắp xếp danh sách bác sĩ theo tên
+  allDoctors.sort((a, b) => {
+    const nameA = a.doctor?.fullName || "";
+    const nameB = b.doctor?.fullName || "";
+    return nameA.localeCompare(nameB);
   });
 
   return (
@@ -155,125 +140,137 @@ export default function WeeklyScheduleView({
           </tr>
         </thead>
         <tbody>
-          {departmentNames.map((deptName, deptIndex) => {
-            const deptDoctors = doctorsByDepartment[deptName];
-
-            // Tính global index cho department, trường hợp cần dùng
-            let globalIndex = 0;
-            for (let i = 0; i < deptIndex; i++) {
-              globalIndex += doctorsByDepartment[departmentNames[i]].length;
-            }
-
+          {allDoctors.map((doctorWeekSchedule, index) => {
             return (
-              <React.Fragment key={deptName}>
-                {/* Department Header Row */}
-                <tr className="bg-gray-100">
-                  <td
-                    colSpan={weekDays.length + 1}
-                    className="border border-gray-300 px-4 py-2 font-semibold text-gray-800 bg-gray-100"
-                  >
-                    {deptName} ({deptDoctors.length} Doctors)
-                  </td>
-                </tr>
-                {/* Doctor Rows */}
-                {deptDoctors.map((doctorWeekSchedule, localIndex) => {
-                  return (
-                    <tr key={doctorWeekSchedule.doctor?.id || localIndex} className="hover:bg-gray-50">
-                      {/* Tên bác sĩ */}
-                      <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-0 bg-white z-10">
-                        {doctorWeekSchedule.doctor?.fullName ||
-                          `Doctor #${doctorWeekSchedule.doctor?.id || localIndex}`}
-                      </td>
-                      {/* Duyệt qua các ngày trong tuần */}
-                      {weekDays.map((day) => {
-                        const daySchedule = doctorWeekSchedule.daySchedules[day.date];
-                        const isWeekend = day.dayName === t("list.days.sat") || day.dayName === t("list.days.sun");
+              <tr key={doctorWeekSchedule.doctor?.id || index} className="hover:bg-gray-50">
+                {/* Tên bác sĩ */}
+                <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-0 bg-white z-10">
+                  {doctorWeekSchedule.doctor?.fullName ||
+                    `Doctor #${doctorWeekSchedule.doctor?.id || index}`}
+                </td>
+                {/* Lặp qua từng ngày để hiển thị lịch làm việc theo ngày */}
+                {weekDays.map((day) => {
+                  const daySchedule = doctorWeekSchedule.daySchedules[day.date];
+                  const isWeekend = day.dayName === t("list.days.sat") || day.dayName === t("list.days.sun");
 
-                        return (
-                          <td
-                            key={day.date}
-                            className={`border border-gray-300 px-4 py-3 ${
-                              day.isToday ? "bg-purple-50" : ""
-                            }`}
-                          >
-                            {!daySchedule && isWeekend ? (
-                              <div className="text-gray-400 text-sm text-center py-4">
+                  return (
+                    <td
+                      key={day.date}
+                      className={`border border-gray-300 px-4 py-3 ${
+                        day.isToday ? "bg-purple-50" : ""
+                      }`}
+                    >
+                      {!daySchedule && isWeekend ? (
+                        <div className="text-gray-400 text-sm text-center py-4">
+                          No sessions
+                        </div>
+                      ) : !daySchedule ? (
+                        <div className="min-h-[80px]"></div>
+                      ) : (
+                        <div className="space-y-2 min-h-[80px]">
+                          {/* Ca sáng */}
+                          {daySchedule.morning ? (
+                            <div className="p-2.5 bg-blue-100 rounded-lg shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
+                              <div className="text-xs font-semibold text-blue-900 mb-1">
+                                Morning
+                              </div>
+                              <div className="text-xs text-blue-700 mb-1 font-medium">
+                                {formatTime(daySchedule.morning.startTime)} - {formatTime(daySchedule.morning.endTime)}
+                              </div>
+                              {daySchedule.morning.clinic && (
+                                <div className="text-xs text-blue-900 font-medium truncate mb-0.5">
+                                  🏥 {daySchedule.morning.clinic.clinicName}
+                                </div>
+                              )}
+                              {daySchedule.morning.room && (
+                                <div className="text-xs text-blue-800 truncate mb-0.5">
+                                  🚪 {daySchedule.morning.room.roomName}
+                                </div>
+                              )}
+                              {daySchedule.morning.status && (
+                                <div className="text-xs text-blue-600 mt-1">
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                    daySchedule.morning.status.toLowerCase() === 'active' 
+                                      ? 'bg-green-200 text-green-800' 
+                                      : daySchedule.morning.status.toLowerCase() === 'cancelled'
+                                      ? 'bg-red-200 text-red-800'
+                                      : 'bg-gray-200 text-gray-800'
+                                  }`}>
+                                    {daySchedule.morning.status}
+                                  </span>
+                                </div>
+                              )}
+                              {daySchedule.morning.note && (
+                                <div className="text-xs text-blue-700 mt-1 italic truncate" title={daySchedule.morning.note}>
+                                  📝 {daySchedule.morning.note}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
+                              <div className="text-xs font-semibold text-gray-500 mb-1">
+                                Morning
+                              </div>
+                              <div className="text-xs text-gray-400">
                                 No sessions
                               </div>
-                            ) : !daySchedule ? (
-                              <div className="min-h-[80px]"></div>
-                            ) : (
-                              <div className="space-y-2 min-h-[80px]">
-                                {/* Hiển thị ca sáng */}
-                                {daySchedule.morning ? (
-                                  <div className="p-2.5 bg-blue-100 rounded-lg shadow-sm border-l-4 border-blue-500 hover:shadow-md transition-shadow">
-                                    <div className="text-xs font-semibold text-blue-900 mb-1">
-                                      {t("list.shifts.morning")}
-                                    </div>
-                                    <div className="text-xs text-blue-700 mb-1">
-                                      {formatTime(daySchedule.morning.startTime)} - {formatTime(daySchedule.morning.endTime)}
-                                    </div>
-                                    {daySchedule.morning.clinic && (
-                                      <div className="text-xs text-blue-900 font-medium truncate">
-                                        {daySchedule.morning.clinic.clinicName}
-                                      </div>
-                                    )}
-                                    {daySchedule.morning.note && (
-                                      <div className="text-xs text-blue-700 mt-1 italic truncate" title={daySchedule.morning.note}>
-                                         {daySchedule.morning.note}
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
-                                    <div className="text-xs font-semibold text-gray-500 mb-1">
-                                      {t("list.shifts.morning")}
-                                    </div>
-                                    <div className="text-xs text-gray-400">
-                                      {t("list.noSessions")}
-                                    </div>
-                                  </div>
-                                )}
+                            </div>
+                          )}
 
-                                {/* Hiển thị ca chiều */}
-                                {daySchedule.afternoon ? (
-                                  <div className="p-2.5 bg-orange-100 rounded-lg shadow-sm border-l-4 border-orange-500 hover:shadow-md transition-shadow">
-                                    <div className="text-xs font-semibold text-orange-900 mb-1">
-                                      {t("list.shifts.afternoon")}
-                                    </div>
-                                    <div className="text-xs text-orange-700 mb-1">
-                                      {formatTime(daySchedule.afternoon.startTime)} - {formatTime(daySchedule.afternoon.endTime)}
-                                    </div>
-                                    {daySchedule.afternoon.clinic && (
-                                      <div className="text-xs text-orange-900 font-medium truncate">
-                                        {daySchedule.afternoon.clinic.clinicName}
-                                      </div>
-                                    )}
-                                    {daySchedule.afternoon.note && (
-                                      <div className="text-xs text-orange-700 mt-1 italic truncate" title={daySchedule.afternoon.note}>
-                                        📝 {daySchedule.afternoon.note}
-                                      </div>
-                                    )}
-                                  </div>
-                                ) : (
-                                  <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
-                                    <div className="text-xs font-semibold text-gray-500 mb-1">
-                                      {t("list.shifts.afternoon")}
-                                    </div>
-                                    <div className="text-xs text-gray-400">
-                                      {t("list.noSessions")}
-                                    </div>
-                                  </div>
-                                )}
+                          {/* Ca chiều */}
+                          {daySchedule.afternoon ? (
+                            <div className="p-2.5 bg-orange-100 rounded-lg shadow-sm border-l-4 border-orange-500 hover:shadow-md transition-shadow">
+                              <div className="text-xs font-semibold text-orange-900 mb-1">
+                                Afternoon
                               </div>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
+                              <div className="text-xs text-orange-700 mb-1 font-medium">
+                                {formatTime(daySchedule.afternoon.startTime)} - {formatTime(daySchedule.afternoon.endTime)}
+                              </div>
+                              {daySchedule.afternoon.clinic && (
+                                <div className="text-xs text-orange-900 font-medium truncate mb-0.5">
+                                  🏥 {daySchedule.afternoon.clinic.clinicName}
+                                </div>
+                              )}
+                              {daySchedule.afternoon.room && (
+                                <div className="text-xs text-orange-800 truncate mb-0.5">
+                                  🚪 {daySchedule.afternoon.room.roomName}
+                                </div>
+                              )}
+                              {daySchedule.afternoon.status && (
+                                <div className="text-xs text-orange-600 mt-1">
+                                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                                    daySchedule.afternoon.status.toLowerCase() === 'active' 
+                                      ? 'bg-green-200 text-green-800' 
+                                      : daySchedule.afternoon.status.toLowerCase() === 'cancelled'
+                                      ? 'bg-red-200 text-red-800'
+                                      : 'bg-gray-200 text-gray-800'
+                                  }`}>
+                                    {daySchedule.afternoon.status}
+                                  </span>
+                                </div>
+                              )}
+                              {daySchedule.afternoon.note && (
+                                <div className="text-xs text-orange-700 mt-1 italic truncate" title={daySchedule.afternoon.note}>
+                                  📝 {daySchedule.afternoon.note}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
+                              <div className="text-xs font-semibold text-gray-500 mb-1">
+                                Afternoon
+                              </div>
+                              <div className="text-xs text-gray-400">
+                                No sessions
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </td>
                   );
                 })}
-              </React.Fragment>
+              </tr>
             );
           })}
         </tbody>

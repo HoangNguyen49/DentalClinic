@@ -326,7 +326,7 @@ export default function EmployeeAttendanceView() {
               </p>
             </div>
             <div>
-              <p className="text-sm text-gray-600">{t("attendance.status", "Status")}</p>
+              <p className="text-sm text-gray-600">{t("attendance.statusLabel", "Status")}</p>
               <span
                 className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(
                   todayAttendance.attendanceStatus

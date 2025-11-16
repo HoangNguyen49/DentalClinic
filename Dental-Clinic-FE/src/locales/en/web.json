@@ -22,6 +22,7 @@
     "checkIn": "Check-in Time",
     "checkOut": "Check-out Time",
     "status": "Status",
+    "statusLabel": "Status",
     "noAttendanceToday": "No attendance record for today",
     "loading": "Loading...",
     "explanationsNeeded": {

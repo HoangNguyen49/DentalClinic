@@ -34,13 +34,13 @@ export default function DailyAttendanceTable({
   const { t } = useTranslation("attendance");
   
   const formatTime = (timeStr: string | null): string => {
-    if (!timeStr) return "Null";
+    if (!timeStr) return "-";
     const date = new Date(timeStr);
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const period = hours >= 12 ? "pm" : "am";
     const displayHours = hours > 12 ? hours - 12 : hours === 0 ? 12 : hours;
-    return `${displayHours}.${minutes.toString().padStart(2, "0")}${period}`;
+    return `${displayHours}:${minutes.toString().padStart(2, "0")}${period}`;
   };
 
   const getStatusColor = (color: string): string => {

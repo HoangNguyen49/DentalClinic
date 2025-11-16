@@ -1,4 +1,3 @@
-import React from "react";
 import { Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
@@ -8,13 +7,22 @@ type HrDocDto = {
   fullName: string;
 };
 
+type RoomResponse = {
+  id: number;
+  roomName: string;
+  clinicId?: number;
+  clinicName?: string;
+};
+
 type ScheduleItem = {
   id: number;
   doctor: HrDocDto | null;
   clinic: any;
+  room: RoomResponse | null;
   workDate: string;
   startTime: string;
   endTime: string;
+  status?: string;
   note?: string;
 };
 
@@ -33,7 +41,6 @@ type DailyScheduleViewProps = {
     isToday: boolean;
   } | null;
   schedulesByDate: Record<string, DoctorDaySchedule[]>;
-  doctorDepartmentMap: Map<number, string>;
   formatTime: (time: string) => string;
 };
 
@@ -41,7 +48,6 @@ export default function DailyScheduleView({
   selectedDate,
   selectedDayInfo,
   schedulesByDate,
-  doctorDepartmentMap,
   formatTime,
 }: DailyScheduleViewProps) {
   const { t } = useTranslation("schedules");
@@ -105,37 +111,11 @@ export default function DailyScheduleView({
     );
   }
 
-  // Nhóm bác sĩ theo phòng ban (department)
-  type DoctorDayScheduleWithDept = DoctorDaySchedule & { departmentName: string };
-  const doctorsByDepartment: Record<string, DoctorDayScheduleWithDept[]> = {};
-
-  doctorSchedules.forEach((docSchedule) => {
-    const doctorId = docSchedule.doctor?.id;
-    const deptName =
-      doctorId
-        ? doctorDepartmentMap.get(doctorId) || t("create.table.uncategorized")
-        : t("create.table.uncategorized");
-
-    if (!doctorsByDepartment[deptName]) {
-      doctorsByDepartment[deptName] = [];
-    }
-
-    doctorsByDepartment[deptName].push({
-      ...docSchedule,
-      departmentName: deptName,
-    });
-  });
-
-  // Sắp xếp lại các phòng ban theo alphabet
-  const departmentNames = Object.keys(doctorsByDepartment).sort();
-
-  // Sắp xếp lại bác sĩ trong từng phòng ban theo tên
-  departmentNames.forEach((deptName) => {
-    doctorsByDepartment[deptName].sort((a, b) => {
-      const nameA = a.doctor?.fullName || "";
-      const nameB = b.doctor?.fullName || "";
-      return nameA.localeCompare(nameB);
-    });
+  // Sắp xếp bác sĩ theo tên (không nhóm theo specialty)
+  const sortedDoctorSchedules = [...doctorSchedules].sort((a, b) => {
+    const nameA = a.doctor?.fullName || "";
+    const nameB = b.doctor?.fullName || "";
+    return nameA.localeCompare(nameB);
   });
 
   // Hiển thị bảng lịch làm việc theo ngày
@@ -156,100 +136,118 @@ export default function DailyScheduleView({
           </tr>
         </thead>
         <tbody>
-          {departmentNames.map((deptName) => {
-            const deptDoctors = doctorsByDepartment[deptName];
-
+          {sortedDoctorSchedules.map((docSchedule, index) => {
             return (
-              <React.Fragment key={deptName}>
-                {/* Hiển thị header của phòng ban */}
-                <tr className="bg-gray-100">
-                  <td
-                    colSpan={3}
-                    className="border border-gray-300 px-4 py-2 font-semibold text-gray-800 bg-gray-100"
-                  >
-                    {deptName} ({deptDoctors.length} {t("create.table.doctors")})
-                  </td>
-                </tr>
-                {/* Hiển thị các dòng bác sĩ trong phòng ban đó */}
-                {deptDoctors.map((docSchedule, index) => {
-                  return (
-                    <tr
-                      key={docSchedule.doctor?.id || index}
-                      className="hover:bg-gray-50"
-                    >
-                      {/* Hiển thị tên bác sĩ */}
-                      <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-0 bg-white z-10">
-                        {docSchedule.doctor?.fullName ||
-                          `${t("common.doctor")} #${docSchedule.doctor?.id || index}`}
-                      </td>
-                      {/* Hiển thị ca sáng */}
-                      <td className="border border-gray-300 px-4 py-3">
-                        {docSchedule.morning ? (
-                          <div className="p-2.5 bg-blue-100 rounded-lg shadow-sm border-l-4 border-blue-500">
-                            <div className="text-xs font-semibold text-blue-900 mb-1">
-                              {formatTime(
-                                docSchedule.morning.startTime
-                              )}{" "}
-                              -{" "}
-                              {formatTime(
-                                docSchedule.morning.endTime
-                              )}
-                            </div>
-                            {docSchedule.morning.clinic && (
-                              <div className="text-xs text-blue-900 font-medium truncate">
-                                {docSchedule.morning.clinic.clinicName}
-                              </div>
-                            )}
-                            {docSchedule.morning.note && (
-                              <div className="text-xs text-blue-700 mt-1 italic truncate" title={docSchedule.morning.note}>
-                                 {docSchedule.morning.note}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
-                            <div className="text-xs text-gray-400">
-                              {t("list.noSessions")}
-                            </div>
-                          </div>
+              <tr
+                key={docSchedule.doctor?.id || index}
+                className="hover:bg-gray-50"
+              >
+                {/* Hiển thị tên bác sĩ */}
+                <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-0 bg-white z-10">
+                  {docSchedule.doctor?.fullName ||
+                    `${t("common.doctor")} #${docSchedule.doctor?.id || index}`}
+                </td>
+                {/* Hiển thị ca sáng */}
+                <td className="border border-gray-300 px-4 py-3">
+                  {docSchedule.morning ? (
+                    <div className="p-2.5 bg-blue-100 rounded-lg shadow-sm border-l-4 border-blue-500">
+                      <div className="text-xs font-semibold text-blue-900 mb-1">
+                        {formatTime(
+                          docSchedule.morning.startTime
+                        )}{" "}
+                        -{" "}
+                        {formatTime(
+                          docSchedule.morning.endTime
                         )}
-                      </td>
-                      {/* Hiển thị ca chiều */}
-                      <td className="border border-gray-300 px-4 py-3">
-                        {docSchedule.afternoon ? (
-                          <div className="p-2.5 bg-orange-100 rounded-lg shadow-sm border-l-4 border-orange-500">
-                            <div className="text-xs font-semibold text-orange-900 mb-1">
-                              {formatTime(
-                                docSchedule.afternoon.startTime
-                              )}{" "}
-                              -{" "}
-                              {formatTime(
-                                docSchedule.afternoon.endTime
-                              )}
-                            </div>
-                            {docSchedule.afternoon.clinic && (
-                              <div className="text-xs text-orange-900 font-medium truncate">
-                                {docSchedule.afternoon.clinic.clinicName}
-                              </div>
-                            )}
-                            {docSchedule.afternoon.note && (
-                              <div className="text-xs text-orange-700 mt-1 italic truncate" title={docSchedule.afternoon.note}>
-                                📝 {docSchedule.afternoon.note}
-                              </div>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
-                            <div className="text-xs text-gray-400">
-                              {t("list.noSessions")}
-                            </div>
-                          </div>
+                      </div>
+                      {docSchedule.morning.clinic && (
+                        <div className="text-xs text-blue-900 font-medium truncate mb-0.5">
+                          🏥 {docSchedule.morning.clinic.clinicName}
+                        </div>
+                      )}
+                      {docSchedule.morning.room && (
+                        <div className="text-xs text-blue-800 truncate mb-0.5">
+                          🚪 {docSchedule.morning.room.roomName}
+                        </div>
+                      )}
+                      {docSchedule.morning.status && (
+                        <div className="text-xs text-blue-600 mt-1">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                            docSchedule.morning.status.toLowerCase() === 'active' 
+                              ? 'bg-green-200 text-green-800' 
+                              : docSchedule.morning.status.toLowerCase() === 'cancelled'
+                              ? 'bg-red-200 text-red-800'
+                              : 'bg-gray-200 text-gray-800'
+                          }`}>
+                            {docSchedule.morning.status}
+                          </span>
+                        </div>
+                      )}
+                      {docSchedule.morning.note && (
+                        <div className="text-xs text-blue-700 mt-1 italic truncate" title={docSchedule.morning.note}>
+                          📝 {docSchedule.morning.note}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
+                      <div className="text-xs text-gray-400">
+                        {t("list.noSessions")}
+                      </div>
+                    </div>
+                  )}
+                </td>
+                {/* Hiển thị ca chiều */}
+                <td className="border border-gray-300 px-4 py-3">
+                  {docSchedule.afternoon ? (
+                    <div className="p-2.5 bg-orange-100 rounded-lg shadow-sm border-l-4 border-orange-500">
+                      <div className="text-xs font-semibold text-orange-900 mb-1">
+                        {formatTime(
+                          docSchedule.afternoon.startTime
+                        )}{" "}
+                        -{" "}
+                        {formatTime(
+                          docSchedule.afternoon.endTime
                         )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </React.Fragment>
+                      </div>
+                      {docSchedule.afternoon.clinic && (
+                        <div className="text-xs text-orange-900 font-medium truncate mb-0.5">
+                          🏥 {docSchedule.afternoon.clinic.clinicName}
+                        </div>
+                      )}
+                      {docSchedule.afternoon.room && (
+                        <div className="text-xs text-orange-800 truncate mb-0.5">
+                          🚪 {docSchedule.afternoon.room.roomName}
+                        </div>
+                      )}
+                      {docSchedule.afternoon.status && (
+                        <div className="text-xs text-orange-600 mt-1">
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
+                            docSchedule.afternoon.status.toLowerCase() === 'active' 
+                              ? 'bg-green-200 text-green-800' 
+                              : docSchedule.afternoon.status.toLowerCase() === 'cancelled'
+                              ? 'bg-red-200 text-red-800'
+                              : 'bg-gray-200 text-gray-800'
+                          }`}>
+                            {docSchedule.afternoon.status}
+                          </span>
+                        </div>
+                      )}
+                      {docSchedule.afternoon.note && (
+                        <div className="text-xs text-orange-700 mt-1 italic truncate" title={docSchedule.afternoon.note}>
+                          📝 {docSchedule.afternoon.note}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
+                      <div className="text-xs text-gray-400">
+                        {t("list.noSessions")}
+                      </div>
+                    </div>
+                  )}
+                </td>
+              </tr>
             );
           })}
         </tbody>

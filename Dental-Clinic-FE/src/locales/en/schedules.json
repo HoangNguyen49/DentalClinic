@@ -83,6 +83,7 @@
       "loadingDoctors": "Loading doctors...",
       "doctors": "doctors",
       "uncategorized": "Uncategorized",
+      "currentSpecialty": "Current specialty",
       "addShift": "Add Shift",
       "removeShift": "Remove Shift"
     },
@@ -128,6 +129,15 @@
     "shifts": {
       "morning": "Morning",
       "afternoon": "Afternoon"
+    },
+    "aiGeneration": {
+      "title": "AI Schedule Generation",
+      "description": "Enter your requirements in English or Vietnamese, AI will automatically analyze and create schedule for you.",
+      "placeholder": "Enter schedule requirements (English or Vietnamese)...\nVietnamese example: Phân công bác sĩ Oral Surgery ở cả 2 clinic vào thứ 2, 3, 4 cả sáng và chiều\nEnglish example: Assign Oral Surgery doctors to both clinics on Monday, Tuesday, Wednesday for both morning and afternoon shifts",
+      "button": "Generate Schedule",
+      "generating": "Generating...",
+      "success": "Schedule generated successfully!",
+      "error": "Error generating schedule"
     }
   },
   "common": {

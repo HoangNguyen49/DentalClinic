@@ -22,6 +22,7 @@
     "checkIn": "Giờ vào",
     "checkOut": "Giờ ra",
     "status": "Trạng thái",
+    "statusLabel": "Trạng thái",
     "noAttendanceToday": "Chưa có thông tin chấm công hôm nay",
     "loading": "Đang tải...",
     "explanationsNeeded": {

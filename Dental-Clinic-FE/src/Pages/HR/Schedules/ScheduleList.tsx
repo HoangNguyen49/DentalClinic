@@ -54,7 +54,6 @@ function ScheduleList() {
   const [currentWeekStart, setCurrentWeekStart] = useState<string>("");
   const [selectedDate, setSelectedDate] = useState<string>("");
   const [viewMode, setViewMode] = useState<"daily" | "weekly">("daily");
-  const [doctorDepartmentMap, setDoctorDepartmentMap] = useState<Map<number, string>>(new Map());
 
   useEffect(() => {
     // Lấy danh sách clinic cho các ứng dụng liên quan
@@ -73,76 +72,6 @@ function ScheduleList() {
       }
     };
 
-    // Lấy thông tin bác sĩ và map về phòng ban của từng bác sĩ
-    const fetchDoctors = async () => {
-      try {
-        // Backend limit per page = 100, nên xử lý fetch nhiều trang nếu vượt quá
-        const response = await axios.get<{
-          content: Array<{
-            id: number;
-            department?: { id: number; departmentName: string };
-          }>;
-          totalElements: number;
-        }>(`${apiBase}/api/hr/employees`, {
-          params: {
-            page: 0,
-            size: 100,
-            isActive: true
-          },
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-        const doctors = response.data?.content || [];
-        const deptMap = new Map<number, string>();
-        doctors.forEach((doctor: any) => {
-          const deptName =
-            doctor.department?.departmentName ||
-            doctor.department?.name ||
-            t("create.table.uncategorized");
-          deptMap.set(doctor.id, deptName);
-        });
-
-        const totalElements = response.data?.totalElements || 0;
-        if (totalElements > 100) {
-          const totalPages = Math.ceil(totalElements / 100);
-          for (let page = 1; page < totalPages; page++) {
-            try {
-              const nextResponse = await axios.get<{
-                content: Array<{
-                  id: number;
-                  department?: { id: number; departmentName: string };
-                }>;
-              }>(`${apiBase}/api/hr/employees`, {
-                params: {
-                  page,
-                  size: 100,
-                  isActive: true
-                },
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                },
-              });
-
-              nextResponse.data?.content?.forEach((doctor: any) => {
-                const deptName =
-                  doctor.department?.departmentName ||
-                  doctor.department?.name ||
-                  t("create.table.uncategorized");
-                deptMap.set(doctor.id, deptName);
-              });
-            } catch (err) {
-              console.error(`Error fetching doctors page ${page}:`, err);
-            }
-          }
-        }
-
-        setDoctorDepartmentMap(deptMap);
-      } catch (err) {
-        console.error("Error fetching doctors:", err);
-      }
-    };
 
     // Lấy ngày thứ hai của tuần từ một ngày bất kỳ (dùng để xác định tuần hiện tại)
     const getMondayOfWeek = (date: Date): string => {
@@ -159,7 +88,6 @@ function ScheduleList() {
     setCurrentWeekStart(monday);
     setSelectedDate(todayStr);
     fetchClinics();
-    fetchDoctors();
     // Ưu tiên hiển thị lịch theo ngày
     fetchSchedule(todayStr, "daily");
   }, []);
@@ -392,29 +320,9 @@ function ScheduleList() {
     {} as Record<string, Record<number, DoctorDaySchedule>>
   );
 
-  // Nhóm lịch theo department trong weekly view
+  // Tạo danh sách lịch theo ngày (không nhóm theo specialty)
   const schedulesByDate = Object.keys(schedulesByDateAndDoctor).reduce((acc, date) => {
-    const doctorSchedules = Object.values(schedulesByDateAndDoctor[date]);
-
-    // Gom nhóm theo phòng ban
-    const schedulesByDept = doctorSchedules.reduce((deptAcc, docSchedule) => {
-      const doctorId = docSchedule.doctor?.id;
-      const deptName =
-        doctorId
-          ? doctorDepartmentMap.get(doctorId) || t("create.table.uncategorized")
-          : t("create.table.uncategorized");
-
-      if (!deptAcc[deptName]) {
-        deptAcc[deptName] = [];
-      }
-      deptAcc[deptName].push(docSchedule);
-      return deptAcc;
-    }, {} as Record<string, DoctorDaySchedule[]>);
-
-    acc[date] = Object.keys(schedulesByDept)
-      .sort()
-      .flatMap((deptName) => schedulesByDept[deptName]);
-
+    acc[date] = Object.values(schedulesByDateAndDoctor[date]);
     return acc;
   }, {} as Record<string, DoctorDaySchedule[]>);
 
@@ -607,14 +515,12 @@ function ScheduleList() {
               selectedDate={selectedDate}
               selectedDayInfo={selectedDayInfo}
               schedulesByDate={schedulesByDate}
-              doctorDepartmentMap={doctorDepartmentMap}
               formatTime={formatTime}
             />
           ) : (
             <WeeklyScheduleView
               weekDays={weekDays}
               schedulesByDateAndDoctor={schedulesByDateAndDoctor}
-              doctorDepartmentMap={doctorDepartmentMap}
               formatTime={formatTime}
             />
           )}

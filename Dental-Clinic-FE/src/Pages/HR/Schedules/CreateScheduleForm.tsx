@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { Calendar, Check, X } from "lucide-react";
@@ -63,7 +63,7 @@ function CreateScheduleForm() {
     return monday.toISOString().split("T")[0];
   };
 
-  // Lấy thứ hai của tuần tiếp theo, dùng mặc định cho weekStart
+  // Lấy thứ hai của tuần tiếp theo
   const getNextMonday = (): string => {
     const today = new Date();
     const mondayOfCurrentWeek = getMondayOfWeek(today);
@@ -95,8 +95,11 @@ function CreateScheduleForm() {
   const [validating, setValidating] = useState(false);
   const [doctors, setDoctors] = useState<any[]>([]);
   const [clinics, setClinics] = useState<any[]>([]);
+  const [aiDescription, setAiDescription] = useState<string>("");
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [aiResult, setAiResult] = useState<{ success: boolean; message: string; count?: number } | null>(null);
 
-  // Tính toán ngày trong tuần từ weekStart
+  // Calculate days of week for schedule table
   const getDaysOfWeek = (weekStartDate: string) => {
     const monday = new Date(weekStartDate);
     const days = [];
@@ -104,24 +107,11 @@ function CreateScheduleForm() {
       const date = new Date(monday);
       date.setDate(monday.getDate() + i);
       const dayNames = [
-        t("create.days.sunday"),
-        t("create.days.monday"),
-        t("create.days.tuesday"),
-        t("create.days.wednesday"),
-        t("create.days.thursday"),
-        t("create.days.friday"),
-        t("create.days.saturday"),
+        "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
       ];
       const dayKey = [
-        "sunday",
-        "monday",
-        "tuesday",
-        "wednesday",
-        "thursday",
-        "friday",
-        "saturday",
+        "sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
       ][date.getDay()];
-
       days.push({
         key: dayKey,
         label: dayNames[date.getDay()],
@@ -139,29 +129,18 @@ function CreateScheduleForm() {
 
   const daysOfWeek = getDaysOfWeek(weekStart);
 
-  // Gom nhóm bác sĩ theo phòng ban
-  const doctorsByDepartment = doctors.reduce(
-    (acc: { [key: string]: any[] }, doctor: any) => {
-      const deptName =
-        doctor.department?.departmentName ||
-        doctor.department?.name ||
-        t("create.table.uncategorized");
-      if (!acc[deptName]) {
-        acc[deptName] = [];
-      }
-      acc[deptName].push(doctor);
-      return acc;
-    },
-    {}
-  );
-
-  const departmentNames = Object.keys(doctorsByDepartment).sort();
+  // Sort doctors by name
+  const sortedDoctors = [...doctors].sort((a, b) => {
+    const nameA = a.fullName || a.name || `Dr. ${a.id}`;
+    const nameB = b.fullName || b.name || `Dr. ${b.id}`;
+    return nameA.localeCompare(nameB);
+  });
 
   useEffect(() => {
     fetchDataFromAPI();
   }, []);
 
-  // Lấy danh sách bác sĩ và cơ sở từ API
+  // Lấy danh sách bác sĩ và cơ sở
   const fetchDataFromAPI = async () => {
     if (!accessToken || !apiBase) {
       toast.error("Please login.");
@@ -215,7 +194,7 @@ function CreateScheduleForm() {
     }
   };
 
-  // Cập nhật cơ sở cho từng ca sáng/chiều - dùng cho thao tác chọn select của user
+  // Cập nhật cơ sở cho từng ca sáng/chiều
   const updateShiftClinic = (
     doctorId: number,
     dayKey: string,
@@ -232,7 +211,7 @@ function CreateScheduleForm() {
       }
 
       if (clinicId === null || clinicId === 0) {
-        // Xóa ca nếu không chọn clinic
+        // Xóa ca khỏi schedule khi không chọn clinic
         if (shiftType === "morning") {
           const { morning, ...rest } = newSchedule[doctorId][dayKey];
           newSchedule[doctorId][dayKey] = rest;
@@ -240,7 +219,7 @@ function CreateScheduleForm() {
           const { afternoon, ...rest } = newSchedule[doctorId][dayKey];
           newSchedule[doctorId][dayKey] = rest;
         }
-        // Nếu cả sáng và chiều đều trống thì xóa luôn ngày đó khỏi lịch
+        // Nếu ngày đó không còn ca nào thì xóa ngày đó khỏi schedule của bác sĩ
         if (Object.keys(newSchedule[doctorId][dayKey]).length === 0) {
           const { [dayKey]: removed, ...rest } = newSchedule[doctorId];
           newSchedule[doctorId] = rest;
@@ -256,12 +235,12 @@ function CreateScheduleForm() {
     });
   };
 
-  // Lấy lịch của bác sĩ theo ngày
+  // Lấy thông tin ca làm việc trong ngày cho một bác sĩ
   const getDaySchedule = (doctorId: number, dayKey: string): DaySchedule => {
     return tableSchedules[doctorId]?.[dayKey] || {};
   };
 
-  // Chuyển dữ liệu bảng hiện tại sang request API
+  // Chuyển đổi dữ liệu tableSchedules sang API format để gửi lên server
   const convertTableToAPIFormat = (): CreateScheduleRequest => {
     const dailyAssignments: {
       [key: string]: Array<{
@@ -287,7 +266,6 @@ function CreateScheduleForm() {
           const roomId =
             doctor?.room?.id || doctor?.roomId || doctor?.defaultRoomId || 0;
 
-          // Tạo assignment cho ca sáng
           if (dayScheduleData.morning?.clinicId) {
             const morningShift = SHIFTS.find((s) => s.id === "morning") || SHIFTS[0];
             dailyAssignments[day.key].push({
@@ -301,7 +279,6 @@ function CreateScheduleForm() {
             });
           }
 
-          // Tạo assignment cho ca chiều
           if (dayScheduleData.afternoon?.clinicId) {
             const afternoonShift = SHIFTS.find((s) => s.id === "afternoon") || SHIFTS[1];
             dailyAssignments[day.key].push({
@@ -325,7 +302,7 @@ function CreateScheduleForm() {
     };
   };
 
-  // Gửi request kiểm tra hợp lệ lịch với backend
+  // Gửi request validate schedule cho backend, thông báo lỗi nếu có
   const validateSchedule = async () => {
     setValidating(true);
     try {
@@ -398,7 +375,7 @@ function CreateScheduleForm() {
     }
   };
 
-  // Kiểm tra hợp lệ lịch ở frontend: Mỗi phòng ban phải phân bác sĩ ở tất cả cơ sở mỗi ngày
+  // Kiểm tra hợp lệ schedule ở phía frontend phục vụ cảnh báo user
   const validateScheduleFrontend = (): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
     const clinicIds = clinics.map((c) => c.id).sort();
@@ -407,75 +384,119 @@ function CreateScheduleForm() {
       return { isValid: false, errors };
     }
     const [clinic1Id, clinic2Id] = clinicIds;
+    
     daysOfWeek.forEach((day) => {
-      const dayAssignments: { [doctorId: number]: { clinicId: number } } = {};
+      // Thu thập thông tin phân công cho mỗi ngày
+      const clinicShifts: { [clinicId: number]: { morning: boolean; afternoon: boolean } } = {};
+      const specialtyClinicDoctors: { [specialtyName: string]: { [clinicId: number]: Set<number> } } = {};
 
       Object.entries(tableSchedules).forEach(([doctorIdStr, daySchedule]) => {
         const doctorId = Number(doctorIdStr);
         const dayScheduleData = daySchedule[day.key];
-        if (dayScheduleData) {
-          // Dùng clinic đầu tiên (morning/afternoon) đang có để check
-          const firstClinicId = dayScheduleData.morning?.clinicId || dayScheduleData.afternoon?.clinicId;
-          if (firstClinicId) {
-            dayAssignments[doctorId] = { clinicId: firstClinicId };
+        if (!dayScheduleData) return;
+
+        const doctor = doctors.find((d: any) => d.id === doctorId);
+        if (!doctor) return;
+
+        const doctorSpecialties: string[] = 
+          (doctor.specialties && Array.isArray(doctor.specialties) && doctor.specialties.length > 0)
+            ? doctor.specialties
+            : (doctor.specialty || doctor.specialtyName)
+              ? [doctor.specialty || doctor.specialtyName]
+              : ["Uncategorized"];
+
+        if (dayScheduleData.morning?.clinicId) {
+          const clinicId = dayScheduleData.morning.clinicId;
+          if (!clinicShifts[clinicId]) {
+            clinicShifts[clinicId] = { morning: false, afternoon: false };
+          }
+          clinicShifts[clinicId].morning = true;
+          doctorSpecialties.forEach((specialtyName) => {
+            if (!specialtyClinicDoctors[specialtyName]) {
+              specialtyClinicDoctors[specialtyName] = {};
+            }
+            if (!specialtyClinicDoctors[specialtyName][clinicId]) {
+              specialtyClinicDoctors[specialtyName][clinicId] = new Set();
+            }
+            specialtyClinicDoctors[specialtyName][clinicId].add(doctorId);
+          });
+        }
+
+        if (dayScheduleData.afternoon?.clinicId) {
+          const clinicId = dayScheduleData.afternoon.clinicId;
+          if (!clinicShifts[clinicId]) {
+            clinicShifts[clinicId] = { morning: false, afternoon: false };
+          }
+          clinicShifts[clinicId].afternoon = true;
+          doctorSpecialties.forEach((specialtyName) => {
+            if (!specialtyClinicDoctors[specialtyName]) {
+              specialtyClinicDoctors[specialtyName] = {};
+            }
+            if (!specialtyClinicDoctors[specialtyName][clinicId]) {
+              specialtyClinicDoctors[specialtyName][clinicId] = new Set();
+            }
+            specialtyClinicDoctors[specialtyName][clinicId].add(doctorId);
+          });
+        }
+      });
+
+      // validate: phải có đúng 2 clinic hoạt động mỗi ngày
+      const workingClinicIds = Object.keys(clinicShifts).map(Number);
+      if (workingClinicIds.length === 0) {
+        return;
+      }
+      if (workingClinicIds.length !== 2) {
+        if (workingClinicIds.length === 1) {
+          const clinicName = clinics.find((c) => c.id === workingClinicIds[0])?.name || `Clinic ${workingClinicIds[0]}`;
+          errors.push(
+            `Only 1 clinic (${clinicName}) is active on ${day.label} (${day.dateString}). Both clinics must be active.`
+          );
+        } else {
+          errors.push(
+            `Too many clinics (${workingClinicIds.length}) are active on ${day.label} (${day.dateString}). Exactly 2 clinics must be active.`
+          );
+        }
+        return;
+      }
+
+      // validate: mỗi clinic phải có bác sĩ cả sáng và chiều
+      [clinic1Id, clinic2Id].forEach((clinicId) => {
+        const shifts = clinicShifts[clinicId];
+        const clinicName = clinics.find((c) => c.id === clinicId)?.name || `Clinic ${clinicId}`;
+        if (!shifts) {
+          errors.push(
+            `${clinicName} must have doctors assigned on ${day.label} (${day.dateString}).`
+          );
+        } else {
+          if (!shifts.morning) {
+            errors.push(
+              `${clinicName} must have doctors assigned in the morning shift (08:00-11:00) on ${day.label} (${day.dateString}).`
+            );
+          }
+          if (!shifts.afternoon) {
+            errors.push(
+              `${clinicName} must have doctors assigned in the afternoon shift (13:00-18:00) on ${day.label} (${day.dateString}).`
+            );
           }
         }
       });
 
-      const workingClinicIds = new Set<number>();
-      Object.values(dayAssignments).forEach((assignment) => {
-        if (assignment && assignment.clinicId) {
-          workingClinicIds.add(assignment.clinicId);
-        }
-      });
-      const numWorkingClinics = workingClinicIds.size;
-      if (numWorkingClinics === 0) return; // ngày nghỉ
-
-      departmentNames.forEach((deptName) => {
-        const deptDoctors = doctorsByDepartment[deptName];
-        if (!deptDoctors || deptDoctors.length === 0) return;
-        const deptDoctorIds = deptDoctors.map((d: any) => d.id);
-        const assignedDoctorsInDept = deptDoctorIds.filter((id: number) =>
-          dayAssignments.hasOwnProperty(id)
-        );
-
-        if (numWorkingClinics === 1) {
-          const workingClinicId = Array.from(workingClinicIds)[0];
-          const hasDoctorInWorkingClinic = assignedDoctorsInDept.some(
-            (doctorId: number) => dayAssignments[doctorId]?.clinicId === workingClinicId
+      // validate: mỗi specialty phải có bác sĩ ở mỗi clinic mỗi ngày
+      Object.entries(specialtyClinicDoctors).forEach(([specialtyName, clinicDoctorsMap]) => {
+        const clinicIdsForSpecialty = Object.keys(clinicDoctorsMap).map(Number);
+        if (clinicIdsForSpecialty.length !== 2) {
+          errors.push(
+            `Specialty "${specialtyName}" must have doctors assigned to both clinics on ${day.label} (${day.dateString}). Found in ${clinicIdsForSpecialty.length} clinic(s).`
           );
-          if (!hasDoctorInWorkingClinic) {
-            const clinicName =
-              clinics.find((c) => c.id === workingClinicId)?.name ||
-              `Clinic ${workingClinicId}`;
-            errors.push(
-              `Department "${deptName}" on ${day.label} (${day.dateString}) has no doctor at ${clinicName}.`
-            );
-          }
-        } else if (numWorkingClinics === 2) {
-          const hasClinic1 = assignedDoctorsInDept.some(
-            (doctorId: number) => dayAssignments[doctorId]?.clinicId === clinic1Id
-          );
-          const hasClinic2 = assignedDoctorsInDept.some(
-            (doctorId: number) => dayAssignments[doctorId]?.clinicId === clinic2Id
-          );
-
-          if (!hasClinic1) {
-            const clinic1Name =
-              clinics.find((c) => c.id === clinic1Id)?.name ||
-              `Clinic ${clinic1Id}`;
-            errors.push(
-              `Department "${deptName}" on ${day.label} (${day.dateString}) has no doctor at ${clinic1Name}.`
-            );
-          }
-          if (!hasClinic2) {
-            const clinic2Name =
-              clinics.find((c) => c.id === clinic2Id)?.name ||
-              `Clinic ${clinic2Id}`;
-            errors.push(
-              `Department "${deptName}" on ${day.label} (${day.dateString}) has no doctor at ${clinic2Name}.`
-            );
-          }
+        } else {
+          [clinic1Id, clinic2Id].forEach((clinicId) => {
+            if (!clinicDoctorsMap[clinicId] || clinicDoctorsMap[clinicId].size === 0) {
+              const clinicName = clinics.find((c) => c.id === clinicId)?.name || `Clinic ${clinicId}`;
+              errors.push(
+                `Specialty "${specialtyName}" must have at least one doctor assigned to ${clinicName} on ${day.label} (${day.dateString}).`
+              );
+            }
+          });
         }
       });
     });
@@ -486,9 +507,9 @@ function CreateScheduleForm() {
     };
   };
 
-  // Submit tạo lịch mới, bao gồm kiểm tra hợp lệ và gửi dữ liệu lên server
+  // Gửi request tạo schedule mới (và validate)
   const handleSubmit = async () => {
-    // Lấy tất cả những assignment đã phân công
+    // Ghép tất cả assignment lại (dùng để validate phía trước)
     const assignmentDetails: Array<{
       day: string;
       date: string;
@@ -531,7 +552,6 @@ function CreateScheduleForm() {
       return;
     }
 
-    // Chỉ báo lỗi nếu tất cả các ngày đều không phân bác sĩ
     const daysWithAssignments = new Set(assignmentDetails.map((a) => a.day));
     const daysWithoutDoctors = daysOfWeek.filter((day) => !daysWithAssignments.has(day.label));
     if (daysWithoutDoctors.length === daysOfWeek.length) {
@@ -539,7 +559,7 @@ function CreateScheduleForm() {
       return;
     }
 
-    // Kiểm tra nếu 2 clinic mà chỉ có bác sĩ tại 1 clinic
+    // Check if there are only assignments in one clinic
     const errors: string[] = [];
     daysOfWeek.forEach((day) => {
       const dayAssignments = assignmentDetails.filter((a) => a.day === day.label);
@@ -589,7 +609,6 @@ function CreateScheduleForm() {
 
       toast.success(`Successfully created ${response.data.length} schedule(s).`);
       setTimeout(() => {
-        // Chuyển về trang danh sách lịch, đồng thời chuyển state tuần để tự động filter tuần mới
         navigate("/hr/schedules", {
           state: {
             refresh: true,
@@ -598,7 +617,7 @@ function CreateScheduleForm() {
         });
       }, 1500);
     } catch (err: any) {
-      // Lỗi từ server, show chi tiết từng lỗi nếu có
+      // Thông báo lỗi cụ thể trả về từ backend
       if (err?.response?.data) {
         const errorData = err.response.data;
         if (errorData.errors && Array.isArray(errorData.errors)) {
@@ -646,9 +665,83 @@ function CreateScheduleForm() {
           position: "top-right",
         });
       }
-      // DỮ LIỆU FORM GIỮ NGUYÊN ĐỂ NGƯỜI DÙNG SỬA
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  // Sinh lịch tự động dùng AI từ mô tả tiếng Anh
+  const handleAiGenerate = async () => {
+    if (!aiDescription.trim()) {
+      toast.error("Please input a description for schedule AI generation.");
+      return;
+    }
+
+    setAiGenerating(true);
+    try {
+      const response = await axios.post<CreateScheduleRequest>(
+        `${apiBase}/api/hr/schedules/ai/generate`,
+        {
+          weekStart: weekStart,
+          description: aiDescription,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      const generatedRequest = response.data;
+      
+      // Convert AI result về format tableSchedules
+      const newTableSchedules: TableSchedule = {};
+      Object.entries(generatedRequest.dailyAssignments).forEach(([dayKey, assignments]) => {
+        assignments.forEach((assignment) => {
+          const doctorId = assignment.doctorId;
+          const clinicId = assignment.clinicId;
+          const startTime = assignment.startTime;
+          const isMorning = startTime >= "08:00" && startTime < "12:00";
+          const shiftKey = isMorning ? "morning" : "afternoon";
+          if (!newTableSchedules[doctorId]) {
+            newTableSchedules[doctorId] = {};
+          }
+          if (!newTableSchedules[doctorId][dayKey]) {
+            newTableSchedules[doctorId][dayKey] = {};
+          }
+          newTableSchedules[doctorId][dayKey][shiftKey] = {
+            clinicId: clinicId,
+          };
+        });
+      });
+      setTableSchedules(newTableSchedules);
+
+      // Số lượng phân công đã tạo từ AI
+      const totalAssignments = Object.values(generatedRequest.dailyAssignments)
+        .reduce((sum, assignments) => sum + assignments.length, 0);
+
+      setAiResult({
+        success: true,
+        message: `Created ${totalAssignments} assignments for ${Object.keys(generatedRequest.dailyAssignments).length} day(s).`,
+        count: totalAssignments,
+      });
+
+      toast.success(`AI successfully created ${totalAssignments} assignments. Please review and edit if needed.`);
+      setTimeout(() => {
+        setAiDescription("");
+        setAiResult(null);
+      }, 5000);
+    } catch (err: any) {
+      console.error("AI generation error:", err);
+      const errorMessage = err?.response?.data?.message || "Could not generate schedule via AI. Please try again.";
+      setAiResult({
+        success: false,
+        message: errorMessage,
+      });
+      toast.error(errorMessage);
+    } finally {
+      setAiGenerating(false);
     }
   };
 
@@ -660,17 +753,17 @@ function CreateScheduleForm() {
           <div className="mb-6 flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold text-[#0D1B3E] mb-2">
-                {t("create.title")}
+                Create New Schedule
               </h1>
               <p className="text-gray-600">
-                {t("create.subtitle")}
+                Assign clinics to doctors for each day and shift of the upcoming week.
               </p>
             </div>
             <button
               onClick={() => navigate("/hr/schedules")}
               className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
             >
-              {t("create.back")}
+              Back
             </button>
           </div>
 
@@ -679,7 +772,7 @@ function CreateScheduleForm() {
               <Calendar className="w-6 h-6 text-blue-600" />
               <div className="flex-1">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {t("create.startWeek.label")}
+                  Start week (Monday)
                 </label>
                 <div className="flex items-center gap-3">
                   <input
@@ -689,20 +782,20 @@ function CreateScheduleForm() {
                       const selectedDate = e.target.value;
                       const date = new Date(selectedDate);
                       if (date.getDay() !== 1) {
-                        toast.warning(t("create.startWeek.selectMonday"));
+                        toast.warning("Please select a Monday.");
                         const day = date.getDay();
                         const diff = day === 0 ? -6 : 1 - day;
                         date.setDate(date.getDate() + diff);
                         const correctedMonday = date.toISOString().split("T")[0];
                         if (correctedMonday < getNextMonday()) {
-                          toast.error(t("create.startWeek.onlyNextWeek"));
+                          toast.error("You can only select next week or later.");
                           setWeekStart(getNextMonday());
                         } else {
                           setWeekStart(correctedMonday);
                         }
                       } else {
                         if (selectedDate < getNextMonday()) {
-                          toast.error(t("create.startWeek.onlyNextWeek"));
+                          toast.error("You can only select next week or later.");
                           setWeekStart(getNextMonday());
                         } else {
                           setWeekStart(selectedDate);
@@ -711,11 +804,11 @@ function CreateScheduleForm() {
                     }}
                     min={getNextMonday()}
                     className="border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    aria-label={t("create.startWeek.label")}
+                    aria-label="Week start"
                   />
                   <button
                     onClick={() => {
-                      // Lấy thứ 2 của tuần tiếp theo từ weekStart hiện tại
+                      // Nhảy đến Monday tiếp theo
                       const currentMonday = new Date(weekStart);
                       const nextMonday = new Date(currentMonday);
                       nextMonday.setDate(currentMonday.getDate() + 7);
@@ -724,23 +817,85 @@ function CreateScheduleForm() {
                     }}
                     className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
                   >
-                    {t("create.startWeek.button")}
+                    Next week
                   </button>
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  {t("create.startWeek.hint")}
+                  Please select the Monday to start the schedule week (must be next week or later).
                 </p>
               </div>
             </div>
           </div>
 
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 shadow-md border border-blue-200 mb-6">
+            <div className="mb-4">
+              <h2 className="text-xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                <span className="text-2xl">🤖</span>
+                AI Schedule Generation
+              </h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Describe your preferred weekly shift/assignment and let AI generate the table for you. You can edit the result for accuracy and compliance before saving.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <textarea
+                value={aiDescription}
+                onChange={(e) => {
+                  setAiDescription(e.target.value);
+                  setAiResult(null);
+                }}
+                placeholder="Describe or list desired assignments e.g. 'Dr. John works Monday to Friday mornings at Clinic 1, Dr. Jane alternates clinics every day...'"
+                className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                rows={3}
+                disabled={aiGenerating}
+              />
+              <button
+                onClick={handleAiGenerate}
+                disabled={aiGenerating || !aiDescription.trim()}
+                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:from-blue-700 hover:to-purple-700 transition font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {aiGenerating ? (
+                  <>
+                    <span className="animate-spin">⏳</span>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <span>✨</span>
+                    Generate by AI
+                  </>
+                )}
+              </button>
+            </div>
+            {aiResult && (
+              <div className={`mt-4 p-3 rounded-lg ${
+                aiResult.success 
+                  ? "bg-green-50 border border-green-200" 
+                  : "bg-red-50 border border-red-200"
+              }`}>
+                <div className="flex items-center gap-2">
+                  {aiResult.success ? (
+                    <span className="text-green-600">✓</span>
+                  ) : (
+                    <span className="text-red-600">✗</span>
+                  )}
+                  <p className={`text-sm ${
+                    aiResult.success ? "text-green-800" : "text-red-800"
+                  }`}>
+                    {aiResult.message}
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
           <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200 mb-6">
             <div className="mb-4">
               <h2 className="text-xl font-bold text-gray-800 mb-2">
-                {t("create.assignClinics.title")}
+                Assign Clinics to Doctors
               </h2>
               <p className="text-sm text-gray-600">
-                {t("create.assignClinics.description")}
+                For each doctor, assign morning and afternoon shifts for each day and select the corresponding clinic.
               </p>
             </div>
 
@@ -749,10 +904,10 @@ function CreateScheduleForm() {
                 <thead>
                   <tr className="bg-blue-50">
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700 sticky left-0 bg-blue-50 z-10">
-                      {t("create.table.no")}
+                      No.
                     </th>
                     <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700 sticky left-12 bg-blue-50 z-10 min-w-[200px]">
-                      {t("create.table.doctor")}
+                      Doctor
                     </th>
                     {daysOfWeek.map((day) => (
                       <th
@@ -776,115 +931,121 @@ function CreateScheduleForm() {
                         colSpan={daysOfWeek.length + 2}
                         className="border border-gray-300 px-4 py-8 text-center text-gray-500"
                       >
-                        {t("create.table.loadingDoctors")}
+                        Loading list of doctors...
                       </td>
                     </tr>
                   ) : (
-                    departmentNames.map((deptName, deptIndex) => {
-                      const deptDoctors = doctorsByDepartment[deptName];
-                      let globalIndex = 0;
-                      for (let i = 0; i < deptIndex; i++) {
-                        globalIndex += doctorsByDepartment[departmentNames[i]].length;
-                      }
+                    sortedDoctors.map((doctor, index) => {
                       return (
-                        <React.Fragment key={deptName}>
-                          <tr className="bg-gray-100">
-                            <td
-                              colSpan={daysOfWeek.length + 2}
-                              className="border border-gray-300 px-4 py-2 font-semibold text-gray-800 bg-gray-100"
-                            >
-                              {deptName} ({deptDoctors.length} {t("create.table.doctors")})
-                            </td>
-                          </tr>
-                          {deptDoctors.map((doctor, localIndex) => {
-                            const currentIndex = globalIndex + localIndex;
-                            return (
-                              <tr key={doctor.id} className="hover:bg-gray-50">
-                                <td className="border border-gray-300 px-4 py-3 text-center font-medium text-gray-700 sticky left-0 bg-white z-10">
-                                  {String(currentIndex + 1).padStart(2, "0")}
-                                </td>
-                                <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-12 bg-white z-10">
-                                  {doctor.fullName ||
-                                    doctor.name ||
-                                    `Dr. ${doctor.id}`}
-                                </td>
-                                {daysOfWeek.map((day) => {
-                                  const daySchedule = getDaySchedule(doctor.id, day.key);
+                        <tr key={doctor.id} className="hover:bg-gray-50">
+                          <td className="border border-gray-300 px-4 py-3 text-center font-medium text-gray-700 sticky left-0 bg-white z-10">
+                            {String(index + 1).padStart(2, "0")}
+                          </td>
+                          <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-12 bg-white z-10">
+                            <div>
+                              <div className="font-medium">
+                                {doctor.fullName ||
+                                  doctor.name ||
+                                  `Dr. ${doctor.id}`}
+                              </div>
+                              {/* Danh sách chuyên khoa của bác sĩ */}
+                              {(() => {
+                                const doctorSpecialties: string[] = 
+                                  (doctor.specialties && Array.isArray(doctor.specialties) && doctor.specialties.length > 0)
+                                    ? doctor.specialties
+                                    : (doctor.specialty || doctor.specialtyName)
+                                      ? [doctor.specialty || doctor.specialtyName]
+                                      : [];
+                                if (doctorSpecialties.length > 0) {
                                   return (
-                                    <td
-                                      key={day.key}
-                                      className="border border-gray-300 px-4 py-3"
-                                    >
-                                      <div className="space-y-2">
-                                        {/* Ca sáng */}
-                                        <div className="p-2 bg-blue-50 rounded border border-blue-200">
-                                          <div className="text-xs font-semibold text-blue-700 mb-1">
-                                            {t("create.shifts.morning")} (08:00 - 11:00)
-                                          </div>
-                                          <select
-                                            value={daySchedule.morning?.clinicId || ""}
-                                            onChange={(e) =>
-                                              updateShiftClinic(
-                                                doctor.id,
-                                                day.key,
-                                                "morning",
-                                                e.target.value ? Number(e.target.value) : null
-                                              )
-                                            }
-                                            className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            aria-label={`${
-                                              doctor.fullName || doctor.name
-                                            } - ${day.label} - Morning Shift - Clinic`}
-                                          >
-                                            <option value="">
-                                              {t("create.table.selectClinic")}
-                                            </option>
-                                            {clinics.map((clinic) => (
-                                              <option key={clinic.id} value={clinic.id}>
-                                                {clinic.name || `${t("common.clinic")} ${clinic.id}`}
-                                              </option>
-                                            ))}
-                                          </select>
-                                        </div>
-                                        
-                                        {/* Ca chiều */}
-                                        <div className="p-2 bg-orange-50 rounded border border-orange-200">
-                                          <div className="text-xs font-semibold text-orange-700 mb-1">
-                                            {t("create.shifts.afternoon")} (13:00 - 18:00)
-                                          </div>
-                                          <select
-                                            value={daySchedule.afternoon?.clinicId || ""}
-                                            onChange={(e) =>
-                                              updateShiftClinic(
-                                                doctor.id,
-                                                day.key,
-                                                "afternoon",
-                                                e.target.value ? Number(e.target.value) : null
-                                              )
-                                            }
-                                            className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            aria-label={`${
-                                              doctor.fullName || doctor.name
-                                            } - ${day.label} - Afternoon Shift - Clinic`}
-                                          >
-                                            <option value="">
-                                              {t("create.table.selectClinic")}
-                                            </option>
-                                            {clinics.map((clinic) => (
-                                              <option key={clinic.id} value={clinic.id}>
-                                                {clinic.name || `${t("common.clinic")} ${clinic.id}`}
-                                              </option>
-                                            ))}
-                                          </select>
-                                        </div>
-                                      </div>
-                                    </td>
+                                    <div className="mt-1 flex flex-wrap gap-1">
+                                      {doctorSpecialties.map((spec, idx) => (
+                                        <span
+                                          key={idx}
+                                          className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600"
+                                          title={spec}
+                                        >
+                                          {spec}
+                                        </span>
+                                      ))}
+                                    </div>
                                   );
-                                })}
-                              </tr>
+                                }
+                                return null;
+                              })()}
+                            </div>
+                          </td>
+                          {daysOfWeek.map((day) => {
+                            const daySchedule = getDaySchedule(doctor.id, day.key);
+                            return (
+                              <td
+                                key={day.key}
+                                className="border border-gray-300 px-4 py-3"
+                              >
+                                <div className="space-y-2">
+                                  <div className="p-2 bg-blue-50 rounded border border-blue-200">
+                                    <div className="text-xs font-semibold text-blue-700 mb-1">
+                                      Morning (08:00 - 11:00)
+                                    </div>
+                                    <select
+                                      value={daySchedule.morning?.clinicId || ""}
+                                      onChange={(e) =>
+                                        updateShiftClinic(
+                                          doctor.id,
+                                          day.key,
+                                          "morning",
+                                          e.target.value ? Number(e.target.value) : null
+                                        )
+                                      }
+                                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      aria-label={`${
+                                        doctor.fullName || doctor.name
+                                      } - ${day.label} - Morning Shift - Clinic`}
+                                    >
+                                      <option value="">
+                                        Select clinic...
+                                      </option>
+                                      {clinics.map((clinic) => (
+                                        <option key={clinic.id} value={clinic.id}>
+                                          {clinic.name || `Clinic ${clinic.id}`}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                  <div className="p-2 bg-orange-50 rounded border border-orange-200">
+                                    <div className="text-xs font-semibold text-orange-700 mb-1">
+                                      Afternoon (13:00 - 18:00)
+                                    </div>
+                                    <select
+                                      value={daySchedule.afternoon?.clinicId || ""}
+                                      onChange={(e) =>
+                                        updateShiftClinic(
+                                          doctor.id,
+                                          day.key,
+                                          "afternoon",
+                                          e.target.value ? Number(e.target.value) : null
+                                        )
+                                      }
+                                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                      aria-label={`${
+                                        doctor.fullName || doctor.name
+                                      } - ${day.label} - Afternoon Shift - Clinic`}
+                                    >
+                                      <option value="">
+                                        Select clinic...
+                                      </option>
+                                      {clinics.map((clinic) => (
+                                        <option key={clinic.id} value={clinic.id}>
+                                          {clinic.name || `Clinic ${clinic.id}`}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  </div>
+                                </div>
+                              </td>
                             );
                           })}
-                        </React.Fragment>
+                        </tr>
                       );
                     })
                   )}
@@ -895,14 +1056,14 @@ function CreateScheduleForm() {
 
           <div className="mb-6 bg-white rounded-xl p-6 shadow-md border border-gray-200">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              {t("create.note.label")}
+              Additional notes (optional)
             </label>
             <textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
               rows={3}
               className="w-full border rounded px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder={t("create.note.placeholder")}
+              placeholder="Type any note for this schedule..."
             />
           </div>
 
@@ -913,7 +1074,7 @@ function CreateScheduleForm() {
               className="px-6 py-3 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition disabled:opacity-50 flex items-center gap-2"
             >
               <Check className="w-4 h-4" />
-              {validating ? t("create.buttons.validating") : t("create.buttons.validate")}
+              {validating ? "Validating..." : "Validate"}
             </button>
             <button
               onClick={handleSubmit}
@@ -921,14 +1082,14 @@ function CreateScheduleForm() {
               className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition disabled:opacity-50 flex items-center gap-2"
             >
               <Calendar className="w-4 h-4" />
-              {submitting ? t("create.buttons.creating") : t("create.buttons.create")}
+              {submitting ? "Creating..." : "Create Schedule"}
             </button>
             <button
               onClick={() => navigate("/hr/schedules")}
               className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition flex items-center gap-2"
             >
               <X className="w-4 h-4" />
-              {t("create.cancel")}
+              Cancel
             </button>
           </div>
         </div>

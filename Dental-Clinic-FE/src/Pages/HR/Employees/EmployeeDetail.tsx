@@ -22,6 +22,10 @@ type Employee = {
   role?: { id: number; roleName: string };
   clinic?: { id: number; clinicName: string };
   roleAtClinic?: string;
+  specialty?: string; 
+  specialties?: string[]; 
+  doctorSpecialties?: Array<{ id: number; specialtyName: string; isActive: boolean }>; // From DoctorSpecialties table
+  room?: { id: number; roomName: string; clinicId?: number; clinicName?: string };
   createdAt?: string;
   updatedAt?: string;
   lastLoginAt?: string;
@@ -206,6 +210,89 @@ function EmployeeDetail() {
                       </div>
                     </div>
                   )}
+                  {(() => {
+                    const roleName = (employee.role as any)?.roleName || "";
+                    const isDoctor = roleName && (
+                      roleName.toUpperCase().includes("DOCTOR") ||
+                      roleName.toUpperCase().includes("BÁC SĨ")
+                    );
+                    
+                    // Bác sĩ: hiển thị TOÀN BỘ specialties và room
+                    if (isDoctor) {
+                      // Thu thập TẤT CẢ chuyên khoa từ nhiều nguồn
+                      const allSpecialties = new Set<string>();
+                      
+                      // 1. Từ array specialties
+                      if (employee.specialties && Array.isArray(employee.specialties)) {
+                        employee.specialties.forEach((spec: string) => {
+                          if (spec && spec.trim()) {
+                            allSpecialties.add(spec.trim());
+                          }
+                        });
+                      }
+                      
+                      // 2. Từ field specialty (single value - legacy)
+                      if (employee.specialty && employee.specialty.trim()) {
+                        allSpecialties.add(employee.specialty.trim());
+                      }
+                      
+                      // 3. Từ doctorSpecialties array (từ bảng DoctorSpecialties)
+                      if (employee.doctorSpecialties && Array.isArray(employee.doctorSpecialties)) {
+                        employee.doctorSpecialties.forEach((ds: any) => {
+                          const specName = ds.specialtyName || ds.specialty || ds.name;
+                          if (specName && specName.trim() && ds.isActive !== false) {
+                            allSpecialties.add(specName.trim());
+                          }
+                        });
+                      }
+                      
+                      const specialtiesList = Array.from(allSpecialties);
+                      
+                      return (
+                        <>
+                          {specialtiesList.length > 0 && (
+                            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                              <div className="text-xs text-gray-500 mb-2">{t("detail.sections.specialty")}</div>
+                              <div className="flex flex-wrap gap-2">
+                                {specialtiesList.map((spec, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                                    title={spec}
+                                  >
+                                    {spec}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {employee.room && (
+                            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                              <div className="text-xs text-gray-500 mb-1">{t("detail.sections.room")}</div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {employee.room.roomName || "-"}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    }
+                    
+                    // Nhân viên khác: hiển thị clinic
+                    if (employee.clinic) {
+                      const clinic = employee.clinic as any;
+                      return (
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="text-xs text-gray-500 mb-1">{t("detail.sections.clinic")}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {clinic.clinicName || clinic.name || "-"}
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return null;
+                  })()}
                 </div>
               </div>
             </div>

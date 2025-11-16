@@ -55,10 +55,12 @@ const STATUS_OPTIONS: StatusOption[] = [
   { value: "ON_TIME", label: "On Time" },
 ];
 
+// Format date for input[type="date"]
 function formatDateInput(date: Date) {
   return date.toISOString().split("T")[0];
 }
 
+// Format time for table display
 function formatDateTime(value?: string | null) {
   if (!value) return "-";
   try {
@@ -71,6 +73,7 @@ function formatDateTime(value?: string | null) {
   }
 }
 
+// Chuẩn hoá trạng thái
 function normalizeStatus(status?: string | null) {
   if (!status) return "-";
   switch (status) {
@@ -109,6 +112,7 @@ export default function AdminAttendanceManagement() {
   });
   const [explanationClinicFilter, setExplanationClinicFilter] = useState<string>("all");
 
+  // Filter status options with i18n support
   const filteredStatusOptions = useMemo(() => {
     return STATUS_OPTIONS.map((opt) => ({
       ...opt,
@@ -116,6 +120,7 @@ export default function AdminAttendanceManagement() {
     }));
   }, [t]);
 
+  // Lấy danh sách phòng khám
   const fetchClinics = async () => {
     if (!accessToken) return;
     try {
@@ -132,6 +137,7 @@ export default function AdminAttendanceManagement() {
     }
   };
 
+  // Lấy danh sách chấm công theo filter
   const fetchAttendance = async () => {
     if (!accessToken) return;
     setLoading(true);
@@ -157,21 +163,22 @@ export default function AdminAttendanceManagement() {
     }
   };
 
+  // effect lấy clinics
   useEffect(() => {
     if (!accessToken) {
       toast.error(t("attendance.messages.noAccessToken", "Missing access token"));
       return;
     }
     fetchClinics();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [accessToken]);
 
+  // effect lấy attendance khi filter thay đổi
   useEffect(() => {
     if (!accessToken) return;
     fetchAttendance();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filters]);
 
+  // Lấy danh sách giải trình đang chờ xét duyệt
   const fetchPendingExplanations = async () => {
     if (!accessToken) return;
     setLoadingExplanations(true);
@@ -200,14 +207,15 @@ export default function AdminAttendanceManagement() {
     }
   };
 
+  // effect lấy giải trình khi chọn sang tab giải trình 
   useEffect(() => {
     if (!accessToken) return;
     if (activeTab === "explanations") {
       fetchPendingExplanations();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, explanationClinicFilter, accessToken]);
 
+  // Xử lý thay đổi filter
   const handleFilterChange = (field: "date" | "clinicId" | "status", value: string) => {
     setFilters((prev) => ({
       ...prev,
@@ -215,6 +223,7 @@ export default function AdminAttendanceManagement() {
     }));
   };
 
+  // Xử lý duyệt cho attendance lẻ
   const handleApprove = async (attendance: AttendanceResponse, targetStatus: string) => {
     if (!accessToken) return;
     const adminNote = prompt(
@@ -247,6 +256,7 @@ export default function AdminAttendanceManagement() {
     }
   };
 
+  // Hiển thị nút tác vụ của từng attendance dòng
   const renderActionButton = (attendance: AttendanceResponse) => {
     const status = attendance.attendanceStatus?.toUpperCase();
     if (status === "LATE") {
@@ -272,6 +282,7 @@ export default function AdminAttendanceManagement() {
     return <span className="text-sm text-gray-400">{t("attendance.actions.noAction", "—")}</span>;
   };
 
+  // Xử lý duyệt hoặc từ chối giải trình
   const handleProcessExplanation = async (explanation: AttendanceExplanationResponse, action: "APPROVE" | "REJECT") => {
     if (!accessToken || !adminUserId) return;
     
@@ -282,7 +293,7 @@ export default function AdminAttendanceManagement() {
       ""
     );
 
-    if (adminNote === null) return; // User cancelled
+    if (adminNote === null) return;
 
     try {
       const response = await axios.post<AttendanceResponse>(
@@ -300,16 +311,16 @@ export default function AdminAttendanceManagement() {
         }
       );
 
-      // Hiển thị thông báo chi tiết về kết quả
+      // Thông báo chi tiết trạng thái mới
       const newStatus = response.data.attendanceStatus;
       if (action === "APPROVE") {
         let statusMessage = "";
         if (explanation.explanationType === "LATE") {
-          statusMessage = `Status đã được cập nhật: LATE → ${newStatus || "APPROVED_LATE"}`;
+          statusMessage = `Status updated: LATE → ${newStatus || "APPROVED_LATE"}`;
         } else if (explanation.explanationType === "ABSENT" || explanation.explanationType === "MISSING_CHECK_IN") {
-          statusMessage = `Status đã được cập nhật: ${explanation.attendanceStatus} → ${newStatus || "APPROVED_ABSENCE"}`;
+          statusMessage = `Status updated: ${explanation.attendanceStatus} → ${newStatus || "APPROVED_ABSENCE"}`;
         } else if (explanation.explanationType === "MISSING_CHECK_OUT") {
-          statusMessage = `Giải trình đã được chấp nhận. Status giữ nguyên: ${newStatus || explanation.attendanceStatus}`;
+          statusMessage = `Explanation approved. Status unchanged: ${newStatus || explanation.attendanceStatus}`;
         }
         
         toast.success(
@@ -318,12 +329,11 @@ export default function AdminAttendanceManagement() {
         );
       } else {
         toast.success(
-          `${t("attendance.messages.explanationRejected", "Explanation rejected")}\nStatus giữ nguyên: ${explanation.attendanceStatus}`,
+          `${t("attendance.messages.explanationRejected", "Explanation rejected")}\nStatus unchanged: ${explanation.attendanceStatus}`,
           { autoClose: 5000 }
         );
       }
 
-      // Refresh cả hai danh sách
       await fetchPendingExplanations();
       await fetchAttendance();
     } catch (error: any) {
@@ -335,6 +345,7 @@ export default function AdminAttendanceManagement() {
     }
   };
 
+  // Lấy nhãn loại giải trình
   const getExplanationTypeLabel = (type?: string | null): string => {
     if (!type) return "-";
     switch (type.toUpperCase()) {
@@ -357,17 +368,12 @@ export default function AdminAttendanceManagement() {
 
       <div className="flex flex-col gap-2">
         <h1 className="text-2xl font-bold text-gray-900">
-          {t("pageTitles.attendanceManagement", "Attendance Management")}
+          Attendance Management
         </h1>
         <p className="text-sm text-gray-600">
-          {t(
-            "attendance.pageDescription",
-            "Review late check-ins or leave requests submitted by employees, update their status, and append admin notes."
-          )}
+          Review late check-ins or leave requests submitted by employees, update their status, and append admin notes.
         </p>
       </div>
-
-      {/* Tabs */}
       <div className="border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
           <button
@@ -378,7 +384,7 @@ export default function AdminAttendanceManagement() {
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
-            {t("attendance.tabs.attendance", "Attendance Records")}
+            Attendance Records
           </button>
           <button
             onClick={() => setActiveTab("explanations")}
@@ -388,7 +394,7 @@ export default function AdminAttendanceManagement() {
                 : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
             }`}
           >
-            {t("attendance.tabs.explanations", "Pending Explanations")}
+            Pending Explanations
             {pendingExplanations.length > 0 && (
               <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
                 {pendingExplanations.length}
@@ -403,7 +409,7 @@ export default function AdminAttendanceManagement() {
           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-                {t("attendance.filters.date", "Date")}
+                Date
                 <input
                   type="date"
                   value={filters.date}
@@ -413,13 +419,13 @@ export default function AdminAttendanceManagement() {
               </label>
 
               <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-                {t("attendance.filters.clinic", "Clinic")}
+                Clinic
                 <select
                   value={filters.clinicId}
                   onChange={(e) => handleFilterChange("clinicId", e.target.value)}
                   className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="all">{t("attendance.filters.allClinics", "All clinics")}</option>
+                  <option value="all">All clinics</option>
                   {clinics.map((clinic) => (
                     <option key={clinic.id} value={clinic.id}>
                       {clinic.clinicName}
@@ -429,13 +435,13 @@ export default function AdminAttendanceManagement() {
               </label>
 
               <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-                {t("attendance.filters.status", "Status")}
+                Status
                 <select
                   value={filters.status}
                   onChange={(e) => handleFilterChange("status", e.target.value)}
                   className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="all">{t("attendance.filters.allStatus", "All statuses")}</option>
+                  <option value="all">All statuses</option>
                   {filteredStatusOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
@@ -451,28 +457,28 @@ export default function AdminAttendanceManagement() {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    {t("attendance.table.employee", "Employee")}
+                    Employee
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    {t("attendance.table.clinic", "Clinic")}
+                    Clinic
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    {t("attendance.table.workDate", "Work Date")}
+                    Work Date
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    {t("attendance.table.checkIn", "Check-in")}
+                    Check-in
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    {t("attendance.table.checkOut", "Check-out")}
+                    Check-out
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    {t("attendance.table.status", "Status")}
+                    Status
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    {t("attendance.table.note", "Note")}
+                    Note
                   </th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    {t("attendance.table.actions", "Actions")}
+                    Actions
                   </th>
                 </tr>
               </thead>
@@ -480,13 +486,13 @@ export default function AdminAttendanceManagement() {
                 {loading ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
-                      {t("attendance.messages.loading", "Loading attendance records...")}
+                      Loading attendance records...
                     </td>
                   </tr>
                 ) : attendances.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
-                      {t("attendance.messages.noData", "No attendance records found")}
+                      No attendance records found
                     </td>
                   </tr>
                 ) : (
@@ -497,7 +503,7 @@ export default function AdminAttendanceManagement() {
                         <div className="text-xs text-gray-500">ID: {attendance.userId}</div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        {attendance.clinicName || t("attendance.table.unknownClinic", "Unknown clinic")}
+                        {attendance.clinicName || "Unknown clinic"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">{attendance.workDate}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">
@@ -507,12 +513,12 @@ export default function AdminAttendanceManagement() {
                         {formatDateTime(attendance.checkOutTime)}
                       </td>
                       <td className="px-4 py-3 text-sm font-medium text-gray-800">
-                        {t(`attendance.status.${attendance.attendanceStatus || "UNKNOWN"}`, normalizeStatus(attendance.attendanceStatus))}
+                        {normalizeStatus(attendance.attendanceStatus)}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700 whitespace-pre-line">
                         {attendance.note && attendance.note.trim().length > 0
                           ? attendance.note
-                          : t("attendance.table.noNote", "No note provided")}
+                          : "No note provided"}
                       </td>
                       <td className="px-4 py-3 text-sm text-right">{renderActionButton(attendance)}</td>
                     </tr>
@@ -527,13 +533,13 @@ export default function AdminAttendanceManagement() {
           <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-                {t("attendance.filters.clinic", "Clinic")}
+                Clinic
                 <select
                   value={explanationClinicFilter}
                   onChange={(e) => setExplanationClinicFilter(e.target.value)}
                   className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="all">{t("attendance.filters.allClinics", "All clinics")}</option>
+                  <option value="all">All clinics</option>
                   {clinics.map((clinic) => (
                     <option key={clinic.id} value={clinic.id}>
                       {clinic.clinicName}
@@ -546,7 +552,7 @@ export default function AdminAttendanceManagement() {
                   onClick={fetchPendingExplanations}
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
                 >
-                  {t("attendance.actions.refresh", "Refresh")}
+                  Refresh
                 </button>
               </div>
             </div>
@@ -555,36 +561,36 @@ export default function AdminAttendanceManagement() {
           <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-x-auto">
             {loadingExplanations ? (
               <div className="px-4 py-6 text-center text-gray-500">
-                {t("attendance.messages.loading", "Loading...")}
+                Loading...
               </div>
             ) : pendingExplanations.length === 0 ? (
               <div className="px-4 py-6 text-center text-gray-500">
-                {t("attendance.messages.noPendingExplanations", "No pending explanations")}
+                No pending explanations
               </div>
             ) : (
               <table className="min-w-full border-collapse">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      {t("attendance.table.employee", "Employee")}
+                      Employee
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      {t("attendance.table.clinic", "Clinic")}
+                      Clinic
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      {t("attendance.table.workDate", "Work Date")}
+                      Work Date
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      {t("attendance.explanation.type", "Type")}
+                      Type
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      {t("attendance.explanation.reason", "Reason")}
+                      Reason
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      {t("attendance.table.status", "Status")}
+                      Status
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      {t("attendance.table.actions", "Actions")}
+                      Actions
                     </th>
                   </tr>
                 </thead>
@@ -596,7 +602,7 @@ export default function AdminAttendanceManagement() {
                         <div className="text-xs text-gray-500">ID: {explanation.userId}</div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        {explanation.clinicName || t("attendance.table.unknownClinic", "Unknown clinic")}
+                        {explanation.clinicName || "Unknown clinic"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">{explanation.workDate}</td>
                       <td className="px-4 py-3 text-sm font-medium text-gray-800">
@@ -609,7 +615,7 @@ export default function AdminAttendanceManagement() {
                       </td>
                       <td className="px-4 py-3 text-sm font-medium">
                         <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs">
-                          {t("attendance.explanation.status.pending", "Pending")}
+                          Pending
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-right space-x-2">
@@ -617,13 +623,13 @@ export default function AdminAttendanceManagement() {
                           onClick={() => handleProcessExplanation(explanation, "APPROVE")}
                           className="px-3 py-1.5 text-sm font-medium rounded bg-green-600 text-white hover:bg-green-700 transition"
                         >
-                          {t("attendance.actions.approve", "Approve")}
+                          Approve
                         </button>
                         <button
                           onClick={() => handleProcessExplanation(explanation, "REJECT")}
                           className="px-3 py-1.5 text-sm font-medium rounded bg-red-600 text-white hover:bg-red-700 transition"
                         >
-                          {t("attendance.actions.reject", "Reject")}
+                          Reject
                         </button>
                       </td>
                     </tr>
@@ -637,4 +643,3 @@ export default function AdminAttendanceManagement() {
     </div>
   );
 }
-

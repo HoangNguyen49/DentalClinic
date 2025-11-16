@@ -29,6 +29,8 @@
       "name": "Name",
       "department": "Department",
       "position": "Position",
+      "specialty": "Specialty",
+      "room": "Room",
       "status": "Status",
       "joinDate": "Join Date",
       "actions": "Actions",
@@ -87,9 +89,24 @@
         "label": "Department",
         "placeholder": "Select department"
       },
+      "clinic": {
+        "label": "Clinic",
+        "placeholder": "Select clinic",
+        "optional": "Optional"
+      },
       "room": {
         "label": "Room",
         "placeholder": "Select room"
+      },
+      "specialty": {
+        "label": "Specialty",
+        "placeholder": "Select specialty",
+        "optional": "Optional",
+        "hint": "Select the medical specialty for this doctor",
+        "selectToAdd": "Select to add",
+        "removeSpecialty": "Remove {{name}}",
+        "quickSelect": "Or quick select:",
+        "multipleSpecialtiesHint": "You can select multiple specialties for the doctor"
       },
       "cancel": "Cancel",
       "create": "Create Employee",
@@ -114,6 +131,7 @@
       "password": "Password",
       "roleId": "Role",
       "departmentId": "Department",
+      "clinicId": "Clinic",
       "roomId": "Room"
     }
   },
@@ -132,6 +150,9 @@
       "admissionDate": "Admission date",
       "position": "Position",
       "department": "Department",
+      "clinic": "Clinic",
+      "specialty": "Specialty",
+      "room": "Room",
       "personalData": "Personal data",
       "contact": "Contact",
       "editPersonalData": "Edit personal data",

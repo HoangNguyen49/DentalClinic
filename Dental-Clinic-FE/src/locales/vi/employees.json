@@ -29,6 +29,8 @@
       "name": "Tên",
       "department": "Phòng Ban",
       "position": "Vị Trí",
+      "specialty": "Chuyên Khoa",
+      "room": "Phòng",
       "status": "Trạng Thái",
       "joinDate": "Ngày Tham Gia",
       "actions": "Thao Tác",
@@ -87,9 +89,24 @@
         "label": "Phòng Ban",
         "placeholder": "Chọn phòng ban"
       },
+      "clinic": {
+        "label": "Cơ Sở",
+        "placeholder": "Chọn cơ sở",
+        "optional": "Tùy chọn"
+      },
       "room": {
         "label": "Phòng",
         "placeholder": "Chọn phòng"
+      },
+      "specialty": {
+        "label": "Chuyên Khoa",
+        "placeholder": "Chọn chuyên khoa",
+        "optional": "Tùy chọn",
+        "hint": "Chọn chuyên khoa y tế cho bác sĩ này",
+        "selectToAdd": "Chọn để thêm",
+        "removeSpecialty": "Xóa {{name}}",
+        "quickSelect": "Hoặc chọn nhanh:",
+        "multipleSpecialtiesHint": "Bạn có thể chọn nhiều chuyên khoa cho bác sĩ"
       },
       "cancel": "Hủy",
       "create": "Tạo Nhân Viên",
@@ -114,6 +131,7 @@
       "password": "Mật khẩu",
       "roleId": "Vai trò",
       "departmentId": "Phòng ban",
+      "clinicId": "Cơ Sở",
       "roomId": "Phòng"
     }
   },
@@ -132,6 +150,9 @@
       "admissionDate": "Ngày nhận việc",
       "position": "Vị trí",
       "department": "Phòng ban",
+      "clinic": "Cơ Sở",
+      "specialty": "Chuyên Khoa",
+      "room": "Phòng",
       "personalData": "Dữ liệu cá nhân",
       "contact": "Liên hệ",
       "editPersonalData": "Chỉnh sửa dữ liệu cá nhân",
