@@ -26,12 +26,14 @@ import ClinicManagement from "../Pages/Admin/Clinics/ClinicManagement";
 import AdminAttendanceManagement from "../Pages/Admin/Attendance/AdminAttendanceManagement";
 import AdminStaffManagement from "../Pages/Admin/Staff/AdminStaffManagement";
 
+
 function App() {
   return (
     <Router>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/service" element={<Service />} />
+        <Route path="/products/*" element={<Product />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<LoginPage />} />
