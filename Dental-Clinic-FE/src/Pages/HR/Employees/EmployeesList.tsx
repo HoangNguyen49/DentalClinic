@@ -231,7 +231,7 @@ function EmployeesList() {
     }
 
     try {
-      const response = await axios.delete(
+      await axios.delete(
         `${apiBase}/api/hr/employees/${employeeId}`,
         {
           params: { reason: reason.trim() },
@@ -612,4 +612,3 @@ function EmployeesList() {
 }
 
 export default EmployeesList;
-
