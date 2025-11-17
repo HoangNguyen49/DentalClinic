@@ -1,0 +1,68 @@
+{
+  "header": {
+    "title": "HR Dashboard",
+    "subtitle": "Manage human resources, work schedules and reports"
+  },
+  "stats": {
+    "totalEmployees": "Total employees",
+    "active": "Active",
+    "inactive": "Inactive",
+    "schedulesThisWeek": "Schedules this week"
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "employeeList": {
+      "title": "Employee list",
+      "description": "View and manage all employees"
+    },
+    "addNewEmployee": {
+      "title": "Add new employee",
+      "description": "Create a new employee account"
+    },
+    "workScheduleManagement": {
+      "title": "Work schedule management",
+      "description": "View and create doctors' work schedules"
+    },
+    "createNewSchedule": {
+      "title": "Create new schedule",
+      "description": "Set up work schedule for a new week"
+    },
+    "statisticsReports": {
+      "title": "Statistics & Reports",
+      "description": "View detailed HR reports"
+    }
+  },
+  "recentEmployees": {
+    "title": "Recent employees",
+    "viewAll": "View all →",
+    "noEmployees": "No employees yet"
+  },
+  "schedules": {
+    "title": "This week's schedules",
+    "viewDetails": "View details →",
+    "noSchedule": "No schedule for this week",
+    "createSchedule": "Create schedule"
+  },
+  "allocation": {
+    "title": "Human resource allocation",
+    "byDepartment": "By Department",
+    "byRole": "By Role",
+    "byClinic": "By Clinic"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "messages": {
+    "loading": "Loading data...",
+    "missingApiUrl": "API URL is not configured. Please check your .env file",
+    "notLoggedIn": "You are not logged in. Please login again.",
+    "unableToLoad": "Unable to load dashboard data",
+    "missingApiUrlOrToken": "Missing API URL or token",
+    "reloadPage": "Reload page"
+  },
+  "common": {
+    "na": "N/A"
+  }
+}
+

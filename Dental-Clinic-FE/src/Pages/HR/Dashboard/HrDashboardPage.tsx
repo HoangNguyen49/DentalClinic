@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useTranslation } from "react-i18next";
 
 // Các kiểu dữ liệu cho các entity
 type EmployeeStatistics = {
@@ -76,6 +77,7 @@ type SchedulePreview = {
 };
 
 function HrDashboardPage() {
+  const { t, i18n } = useTranslation("hr-dashboard");
   const navigate = useNavigate();
   const [statistics, setStatistics] = useState<EmployeeStatistics>({});
   const [recentEmployees, setRecentEmployees] = useState<EmployeePreview[]>([]);
@@ -91,12 +93,12 @@ function HrDashboardPage() {
     if (apiBase && accessToken) {
       fetchDashboardData();
     } else {
-      setError("Missing API URL or token");
+      setError(t("messages.missingApiUrlOrToken"));
       if (!apiBase) {
-        toast.error("API URL is not configured. Please check your .env file");
+        toast.error(t("messages.missingApiUrl"));
       }
       if (!accessToken) {
-        toast.error("You are not logged in. Please login again.");
+        toast.error(t("messages.notLoggedIn"));
       }
       setLoading(false);
     }
@@ -158,7 +160,7 @@ function HrDashboardPage() {
       }
     } catch (err: any) {
       // Xử lý lỗi API và set dữ liệu rỗng để không crash
-      const errorMessage = err?.response?.data?.message || err?.message || "Unable to load dashboard data";
+      const errorMessage = err?.response?.data?.message || err?.message || t("messages.unableToLoad");
       toast.error(errorMessage);
       setStatistics({});
       setRecentEmployees([]);
@@ -171,36 +173,36 @@ function HrDashboardPage() {
   // Hiển thị các hành động nhanh
   const quickActions = [
     {
-      title: "Employee list",
-      description: "View and manage all employees",
+      title: t("quickActions.employeeList.title"),
+      description: t("quickActions.employeeList.description"),
       icon: <Users className="w-10 h-10 text-blue-600" />,
       link: "/hr/employees",
       color: "bg-blue-50 hover:bg-blue-100",
     },
     {
-      title: "Add new employee",
-      description: "Create a new employee account",
+      title: t("quickActions.addNewEmployee.title"),
+      description: t("quickActions.addNewEmployee.description"),
       icon: <UserPlus className="w-10 h-10 text-green-600" />,
       link: "/hr/employees/create",
       color: "bg-green-50 hover:bg-green-100",
     },
     {
-      title: "Work schedule management",
-      description: "View and create doctors' work schedules",
+      title: t("quickActions.workScheduleManagement.title"),
+      description: t("quickActions.workScheduleManagement.description"),
       icon: <Calendar className="w-10 h-10 text-purple-600" />,
       link: "/hr/schedules",
       color: "bg-purple-50 hover:bg-purple-100",
     },
     {
-      title: "Create new schedule",
-      description: "Set up work schedule for a new week",
+      title: t("quickActions.createNewSchedule.title"),
+      description: t("quickActions.createNewSchedule.description"),
       icon: <Calendar className="w-10 h-10 text-green-600" />,
       link: "/hr/schedules/create",
       color: "bg-green-50 hover:bg-green-100",
     },
     {
-      title: "Statistics & Reports",
-      description: "View detailed HR reports",
+      title: t("quickActions.statisticsReports.title"),
+      description: t("quickActions.statisticsReports.description"),
       icon: <BarChart3 className="w-10 h-10 text-orange-600" />,
       link: "/hr/reports",
       color: "bg-orange-50 hover:bg-orange-100",
@@ -210,25 +212,25 @@ function HrDashboardPage() {
   // Thống kê nhanh ở đầu dashboard
   const statsCards = [
     {
-      title: "Total employees",
+      title: t("stats.totalEmployees"),
       value: statistics.totalEmployees || 0,
       icon: <Users className="w-8 h-8 text-blue-600" />,
       color: "bg-blue-50 border-blue-200",
     },
     {
-      title: "Active",
+      title: t("stats.active"),
       value: statistics.activeEmployees || 0,
       icon: <UserCheck className="w-8 h-8 text-green-600" />,
       color: "bg-green-50 border-green-200",
     },
     {
-      title: "Inactive",
+      title: t("stats.inactive"),
       value: statistics.inactiveEmployees || 0,
       icon: <UserX className="w-8 h-8 text-red-600" />,
       color: "bg-red-50 border-red-200",
     },
     {
-      title: "Schedules this week",
+      title: t("stats.schedulesThisWeek"),
       value: currentSchedule.length || 0,
       icon: <Calendar className="w-8 h-8 text-purple-600" />,
       color: "bg-purple-50 border-purple-200",
@@ -240,7 +242,7 @@ function HrDashboardPage() {
       <div className="p-6 min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading data...</p>
+          <p className="mt-4 text-gray-600">{t("messages.loading")}</p>
         </div>
       </div>
     );
@@ -255,7 +257,7 @@ function HrDashboardPage() {
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
-            Reload page
+            {t("messages.reloadPage")}
           </button>
         </div>
       </div>
@@ -271,16 +273,16 @@ function HrDashboardPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-[#0D1B3E] mb-2">
-                  HR Dashboard
+                  {t("header.title")}
                 </h1>
                 <p className="text-gray-600">
-                  Manage human resources, work schedules and reports
+                  {t("header.subtitle")}
                 </p>
               </div>
               <div className="hidden md:flex items-center gap-2 text-sm text-gray-500">
                 <Clock className="w-4 h-4" />
                 <span>
-                  {new Date().toLocaleDateString('en-US', {
+                  {new Date().toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
                     weekday: 'long',
                     year: 'numeric',
                     month: 'long',
@@ -317,7 +319,7 @@ function HrDashboardPage() {
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <BarChart3 className="w-6 h-6 text-blue-600" />
-              Quick Actions
+              {t("quickActions.title")}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
               {quickActions.map((action, index) => (
@@ -345,13 +347,13 @@ function HrDashboardPage() {
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
                   <Users className="w-5 h-5 text-blue-600" />
-                  Recent employees
+                  {t("recentEmployees.title")}
                 </h2>
                 <button
                   onClick={() => navigate("/hr/employees")}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:underline transition"
                 >
-                  View all →
+                  {t("recentEmployees.viewAll")}
                 </button>
               </div>
               <div className="space-y-2">
@@ -359,7 +361,7 @@ function HrDashboardPage() {
                   <div className="text-center py-8">
                     <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500 text-sm">
-                      No employees yet
+                      {t("recentEmployees.noEmployees")}
                     </p>
                   </div>
                 ) : (
@@ -407,11 +409,11 @@ function HrDashboardPage() {
                       <div className="flex-shrink-0">
                         {employee.isActive ? (
                           <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
-                            Active
+                            {t("status.active")}
                           </span>
                         ) : (
                           <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
-                            Inactive
+                            {t("status.inactive")}
                           </span>
                         )}
                       </div>
@@ -425,13 +427,13 @@ function HrDashboardPage() {
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-purple-600" />
-                  This week's schedules
+                  {t("schedules.title")}
                 </h2>
                 <button
                   onClick={() => navigate("/hr/schedules")}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium hover:underline transition"
                 >
-                  View details →
+                  {t("schedules.viewDetails")}
                 </button>
               </div>
               <div className="space-y-2">
@@ -439,13 +441,13 @@ function HrDashboardPage() {
                   <div className="text-center py-8">
                     <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-gray-500 text-sm mb-4">
-                      No schedule for this week
+                      {t("schedules.noSchedule")}
                     </p>
                     <button
                       onClick={() => navigate("/hr/schedules/create")}
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
                     >
-                      Create schedule
+                      {t("schedules.createSchedule")}
                     </button>
                   </div>
                 ) : (
@@ -464,18 +466,18 @@ function HrDashboardPage() {
                         </p>
                         <p className="text-xs text-gray-600 truncate mt-0.5 flex items-center gap-1">
                           <Building2 className="w-3 h-3" />
-                          {schedule.clinic?.clinicName || "N/A"}
+                          {schedule.clinic?.clinicName || t("common.na")}
                         </p>
                         <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                           <span>
-                            {schedule.workDate ? new Date(schedule.workDate).toLocaleDateString('en-US', {
+                            {schedule.workDate ? new Date(schedule.workDate).toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
                               weekday: 'short',
                               day: '2-digit',
                               month: '2-digit'
-                            }) : 'N/A'}
+                            }) : t("common.na")}
                           </span>
                           <span>•</span>
-                          <span>{schedule.startTime || 'N/A'} - {schedule.endTime || 'N/A'}</span>
+                          <span>{schedule.startTime || t("common.na")} - {schedule.endTime || t("common.na")}</span>
                         </p>
                       </div>
                       <div className="flex-shrink-0">
@@ -503,14 +505,14 @@ function HrDashboardPage() {
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
               <h2 className="text-xl font-semibold text-gray-800 mb-5 flex items-center gap-2">
                 <BarChart3 className="w-6 h-6 text-orange-600" />
-                Human resource allocation
+                {t("allocation.title")}
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {statistics.byDepartment && Object.keys(statistics.byDepartment).length > 0 && (
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                       <Building2 className="w-5 h-5 text-blue-600" />
-                      By Department
+                      {t("allocation.byDepartment")}
                     </h3>
                     <div className="space-y-2">
                       {Object.entries(statistics.byDepartment).map(([dept, count]) => (
@@ -518,7 +520,7 @@ function HrDashboardPage() {
                           key={dept}
                           className="flex justify-between items-center py-1.5 px-2 rounded hover:bg-white transition"
                         >
-                          <span className="text-gray-700 text-sm">{dept || "N/A"}</span>
+                          <span className="text-gray-700 text-sm">{dept || t("common.na")}</span>
                           <span className="font-bold bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-sm">
                             {count as number}
                           </span>
@@ -531,7 +533,7 @@ function HrDashboardPage() {
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                       <Shield className="w-5 h-5 text-purple-600" />
-                      By Role
+                      {t("allocation.byRole")}
                     </h3>
                     <div className="space-y-2">
                       {Object.entries(statistics.byRole).map(([role, count]) => (
@@ -539,7 +541,7 @@ function HrDashboardPage() {
                           key={role}
                           className="flex justify-between items-center py-1.5 px-2 rounded hover:bg-white transition"
                         >
-                          <span className="text-gray-700 text-sm">{role || "N/A"}</span>
+                          <span className="text-gray-700 text-sm">{role || t("common.na")}</span>
                           <span className="font-bold bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-sm">
                             {count as number}
                           </span>
@@ -552,7 +554,7 @@ function HrDashboardPage() {
                   <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
                     <h3 className="font-semibold text-gray-700 mb-3 flex items-center gap-2">
                       <Building2 className="w-5 h-5 text-green-600" />
-                      By Clinic
+                      {t("allocation.byClinic")}
                     </h3>
                     <div className="space-y-2">
                       {Object.entries(statistics.byClinic).map(([clinic, count]) => (
@@ -560,7 +562,7 @@ function HrDashboardPage() {
                           key={clinic}
                           className="flex justify-between items-center py-1.5 px-2 rounded hover:bg-white transition"
                         >
-                          <span className="text-gray-700 text-sm">{clinic || "N/A"}</span>
+                          <span className="text-gray-700 text-sm">{clinic || t("common.na")}</span>
                           <span className="font-bold bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-sm">
                             {count as number}
                           </span>

@@ -3,11 +3,11 @@ import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
 import {
   ArrowLeft,
-  Edit,
   User,
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useTranslation } from "react-i18next";
 
 type Employee = {
   id: number;
@@ -22,12 +22,17 @@ type Employee = {
   role?: { id: number; roleName: string };
   clinic?: { id: number; clinicName: string };
   roleAtClinic?: string;
+  specialty?: string; 
+  specialties?: string[]; 
+  doctorSpecialties?: Array<{ id: number; specialtyName: string; isActive: boolean }>; // From DoctorSpecialties table
+  room?: { id: number; roomName: string; clinicId?: number; clinicName?: string };
   createdAt?: string;
   updatedAt?: string;
   lastLoginAt?: string;
 };
 
 function EmployeeDetail() {
+  const { t, i18n } = useTranslation("employees");
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
@@ -35,6 +40,7 @@ function EmployeeDetail() {
 
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
+  const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -44,7 +50,7 @@ function EmployeeDetail() {
 
   const fetchEmployeeDetail = async () => {
     if (!accessToken || !apiBase || !id) {
-      toast.error("Vui lòng đăng nhập");
+      toast.error(t("detail.pleaseLogin"));
       setLoading(false);
       return;
     }
@@ -58,9 +64,10 @@ function EmployeeDetail() {
         }
       );
       setEmployee(response.data);
+      setAvatarError(false);
     } catch (err: any) {
       console.error("Error fetching employee:", err);
-      let errorMsg = "Không thể tải thông tin nhân viên";
+      let errorMsg = t("detail.cannotLoad");
 
       if (err?.response?.data) {
         const errorData = err.response.data;
@@ -79,10 +86,10 @@ function EmployeeDetail() {
   };
 
   const formatDate = (dateString?: string) => {
-    if (!dateString) return "-";
+    if (!dateString) return t("common.na");
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString("vi-VN", {
+      return date.toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-US', {
         year: "numeric",
         month: "2-digit",
         day: "2-digit",
@@ -95,7 +102,7 @@ function EmployeeDetail() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Đang tải thông tin nhân viên...</div>
+        <div className="text-gray-500">{t("detail.loading")}</div>
       </div>
     );
   }
@@ -103,7 +110,7 @@ function EmployeeDetail() {
   if (!employee) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-red-500">Không tìm thấy nhân viên</div>
+        <div className="text-red-500">{t("detail.notFound")}</div>
       </div>
     );
   }
@@ -119,10 +126,10 @@ function EmployeeDetail() {
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors mb-3"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Quay lại</span>
+            <span>{t("detail.back")}</span>
           </button>
           <h1 className="text-3xl font-semibold">
-            <span className="text-gray-400 font-normal">PROFILE</span>
+            <span className="text-gray-400 font-normal">{t("detail.profile")}</span>
             <span className="text-gray-400 font-normal ml-4">{employee.fullName}</span>
           </h1>
         </div>
@@ -133,26 +140,20 @@ function EmployeeDetail() {
             {/* Left Column - Profile Card */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                {/* Avatar with Edit Icon */}
+                {/* Avatar */}
                 <div className="relative mb-4">
                   <div className="w-32 h-32 rounded-lg bg-gray-200 overflow-hidden flex items-center justify-center mx-auto">
-                    {employee.avatarUrl ? (
+                    {employee.avatarUrl && !avatarError ? (
                       <img
-                        src={`${apiBase}${employee.avatarUrl}`}
+                        src={employee.avatarUrl.startsWith('http') ? employee.avatarUrl : `${apiBase}${employee.avatarUrl.startsWith('/') ? employee.avatarUrl : '/' + employee.avatarUrl}`}
                         alt={employee.fullName}
                         className="w-full h-full object-cover"
+                        onError={() => setAvatarError(true)}
                       />
                     ) : (
                       <User className="w-16 h-16 text-gray-400" />
                     )}
                   </div>
-                  <button
-                    onClick={() => navigate(`/hr/employees/${employee.id}/edit`)}
-                    className="absolute top-0 right-0 lg:right-auto lg:left-1/2 lg:transform lg:-translate-x-1/2 lg:top-full lg:mt-2 w-8 h-8 bg-white rounded-full shadow-md flex items-center justify-center hover:bg-gray-50 border border-gray-200"
-                    title="Edit avatar"
-                  >
-                    <Edit className="w-4 h-4 text-gray-600" />
-                  </button>
                 </div>
 
                 {/* Name */}
@@ -163,7 +164,7 @@ function EmployeeDetail() {
                 {/* Role Badge */}
                 <div className="flex justify-center mb-6">
                   <span className="inline-flex px-4 py-1 rounded-full text-sm font-medium bg-blue-500 text-white">
-                    {(employee.role as any)?.roleName || "Employee"}
+                    {(employee.role as any)?.roleName || t("detail.employee")}
                   </span>
                 </div>
 
@@ -171,7 +172,7 @@ function EmployeeDetail() {
                 <div className="space-y-3">
                   {employee.roleAtClinic && (
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Journey</div>
+                      <div className="text-xs text-gray-500 mb-1">{t("detail.sections.journey")}</div>
                       <div className="text-sm font-medium text-gray-900">
                         {employee.roleAtClinic}
                       </div>
@@ -179,7 +180,7 @@ function EmployeeDetail() {
                   )}
                   {employee.code && (
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Registration</div>
+                      <div className="text-xs text-gray-500 mb-1">{t("detail.sections.registration")}</div>
                       <div className="text-sm font-medium text-gray-900">
                         {employee.code}
                       </div>
@@ -187,7 +188,7 @@ function EmployeeDetail() {
                   )}
                   {employee.createdAt && (
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Admission date</div>
+                      <div className="text-xs text-gray-500 mb-1">{t("detail.sections.admissionDate")}</div>
                       <div className="text-sm font-medium text-gray-900">
                         {formatDate(employee.createdAt)}
                       </div>
@@ -195,7 +196,7 @@ function EmployeeDetail() {
                   )}
                   {(employee.role as any)?.roleName && (
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Position</div>
+                      <div className="text-xs text-gray-500 mb-1">{t("detail.sections.position")}</div>
                       <div className="text-sm font-medium text-gray-900">
                         {(employee.role as any).roleName}
                       </div>
@@ -203,12 +204,95 @@ function EmployeeDetail() {
                   )}
                   {(employee.department as any)?.departmentName && (
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="text-xs text-gray-500 mb-1">Department</div>
+                      <div className="text-xs text-gray-500 mb-1">{t("detail.sections.department")}</div>
                       <div className="text-sm font-medium text-gray-900">
                         {(employee.department as any).departmentName}
                       </div>
                     </div>
                   )}
+                  {(() => {
+                    const roleName = (employee.role as any)?.roleName || "";
+                    const isDoctor = roleName && (
+                      roleName.toUpperCase().includes("DOCTOR") ||
+                      roleName.toUpperCase().includes("BÁC SĨ")
+                    );
+                    
+                    // Bác sĩ: hiển thị TOÀN BỘ specialties và room
+                    if (isDoctor) {
+                      // Thu thập TẤT CẢ chuyên khoa từ nhiều nguồn
+                      const allSpecialties = new Set<string>();
+                      
+                      // 1. Từ array specialties
+                      if (employee.specialties && Array.isArray(employee.specialties)) {
+                        employee.specialties.forEach((spec: string) => {
+                          if (spec && spec.trim()) {
+                            allSpecialties.add(spec.trim());
+                          }
+                        });
+                      }
+                      
+                      // 2. Từ field specialty (single value - legacy)
+                      if (employee.specialty && employee.specialty.trim()) {
+                        allSpecialties.add(employee.specialty.trim());
+                      }
+                      
+                      // 3. Từ doctorSpecialties array (từ bảng DoctorSpecialties)
+                      if (employee.doctorSpecialties && Array.isArray(employee.doctorSpecialties)) {
+                        employee.doctorSpecialties.forEach((ds: any) => {
+                          const specName = ds.specialtyName || ds.specialty || ds.name;
+                          if (specName && specName.trim() && ds.isActive !== false) {
+                            allSpecialties.add(specName.trim());
+                          }
+                        });
+                      }
+                      
+                      const specialtiesList = Array.from(allSpecialties);
+                      
+                      return (
+                        <>
+                          {specialtiesList.length > 0 && (
+                            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                              <div className="text-xs text-gray-500 mb-2">{t("detail.sections.specialty")}</div>
+                              <div className="flex flex-wrap gap-2">
+                                {specialtiesList.map((spec, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="inline-flex px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200"
+                                    title={spec}
+                                  >
+                                    {spec}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          {employee.room && (
+                            <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                              <div className="text-xs text-gray-500 mb-1">{t("detail.sections.room")}</div>
+                              <div className="text-sm font-medium text-gray-900">
+                                {employee.room.roomName || "-"}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      );
+                    }
+                    
+                    // Nhân viên khác: hiển thị clinic
+                    if (employee.clinic) {
+                      const clinic = employee.clinic as any;
+                      return (
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                          <div className="text-xs text-gray-500 mb-1">{t("detail.sections.clinic")}</div>
+                          <div className="text-sm font-medium text-gray-900">
+                            {clinic.clinicName || clinic.name || "-"}
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    return null;
+                  })()}
                 </div>
               </div>
             </div>
@@ -223,33 +307,25 @@ function EmployeeDetail() {
                       <div>
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-xl font-bold text-gray-900">
-                            Personal data
+                            {t("detail.sections.personalData")}
                           </h3>
-                          <button
-                            onClick={() => navigate(`/hr/employees/${employee.id}/edit`)}
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
-                            title="Edit personal data"
-                            aria-label="Edit personal data"
-                          >
-                            <Edit className="w-5 h-5 text-gray-600" />
-                          </button>
                         </div>
                         <div className="bg-white rounded-lg border border-gray-200 p-6">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="text-xs text-gray-500 mb-1 block">
-                                Full name
+                                {t("detail.fields.fullName")}
                               </label>
                               <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                 <span className="text-sm font-medium text-gray-900">
-                                  {employee.fullName || "-"}
+                                  {employee.fullName || t("common.na")}
                                 </span>
                               </div>
                             </div>
                             {employee.username && (
                               <div>
                                 <label className="text-xs text-gray-500 mb-1 block">
-                                  Username
+                                  {t("detail.fields.username")}
                                 </label>
                                 <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                   <span className="text-sm font-medium text-gray-900">
@@ -261,7 +337,7 @@ function EmployeeDetail() {
                             {employee.code && (
                               <div>
                                 <label className="text-xs text-gray-500 mb-1 block">
-                                  Employee Code
+                                  {t("detail.fields.employeeCode")}
                                 </label>
                                 <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                   <span className="text-sm font-medium text-gray-900">
@@ -277,32 +353,24 @@ function EmployeeDetail() {
                       {/* Contact Section */}
                       <div>
                         <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xl font-bold text-gray-900">Contact</h3>
-                          <button
-                            onClick={() => navigate(`/hr/employees/${employee.id}/edit`)}
-                            className="p-1 hover:bg-gray-100 rounded transition-colors"
-                            title="Edit contact information"
-                            aria-label="Edit contact information"
-                          >
-                            <Edit className="w-5 h-5 text-gray-600" />
-                          </button>
+                          <h3 className="text-xl font-bold text-gray-900">{t("detail.sections.contact")}</h3>
                         </div>
                         <div className="bg-white rounded-lg border border-gray-200 p-6">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="text-xs text-gray-500 mb-1 block">
-                                E-mail
+                                {t("detail.fields.email")}
                               </label>
                               <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                 <span className="text-sm font-medium text-gray-900">
-                                  {employee.email || "-"}
+                                  {employee.email || t("common.na")}
                                 </span>
                               </div>
                             </div>
                             {employee.phone && (
                               <div>
                                 <label className="text-xs text-gray-500 mb-1 block">
-                                  Phone
+                                  {t("detail.fields.phone")}
                                 </label>
                                 <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                   <span className="text-sm font-medium text-gray-900">

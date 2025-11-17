@@ -1,0 +1,72 @@
+{
+  "summaryCards": {
+    "todayPresents": "Hôm Nay Có Mặt",
+    "todayLate": "Hôm Nay Đi Trễ",
+    "todayAbsents": "Hôm Nay Vắng Mặt",
+    "todayLeave": "Hôm Nay Nghỉ Phép",
+    "todayOffday": "Hôm Nay Nghỉ",
+    "totalPresentToday": "Tổng có mặt hôm nay",
+    "totalLateToday": "Tổng đi trễ hôm nay",
+    "totalAbsentsToday": "Tổng vắng mặt hôm nay",
+    "totalLeaveToday": "Tổng nghỉ phép hôm nay",
+    "totalOffdayToday": "Tổng nghỉ hôm nay",
+    "noComparisonData": "Không có dữ liệu so sánh",
+    "vsYesterday": "so với Hôm qua"
+  },
+  "filters": {
+    "dailyAttendance": "Chấm Công Hàng Ngày",
+    "monthlyAttendance": "Chấm Công Hàng Tháng",
+    "selectWorkDate": "Chọn ngày làm việc",
+    "selectYear": "Chọn năm",
+    "selectMonth": "Chọn tháng",
+    "search": "Tìm kiếm",
+    "allDepartments": "Tất Cả Phòng Ban",
+    "filterByDepartment": "Lọc theo phòng ban",
+    "selectPeriod": "Chọn kỳ",
+    "daily": "Hàng Ngày",
+    "monthly": "Hàng Tháng"
+  },
+  "chart": {
+    "monthlyAttendanceStatistics": "Thống Kê Chấm Công Hàng Tháng",
+    "numberOfAttendance": "Số Lượng Chấm Công",
+    "noDataAvailable": "Không có dữ liệu"
+  },
+  "table": {
+    "dailyAttendanceList": "Danh Sách Chấm Công Hàng Ngày",
+    "monthlyAttendanceList": "Danh Sách Chấm Công Hàng Tháng",
+    "id": "ID",
+    "employeeName": "Tên Nhân Viên",
+    "status": "Trạng Thái",
+    "checkIn": "Giờ Vào",
+    "checkOut": "Giờ Ra",
+    "shift": "Ca Làm",
+    "worked": "Đã Làm",
+    "remarks": "Ghi Chú",
+    "workingDays": "Ngày Làm Việc",
+    "presentDays": "Ngày Có Mặt",
+    "lateDays": "Ngày Đi Trễ",
+    "absentDays": "Ngày Vắng Mặt",
+    "leaveDays": "Ngày Nghỉ Phép",
+    "offDays": "Ngày Nghỉ",
+    "totalWorked": "Tổng Giờ Làm",
+    "noAttendanceRecordsFound": "Không tìm thấy bản ghi chấm công"
+  },
+  "pagination": {
+    "rowsPerPage": "Số dòng mỗi trang",
+    "selectRowsPerPage": "Chọn số dòng mỗi trang",
+    "page": "Trang",
+    "of": "của",
+    "first": "Đầu",
+    "previous": "Trước",
+    "next": "Sau",
+    "last": "Cuối"
+  },
+  "messages": {
+    "loading": "Đang tải...",
+    "failedToLoadDailySummary": "Không thể tải tóm tắt hàng ngày",
+    "failedToLoadDailyAttendanceList": "Không thể tải danh sách chấm công hàng ngày",
+    "failedToLoadMonthlySummary": "Không thể tải tóm tắt hàng tháng",
+    "failedToLoadMonthlyAttendanceList": "Không thể tải danh sách chấm công hàng tháng"
+  }
+}
+

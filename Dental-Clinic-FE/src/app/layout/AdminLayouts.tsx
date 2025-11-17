@@ -9,6 +9,8 @@ import {
   FaBoxes,
   FaUser,
   FaComments,
+  FaHospital,
+  FaClock,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
@@ -27,16 +29,42 @@ const AdminLayout = () => {
       <aside className="w-64 bg-white shadow-md">
         <div className="p-6 text-2xl font-bold text-blue-600">Dental Admin</div>
         <nav className="flex flex-col gap-1 px-4">
-          <NavItem to="/admin" label={t("nav.dashboard")} icon={<FaChartBar />} />
-          <NavItem to="/admin/appointments" label={t("nav.appointments")} icon={<FaCalendarAlt />} />
-          <NavItem to="/admin/treatments" label={t("nav.treatments")} icon={<FaClipboardList />} />
-          <NavItem to="/admin/rooms" label={t("nav.rooms")} icon={<FaUserMd />} />
-          <NavItem to="/admin/invoices" label={t("nav.invoices")} icon={<FaFileInvoice />} />
-          <NavItem to="/admin/medical-records" label={t("nav.medicalRecords")} icon={<FaClipboardList />} />
-          <NavItem to="/admin/inventory" label={t("nav.inventory")} icon={<FaBoxes />} />
-          <NavItem to="/admin/reports" label={t("nav.reports")} icon={<FaChartBar />} />
-          <NavItem to="/admin/staff" label={t("nav.staff")} icon={<FaUser />} />
-          <NavItem to="/admin/crm" label={t("nav.crm")} icon={<FaComments />} />
+          <NavItem to="/admin" label={t("nav.dashboard", "Dashboard")} icon={<FaChartBar />} />
+          <NavItem
+            to="/admin/appointments"
+            label={t("nav.appointments", "Appointments")}
+            icon={<FaCalendarAlt />}
+          />
+          <NavItem
+            to="/admin/attendance"
+            label={t("nav.attendance", "Attendance")}
+            icon={<FaClock />}
+          />
+          <NavItem to="/admin/clinics" label={t("nav.clinics", "Clinics")} icon={<FaHospital />} />
+          <NavItem
+            to="/admin/treatments"
+            label={t("nav.treatments", "Treatments")}
+            icon={<FaClipboardList />}
+          />
+          <NavItem to="/admin/rooms" label={t("nav.rooms", "Rooms")} icon={<FaUserMd />} />
+          <NavItem
+            to="/admin/invoices"
+            label={t("nav.invoices", "Invoices")}
+            icon={<FaFileInvoice />}
+          />
+          <NavItem
+            to="/admin/medical-records"
+            label={t("nav.medicalRecords", "Medical Records")}
+            icon={<FaClipboardList />}
+          />
+          <NavItem
+            to="/admin/inventory"
+            label={t("nav.inventory", "Inventory")}
+            icon={<FaBoxes />}
+          />
+          <NavItem to="/admin/reports" label={t("nav.reports", "Reports")} icon={<FaChartBar />} />
+          <NavItem to="/admin/staff" label={t("nav.staff", "Staff")} icon={<FaUser />} />
+          <NavItem to="/admin/crm" label={t("nav.crm", "CRM")} icon={<FaComments />} />
         </nav>
       </aside>
 

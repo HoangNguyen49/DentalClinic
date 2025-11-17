@@ -1,0 +1,72 @@
+{
+  "summaryCards": {
+    "todayPresents": "Today Presents",
+    "todayLate": "Today Late",
+    "todayAbsents": "Today Absents",
+    "todayLeave": "Today Leave",
+    "todayOffday": "Today Offday",
+    "totalPresentToday": "Total present today",
+    "totalLateToday": "Total late today",
+    "totalAbsentsToday": "Total absents today",
+    "totalLeaveToday": "Total leave today",
+    "totalOffdayToday": "Total offday today",
+    "noComparisonData": "No comparison data",
+    "vsYesterday": "vs Yesterday"
+  },
+  "filters": {
+    "dailyAttendance": "Daily Attendance",
+    "monthlyAttendance": "Monthly Attendance",
+    "selectWorkDate": "Select work date",
+    "selectYear": "Select year",
+    "selectMonth": "Select month",
+    "search": "Search",
+    "allDepartments": "All Departments",
+    "filterByDepartment": "Filter by department",
+    "selectPeriod": "Select period",
+    "daily": "Daily",
+    "monthly": "Monthly"
+  },
+  "chart": {
+    "monthlyAttendanceStatistics": "Monthly Attendance Statistics",
+    "numberOfAttendance": "Number of Attendance",
+    "noDataAvailable": "No data available"
+  },
+  "table": {
+    "dailyAttendanceList": "Daily Attendance List",
+    "monthlyAttendanceList": "Monthly Attendance List",
+    "id": "ID",
+    "employeeName": "Employee Name",
+    "status": "Status",
+    "checkIn": "Check In",
+    "checkOut": "Check Out",
+    "shift": "Shift",
+    "worked": "Worked",
+    "remarks": "Remarks",
+    "workingDays": "Working Days",
+    "presentDays": "Present Days",
+    "lateDays": "Late Days",
+    "absentDays": "Absent Days",
+    "leaveDays": "Leave Days",
+    "offDays": "Off Days",
+    "totalWorked": "Total Worked",
+    "noAttendanceRecordsFound": "No attendance records found"
+  },
+  "pagination": {
+    "rowsPerPage": "Rows per page",
+    "selectRowsPerPage": "Select rows per page",
+    "page": "Page",
+    "of": "of",
+    "first": "First",
+    "previous": "Previous",
+    "next": "Next",
+    "last": "Last"
+  },
+  "messages": {
+    "loading": "Loading...",
+    "failedToLoadDailySummary": "Failed to load daily summary",
+    "failedToLoadDailyAttendanceList": "Failed to load daily attendance list",
+    "failedToLoadMonthlySummary": "Failed to load monthly summary",
+    "failedToLoadMonthlyAttendanceList": "Failed to load monthly attendance list"
+  }
+}
+
