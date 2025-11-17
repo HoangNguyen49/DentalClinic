@@ -59,24 +59,25 @@ export default function DailyScheduleView({
       <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
         <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-500 text-lg mb-2">
-          {t("list.noSchedulesForDate")}
+          No work schedules for this date
         </p>
         <button
           onClick={() => navigate("/hr/schedules/create")}
           className="mt-4 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
         >
-          {t("list.createNewSchedule")}
+          Create new work schedule
         </button>
       </div>
     );
   }
 
+  // Lấy danh sách lịch bác sĩ theo ngày đã chọn
   const doctorSchedules = schedulesByDate[selectedDate] || [];
   const isWeekend =
-    selectedDayInfo.dayName === t("list.days.sat") ||
-    selectedDayInfo.dayName === t("list.days.sun");
+    selectedDayInfo.dayName === "Saturday" ||
+    selectedDayInfo.dayName === "Sunday";
 
-  // Nếu không có lịch cho ngày đã chọn
+  // Nếu không có lịch làm việc trong ngày đã chọn
   if (doctorSchedules.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
@@ -84,13 +85,13 @@ export default function DailyScheduleView({
           <thead>
             <tr>
               <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800 sticky left-0 z-20">
-                {t("create.table.doctor")}
+                Doctor
               </th>
               <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800">
-                {t("list.shifts.morning")}
+                Morning
               </th>
               <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800">
-                {t("list.shifts.afternoon")}
+                Afternoon
               </th>
             </tr>
           </thead>
@@ -101,8 +102,8 @@ export default function DailyScheduleView({
                 className="border border-gray-300 px-4 py-12 text-center text-gray-400"
               >
                 {isWeekend
-                  ? t("list.noSessions")
-                  : t("list.noSchedulesForDate")}
+                  ? "No sessions"
+                  : "No work schedules for this date"}
               </td>
             </tr>
           </tbody>
@@ -111,27 +112,27 @@ export default function DailyScheduleView({
     );
   }
 
-  // Sắp xếp bác sĩ theo tên (không nhóm theo specialty)
+  // Sắp xếp lịch bác sĩ theo tên
   const sortedDoctorSchedules = [...doctorSchedules].sort((a, b) => {
     const nameA = a.doctor?.fullName || "";
     const nameB = b.doctor?.fullName || "";
     return nameA.localeCompare(nameB);
   });
 
-  // Hiển thị bảng lịch làm việc theo ngày
+  // Hiển thị bảng lịch làm việc trong ngày
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
       <table className="w-full border-collapse min-w-[800px]">
         <thead>
           <tr>
             <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800 sticky left-0 z-20">
-              {t("create.table.doctor")}
+              Doctor
             </th>
             <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800">
-              {t("list.shifts.morning")}
+              Morning
             </th>
             <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800">
-              {t("list.shifts.afternoon")}
+              Afternoon
             </th>
           </tr>
         </thead>
@@ -145,7 +146,7 @@ export default function DailyScheduleView({
                 {/* Hiển thị tên bác sĩ */}
                 <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-0 bg-white z-10">
                   {docSchedule.doctor?.fullName ||
-                    `${t("common.doctor")} #${docSchedule.doctor?.id || index}`}
+                    `Doctor #${docSchedule.doctor?.id || index}`}
                 </td>
                 {/* Hiển thị ca sáng */}
                 <td className="border border-gray-300 px-4 py-3">
@@ -192,7 +193,7 @@ export default function DailyScheduleView({
                   ) : (
                     <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
                       <div className="text-xs text-gray-400">
-                        {t("list.noSessions")}
+                        No sessions
                       </div>
                     </div>
                   )}
@@ -242,7 +243,7 @@ export default function DailyScheduleView({
                   ) : (
                     <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
                       <div className="text-xs text-gray-400">
-                        {t("list.noSessions")}
+                        No sessions
                       </div>
                     </div>
                   )}

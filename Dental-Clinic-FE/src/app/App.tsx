@@ -22,10 +22,10 @@ import DailyAttendanceView from "../Pages/HR/Attendance/DailyAttendanceView";
 import Service from "../Pages/Service";
 import About from "../Pages/About";
 import ContactPage from "../Pages/Contact";
+import Product from "../Pages/Product/index";
 import ClinicManagement from "../Pages/Admin/Clinics/ClinicManagement";
 import AdminAttendanceManagement from "../Pages/Admin/Attendance/AdminAttendanceManagement";
 import AdminStaffManagement from "../Pages/Admin/Staff/AdminStaffManagement";
-
 
 function App() {
   return (
