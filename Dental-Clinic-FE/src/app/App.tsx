@@ -21,6 +21,7 @@ import Service from "../pages/Service";
 import About from "../pages/About";
 import ContactPage from "../pages/Contact";
 import Product from "../pages/Product";
+import AccountantProduct from "../Pages/Product/accountant";
 
 function App() {
   return (
@@ -55,6 +56,8 @@ function App() {
             <Route path="schedules/create" element={<CreateScheduleForm />} />
           </Route>
         </Route>
+
+          <Route path="/accountant/create" element={<AccountantProduct />} />
       </Routes>
     </Router>
   );

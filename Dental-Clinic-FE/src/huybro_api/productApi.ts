@@ -1,4 +1,6 @@
 import axiosClient, { API_BASE_URL } from './axiosClient';
+import { AxiosError } from 'axios';
+
 
 export interface Product {
   productId: number;
@@ -83,5 +85,277 @@ export async function fetchProductsPage(params: ProductPageParams): Promise<Page
   };
   const qs = toQueryString({ ...defaults, ...params });
   const res = await axiosClient.get<PageResponse<Product>>(`/api/products/page?${qs}`);
+  return res.data;
+}
+
+
+
+// ====== DTO cho accountant create ======
+
+export interface ProductImageCreateDto {
+    imageUrl: string;
+    imageOrder: number;
+}
+
+export interface ProductCreateDto {
+    sku: string;
+    productName: string;
+    brand: string;
+    productDescription: string;
+    unit: number;
+    defaultRetailPrice: number;
+    currency: 'USD' | 'VND';
+    isTaxable: boolean;
+    taxCode: number;
+    isActive: boolean;
+    image: ProductImageCreateDto[];
+    typeNames: string[];
+}
+
+
+type UnknownRecord = Record<string, unknown>;
+
+interface FieldErrorLike extends UnknownRecord {
+    field?: string;
+    name?: string;
+    message?: string;
+    defaultMessage?: string;
+    error?: string;
+}
+// Response khi BE upload-image trả lại
+export type UploadImageResponse = ProductImageCreateDto;
+
+// Chuẩn hoá lỗi validation (cố gắng lôi hết thông báo ra)
+export interface ValidationErrorResult {
+    fieldErrors: Record<string, string[]>;
+    globalErrors: string[];
+    reasonIfNotAll?: string;
+    raw?: unknown;
+}
+
+export function extractValidationErrors(error: unknown): ValidationErrorResult {
+  const result: ValidationErrorResult = {
+    fieldErrors: {},
+    globalErrors: [],
+  };
+
+  const axiosErr = error as AxiosError<unknown, unknown>;
+  const data = axiosErr.response?.data as unknown;
+
+  if (!data || typeof data !== 'object') {
+    result.reasonIfNotAll =
+      'API trả về lỗi nhưng không có JSON chi tiết (không đọc được danh sách lỗi validation).';
+    return result;
+  }
+
+  const d = data as UnknownRecord;
+  let foundSomething = false;
+
+  // ---------- case 3: fieldErrors + globalErrors ----------
+  const globalErrors = d.globalErrors;
+  if (Array.isArray(globalErrors)) {
+    globalErrors.forEach((msg) => {
+      if (msg != null) {
+        result.globalErrors.push(String(msg));
+        foundSomething = true;
+      }
+    });
+  }
+
+  const fieldErrorsArr = d.fieldErrors;
+  if (Array.isArray(fieldErrorsArr)) {
+    fieldErrorsArr.forEach((fe) => {
+      if (!fe || typeof fe !== 'object') return;
+      const f = fe as FieldErrorLike;
+
+      const field = (f.field ?? f.name) as string | undefined;
+      const msg = (f.message ?? f.defaultMessage ?? f.error) as
+        | string
+        | undefined;
+
+      if (field && msg) {
+        if (!result.fieldErrors[field]) result.fieldErrors[field] = [];
+        result.fieldErrors[field].push(msg);
+        foundSomething = true;
+      }
+    });
+  }
+
+  // ---------- case 1 + 2: data.errors ----------
+  if (!foundSomething && 'errors' in d) {
+    const errors = d.errors as unknown;
+
+    // map: { sku: ['msg'], productName: 'msg' }
+    if (!Array.isArray(errors) && typeof errors === 'object' && errors !== null) {
+      Object.entries(errors as UnknownRecord).forEach(([field, value]) => {
+        if (Array.isArray(value)) {
+          result.fieldErrors[field] = value.map((x) => String(x));
+        } else {
+          result.fieldErrors[field] = [String(value)];
+        }
+      });
+      foundSomething = true;
+    }
+
+    // array of { field, message }
+    if (Array.isArray(errors)) {
+      errors.forEach((err) => {
+        if (!err || typeof err !== 'object') return;
+        const e = err as FieldErrorLike;
+
+        const field = (e.field ?? e.name) as string | undefined;
+        const msg = (e.message ?? e.defaultMessage ?? e.error) as
+          | string
+          | undefined;
+
+        if (field && msg) {
+          if (!result.fieldErrors[field]) result.fieldErrors[field] = [];
+          result.fieldErrors[field].push(msg);
+        } else if (msg) {
+          result.globalErrors.push(msg);
+        }
+      });
+      if (errors.length > 0) foundSomething = true;
+    }
+  }
+
+  // ---------- fallback nếu vẫn không parse được ----------
+  if (!foundSomething) {
+    const message =
+      (d.message as string | undefined) ??
+      (d.error as string | undefined) ??
+      undefined;
+
+    if (message) {
+      result.globalErrors.push(String(message));
+      result.reasonIfNotAll =
+        'BE không trả về cấu trúc errors/fieldErrors chuẩn, chỉ có trường message – không thể tách lỗi theo từng field DTO.';
+    } else {
+      result.reasonIfNotAll =
+        'Không tìm thấy thuộc tính errors/fieldErrors/globalErrors trong JSON trả về – không thể map đầy đủ lỗi DTO.';
+    }
+  }
+
+  result.raw = data;
+  return result;
+}
+
+
+// ====== API dành riêng cho accountant ======
+
+/**
+ * POST /api/products/accountant
+ */
+export async function createProductForAccountant(
+    payload: ProductCreateDto
+) {
+    const res = await axiosClient.post<Product>('/api/products/accountant/create', payload);
+    return res.data;
+}
+
+/**
+ * POST /api/products/upload-image
+ * multipart/form-data: file + sku + imageOrder
+ */
+export async function uploadProductImage(
+    file: File,
+    sku: string,
+    imageOrder: number
+): Promise<UploadImageResponse> {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('sku', sku);
+    formData.append('imageOrder', String(imageOrder));
+
+    const res = await axiosClient.post<UploadImageResponse>(
+        '/api/products/upload-image',
+        formData,
+        {
+            headers: {
+                // để axios tự set boundary, chỉ cần kiểu multipart
+                'Content-Type': 'multipart/form-data',
+            },
+        }
+    );
+
+    return res.data;
+}
+
+/**
+ * POST /api/products/accountant/suggest-sku
+ * Body: List<String> typeNames
+ * Response: string sku gợi ý
+ */
+export async function suggestSkuForAccountant(
+  typeNames: string[]
+): Promise<string> {
+  const res = await axiosClient.post<string>(
+    '/api/products/accountant/suggest-sku',
+    typeNames,
+  );
+  return res.data;
+}
+
+
+
+// ====== DTO cho AI validate/analyze images ======
+
+export interface ProductImageValidateRequestDto {
+  base64Images: string[];
+}
+
+export interface ProductImageAnalyzeRequestDto {
+  base64Images: string[];
+  allowedTypeNames?: string[];
+}
+// Theo docs: FE dùng các field này để auto-fill form
+export interface GeminiVisionResult {
+  productName?: string;
+  brand?: string;
+  productDescription?: string;
+  typeNames?: string[];
+  needBetterImages?: boolean;
+  [key: string]: unknown;
+}
+
+// ====== API AI – phân biệt rõ 2 loại: validate-only vs validate+analyze ======
+
+/**
+ * A. API validate hình ảnh bằng AI (chỉ moderation, không trả data điền form)
+ * POST /api/products/ai/validate-images
+ * Body: { base64Images: string[] }
+ * 200 OK nếu hợp lệ, 400 với globalErrors nếu AI không chấp nhận
+ */
+export async function validateProductImagesAi(
+  base64Images: string[],
+): Promise<void> {
+  const payload: ProductImageValidateRequestDto = { base64Images };
+  await axiosClient.post<void>(
+    '/api/products/ai/validate-images',
+    payload,
+  );
+}
+
+/**
+ * B. API vừa validate vừa tự tạo các field liên quan bằng AI
+ * (moderation + vision) – auto-fill form
+ * POST /api/products/ai/analyze-images
+ * Body: { base64Images: string[]; allowedTypeNames?: string[] }
+ */
+export async function analyzeProductImagesAi(
+  base64Images: string[],
+  allowedTypeNames?: string[],
+): Promise<GeminiVisionResult> {
+  const payload: ProductImageAnalyzeRequestDto = {
+    base64Images,
+    ...(allowedTypeNames && allowedTypeNames.length > 0
+      ? { allowedTypeNames }
+      : {}),
+  };
+
+  const res = await axiosClient.post<GeminiVisionResult>(
+    '/api/products/ai/analyze-images',
+    payload,
+  );
   return res.data;
 }
