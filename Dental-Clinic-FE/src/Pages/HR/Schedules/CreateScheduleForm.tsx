@@ -670,20 +670,21 @@ function CreateScheduleForm() {
     }
   };
 
-  // Sinh lịch tự động dùng AI từ mô tả tiếng Anh
+  // Sinh lịch tự động dùng AI từ mô tả
   const handleAiGenerate = async () => {
     if (!aiDescription.trim()) {
-      toast.error("Please input a description for schedule AI generation.");
+      toast.error(t("create.aiGeneration.messages.pleaseInput", "Please input a description for schedule AI generation."));
       return;
     }
 
     setAiGenerating(true);
     try {
+      // Luôn sử dụng endpoint generate với template tự động
       const response = await axios.post<CreateScheduleRequest>(
         `${apiBase}/api/hr/schedules/ai/generate`,
         {
           weekStart: weekStart,
-          description: aiDescription,
+          description: aiDescription.trim(),
         },
         {
           headers: {
@@ -727,7 +728,7 @@ function CreateScheduleForm() {
         count: totalAssignments,
       });
 
-      toast.success(`AI successfully created ${totalAssignments} assignments. Please review and edit if needed.`);
+      toast.success(t("create.aiGeneration.success", "AI successfully created {{count}} assignments. Please review and edit if needed.", { count: totalAssignments }));
       setTimeout(() => {
         setAiDescription("");
         setAiResult(null);
@@ -834,7 +835,7 @@ function CreateScheduleForm() {
                 AI Schedule Generation
               </h2>
               <p className="text-sm text-gray-600 mb-4">
-                Describe your preferred weekly shift/assignment and let AI generate the table for you. You can edit the result for accuracy and compliance before saving.
+                {t("create.aiGeneration.description")}
               </p>
             </div>
             <div className="flex gap-3">
@@ -844,7 +845,7 @@ function CreateScheduleForm() {
                   setAiDescription(e.target.value);
                   setAiResult(null);
                 }}
-                placeholder="Describe or list desired assignments e.g. 'Dr. John works Monday to Friday mornings at Clinic 1, Dr. Jane alternates clinics every day...'"
+                placeholder={t("create.aiGeneration.placeholder")}
                 className="flex-1 border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                 rows={3}
                 disabled={aiGenerating}

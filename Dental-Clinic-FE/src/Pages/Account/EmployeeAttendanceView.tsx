@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -92,6 +92,20 @@ function getExplanationStatusColor(status?: string | null): string {
   }
 }
 
+function calculateWorkedHours(attendance: AttendanceResponse): number {
+  if (!attendance.checkInTime || !attendance.checkOutTime) return 0;
+  const start = new Date(attendance.checkInTime).getTime();
+  const end = new Date(attendance.checkOutTime).getTime();
+  if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return 0;
+  const diffMs = end - start;
+  return diffMs / (1000 * 60 * 60);
+}
+
+function formatHourValue(value: number): string {
+  if (!Number.isFinite(value) || value <= 0) return "-";
+  return `${value.toFixed(1)}h`;
+}
+
 export default function EmployeeAttendanceView() {
   const { t } = useTranslation("web");
   const navigate = useNavigate();
@@ -126,6 +140,54 @@ export default function EmployeeAttendanceView() {
   const [selectedExplanation, setSelectedExplanation] = useState<ExplanationResponse | null>(null);
   const [explanationReason, setExplanationReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  const monthlySummary = useMemo(() => {
+    if (!monthlyAttendances.length) {
+      return {
+        totalDays: 0,
+        presentDays: 0,
+        lateDays: 0,
+        absentDays: 0,
+        approvedDays: 0,
+        totalHours: 0,
+        avgHours: 0,
+      };
+    }
+
+    const stats = monthlyAttendances.reduce(
+      (acc, attendance) => {
+        const status = (attendance.attendanceStatus || "").toUpperCase();
+        acc.totalDays += 1;
+        if (status === "ABSENT") {
+          acc.absentDays += 1;
+        } else {
+          acc.presentDays += 1;
+        }
+        if (status === "LATE" || status === "APPROVED_LATE") {
+          acc.lateDays += 1;
+        }
+        if (status.startsWith("APPROVED")) {
+          acc.approvedDays += 1;
+        }
+        acc.totalHours += calculateWorkedHours(attendance);
+        return acc;
+      },
+      {
+        totalDays: 0,
+        presentDays: 0,
+        lateDays: 0,
+        absentDays: 0,
+        approvedDays: 0,
+        totalHours: 0,
+        avgHours: 0,
+      }
+    );
+
+    const avgHours =
+      stats.presentDays > 0 ? stats.totalHours / stats.presentDays : 0;
+
+    return { ...stats, avgHours };
+  }, [monthlyAttendances]);
 
   // Lấy dữ liệu chấm công hiện tại, giải trình cần thiết, và lịch sử hàng tháng khi có userId
   useEffect(() => {
@@ -451,6 +513,44 @@ export default function EmployeeAttendanceView() {
             </select>
           </div>
         </div>
+        {monthlyAttendances.length > 0 && (
+          <div className="mb-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-xl border border-gray-200 p-4 bg-gradient-to-br from-blue-50 to-blue-100">
+                <p className="text-sm font-medium text-blue-700">{t("attendance.monthlyHistory.summary.totalDays", "Days Logged")}</p>
+                <p className="text-3xl font-bold text-blue-900 mt-2">{monthlySummary.totalDays}</p>
+                <p className="text-xs text-blue-800 mt-1">
+                  {t("attendance.monthlyHistory.summary.presentHelper", "Present days: {{value}}", {
+                    value: monthlySummary.presentDays,
+                  })}
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 p-4 bg-gradient-to-br from-amber-50 to-amber-100">
+                <p className="text-sm font-medium text-amber-700">{t("attendance.monthlyHistory.summary.lateDays", "Late days")}</p>
+                <p className="text-3xl font-bold text-amber-900 mt-2">{monthlySummary.lateDays}</p>
+                <p className="text-xs text-amber-800 mt-1">
+                  {t("attendance.monthlyHistory.summary.approvedHelper", "Approved entries: {{value}}", {
+                    value: monthlySummary.approvedDays,
+                  })}
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 p-4">
+                <p className="text-sm font-medium text-rose-700">{t("attendance.monthlyHistory.summary.absentDays", "Absent days")}</p>
+                <p className="text-3xl font-bold text-rose-900 mt-2">{monthlySummary.absentDays}</p>
+                <p className="text-xs text-rose-800 mt-1">
+                  {t("attendance.monthlyHistory.summary.absentHelper", "Impact days: {{value}}", {
+                    value: monthlySummary.absentDays,
+                  })}
+                </p>
+              </div>
+              <div className="rounded-xl border border-gray-200 p-4">
+                <p className="text-sm font-medium text-gray-600">{t("attendance.monthlyHistory.summary.totalHours", "Total hours")}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{formatHourValue(monthlySummary.totalHours)}</p>
+                <p className="text-xs text-gray-500 mt-1">{t("attendance.monthlyHistory.summary.avgHours", "Avg hours/day")}: {formatHourValue(monthlySummary.avgHours)}</p>
+              </div>
+            </div>
+          </div>
+        )}
         {loadingMonthly ? (
           <div className="text-center py-8">{t("attendance.loading", "Loading...")}</div>
         ) : monthlyAttendances.length > 0 ? (
@@ -462,16 +562,22 @@ export default function EmployeeAttendanceView() {
                     {t("attendance.monthlyHistory.date", "Date")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("attendance.monthlyHistory.clinic", "Clinic / Location")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t("attendance.monthlyHistory.checkIn", "Check-in")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t("attendance.monthlyHistory.checkOut", "Check-out")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("attendance.monthlyHistory.hours", "Worked Hours")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t("attendance.monthlyHistory.status", "Status")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {t("attendance.monthlyHistory.note", "Note")}
+                    {t("attendance.monthlyHistory.remarks", "Remarks")}
                   </th>
                 </tr>
               </thead>
@@ -482,10 +588,16 @@ export default function EmployeeAttendanceView() {
                       {formatDate(new Date(attendance.workDate))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {attendance.clinicName || "-"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatTime(attendance.checkInTime)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {formatTime(attendance.checkOutTime)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatHourValue(calculateWorkedHours(attendance))}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span
@@ -496,9 +608,9 @@ export default function EmployeeAttendanceView() {
                         {t(`attendance.status.${attendance.attendanceStatus || "UNKNOWN"}`, attendance.attendanceStatus || "N/A")}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-gray-500 max-w-sm">
                       {attendance.note ? (
-                        <div className="max-w-xs truncate" title={attendance.note}>
+                        <div className="truncate" title={attendance.note}>
                           {attendance.note}
                         </div>
                       ) : (

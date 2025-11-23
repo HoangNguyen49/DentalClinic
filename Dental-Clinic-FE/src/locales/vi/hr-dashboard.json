@@ -7,7 +7,9 @@
     "totalEmployees": "Tổng nhân viên",
     "active": "Đang hoạt động",
     "inactive": "Không hoạt động",
-    "schedulesThisWeek": "Lịch tuần này"
+    "schedulesThisWeek": "Lịch tuần này",
+    "attendancePresent": "Có Mặt (30 ngày)",
+    "attendanceTotalHours": "Tổng Giờ (30 ngày)"
   },
   "quickActions": {
     "title": "Thao Tác Nhanh",

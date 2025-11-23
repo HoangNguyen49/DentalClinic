@@ -13,7 +13,7 @@ import { useTranslation } from "react-i18next";
 // Hàm xử lý layout chính của HR (giao diện dashboard nhân sự)
 const HRLayout = () => {
   const navigate = useNavigate();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation("hr-dashboard");
 
   // Đổi ngôn ngữ tiếng Anh/tiếng Việt
   const toggleLanguage = () => {
@@ -26,7 +26,9 @@ const HRLayout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("roles");
-    navigate("/login");
+    localStorage.removeItem("user");
+    sessionStorage.clear();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -50,7 +52,7 @@ const HRLayout = () => {
             className="w-full flex items-center gap-3 px-4 py-2 rounded-md text-red-600 hover:bg-red-50 transition"
           >
             <FaSignOutAlt />
-            <span>Logout</span>
+            <span>{t("logout", "Logout")}</span>
           </button>
         </div>
       </aside>

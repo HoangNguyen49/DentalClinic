@@ -87,6 +87,8 @@ export function AttendanceListFilter({
   selectedDepartment,
   searchTerm,
   departments,
+  selectedYear,
+  selectedMonth,
   onViewModeChange,
   onDepartmentChange,
   onSearchChange,
@@ -95,17 +97,48 @@ export function AttendanceListFilter({
   selectedDepartment: number | null;
   searchTerm: string;
   departments: Department[];
+  selectedYear: number;
+  selectedMonth: number;
   onViewModeChange: (mode: "daily" | "monthly") => void;
   onDepartmentChange: (deptId: number | null) => void;
   onSearchChange: (term: string) => void;
 }) {
   const { t } = useTranslation("attendance");
+  const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+  let workingDaysExcludingSunday = 0;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(selectedYear, selectedMonth - 1, day);
+    if (date.getDay() !== 0) {
+      workingDaysExcludingSunday++;
+    }
+  }
   
   return (
     <div className="flex justify-between items-center mb-4">
-      <h2 className="text-xl font-semibold text-gray-800">
-        {viewMode === "daily" ? t("table.dailyAttendanceList") : t("table.monthlyAttendanceList")}
-      </h2>
+      <div>
+        <h2 className="text-xl font-semibold text-gray-800">
+          {viewMode === "daily" ? t("table.dailyAttendanceList") : t("table.monthlyAttendanceList")}
+        </h2>
+        {viewMode === "monthly" && (
+          <p className="text-sm text-gray-500 mt-1">
+            {new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString(undefined, {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}{" "}
+            –{" "}
+            {new Date(selectedYear, selectedMonth, 0).toLocaleDateString(undefined, {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}{" "}
+            ·{" "}
+            {t("table.workingDaysExSunday", "Total working days: {{count}} (no Sundays)", {
+              count: workingDaysExcludingSunday,
+            })}
+          </p>
+        )}
+      </div>
       <div className="flex items-center gap-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />

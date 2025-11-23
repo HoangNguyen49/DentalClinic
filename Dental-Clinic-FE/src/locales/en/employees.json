@@ -155,8 +155,22 @@
       "room": "Room",
       "personalData": "Personal data",
       "contact": "Contact",
+      "actions": "Actions",
       "editPersonalData": "Edit personal data",
       "editContact": "Edit contact information"
+    },
+    "actions": {
+      "activate": "activate",
+      "deactivate": "deactivate",
+      "confirmToggle": "Are you sure you want to {{action}} {{name}}'s account?",
+      "reason": "Please enter a reason:",
+      "reasonRequired": "Reason is required",
+      "activated": "Account activated successfully",
+      "deactivated": "Account deactivated successfully",
+      "toggleFailed": "Failed to toggle account status",
+      "processing": "Processing...",
+      "activateAccount": "Activate Account",
+      "deactivateAccount": "Deactivate Account"
     },
     "fields": {
       "fullName": "Full name",

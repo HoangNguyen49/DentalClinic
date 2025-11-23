@@ -51,13 +51,26 @@
       "selectYear": "Select Year",
       "month": "Month",
       "date": "Date",
+      "clinic": "Clinic / Location",
       "checkIn": "Check-in",
       "checkOut": "Check-out",
       "status": "Status",
-      "note": "Note",
+      "hours": "Worked Hours",
+      "remarks": "Remarks",
       "noData": "No attendance data for this month",
       "loading": "Loading...",
-      "loadFailed": "Unable to load attendance history. Please contact HR."
+      "loadFailed": "Unable to load attendance history. Please contact HR.",
+      "summary": {
+        "totalDays": "Days Logged",
+        "presentDays": "Present days",
+        "lateDays": "Late days",
+        "absentDays": "Absent days",
+        "totalHours": "Total hours",
+        "avgHours": "Avg hours/day",
+        "presentHelper": "Present days: {{value}}",
+        "approvedHelper": "Approved entries: {{value}}",
+        "absentHelper": "Impact days: {{value}}"
+      }
     },
     "status": {
       "ON_TIME": "On Time",

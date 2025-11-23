@@ -155,8 +155,22 @@
       "room": "Phòng",
       "personalData": "Dữ liệu cá nhân",
       "contact": "Liên hệ",
+      "actions": "Thao Tác",
       "editPersonalData": "Chỉnh sửa dữ liệu cá nhân",
       "editContact": "Chỉnh sửa thông tin liên hệ"
+    },
+    "actions": {
+      "activate": "kích hoạt",
+      "deactivate": "khóa",
+      "confirmToggle": "Bạn có chắc chắn muốn {{action}} tài khoản của {{name}}?",
+      "reason": "Vui lòng nhập lý do:",
+      "reasonRequired": "Lý do là bắt buộc",
+      "activated": "Tài khoản đã được kích hoạt thành công",
+      "deactivated": "Tài khoản đã được khóa thành công",
+      "toggleFailed": "Không thể thay đổi trạng thái tài khoản",
+      "processing": "Đang xử lý...",
+      "activateAccount": "Kích Hoạt Tài Khoản",
+      "deactivateAccount": "Khóa Tài Khoản"
     },
     "fields": {
       "fullName": "Họ và tên",

@@ -7,7 +7,9 @@
     "totalEmployees": "Total employees",
     "active": "Active",
     "inactive": "Inactive",
-    "schedulesThisWeek": "Schedules this week"
+    "schedulesThisWeek": "Schedules this week",
+    "attendancePresent": "Present (30 days)",
+    "attendanceTotalHours": "Total Hours (30 days)"
   },
   "quickActions": {
     "title": "Quick Actions",

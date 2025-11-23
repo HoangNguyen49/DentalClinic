@@ -31,6 +31,20 @@ type MonthlyChartProps = {
 
 export default function MonthlyChart({ monthlySummary, loading, loadingSummary }: MonthlyChartProps) {
   const { t } = useTranslation("attendance");
+  const forbiddenDepartments = [
+    "ADMIN",
+    "ADMINISTRATION",
+    "HUMAN RESOURCE",
+    "HUMAN RESOURCES",
+    "HUMAN RESOURCE DEPARTMENT",
+    "HUMAN RESOURCES DEPARTMENT",
+  ];
+
+  const sanitizedSummary = monthlySummary.filter((item) => {
+    const name = (item.departmentName || "").toUpperCase();
+    if (!name) return false;
+    return !forbiddenDepartments.some((blocked) => name.includes(blocked));
+  });
   
   return (
     <div className={`bg-white rounded-lg shadow-md p-6 transition-opacity duration-300 ${loadingSummary ? 'opacity-50' : 'opacity-100'}`}>
@@ -42,12 +56,12 @@ export default function MonthlyChart({ monthlySummary, loading, loadingSummary }
 
       {loading ? (
         <div className="text-center py-8">{t("messages.loading")}</div>
-      ) : monthlySummary.length === 0 ? (
+      ) : sanitizedSummary.length === 0 ? (
         <div className="text-center py-8 text-gray-500">{t("chart.noDataAvailable")}</div>
       ) : (
         <ResponsiveContainer width="100%" height={400}>
           <BarChart
-            data={monthlySummary.map((item) => ({
+            data={sanitizedSummary.map((item) => ({
               name: item.departmentName,
               Present: item.present,
               Late: item.late,

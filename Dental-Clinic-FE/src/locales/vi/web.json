@@ -51,13 +51,26 @@
       "selectYear": "Chọn năm",
       "month": "Tháng",
       "date": "Ngày",
+      "clinic": "Phòng khám / Khu vực",
       "checkIn": "Giờ vào",
       "checkOut": "Giờ ra",
       "status": "Trạng thái",
-      "note": "Ghi chú",
+      "hours": "Số giờ làm",
+      "remarks": "Ghi chú",
       "noData": "Không có dữ liệu chấm công trong tháng này",
       "loading": "Đang tải...",
-      "loadFailed": "Không thể tải lịch sử chấm công. Vui lòng liên hệ HR."
+      "loadFailed": "Không thể tải lịch sử chấm công. Vui lòng liên hệ HR.",
+      "summary": {
+        "totalDays": "Số ngày đã chấm",
+        "presentDays": "Số ngày làm",
+        "lateDays": "Số ngày đi trễ",
+        "absentDays": "Số ngày vắng",
+        "totalHours": "Tổng giờ công",
+        "avgHours": "Giờ trung bình/ngày",
+        "presentHelper": "Ngày làm: {{value}}",
+        "approvedHelper": "Đã duyệt tính lương: {{value}}",
+        "absentHelper": "Ngày ảnh hưởng lương: {{value}}"
+      }
     },
     "status": {
       "ON_TIME": "Đúng giờ",

@@ -67,7 +67,11 @@ function CreateEmployeeForm() {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      const departmentsData = departmentsRes.data || [];
+      const forbiddenDepartmentNames = ["ADMIN", "ADMINISTRATION"];
+      const departmentsData = (departmentsRes.data || []).filter((dept) => {
+        const name = (dept.departmentName || "").toUpperCase();
+        return name && !forbiddenDepartmentNames.includes(name);
+      });
       setDepartments(departmentsData);
 
       const rolesRes = await axios.get<Role[]>(
@@ -76,12 +80,11 @@ function CreateEmployeeForm() {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      const filteredRoles = (rolesRes.data || []).filter(
-        (role) =>
-          role.roleName &&
-          role.roleName.toUpperCase() !== "ADMIN" &&
-          role.roleName.toUpperCase() !== "USER"
-      );
+      const filteredRoles = (rolesRes.data || []).filter((role) => {
+        if (!role.roleName) return false;
+        const normalized = role.roleName.toUpperCase();
+        return normalized !== "ADMIN" && normalized !== "USER";
+      });
       setRoles(filteredRoles);
 
       const clinicsRes = await axios.get<Clinic[]>(

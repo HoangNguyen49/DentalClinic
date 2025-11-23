@@ -36,6 +36,7 @@
     "monthlyAttendanceList": "Danh Sách Chấm Công Hàng Tháng",
     "id": "ID",
     "employeeName": "Tên Nhân Viên",
+    "jobTitle": "Chức danh",
     "status": "Trạng Thái",
     "checkIn": "Giờ Vào",
     "checkOut": "Giờ Ra",
@@ -49,6 +50,25 @@
     "leaveDays": "Ngày Nghỉ Phép",
     "offDays": "Ngày Nghỉ",
     "totalWorked": "Tổng Giờ Làm",
+    "workedHours": "Giờ làm (h)",
+    "monthlyTotal": "Tổng theo tháng",
+    "daysSuffix": "ngày",
+    "workingDaysExSunday": "Tổng số ngày làm: {{count}} (loại Chủ nhật)",
+    "exportRange": "Khoảng thời gian",
+    "totalWorkedMinutes": "Tổng Phút Làm",
+    "employmentType": "Loại Hình Công Việc",
+    "employmentTypeHourly": "Công nhật (Wage)",
+    "employmentTypeMonthly": "Lương tháng (Salary)",
+    "standardHours": "Giờ tiêu chuẩn (H)",
+    "payableDays": "Ngày tính lương",
+    "unpaidLeaveDays": "Ngày nghỉ không lương",
+    "otHours": "Giờ OT được duyệt (H)",
+    "finalPayableHours": "Giờ tính lương cuối (H)",
+    "export": "Xuất Excel",
+    "exporting": "Đang xuất...",
+    "totals": "Tổng hợp tính lương",
+    "avgWorkedPerDay": "Giờ trung bình / ngày",
+    "unknownRole": "Chưa xác định",
     "noAttendanceRecordsFound": "Không tìm thấy bản ghi chấm công"
   },
   "pagination": {
@@ -66,7 +86,25 @@
     "failedToLoadDailySummary": "Không thể tải tóm tắt hàng ngày",
     "failedToLoadDailyAttendanceList": "Không thể tải danh sách chấm công hàng ngày",
     "failedToLoadMonthlySummary": "Không thể tải tóm tắt hàng tháng",
-    "failedToLoadMonthlyAttendanceList": "Không thể tải danh sách chấm công hàng tháng"
+    "failedToLoadMonthlyAttendanceList": "Không thể tải danh sách chấm công hàng tháng",
+    "exportSuccess": "Đã xuất danh sách chấm công tháng",
+    "exportFailed": "Không thể xuất danh sách chấm công tháng",
+    "exportNoData": "Không có dữ liệu chấm công để xuất"
+  },
+  "detail": {
+    "title": "Chi Tiết Chấm Công",
+    "loading": "Đang tải...",
+    "notFound": "Không tìm thấy bản ghi chấm công",
+    "fetchFailed": "Không thể tải chi tiết chấm công",
+    "close": "Đóng",
+    "workDate": "Ngày Làm Việc",
+    "status": "Trạng Thái",
+    "checkIn": "Giờ Vào",
+    "checkOut": "Giờ Ra",
+    "actualHours": "Giờ Làm Thực Tế",
+    "shiftType": "Loại Ca",
+    "note": "Ghi Chú",
+    "hours": "giờ"
   }
 }
 

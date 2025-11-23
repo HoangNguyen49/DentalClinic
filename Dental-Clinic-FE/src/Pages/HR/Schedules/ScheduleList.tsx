@@ -171,13 +171,62 @@ function ScheduleList() {
 
   // Chuyển sang tuần trước/tuần sau
   // Navigate to the previous or next week
-  const navigateWeek = (direction: "prev" | "next") => {
-    const current = new Date(currentWeekStart);
-    const newDate = new Date(current);
-    newDate.setDate(current.getDate() + (direction === "next" ? 7 : -7));
-    const newWeekStart = newDate.toISOString().split("T")[0];
-    setCurrentWeekStart(newWeekStart);
-    fetchSchedule(newWeekStart, "weekly");
+  const navigateWeek = async (direction: "prev" | "next") => {
+    if (direction === "next") {
+      // Sử dụng endpoint /next-week nếu đang ở tuần hiện tại
+      const today = new Date();
+      const day = today.getDay();
+      const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(today.setDate(diff));
+      const currentWeekStartStr = monday.toISOString().split("T")[0];
+      
+      if (currentWeekStart === currentWeekStartStr) {
+        // Đang ở tuần hiện tại, dùng endpoint /next-week
+        setLoading(true);
+        try {
+          const response = await axios.get<ScheduleItem[]>(
+            `${apiBase}/api/hr/schedules/next-week`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+          setSchedules(response.data || []);
+          // Cập nhật currentWeekStart để hiển thị đúng
+          const nextWeekDate = new Date(monday);
+          nextWeekDate.setDate(monday.getDate() + 7);
+          setCurrentWeekStart(nextWeekDate.toISOString().split("T")[0]);
+        } catch (err: any) {
+          console.error("Error fetching next week:", err);
+          // Fallback: tự tính
+          const current = new Date(currentWeekStart);
+          const newDate = new Date(current);
+          newDate.setDate(current.getDate() + 7);
+          const newWeekStart = newDate.toISOString().split("T")[0];
+          setCurrentWeekStart(newWeekStart);
+          fetchSchedule(newWeekStart, "weekly");
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Không phải tuần hiện tại, tự tính
+        const current = new Date(currentWeekStart);
+        const newDate = new Date(current);
+        newDate.setDate(current.getDate() + 7);
+        const newWeekStart = newDate.toISOString().split("T")[0];
+        setCurrentWeekStart(newWeekStart);
+        fetchSchedule(newWeekStart, "weekly");
+      }
+    } else {
+      // Tuần trước: tự tính
+      const current = new Date(currentWeekStart);
+      const newDate = new Date(current);
+      newDate.setDate(current.getDate() - 7);
+      const newWeekStart = newDate.toISOString().split("T")[0];
+      setCurrentWeekStart(newWeekStart);
+      fetchSchedule(newWeekStart, "weekly");
+    }
   };
 
   // Chuyển sang ngày trước/ngày sau
