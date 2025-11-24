@@ -28,7 +28,7 @@ import AdminStaffManagement from "../pages/Admin/Staff/AdminStaffManagement";
 import ReceptionLayout from "../app/layout/ReceptionLayout";
 import ProtectedRouteReception from "../app/routes/ProtectedRouteReception";
 import ReceptionDashboard from "../pages/Reception/Dashboard/ReceptionDashboard";
-import BookingOffline from "../pages/Reception/Booking/BookingOffline";
+import BookingOffline from "../pages/Reception/BookingCRM/BookingOffline";
 import BookingPage from "../pages/Booking/BookingPage";
 import PatientList from "../pages/Reception/Patient/PatientList";
 
