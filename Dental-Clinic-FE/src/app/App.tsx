@@ -9,7 +9,7 @@ import EmployeeAttendanceView from "../Pages/Account/EmployeeAttendanceView";
 import AdminLayout from "../app/layout/AdminLayouts";
 import HRLayout from "../app/layout/HrLayout";
 import AdminDashboardPage from "../Pages/Admin/Dashboard/AdminDashboardPage";
-import ProtectedRouteAdmin from "../app/routes/ProtectedRouteAdmin";
+import ProtectedRouteAdmin from "./routes/ProtectedRouteAdmin";
 import ProtectedRouteHR from "../app/routes/ProtectedRouteHR";
 import AppointmentList from "../Pages/Admin/Appointments/AppointmentList";
 import HrDashboardPage from "../Pages/HR/Dashboard/HrDashboardPage";
@@ -26,6 +26,12 @@ import Product from "../Pages/Product/index";
 import ClinicManagement from "../Pages/Admin/Clinics/ClinicManagement";
 import AdminAttendanceManagement from "../Pages/Admin/Attendance/AdminAttendanceManagement";
 import AdminStaffManagement from "../Pages/Admin/Staff/AdminStaffManagement";
+import ReceptionLayout from "../app/layout/ReceptionLayout";
+import ProtectedRouteReception from "../app/routes/ProtectedRouteReception";
+import ReceptionDashboard from "../Pages/Reception/Dashboard/ReceptionDashboard";
+import BookingOffline from "../Pages/Reception/BookingCRM/BookingOffline";
+import BookingPage from "../Pages/Booking/BookingPage";
+import PatientList from "../Pages/Reception/Patient/PatientList";
 
 function App() {
   return (
@@ -42,6 +48,7 @@ function App() {
         <Route path="/my-account" element={<MyAccount />} />
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/my-attendance" element={<EmployeeAttendanceView />} />
+        <Route path="/booking" element={<BookingPage />} />
 
         <Route path="/admin" element={<ProtectedRouteAdmin />}>
           <Route element={<AdminLayout />}>
@@ -63,6 +70,15 @@ function App() {
             <Route path="attendance" element={<DailyAttendanceView />} />
             <Route path="schedules" element={<ScheduleList />} />
             <Route path="schedules/create" element={<CreateScheduleForm />} />
+          </Route>
+        </Route>
+
+        <Route path="/reception" element={<ProtectedRouteReception />}> 
+          <Route element={<ReceptionLayout />}>
+             <Route path="dashboard" element={<ReceptionDashboard />} />
+             <Route path="walk-in" element={<BookingOffline />} /> 
+             <Route path="appointments" element={<AppointmentList/>} />
+             <Route path="patients" element={<PatientList/>} />
           </Route>
         </Route>
       </Routes>
