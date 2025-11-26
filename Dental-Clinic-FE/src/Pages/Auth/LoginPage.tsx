@@ -68,9 +68,10 @@ function LoginPage() {
       ] = `Bearer ${data.accessToken}`;
 
       toast.success(t("login:loginSuccess"));
+      // Redirect based on role: ADMIN -> /admin
       setTimeout(() => {
-        if (normalizedRoles.includes("ADMIN")) navigate("/");
-        else navigate("/");
+        if (normalizedRoles.includes("ADMIN")) navigate("/admin", { replace: true });
+        else navigate("/", { replace: true });
       }, 2000);
     } catch (err: any) {
       const msg = err?.response?.data?.message;

@@ -85,9 +85,14 @@ function Header() {
   const isUser = Array.isArray(user?.roles)
     ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_USER" || r.toUpperCase() === "USER")
     : user?.role?.toUpperCase() === "USER";
+
+    //check role DOCTOR
+  const isDoctor = Array.isArray(user?.roles)
+    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_DOCTOR" || r.toUpperCase() === "DOCTOR")
+    : user?.role?.toUpperCase() === "DOCTOR";
   
   // Ẩn "My Attendance" nếu là USER hoặc ADMIN
-  const shouldHideMyAttendance = isUser || isAdmin;
+  const shouldHideMyAttendance = isUser || isAdmin || isDoctor;
 
   const changeLang = async () => {
     const newLang = i18n.language === "en" ? "vi" : "en";
@@ -176,6 +181,16 @@ function Header() {
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
                     >
                       {t("attendance.hrDashboard", "HR Dashboard")}
+                    </Link>
+                  )}
+
+                  {isDoctor && (
+                    <Link
+                      to="/doctor/dashboard"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                    >
+                      Doctor Dashboard
+                      {/* {t("account.doctorDashboard", "Doctor Dashboard")} */}
                     </Link>
                   )}
                   {isAdmin && (
