@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Cấu hình đường dẫn API
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 interface StepProps {
@@ -59,9 +58,8 @@ export default function StepDateTime({ data, updateData, onNext, onPrev }: StepP
             serviceIds: serviceIds,
             date: selectedDate
           },
-          // 2. THÊM HEADER AUTHORIZATION TẠI ĐÂY
           headers: {
-            'Authorization': `Bearer ${token}` // Gửi token dạng Bearer
+            'Authorization': `Bearer ${token}`
           },
           withCredentials: true 
         }
@@ -71,7 +69,6 @@ export default function StepDateTime({ data, updateData, onNext, onPrev }: StepP
 
     } catch (err: any) {
       console.error("Error fetching slots:", err);
-      // Xử lý hiển thị lỗi thân thiện hơn
       if (err.response && err.response.status === 401) {
          setError("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
       } else {
@@ -99,7 +96,7 @@ export default function StepDateTime({ data, updateData, onNext, onPrev }: StepP
           <h3 className="text-xl font-bold text-gray-800">Chọn Ngày & Giờ</h3>
           <p className="text-sm text-gray-500 mt-1">
              Lịch trống của <span className="font-bold text-[#3366FF]">{data.doctorName}</span>
-             {' '} cho dịch vụ <span className="font-medium text-gray-700">{data.serviceName}</span>
+             
           </p>
        </div>
        
@@ -108,7 +105,7 @@ export default function StepDateTime({ data, updateData, onNext, onPrev }: StepP
          <label className="block text-sm font-medium text-gray-600 mb-2 text-center">Ngày mong muốn</label>
          <input 
            type="date" 
-           className="w-full p-3 border border-gray-300 rounded-xl text-center font-bold text-gray-700 focus:ring-2 focus:ring-[#3366FF] focus:border-[#3366FF] outline-none shadow-sm cursor-pointer"
+           className="w-full p-3 border border-gray-300 rounded-full text-center font-bold text-gray-700 focus:ring-2 focus:ring-[#3366FF] focus:border-[#3366FF] outline-none shadow-sm cursor-pointer"
            min={today}
            value={selectedDate}
            onChange={handleDateChange}
@@ -145,7 +142,7 @@ export default function StepDateTime({ data, updateData, onNext, onPrev }: StepP
                                     disabled={!slot.available}
                                     onClick={() => handleSelectTime(slot.time)}
                                     className={`
-                                        py-3 rounded-lg text-sm font-bold transition-all duration-200 border
+                                        py-3 rounded-full text-sm font-bold transition-all duration-200 border
                                         ${!slot.available 
                                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed border-transparent decoration-gray-400' // Bận
                                             : isSelected
