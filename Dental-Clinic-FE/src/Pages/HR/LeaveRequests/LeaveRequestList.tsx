@@ -159,7 +159,7 @@ export default function LeaveRequestList() {
       <Header />
       <div className="min-h-screen bg-gray-100">
         <div className="p-6 space-y-6 max-w-7xl mx-auto">
-          <ToastContainer position="top-right" autoClose={3000} />
+          <ToastContainer position="top-right" autoClose={5000} />
       
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">{t("leaveRequest.title", "Đơn xin nghỉ của tôi")}</h1>
