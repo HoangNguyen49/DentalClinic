@@ -53,7 +53,7 @@
     "workedHours": "Worked Hours (H)",
     "monthlyTotal": "Monthly Total",
     "daysSuffix": "days",
-    "workingDaysExSunday": "Total working days: {{count}} (no Sundays)",
+    "workingDaysExSunday": "Total working days: {{count}} (excluding Sundays only, Saturday is a working day)",
     "exportRange": "Period",
     "totalWorkedMinutes": "Total Worked (Minutes)",
     "employmentType": "Employment Type",
@@ -69,7 +69,10 @@
     "totals": "Payroll Totals",
     "avgWorkedPerDay": "Average Worked / Day",
     "unknownRole": "Unknown role",
-    "noAttendanceRecordsFound": "No attendance records found"
+    "noAttendanceRecordsFound": "No attendance records found",
+    "actualWorkedDays": "Actual Worked Days",
+    "totalLateMinutes": "Total Late Minutes",
+    "totalEarlyMinutes": "Total Early Minutes"
   },
   "pagination": {
     "rowsPerPage": "Rows per page",

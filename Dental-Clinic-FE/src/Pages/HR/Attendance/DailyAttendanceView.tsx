@@ -211,7 +211,6 @@ function DailyAttendanceView() {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      console.log("Daily list response:", response.data);
       setDailyList(response.data.content || []);
       setDailyTotalPages(response.data.totalPages || 0);
       setDailyTotalElements(response.data.totalElements || 0);
@@ -264,7 +263,6 @@ function DailyAttendanceView() {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      console.log("Monthly list response:", response.data);
       setMonthlyList(response.data.content || []);
       setMonthlyTotalPages(response.data.totalPages || 0);
       setMonthlyTotalElements(response.data.totalElements || 0);
@@ -358,6 +356,16 @@ function DailyAttendanceView() {
       const lateLabel = t("table.lateDays", "Late Days");
       const monthlyLabel = t("table.monthlyTotal", "Monthly Total");
 
+      const formatMinutes = (minutes: number): string => {
+        if (!minutes || minutes === 0) return "0";
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        if (hours > 0) {
+          return `${hours}h ${mins}m`;
+        }
+        return `${mins}m`;
+      };
+
       const sheetData = filteredMonthlyList.map((item, index) => {
         // Sử dụng cùng logic format như trong bảng - luôn hiển thị theo giờ
         let display: string;
@@ -376,9 +384,12 @@ function DailyAttendanceView() {
           "#": index + 1,
           [employeeLabel]: item.employeeName,
           [jobLabel]: item.jobTitle || "",
+          [t("table.actualWorkedDays", "Số ngày đi làm")]: (item.actualWorkedDays ?? item.workingDays) ?? 0,
           [leaveLabel]: item.leaveDays || 0,
           [absentLabel]: item.absentDays || 0,
           [lateLabel]: item.lateDays || 0,
+          [t("table.totalLateMinutes", "Tổng phút trễ")]: formatMinutes(item.totalLateMinutes || 0),
+          [t("table.totalEarlyMinutes", "Tổng phút sớm")]: formatMinutes(item.totalEarlyMinutes || 0),
           [monthlyLabel]: display,
         };
       });

@@ -53,7 +53,7 @@
     "workedHours": "Giờ làm (h)",
     "monthlyTotal": "Tổng theo tháng",
     "daysSuffix": "ngày",
-    "workingDaysExSunday": "Tổng số ngày làm: {{count}} (loại Chủ nhật)",
+    "workingDaysExSunday": "Tổng số ngày làm: {{count}} (chỉ trừ Chủ nhật, Thứ 7 là ngày làm việc)",
     "exportRange": "Khoảng thời gian",
     "totalWorkedMinutes": "Tổng Phút Làm",
     "employmentType": "Loại Hình Công Việc",
@@ -69,7 +69,10 @@
     "totals": "Tổng hợp tính lương",
     "avgWorkedPerDay": "Giờ trung bình / ngày",
     "unknownRole": "Chưa xác định",
-    "noAttendanceRecordsFound": "Không tìm thấy bản ghi chấm công"
+    "noAttendanceRecordsFound": "Không tìm thấy bản ghi chấm công",
+    "actualWorkedDays": "Số ngày đi làm",
+    "totalLateMinutes": "Tổng phút trễ",
+    "totalEarlyMinutes": "Tổng phút sớm"
   },
   "pagination": {
     "rowsPerPage": "Số dòng mỗi trang",

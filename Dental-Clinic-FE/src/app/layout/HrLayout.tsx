@@ -7,6 +7,7 @@ import {
   FaUsers,
   FaUserPlus,
   FaSignOutAlt,
+  FaFileAlt,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
@@ -45,6 +46,7 @@ const HRLayout = () => {
           <NavItem to="/hr/schedules" label="Schedules" icon={<FaCalendarAlt />} />
           <NavItem to="/hr/schedules/create" label="Create Schedule" icon={<FaCalendarAlt />} />
           <NavItem to="/hr/attendance" label="Attendance" icon={<FaUser />} />
+          <NavItem to="/hr/leave-requests" label="Leave Requests" icon={<FaFileAlt />} />
         </nav>
         <div className="p-4 border-t">
           <button

@@ -84,25 +84,25 @@ function normalizeStatus(
   switch (status) {
     case "ON_TIME":
       return translate
-        ? translate("attendance.status.ON_TIME", "On Time")
+        ? translate("attendance.statusOptions.ON_TIME", "On Time")
         : "On Time";
     case "LATE":
-      return translate ? translate("attendance.status.LATE", "Late") : "Late";
+      return translate ? translate("attendance.statusOptions.LATE", "Late") : "Late";
     case "ABSENT":
       return translate
-        ? translate("attendance.status.ABSENT", "Absent")
+        ? translate("attendance.statusOptions.ABSENT", "Absent")
         : "Absent";
     case "APPROVED_ABSENCE":
       return translate
-        ? translate("attendance.status.APPROVED_ABSENCE", "Approved Leave")
+        ? translate("attendance.statusOptions.APPROVED_ABSENCE", "Approved Leave")
         : "Approved Leave";
     case "APPROVED_LATE":
       return translate
-        ? translate("attendance.status.APPROVED_LATE", "Approved Late")
+        ? translate("attendance.statusOptions.APPROVED_LATE", "Approved Late")
         : "Approved Late";
     default:
       return translate
-        ? translate("attendance.status.UNKNOWN", status)
+        ? translate("attendance.statusOptions.UNKNOWN", status)
         : status;
   }
 }
@@ -135,7 +135,7 @@ export default function AdminAttendanceManagement() {
   const filteredStatusOptions = useMemo(() => {
     return STATUS_OPTIONS.map((opt) => ({
       ...opt,
-      label: t(`attendance.status.${opt.value}`, opt.label),
+      label: t(`attendance.statusOptions.${opt.value}`, opt.label),
     }));
   }, [t]);
 

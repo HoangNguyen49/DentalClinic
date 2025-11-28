@@ -25,6 +25,13 @@ type AttendanceResponse = {
   faceMatchScore?: number | null;
   createdAt?: string | null;
   updatedAt?: string | null;
+  // Thông tin tính toán giờ làm việc và đi trễ/ra sớm
+  shiftType?: string | null; // MORNING, AFTERNOON, FULL_DAY
+  actualWorkHours?: number | null; // Số giờ làm việc thực tế (đã trừ đi trễ, ra sớm, nghỉ trưa)
+  expectedWorkHours?: number | null; // Số giờ làm việc theo lịch
+  lateMinutes?: number | null; // Số phút đi trễ
+  earlyMinutes?: number | null; // Số phút ra sớm
+  lunchBreakMinutes?: number | null; // Số phút nghỉ trưa
 };
 
 type ExplanationResponse = {
@@ -46,6 +53,14 @@ type ExplanationResponse = {
 
 function formatDate(date: Date): string {
   return date.toISOString().split("T")[0];
+}
+
+function formatDateDisplay(date: Date | string): string {
+  const d = typeof date === 'string' ? new Date(date) : date;
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 function formatTime(value?: string | null): string {
@@ -140,6 +155,7 @@ export default function EmployeeAttendanceView() {
   const [selectedExplanation, setSelectedExplanation] = useState<ExplanationResponse | null>(null);
   const [explanationReason, setExplanationReason] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [selectedExplanationDate, setSelectedExplanationDate] = useState<string>(new Date().toISOString().split("T")[0]);
 
   const monthlySummary = useMemo(() => {
     if (!monthlyAttendances.length) {
@@ -151,6 +167,9 @@ export default function EmployeeAttendanceView() {
         approvedDays: 0,
         totalHours: 0,
         avgHours: 0,
+        totalLateMinutes: 0, // Tổng số phút đi trễ trong tháng
+        totalEarlyMinutes: 0, // Tổng số phút ra sớm trong tháng
+        totalActualWorkHours: 0, // Tổng giờ làm thực tế
       };
     }
 
@@ -170,6 +189,18 @@ export default function EmployeeAttendanceView() {
           acc.approvedDays += 1;
         }
         acc.totalHours += calculateWorkedHours(attendance);
+        
+        // Tính tổng số phút đi trễ và ra sớm
+        acc.totalLateMinutes += attendance.lateMinutes || 0;
+        acc.totalEarlyMinutes += attendance.earlyMinutes || 0;
+        
+        // Sử dụng actualWorkHours nếu có, nếu không thì dùng calculateWorkedHours
+        if (attendance.actualWorkHours != null && attendance.actualWorkHours > 0) {
+          acc.totalActualWorkHours += attendance.actualWorkHours;
+        } else {
+          acc.totalActualWorkHours += calculateWorkedHours(attendance);
+        }
+        
         return acc;
       },
       {
@@ -180,6 +211,9 @@ export default function EmployeeAttendanceView() {
         approvedDays: 0,
         totalHours: 0,
         avgHours: 0,
+        totalLateMinutes: 0,
+        totalEarlyMinutes: 0,
+        totalActualWorkHours: 0,
       }
     );
 
@@ -251,7 +285,13 @@ export default function EmployeeAttendanceView() {
       const filtered = (response.data || []).filter(
         (exp) => exp.userId === userId
       );
-      setExplanationsNeeding(filtered);
+      // Sắp xếp theo ngày từ mới nhất đến cũ nhất
+      const sorted = filtered.sort((a, b) => {
+        const dateA = new Date(a.workDate).getTime();
+        const dateB = new Date(b.workDate).getTime();
+        return dateB - dateA; // Mới nhất trước
+      });
+      setExplanationsNeeding(sorted);
     } catch (error: any) {
       console.error("Failed to fetch explanations:", error);
       setExplanationsNeeding([]);
@@ -266,7 +306,13 @@ export default function EmployeeAttendanceView() {
       const startDate = `${selectedYear}-${String(selectedMonth).padStart(2, "0")}-01`;
       const endDate = new Date(selectedYear, selectedMonth, 0).toISOString().split("T")[0];
       
-      const response = await axios.get<{ content?: AttendanceResponse[] } | AttendanceResponse[]>(
+      const response = await axios.get<{
+        content: AttendanceResponse[];
+        totalPages: number;
+        totalElements: number;
+        number: number;
+        size: number;
+      }>(
         `${apiBase}/api/hr/attendance/history`,
         {
           params: {
@@ -280,16 +326,11 @@ export default function EmployeeAttendanceView() {
         }
       );
       
-      let attendances: AttendanceResponse[] = [];
+      // API trả về Page object với cấu trúc { content: [...], totalPages, ... }
+      const attendances: AttendanceResponse[] = response.data?.content || [];
       
-      if (Array.isArray(response.data)) {
-        attendances = response.data;
-      } else if (response.data && typeof response.data === 'object' && 'content' in response.data) {
-        attendances = (response.data as { content: AttendanceResponse[] }).content || [];
-      }
-      
-      // Đảm bảo chỉ hiển thị chấm công của đúng user
-      const filtered = attendances.filter((att) => att.userId === userId);
+      // Đảm bảo chỉ hiển thị chấm công của đúng user (double check)
+      const filtered = attendances.filter((att) => att && att.userId === userId);
       setMonthlyAttendances(filtered);
     } catch (error: any) {
       console.error("Failed to fetch monthly attendances:", error);
@@ -394,7 +435,7 @@ export default function EmployeeAttendanceView() {
                   todayAttendance.attendanceStatus
                 )}`}
               >
-                {t(`attendance.status.${todayAttendance.attendanceStatus || "UNKNOWN"}`, todayAttendance.attendanceStatus || "N/A")}
+                {t(`attendance.statusOptions.${todayAttendance.attendanceStatus || "UNKNOWN"}`, todayAttendance.attendanceStatus || "N/A")}
               </span>
             </div>
           </div>
@@ -408,44 +449,65 @@ export default function EmployeeAttendanceView() {
       {/* Explanations Section */}
       {explanationsNeeding.length > 0 && (
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-orange-500">
-          <div className="flex items-center gap-2 mb-4">
-            <svg
-              className="w-6 h-6 text-orange-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <svg
+                className="w-6 h-6 text-orange-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              <h2 className="text-xl font-semibold text-orange-900">
+                {t("attendance.explanationsNeeded.title", "Attendance Explanations Needed")}
+              </h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="explanation-date-picker" className="text-sm font-medium text-gray-700">
+                {t("attendance.explanationsNeeded.date", "Ngày")}:
+              </label>
+              <input
+                id="explanation-date-picker"
+                type="date"
+                value={selectedExplanationDate}
+                onChange={(e) => setSelectedExplanationDate(e.target.value)}
+                className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                max={new Date().toISOString().split("T")[0]}
+                title={t("attendance.explanationsNeeded.date", "Chọn ngày")}
               />
-            </svg>
-            <h2 className="text-xl font-semibold text-orange-900">
-              {t("attendance.explanationsNeeded.title", "Attendance Explanations Needed")}
-            </h2>
+            </div>
           </div>
           <div className="space-y-4">
-            {explanationsNeeding.map((explanation) => (
+            {explanationsNeeding
+              .filter((explanation) => {
+                const explanationDate = new Date(explanation.workDate).toISOString().split("T")[0];
+                return explanationDate === selectedExplanationDate;
+              })
+              .map((explanation) => (
               <div
                 key={explanation.attendanceId}
-                className="border rounded-lg p-4 bg-gray-50"
+                className="border rounded-lg p-5 bg-white shadow-sm hover:shadow-md transition-shadow"
               >
-                <div className="flex justify-between items-start mb-2">
-                  <div>
-                    <p className="font-semibold">
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <p className="text-lg font-bold text-gray-900 mb-2">
                       {t(`attendance.explanationType.${explanation.explanationType || "UNKNOWN"}`, explanation.explanationType || "")}
                     </p>
-                    <p className="text-sm text-gray-600">
-                      {t("attendance.explanationsNeeded.date", "Date")}: {formatDate(new Date(explanation.workDate))}
+                    <p className="text-sm text-gray-600 mb-1">
+                      <span className="font-semibold">{t("attendance.explanationsNeeded.date", "Ngày")}:</span> {formatDateDisplay(explanation.workDate)}
                     </p>
                     <p className="text-sm text-gray-600">
-                      {t("attendance.explanationsNeeded.status", "Status")}: {t(`attendance.status.${explanation.attendanceStatus || "UNKNOWN"}`, explanation.attendanceStatus || "N/A")}
+                      <span className="font-semibold">{t("attendance.explanationsNeeded.status", "Trạng thái")}:</span> {t(`attendance.statusOptions.${explanation.attendanceStatus || "UNKNOWN"}`, explanation.attendanceStatus || "N/A")}
                     </p>
                   </div>
                   <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${getExplanationStatusColor(
+                    className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ml-4 ${getExplanationStatusColor(
                       explanation.explanationStatus
                     )}`}
                   >
@@ -453,27 +515,35 @@ export default function EmployeeAttendanceView() {
                   </span>
                 </div>
                 {explanation.employeeReason && (
-                  <div className="mt-2 p-2 bg-white rounded border">
-                    <p className="text-xs font-semibold text-gray-700 mb-1">{t("attendance.explanationsNeeded.reason", "Reason")}:</p>
+                  <div className="mt-3 p-3 bg-gray-50 rounded border border-gray-200">
+                    <p className="text-xs font-semibold text-gray-700 mb-1">{t("attendance.explanationsNeeded.reason", "Lý do")}:</p>
                     <p className="text-sm text-gray-800">{explanation.employeeReason}</p>
                   </div>
                 )}
                 {explanation.adminNote && (
-                  <div className="mt-2 p-2 bg-blue-50 rounded border border-blue-200">
-                    <p className="text-xs font-semibold text-blue-700 mb-1">{t("attendance.explanationsNeeded.adminNote", "Admin Note")}:</p>
+                  <div className="mt-3 p-3 bg-blue-50 rounded border border-blue-200">
+                    <p className="text-xs font-semibold text-blue-700 mb-1">{t("attendance.explanationsNeeded.adminNote", "Ghi chú từ admin")}:</p>
                     <p className="text-sm text-blue-800">{explanation.adminNote}</p>
                   </div>
                 )}
                 {explanation.explanationStatus === "PENDING" && (
                   <button
                     onClick={() => openExplanationDialog(explanation)}
-                    className="mt-3 w-full px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"
+                    className="mt-4 w-full px-4 py-3 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors shadow-md hover:shadow-lg"
                   >
-                    {explanation.employeeReason ? t("attendance.explanationsNeeded.update", "Update Explanation") : t("attendance.explanationsNeeded.submit", "Submit Explanation")}
+                    {explanation.employeeReason ? t("attendance.explanationsNeeded.update", "Cập nhật giải trình") : t("attendance.explanationsNeeded.submit", "Gửi giải trình")}
                   </button>
                 )}
               </div>
             ))}
+            {explanationsNeeding.filter((explanation) => {
+              const explanationDate = new Date(explanation.workDate).toISOString().split("T")[0];
+              return explanationDate === selectedExplanationDate;
+            }).length === 0 && (
+              <div className="text-center py-8 text-gray-500">
+                <p>{t("attendance.explanationsNeeded.noExplanationsForDate", "Không có giải trình cần xử lý cho ngày này")}</p>
+              </div>
+            )}
           </div>
         </div>
       )}
@@ -515,7 +585,7 @@ export default function EmployeeAttendanceView() {
         </div>
         {monthlyAttendances.length > 0 && (
           <div className="mb-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
               <div className="rounded-xl border border-gray-200 p-4 bg-gradient-to-br from-blue-50 to-blue-100">
                 <p className="text-sm font-medium text-blue-700">{t("attendance.monthlyHistory.summary.totalDays", "Days Logged")}</p>
                 <p className="text-3xl font-bold text-blue-900 mt-2">{monthlySummary.totalDays}</p>
@@ -534,6 +604,17 @@ export default function EmployeeAttendanceView() {
                   })}
                 </p>
               </div>
+              <div className="rounded-xl border border-gray-200 p-4 bg-gradient-to-br from-red-50 to-red-100">
+                <p className="text-sm font-medium text-red-700">{t("attendance.monthlyHistory.summary.totalLateMinutes", "Tổng phút đi trễ")}</p>
+                <p className="text-3xl font-bold text-red-900 mt-2">
+                  {monthlySummary.totalLateMinutes > 0 ? `${monthlySummary.totalLateMinutes} phút` : "0"}
+                </p>
+                <p className="text-xs text-red-800 mt-1">
+                  {t("attendance.monthlyHistory.summary.lateHours", "≈ {{hours}} giờ", {
+                    hours: (monthlySummary.totalLateMinutes / 60).toFixed(1),
+                  })}
+                </p>
+              </div>
               <div className="rounded-xl border border-gray-200 p-4">
                 <p className="text-sm font-medium text-rose-700">{t("attendance.monthlyHistory.summary.absentDays", "Absent days")}</p>
                 <p className="text-3xl font-bold text-rose-900 mt-2">{monthlySummary.absentDays}</p>
@@ -545,7 +626,7 @@ export default function EmployeeAttendanceView() {
               </div>
               <div className="rounded-xl border border-gray-200 p-4">
                 <p className="text-sm font-medium text-gray-600">{t("attendance.monthlyHistory.summary.totalHours", "Total hours")}</p>
-                <p className="text-3xl font-bold text-gray-900 mt-2">{formatHourValue(monthlySummary.totalHours)}</p>
+                <p className="text-3xl font-bold text-gray-900 mt-2">{formatHourValue(monthlySummary.totalActualWorkHours || monthlySummary.totalHours)}</p>
                 <p className="text-xs text-gray-500 mt-1">{t("attendance.monthlyHistory.summary.avgHours", "Avg hours/day")}: {formatHourValue(monthlySummary.avgHours)}</p>
               </div>
             </div>
@@ -574,6 +655,12 @@ export default function EmployeeAttendanceView() {
                     {t("attendance.monthlyHistory.hours", "Worked Hours")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("attendance.monthlyHistory.lateMinutes", "Đi trễ (phút)")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    {t("attendance.monthlyHistory.earlyMinutes", "Ra sớm (phút)")}
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     {t("attendance.monthlyHistory.status", "Status")}
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -582,43 +669,73 @@ export default function EmployeeAttendanceView() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {monthlyAttendances.map((attendance) => (
-                  <tr key={attendance.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatDate(new Date(attendance.workDate))}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {attendance.clinicName || "-"}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatTime(attendance.checkInTime)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatTime(attendance.checkOutTime)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatHourValue(calculateWorkedHours(attendance))}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
-                          attendance.attendanceStatus
-                        )}`}
-                      >
-                        {t(`attendance.status.${attendance.attendanceStatus || "UNKNOWN"}`, attendance.attendanceStatus || "N/A")}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 max-w-sm">
-                      {attendance.note ? (
-                        <div className="truncate" title={attendance.note}>
-                          {attendance.note}
-                        </div>
-                      ) : (
-                        "-"
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {monthlyAttendances.map((attendance) => {
+                  // Sử dụng actualWorkHours nếu có, nếu không thì tính từ checkIn/checkOut
+                  const workedHours = attendance.actualWorkHours != null && attendance.actualWorkHours > 0
+                    ? attendance.actualWorkHours
+                    : calculateWorkedHours(attendance);
+                  
+                  return (
+                    <tr key={attendance.id} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatDate(new Date(attendance.workDate))}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {attendance.clinicName || "-"}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatTime(attendance.checkInTime)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatTime(attendance.checkOutTime)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {formatHourValue(workedHours)}
+                        {attendance.expectedWorkHours && (
+                          <span className="text-xs text-gray-500 ml-1">
+                            / {formatHourValue(attendance.expectedWorkHours)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {attendance.lateMinutes && attendance.lateMinutes > 0 ? (
+                          <span className="text-red-600 font-semibold">
+                            {attendance.lateMinutes} phút
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        {attendance.earlyMinutes && attendance.earlyMinutes > 0 ? (
+                          <span className="text-orange-600 font-semibold">
+                            {attendance.earlyMinutes} phút
+                          </span>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                            attendance.attendanceStatus
+                          )}`}
+                        >
+                          {t(`attendance.status.${attendance.attendanceStatus || "UNKNOWN"}`, attendance.attendanceStatus || "N/A")}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-500 max-w-sm">
+                        {attendance.note ? (
+                          <div className="truncate" title={attendance.note}>
+                            {attendance.note}
+                          </div>
+                        ) : (
+                          "-"
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

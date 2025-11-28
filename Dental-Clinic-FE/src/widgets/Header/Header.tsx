@@ -186,6 +186,14 @@ function Header() {
                       {t("account.myAttendance")}
                     </Link>
                   )}
+                  {!shouldHideMyAttendance && (
+                    <Link
+                      to="/my-leave-requests"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                    >
+                      {t("account.myLeaveRequests")}
+                    </Link>
+                  )}
                   {isHR && (
                     <Link
                       to="/hr/dashboard"

@@ -19,6 +19,8 @@ import EmployeesList from "../Pages/HR/Employees/EmployeesList";
 import CreateEmployeeForm from "../Pages/HR/Employees/CreateEmployeeForm";
 import EmployeeDetail from "../Pages/HR/Employees/EmployeeDetail";
 import DailyAttendanceView from "../Pages/HR/Attendance/DailyAttendanceView";
+import LeaveRequestList from "../Pages/HR/LeaveRequests/LeaveRequestList";
+import LeaveRequestManagement from "../Pages/HR/LeaveRequests/LeaveRequestManagement";
 import Service from "../Pages/Service";
 import About from "../Pages/About";
 import ContactPage from "../Pages/Contact";
@@ -48,6 +50,7 @@ function App() {
         <Route path="/my-account" element={<MyAccount />} />
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/my-attendance" element={<EmployeeAttendanceView />} />
+        <Route path="/my-leave-requests" element={<LeaveRequestList />} />
         <Route path="/booking" element={<BookingPage />} />
 
         <Route path="/admin" element={<ProtectedRouteAdmin />}>
@@ -70,6 +73,7 @@ function App() {
             <Route path="attendance" element={<DailyAttendanceView />} />
             <Route path="schedules" element={<ScheduleList />} />
             <Route path="schedules/create" element={<CreateScheduleForm />} />
+            <Route path="leave-requests" element={<LeaveRequestManagement />} />
           </Route>
         </Route>
 

@@ -13,7 +13,8 @@
   "account": {
     "myAccount": "Tài khoản của tôi",
     "adminDashboard": "Bảng quản trị",
-    "myAttendance": "Chấm công của tôi"
+    "myAttendance": "Chấm công của tôi",
+    "myLeaveRequests": "Đơn xin nghỉ của tôi"
   },
   "attendance": {
     "hrDashboard": "Bảng điều khiển HR",
@@ -43,7 +44,8 @@
       "submitting": "Đang gửi...",
       "submitSuccess": "Gửi giải trình thành công",
       "submitFailed": "Gửi giải trình thất bại",
-      "enterReason": "Vui lòng nhập lý do giải trình"
+      "enterReason": "Vui lòng nhập lý do giải trình",
+      "noExplanationsForDate": "Không có giải trình cần xử lý cho ngày này"
     },
     "monthlyHistory": {
       "title": "Lịch sử chấm công tháng",
@@ -72,7 +74,7 @@
         "absentHelper": "Ngày ảnh hưởng lương: {{value}}"
       }
     },
-    "status": {
+    "statusOptions": {
       "ON_TIME": "Đúng giờ",
       "LATE": "Đi trễ",
       "ABSENT": "Vắng mặt",
@@ -91,6 +93,70 @@
       "APPROVED": "Đã duyệt",
       "REJECTED": "Đã từ chối"
     }
+  },
+  "leaveRequest": {
+    "title": "Đơn xin nghỉ của tôi",
+    "createTitle": "Tạo đơn xin nghỉ",
+    "createNew": "Tạo đơn mới",
+    "startDate": "Ngày bắt đầu",
+    "endDate": "Ngày kết thúc",
+    "type": "Loại nghỉ",
+    "types": {
+      "vacation": "Nghỉ phép",
+      "sick": "Nghỉ ốm",
+      "personal": "Nghỉ cá nhân",
+      "other": "Khác"
+    },
+    "status": {
+      "approved": "Đã duyệt",
+      "rejected": "Đã từ chối",
+      "pending": "Chờ duyệt"
+    },
+    "reason": "Lý do",
+    "reasonPlaceholder": "Nhập lý do xin nghỉ...",
+    "clinic": "Cơ sở",
+    "approvedBy": "Duyệt bởi",
+    "createdAt": "Tạo lúc",
+    "cancel": "Hủy đơn",
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "management": {
+      "title": "Quản lý đơn xin nghỉ"
+    },
+    "searchPlaceholder": "Tìm kiếm...",
+    "processTitle": "Xử lý đơn xin nghỉ",
+    "processMessage": "Bạn có muốn",
+    "process": "xử lý đơn này",
+    "commentPlaceholder": "Nhập ghi chú (tùy chọn)...",
+    "messages": {
+      "loadFailed": "Không thể tải danh sách đơn xin nghỉ",
+      "noRequests": "Chưa có đơn xin nghỉ nào",
+      "confirmCancel": "Bạn có chắc muốn hủy đơn này?",
+      "cancelSuccess": "Hủy đơn thành công",
+      "cancelFailed": "Không thể hủy đơn",
+      "createSuccess": "Tạo đơn xin nghỉ thành công",
+      "createFailed": "Không thể tạo đơn xin nghỉ",
+      "approveSuccess": "Duyệt đơn thành công",
+      "rejectSuccess": "Từ chối đơn thành công",
+      "processFailed": "Không thể xử lý đơn",
+      "noAccessToken": "Không có quyền truy cập",
+      "noClinic": "Không thể xác định cơ sở. Vui lòng liên hệ quản trị viên.",
+      "fillAllFields": "Vui lòng điền đầy đủ thông tin",
+      "invalidDateRange": "Ngày bắt đầu phải trước ngày kết thúc",
+      "pastDate": "Không thể tạo đơn cho ngày trong quá khứ"
+    }
+  },
+  "common": {
+    "close": "Đóng",
+    "cancel": "Hủy",
+    "submit": "Gửi",
+    "submitting": "Đang gửi...",
+    "confirm": "Xác nhận",
+    "retry": "Thử lại",
+    "all": "Tất cả",
+    "previous": "Trước",
+    "next": "Sau",
+    "page": "Trang"
   },
   "cta": {
     "getInTouch": "Liên hệ ngay"

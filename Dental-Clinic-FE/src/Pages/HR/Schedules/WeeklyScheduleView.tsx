@@ -184,7 +184,7 @@ export default function WeeklyScheduleView({
                               )}
                               {daySchedule.morning.room && (
                                 <div className="text-xs text-blue-800 truncate mb-0.5">
-                                  🚪 {daySchedule.morning.room.roomName}
+                                   {daySchedule.morning.room.roomName}
                                 </div>
                               )}
                               {daySchedule.morning.status && (
@@ -202,7 +202,7 @@ export default function WeeklyScheduleView({
                               )}
                               {daySchedule.morning.note && (
                                 <div className="text-xs text-blue-700 mt-1 italic truncate" title={daySchedule.morning.note}>
-                                  📝 {daySchedule.morning.note}
+                                   {daySchedule.morning.note}
                                 </div>
                               )}
                             </div>
