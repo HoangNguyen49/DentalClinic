@@ -1,5 +1,8 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import HomePage from "../pages/Home/index";
+import Service from "../pages/Service";
+import About from "../pages/About";
+import ContactPage from "../pages/Contact";
 import LoginPage from "../pages/Auth/LoginPage";
 import SignUp from "../pages/Auth/SignUp";
 import OAuthSuccessHandler from "../pages/Auth/OAuthSuccessHandler";
@@ -19,9 +22,6 @@ import EmployeesList from "../pages/HR/Employees/EmployeesList";
 import CreateEmployeeForm from "../pages/HR/Employees/CreateEmployeeForm";
 import EmployeeDetail from "../pages/HR/Employees/EmployeeDetail";
 import DailyAttendanceView from "../pages/HR/Attendance/DailyAttendanceView";
-import Service from "../pages/Service";
-import About from "../pages/About";
-import ContactPage from "../pages/Contact";
 import ClinicManagement from "../pages/Admin/Clinics/ClinicManagement";
 import AdminAttendanceManagement from "../pages/Admin/Attendance/AdminAttendanceManagement";
 import AdminStaffManagement from "../pages/Admin/Staff/AdminStaffManagement";
@@ -31,6 +31,7 @@ import ReceptionDashboard from "../pages/Reception/Dashboard/ReceptionDashboard"
 import BookingOffline from "../pages/Reception/BookingCRM/BookingOffline";
 import BookingPage from "../pages/Booking/BookingPage";
 import PatientList from "../pages/Reception/Patient/PatientList";
+import AuthGuard from "./routes/AuthGuard";
 
 function App() {
   return (
@@ -48,35 +49,40 @@ function App() {
         <Route path="/my-attendance" element={<EmployeeAttendanceView />} />
         <Route path="/booking" element={<BookingPage />} />
 
-        <Route path="/admin" element={<ProtectedRouteAdmin />}>
-          <Route element={<AdminLayout />}>
-            <Route index element={<AdminDashboardPage />} />{" "}
-            <Route path="dashboard" element={<AdminDashboardPage />} />
-            <Route path="appointments" element={<AppointmentList />} />
-            <Route path="attendance" element={<AdminAttendanceManagement />} />
-            <Route path="clinics" element={<ClinicManagement />} />
-            <Route path="staff" element={<AdminStaffManagement />} />
+        <Route element={<AuthGuard />}>
+          <Route path="/admin" element={<ProtectedRouteAdmin />}>
+            <Route element={<AdminLayout />}>
+              <Route index element={<AdminDashboardPage />} />{" "}
+              <Route path="dashboard" element={<AdminDashboardPage />} />
+              <Route path="appointments" element={<AppointmentList />} />
+              <Route
+                path="attendance"
+                element={<AdminAttendanceManagement />}
+              />
+              <Route path="clinics" element={<ClinicManagement />} />
+              <Route path="staff" element={<AdminStaffManagement />} />
+            </Route>
           </Route>
-        </Route>
-        
-        <Route path="/hr" element={<ProtectedRouteHR />}>
-          <Route element={<HRLayout />}>
-            <Route path="dashboard" element={<HrDashboardPage />} />
-            <Route path="employees" element={<EmployeesList />} />
-            <Route path="employees/create" element={<CreateEmployeeForm />} />
-            <Route path="employees/:id" element={<EmployeeDetail />} />
-            <Route path="attendance" element={<DailyAttendanceView />} />
-            <Route path="schedules" element={<ScheduleList />} />
-            <Route path="schedules/create" element={<CreateScheduleForm />} />
-          </Route>
-        </Route>
 
-        <Route path="/reception" element={<ProtectedRouteReception />}> 
-          <Route element={<ReceptionLayout />}>
-             <Route path="dashboard" element={<ReceptionDashboard />} />
-             <Route path="walk-in" element={<BookingOffline />} /> 
-             <Route path="appointments" element={<AppointmentList/>} />
-             <Route path="patients" element={<PatientList/>} />
+          <Route path="/hr" element={<ProtectedRouteHR />}>
+            <Route element={<HRLayout />}>
+              <Route path="dashboard" element={<HrDashboardPage />} />
+              <Route path="employees" element={<EmployeesList />} />
+              <Route path="employees/create" element={<CreateEmployeeForm />} />
+              <Route path="employees/:id" element={<EmployeeDetail />} />
+              <Route path="attendance" element={<DailyAttendanceView />} />
+              <Route path="schedules" element={<ScheduleList />} />
+              <Route path="schedules/create" element={<CreateScheduleForm />} />
+            </Route>
+          </Route>
+
+          <Route path="/reception" element={<ProtectedRouteReception />}>
+            <Route element={<ReceptionLayout />}>
+              <Route path="dashboard" element={<ReceptionDashboard />} />
+              <Route path="walk-in" element={<BookingOffline />} />
+              <Route path="appointments" element={<AppointmentList />} />
+              <Route path="patients" element={<PatientList />} />
+            </Route>
           </Route>
         </Route>
       </Routes>
