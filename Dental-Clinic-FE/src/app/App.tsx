@@ -27,6 +27,7 @@ import Service from "../Pages/Service";
 import About from "../Pages/About";
 import ContactPage from "../Pages/Contact";
 import Product from "../Pages/Product/index";
+import AccountantProduct from "../Pages/Product/accountant";
 import ClinicManagement from "../Pages/Admin/Clinics/ClinicManagement";
 import AdminAttendanceManagement from "../Pages/Admin/Attendance/AdminAttendanceManagement";
 import HrAttendanceManagement from "../Pages/HR/Attendance/HrAttendanceManagement";
@@ -97,6 +98,8 @@ function App() {
               </Route>
             </Route>
           </Route>
+
+          <Route path="/accountant/create" element={<AccountantProduct />} />
         </Routes>
       </Router>
       <ToastContainer position="top-right" autoClose={3000} />

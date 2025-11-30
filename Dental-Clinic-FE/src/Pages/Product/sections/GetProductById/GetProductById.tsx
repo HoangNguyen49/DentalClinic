@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import useGetProductById from "./useGetProductById";
+import {getProductImageSrc} from "../../../../huybro_api/productApi.ts";
 
 export default function GetProductById() {
   const { id } = useParams();
@@ -44,7 +45,7 @@ export default function GetProductById() {
                       }`}
                   >
                     <img
-                      src={`${import.meta.env.VITE_API_URL}${img.imageUrl}`}
+                      src={getProductImageSrc(img.imageUrl)}
                       alt={`${detail.productName} thumb ${img.imageOrder}`}
                       className="h-full w-full object-cover"
                     />
@@ -59,7 +60,7 @@ export default function GetProductById() {
                 <div className="relative aspect-square w-full bg-gray-50">
                   {images[imgIdx] ? (
                     <img
-                      src={`${import.meta.env.VITE_API_URL}${images[imgIdx].imageUrl}`}
+                      src={getProductImageSrc(images[imgIdx].imageUrl)}
                       alt={`${detail.productName} ${images[imgIdx].imageOrder}`}
                       className="absolute inset-0 h-full w-full object-cover"
                     />

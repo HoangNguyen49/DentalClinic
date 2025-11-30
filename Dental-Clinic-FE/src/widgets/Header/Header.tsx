@@ -38,7 +38,7 @@ function Header() {
     // Cập nhật lại trang khi User upload avatar
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
-    
+
     const handleAvatarUpdate = () => {
     const updatedUser = localStorage.getItem("user");
     if (updatedUser) setUser(JSON.parse(updatedUser));
