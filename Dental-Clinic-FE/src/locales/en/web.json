@@ -33,7 +33,7 @@
       "date": "Date",
       "status": "Status",
       "reason": "Reason",
-      "adminNote": "Admin Note",
+      "adminNote": "HR Note",
       "submit": "Submit Explanation",
       "update": "Update Explanation",
       "dialogTitle": "Submit Explanation",

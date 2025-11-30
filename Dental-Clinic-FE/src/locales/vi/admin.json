@@ -202,8 +202,9 @@
       "enterRejectionNote": "Nhập lý do từ chối (không bắt buộc)",
       "explanationApproved": "Đã duyệt giải trình thành công",
       "explanationRejected": "Đã từ chối giải trình",
+      "missingCheckOutApproved": "Đã duyệt giải trình. Hệ thống tự động cập nhật giờ ra là 18:00 và tính lại giờ công.",
       "processFailed": "Không thể xử lý giải trình",
-      "addAdminNotePlaceholder": "Nhập ghi chú quản trị (không bắt buộc)",
+      "addAdminNotePlaceholder": "Nhập ghi chú HR (không bắt buộc)",
       "loading": "Đang tải danh sách chấm công...",
       "noData": "Không có dữ liệu chấm công",
       "noPendingExplanations": "Không có giải trình chờ xử lý"

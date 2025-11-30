@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import i18n from "../../app/providers/i18n";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
+import NotificationBell from "../NotificationBell";
 
 function Header() {
   const navigate = useNavigate();
@@ -147,6 +148,9 @@ function Header() {
           >
             {i18n.language === "en" ? <span>VN</span> : <span>EN</span>}
           </button>
+
+          {/* Notification Bell - chỉ hiển thị khi user đã login */}
+          {user && <NotificationBell />}
 
           {!user ? (
             <Link to="/login">

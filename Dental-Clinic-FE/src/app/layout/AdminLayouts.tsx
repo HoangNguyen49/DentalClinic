@@ -15,6 +15,8 @@ import {
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
+import NotificationBell from "../../widgets/NotificationBell";
+
 const AdminLayout = () => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation("admin"); // namespace "admin"
@@ -97,6 +99,7 @@ const AdminLayout = () => {
         <header className="bg-white shadow px-6 py-4 flex justify-between items-center">
           <h1 className="text-xl font-semibold text-gray-800">{t("pageTitles.adminDashboard")}</h1>
           <div className="flex items-center gap-2">
+            <NotificationBell />
             <button
               onClick={toggleLanguage}
               className="px-3 py-2 border rounded hover:bg-gray-100"
@@ -134,8 +137,7 @@ const NavItem = ({
   <NavLink
     to={to}
     className={({ isActive }) =>
-      `flex items-center gap-3 px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition ${
-        isActive ? "bg-blue-200 font-semibold text-blue-700" : ""
+      `flex items-center gap-3 px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition ${isActive ? "bg-blue-200 font-semibold text-blue-700" : ""
       }`
     }
   >

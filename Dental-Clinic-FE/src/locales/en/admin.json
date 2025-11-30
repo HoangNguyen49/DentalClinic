@@ -200,8 +200,9 @@
       "enterRejectionNote": "Enter rejection reason (optional)",
       "explanationApproved": "Explanation approved successfully",
       "explanationRejected": "Explanation rejected",
+      "missingCheckOutApproved": "Explanation approved. Check-out time automatically set to 18:00 and work hours recalculated.",
       "processFailed": "Unable to process explanation",
-      "addAdminNotePlaceholder": "Add admin note (optional)",
+      "addAdminNotePlaceholder": "Add HR note (optional)",
       "loading": "Loading attendance records...",
       "noData": "No attendance records found",
       "noPendingExplanations": "No pending explanations"

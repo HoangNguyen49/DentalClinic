@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { CheckCircle, XCircle, Clock, Search } from "lucide-react";
+import { useNotification } from "../../../app/providers/NotificationContext";
 
 const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -44,9 +45,39 @@ export default function LeaveRequestManagement() {
   const [comment, setComment] = useState("");
   const accessToken = localStorage.getItem("accessToken");
 
+  const { notifications } = useNotification();
+  const lastNotificationIdRef = useRef<number | null>(null);
+
   useEffect(() => {
     fetchLeaveRequests();
   }, [page, statusFilter]);
+
+  // Effect lắng nghe notifications để tự động refresh danh sách đơn xin nghỉ
+  useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
+    if (!accessToken) return;
+
+    const latestNotification = notifications[0];
+    if (!latestNotification || latestNotification.notificationId === lastNotificationIdRef.current) {
+      return;
+    }
+
+    // Nếu có thông báo về đơn xin nghỉ mới
+    if (
+      latestNotification.type === "LEAVE_REQUEST_CREATED" &&
+      latestNotification.relatedEntityType === "LEAVE_REQUEST"
+    ) {
+      lastNotificationIdRef.current = latestNotification.notificationId;
+
+      // Refresh dữ liệu ngay lập tức
+      fetchLeaveRequests();
+      // Nếu đang ở tab chờ duyệt thì refresh cả pending
+      if (statusFilter === "PENDING" || statusFilter === "") {
+        fetchPendingRequests();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications]);
 
   const fetchLeaveRequests = async () => {
     if (!accessToken) return;
@@ -67,7 +98,7 @@ export default function LeaveRequestManagement() {
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message ||
-          t("leaveRequest.messages.loadFailed", "Không thể tải danh sách đơn xin nghỉ")
+        t("leaveRequest.messages.loadFailed", "Không thể tải danh sách đơn xin nghỉ")
       );
     } finally {
       setLoading(false);
@@ -89,7 +120,7 @@ export default function LeaveRequestManagement() {
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message ||
-          t("leaveRequest.messages.loadFailed", "Không thể tải danh sách đơn xin nghỉ")
+        t("leaveRequest.messages.loadFailed", "Không thể tải danh sách đơn xin nghỉ")
       );
     } finally {
       setLoading(false);
@@ -122,7 +153,7 @@ export default function LeaveRequestManagement() {
     } catch (error: any) {
       toast.error(
         error?.response?.data?.message ||
-          t("leaveRequest.messages.processFailed", "Không thể xử lý đơn")
+        t("leaveRequest.messages.processFailed", "Không thể xử lý đơn")
       );
     }
   };
@@ -212,7 +243,7 @@ export default function LeaveRequestManagement() {
   return (
     <div className="space-y-6">
       <ToastContainer position="top-right" autoClose={3000} />
-      
+
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-900">{t("leaveRequest.management.title", "Quản lý đơn xin nghỉ")}</h1>
       </div>
@@ -235,11 +266,10 @@ export default function LeaveRequestManagement() {
                 setStatusFilter("");
                 fetchLeaveRequests();
               }}
-              className={`px-4 py-2 rounded-lg transition ${
-                statusFilter === ""
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`px-4 py-2 rounded-lg transition ${statusFilter === ""
+                ? "bg-blue-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
             >
               {t("common.all", "Tất cả")}
             </button>
@@ -248,11 +278,10 @@ export default function LeaveRequestManagement() {
                 setStatusFilter("PENDING");
                 fetchPendingRequests();
               }}
-              className={`px-4 py-2 rounded-lg transition ${
-                statusFilter === "PENDING"
-                  ? "bg-yellow-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`px-4 py-2 rounded-lg transition ${statusFilter === "PENDING"
+                ? "bg-yellow-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
             >
               {t("leaveRequest.status.pending", "Chờ duyệt")}
             </button>
@@ -261,11 +290,10 @@ export default function LeaveRequestManagement() {
                 setStatusFilter("APPROVED");
                 fetchLeaveRequests();
               }}
-              className={`px-4 py-2 rounded-lg transition ${
-                statusFilter === "APPROVED"
-                  ? "bg-green-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`px-4 py-2 rounded-lg transition ${statusFilter === "APPROVED"
+                ? "bg-green-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
             >
               {t("leaveRequest.status.approved", "Đã duyệt")}
             </button>
@@ -274,11 +302,10 @@ export default function LeaveRequestManagement() {
                 setStatusFilter("REJECTED");
                 fetchLeaveRequests();
               }}
-              className={`px-4 py-2 rounded-lg transition ${
-                statusFilter === "REJECTED"
-                  ? "bg-red-600 text-white"
-                  : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-              }`}
+              className={`px-4 py-2 rounded-lg transition ${statusFilter === "REJECTED"
+                ? "bg-red-600 text-white"
+                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                }`}
             >
               {t("leaveRequest.status.rejected", "Đã từ chối")}
             </button>

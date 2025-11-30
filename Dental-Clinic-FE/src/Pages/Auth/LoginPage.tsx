@@ -37,8 +37,9 @@ function LoginPage() {
     }
     setLoading(true);
     try {
+      const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
       const { data } = await axios.post<LoginResponse>(
-        `${import.meta.env.VITE_API_URL}/api/auth/login`,
+        `${apiUrl}/api/auth/login`,
         { email, password },
         { withCredentials: false } // JWT Bearer không cần cookie
       );
