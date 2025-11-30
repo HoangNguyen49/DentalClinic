@@ -73,11 +73,7 @@ function Header() {
   };
 
   const handleGetInTouch = () => {
-    if (user) {
       navigate("/booking");
-    } else {
-      navigate("/login", { state: { from: "/booking" } });
-    }
   }
 
   // check role ADMIN

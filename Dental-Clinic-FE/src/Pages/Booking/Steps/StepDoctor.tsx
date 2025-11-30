@@ -1,42 +1,47 @@
-import {useState, useEffect} from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
-
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 interface StepProps {
-    data: any;
-    updateData: (data: any) => void;
-    onNext: () => void;
-    onPrev:() => void;
+  data: {
+    clinicId: number | null;
+    clinicName: string;
+    selectedServices: any[];
+    doctorId: number | null;
+    [key: string]: any;
+  };
+  updateData: (data: any) => void;
+  onNext: () => void;
+  onPrev: () => void;
 }
 
 interface Doctor {
-    id: number;
-    fullName: string;
-    specialty: string;
-    avatarUrl: string | null;
+  id: number;
+  fullName: string;
+  specialties: string[];
+  avatarUrl: string | null;
 }
 
-export default function StepDoctor({data, updateData, onNext, onPrev}: StepProps) {
-    const [doctors, setDoctors] = useState<Doctor[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
+export default function StepDoctor({ data, updateData, onNext, onPrev }: StepProps) {
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (data.clinicId && data.selectedServices.length > 0) {
+  // Tính toán danh sách chuyên khoa từ các dịch vụ đã chọn
+  const uniqueCategories = Array.from(new Set((data.selectedServices || []).map((s: any) => s.category)));
+
+  useEffect(() => {
+    if (data.clinicId && uniqueCategories.length > 0) {
       fetchDoctors();
     }
-    }, [data.clinicId, data.selectedServices]);
+  }, [data.clinicId, data.selectedServices]);
 
-const fetchDoctors = async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            // Lấy chuyên khoa từ dịch vụ đầu tiên trong mảng selectedServices
-            const uniqueCategories = Array.from(new Set(data.selectedServices.map((s: any) => s.category)));
-      
-      // 2. Chuyển thành chuỗi cách nhau dấu phẩy để gửi API
+  const fetchDoctors = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Chuyển mảng category thành chuỗi gửi API (VD: "Preventive,Implant")
       const specialtyParam = uniqueCategories.join(',');
 
       console.log(`Fetching doctors for Clinic: ${data.clinicId}, Specialties: ${specialtyParam}`);
@@ -44,34 +49,36 @@ const fetchDoctors = async () => {
       const response = await axios.get(`${API_BASE_URL}/api/public/doctors`, {
         params: {
           clinicId: data.clinicId,
-          specialty: specialtyParam // Gửi chuỗi "Preventive Care,Oral Surgery"
+          specialty: specialtyParam 
         }
       });
 
       setDoctors(response.data as Doctor[]);
-        } catch (err) {
-            console.error("Error fetching doctors:", err);
-            setError("Không thể tải danh sách bác sĩ. Vui lòng thử lại sau.");
-        }finally {
-            setLoading(false);
-        }
-    };
+      
+    } catch (err) {
+      console.error("Error fetching doctors:", err);
+      setError("Không thể tải danh sách bác sĩ. Vui lòng thử lại sau.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const handleSelectDoctor = (doctor: Doctor) => {
-        updateData({
-            ...data,
-            doctorId: doctor.id,
-            doctorName: doctor.fullName,
-            doctorAvatarUrl: doctor.avatarUrl
-        });
-    };
+  const handleSelectDoctor = (doctor: Doctor) => {
+    updateData({
+      ...data,
+      doctorId: doctor.id,
+      doctorName: doctor.fullName,
+      doctorAvatar: doctor.avatarUrl, // Lưu key này để StepSummary dùng
+      doctorSpecialties: doctor.specialties // Lưu list này để StepSummary hiện Tags
+    });
+  };
 
-    return (
+  return (
     <div className="space-y-6 animate-fadeIn">
       <div className="text-center mb-6">
         <h3 className="text-xl font-bold text-gray-800">Chọn Bác Sĩ</h3>
         <p className="text-sm text-gray-500">
-           Chuyên khoa: <span className="font-semibold text-[#3366FF]">{data.serviceCategory}</span> 
+           Chuyên khoa: <span className="font-semibold text-[#3366FF]">{uniqueCategories.join(', ')}</span> 
            {' '} tại {data.clinicName}
         </p>
       </div>
@@ -82,7 +89,7 @@ const fetchDoctors = async () => {
          <div className="text-center py-10 text-red-500">{error}</div>
       ) : doctors.length === 0 ? (
         <div className="text-center p-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-          <p className="text-gray-500 font-medium">Chưa có bác sĩ nào cho chuyên khoa này tại cơ sở đã chọn.</p>
+          <p className="text-gray-500 font-medium">Chưa có bác sĩ nào phụ trách (các) chuyên khoa này tại cơ sở đã chọn.</p>
           <p className="text-sm text-gray-400 mt-2">Vui lòng quay lại và thử chọn cơ sở khác.</p>
         </div>
       ) : (
@@ -104,15 +111,24 @@ const fetchDoctors = async () => {
               />
               <div className="flex-1">
                 <div className="font-bold text-gray-800 text-lg">{doctor.fullName}</div>
-                <div className="text-sm text-[#3366FF] font-medium bg-blue-50 inline-block px-2 py-0.5 rounded mt-1">
-                    {doctor.specialty}
+                
+                {/* Hiển thị Tags chuyên khoa */}
+                <div className="flex flex-wrap gap-1 mt-1">
+                    {doctor.specialties && doctor.specialties.map((spec, idx) => (
+                        <span 
+                            key={idx} 
+                            className="text-[10px] font-bold text-[#3366FF] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100"
+                        >
+                            {spec}
+                        </span>
+                    ))}
                 </div>
               </div>
               
               {/* Icon check khi được chọn */}
               {data.doctorId === doctor.id && (
                 <div className="bg-[#3366FF] text-white rounded-full p-1 shadow-sm animate-scaleIn">
-                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                   <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                     </svg>
                 </div>

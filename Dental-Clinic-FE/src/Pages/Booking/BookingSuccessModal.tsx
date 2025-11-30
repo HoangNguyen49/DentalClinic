@@ -14,7 +14,7 @@ export default function BookingSuccessModal({ isOpen, onClose }: SuccessModalPro
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer);
-            onClose(); // Hết giờ thì chuyển trang
+            onClose();
             return 0;
           }
           return prev - 1;
@@ -31,7 +31,7 @@ export default function BookingSuccessModal({ isOpen, onClose }: SuccessModalPro
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fadeIn">
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-sm w-full text-center transform transition-all scale-100">
         
-        {/* Icon Check Hoạt hình */}
+        {/* Icon Check*/}
         <div className="mx-auto flex items-center justify-center h-20 w-20 rounded-full bg-green-100 mb-6">
           <svg className="h-10 w-10 text-green-600 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />

@@ -37,7 +37,6 @@ export default function BookingPage() {
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
   const handleConfirmBooking = async () => {
-    // 1. Kiểm tra đăng nhập & Lấy token
     const storedUser = localStorage.getItem("user");
     const token = localStorage.getItem("accessToken");
 
@@ -48,10 +47,6 @@ export default function BookingPage() {
     }
 
     const currentUser = JSON.parse(storedUser);
-    
-    // --- FIX 1: LOGIC PATIENT ID ---
-    // Nếu trong localStorage có patientId thì dùng, nếu chưa có (user mới) thì gửi 0.
-    // Backend sẽ tự động tìm profile Patient dựa vào userId trong Token.
     const patientId = currentUser.patientId || 0; 
 
 
@@ -67,9 +62,9 @@ export default function BookingPage() {
 
       const payload = {
         clinicId: bookingData.clinicId,
-        patientId: patientId, // Gửi 0 hoặc ID thật
+        patientId: patientId, 
         doctorId: bookingData.doctorId,
-        roomId: null, // Để null, để Backend hoặc Lễ tân xếp sau
+        roomId: null, // Để null, để Lễ tân xếp sau
         startDateTime: startDateTime.toISOString(),
         status: "PENDING",
         channel: "WEB_BOOKING",
@@ -83,8 +78,6 @@ export default function BookingPage() {
       console.log("Sending Booking Payload:", payload);
 
       // 3. Gọi API
-      // --- FIX 2: SỬA LỖI TYPO URL (Bỏ dấu ' ở cuối) ---
-      // Đảm bảo bạn đã tạo endpoint này trong PatientBookingController
       await axios.post(
         `${API_BASE_URL}/api/booking/appointments`, 
         payload,
@@ -107,17 +100,15 @@ export default function BookingPage() {
       let message = "Có lỗi xảy ra. Vui lòng thử lại sau.";
 
       // Phân loại lỗi để báo chi tiết
-      if (status === 409) { // Conflict
+      if (status === 409) { 
          title = "Rất tiếc, khung giờ này vừa có người đặt!";
          message = "Hệ thống vừa ghi nhận một lịch hẹn khác trùng với thời gian bạn chọn. Vui lòng chọn khung giờ khác.";
       } else if (status === 404) {
          title = "Dữ liệu không tồn tại";
          message = "Có vẻ như Dịch vụ hoặc Bác sĩ này đã thay đổi. Vui lòng tải lại trang.";
       } else if (errorData && errorData.message) {
-         message = errorData.message; // Lấy message từ Backend trả về
+         message = errorData.message; 
       }
-
-      // Hiện Toast Custom đẹp
       toast.error(
         <div className="flex flex-col gap-1">
           <h4 className="font-bold text-base">{title}</h4>
@@ -212,7 +203,7 @@ export default function BookingPage() {
                   {step}
                 </div>
                 
-                {/* Connector Line (trừ bước cuối) */}
+                {/* Connector Line */}
                 {step < 4 && (
                   <div className={`w-16 md:w-24 h-1 transition-all duration-500 mx-2 rounded-full
                     ${currentStep > step ? 'bg-white' : 'bg-blue-300'}`} 

@@ -38,6 +38,7 @@ import BookingOffline from "../Pages/Reception/BookingCRM/BookingOffline";
 import BookingPage from "../Pages/Booking/BookingPage";
 import PatientList from "../Pages/Reception/Patient/PatientList";
 import { NotificationProvider } from "./providers/NotificationContext";
+import AuthGuard from "./routes/AuthGuard";
 
 function App() {
   return (
@@ -58,37 +59,42 @@ function App() {
           <Route path="/my-leave-requests" element={<LeaveRequestList />} />
           <Route path="/booking" element={<BookingPage />} />
 
-          <Route path="/admin" element={<ProtectedRouteAdmin />}>
-            <Route element={<AdminLayout />}>
-              <Route index element={<AdminDashboardPage />} />{" "}
-              <Route path="dashboard" element={<AdminDashboardPage />} />
-              <Route path="appointments" element={<AppointmentList />} />
-              <Route path="attendance" element={<AdminAttendanceManagement />} />
-              <Route path="clinics" element={<ClinicManagement />} />
-              <Route path="staff" element={<AdminStaffManagement />} />
+          <Route element={<AuthGuard />}>
+            <Route path="/admin" element={<ProtectedRouteAdmin />}>
+              <Route element={<AdminLayout />}>
+                <Route index element={<AdminDashboardPage />} />{" "}
+                <Route path="dashboard" element={<AdminDashboardPage />} />
+                <Route path="appointments" element={<AppointmentList />} />
+                <Route
+                  path="attendance"
+                  element={<AdminAttendanceManagement />}
+                />
+                <Route path="clinics" element={<ClinicManagement />} />
+                <Route path="staff" element={<AdminStaffManagement />} />
+              </Route>
             </Route>
-          </Route>
 
-          <Route path="/hr" element={<ProtectedRouteHR />}>
-            <Route element={<HRLayout />}>
-              <Route path="dashboard" element={<HrDashboardPage />} />
-              <Route path="employees" element={<EmployeesList />} />
-              <Route path="employees/create" element={<CreateEmployeeForm />} />
-              <Route path="employees/:id" element={<EmployeeDetail />} />
-              <Route path="attendance" element={<DailyAttendanceView />} />
-              <Route path="attendance/explanations" element={<HrAttendanceManagement />} />
-              <Route path="schedules" element={<ScheduleList />} />
-              <Route path="schedules/create" element={<CreateScheduleForm />} />
-              <Route path="leave-requests" element={<LeaveRequestManagement />} />
+            <Route path="/hr" element={<ProtectedRouteHR />}>
+              <Route element={<HRLayout />}>
+                <Route path="dashboard" element={<HrDashboardPage />} />
+                <Route path="employees" element={<EmployeesList />} />
+                <Route path="employees/create" element={<CreateEmployeeForm />} />
+                <Route path="employees/:id" element={<EmployeeDetail />} />
+                <Route path="attendance" element={<DailyAttendanceView />} />
+                <Route path="attendance/explanations" element={<HrAttendanceManagement />} />
+                <Route path="schedules" element={<ScheduleList />} />
+                <Route path="schedules/create" element={<CreateScheduleForm />} />
+                <Route path="leave-requests" element={<LeaveRequestManagement />} />
+              </Route>
             </Route>
-          </Route>
 
-          <Route path="/reception" element={<ProtectedRouteReception />}>
-            <Route element={<ReceptionLayout />}>
-              <Route path="dashboard" element={<ReceptionDashboard />} />
-              <Route path="walk-in" element={<BookingOffline />} />
-              <Route path="appointments" element={<AppointmentList />} />
-              <Route path="patients" element={<PatientList />} />
+            <Route path="/reception" element={<ProtectedRouteReception />}>
+              <Route element={<ReceptionLayout />}>
+                <Route path="dashboard" element={<ReceptionDashboard />} />
+                <Route path="walk-in" element={<BookingOffline />} />
+                <Route path="appointments" element={<AppointmentList />} />
+                <Route path="patients" element={<PatientList />} />
+              </Route>
             </Route>
           </Route>
         </Routes>
