@@ -27,7 +27,10 @@ import Service from "../Pages/Service";
 import About from "../Pages/About";
 import ContactPage from "../Pages/Contact";
 import Product from "../Pages/Product/index";
-import AccountantProduct from "../Pages/Product/accountant";
+import AccountantRoutes from "../Pages/Product/accountant";
+import Cart from "../Pages/Product/sections/GetProductsInvoice/index";
+import ProtectedRouteAccountant from "../app/routes/ProtectedRouteAccountant";
+import PaypalSuccessPage from "../Pages/Product/sections/GetProductsInvoice/Payments/paypal/PaypalSuccessPage";
 import ClinicManagement from "../Pages/Admin/Clinics/ClinicManagement";
 import AdminAttendanceManagement from "../Pages/Admin/Attendance/AdminAttendanceManagement";
 import HrAttendanceManagement from "../Pages/HR/Attendance/HrAttendanceManagement";
@@ -49,6 +52,8 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/service" element={<Service />} />
           <Route path="/products/*" element={<Product />} />
+          <Route path="/cart/*" element={<Cart />} />
+          <Route path="/paypal/success" element={<PaypalSuccessPage />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/about" element={<About />} />
           <Route path="/login" element={<LoginPage />} />
@@ -97,9 +102,11 @@ function App() {
                 <Route path="patients" element={<PatientList />} />
               </Route>
             </Route>
-          </Route>
 
-          <Route path="/accountant/create" element={<AccountantProduct />} />
+            <Route element={<ProtectedRouteAccountant />}>
+              <Route path="/accountant/*" element={<AccountantRoutes />} />
+            </Route>
+          </Route>
         </Routes>
       </Router>
       <ToastContainer position="top-right" autoClose={3000} />

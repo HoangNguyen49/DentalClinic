@@ -5,6 +5,7 @@ import i18n from "../../app/providers/i18n";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "../NotificationBell";
+import CartIconButton from "../../Pages/Product/sections/widgets/CartIconButton.tsx";
 
 function Header() {
   const navigate = useNavigate();
@@ -40,8 +41,8 @@ function Header() {
     if (storedUser) setUser(JSON.parse(storedUser));
 
     const handleAvatarUpdate = () => {
-    const updatedUser = localStorage.getItem("user");
-    if (updatedUser) setUser(JSON.parse(updatedUser));
+      const updatedUser = localStorage.getItem("user");
+      if (updatedUser) setUser(JSON.parse(updatedUser));
     };
 
     // Đồng bộ khi localStorage thay đổi (khác tab)
@@ -124,11 +125,11 @@ function Header() {
           <Link to="/service" className="hover:text-blue-600">
             {t("nav.services")}
           </Link>
-          <Link to="/about" className="hover:text-blue-600">
-            {t("nav.about")}
-          </Link>
           <Link to="/products" className="hover:text-blue-600">
             {t("nav.products")}
+          </Link>
+          <Link to="/about" className="hover:text-blue-600">
+            {t("nav.about")}
           </Link>
           <Link to="/contact" className="hover:text-blue-600">
             {t("nav.contact")}
@@ -148,6 +149,8 @@ function Header() {
           {/* Notification Bell - chỉ hiển thị khi user đã login */}
           {user && <NotificationBell />}
 
+          <CartIconButton />
+          
           {!user ? (
             <Link to="/login">
               <button className="px-5 py-2 rounded-full border-2 border-[#3366FF] text-[#3366FF] font-bold transition hover:bg-[#3366FF] hover:text-white">

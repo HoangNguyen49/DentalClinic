@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { type SortKey } from "./GetAllProducts/useGetAllProducts";
+import { type SortKey } from "../GetAllProducts/useGetAllProducts";
 
 type Props = {
   q: string;
@@ -77,7 +77,7 @@ export default function ToolbarProduct({
                   } group-hover:opacity-90`}
               />
               <span className="relative z-10 flex items-center gap-1 text-white tracking-wider">
-                {sort === "name-desc" ? (
+                {sort === "name-asc" ? (
                   <>
                     <span>A</span>
                     <svg

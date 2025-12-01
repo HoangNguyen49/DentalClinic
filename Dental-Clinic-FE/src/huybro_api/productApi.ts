@@ -1,6 +1,4 @@
 import axiosClient, { API_BASE_URL } from './axiosClient';
-import { AxiosError } from 'axios';
-
 
 export interface Product {
   productId: number;
@@ -139,7 +137,8 @@ export function extractValidationErrors(error: unknown): ValidationErrorResult {
     globalErrors: [],
   };
 
-  const axiosErr = error as AxiosError<unknown, unknown>;
+  const axiosErr = error as { response?: { data?: unknown } };
+
   const data = axiosErr.response?.data as unknown;
 
   if (!data || typeof data !== 'object') {
@@ -300,14 +299,20 @@ export async function suggestSkuForAccountant(
 
 // ====== DTO cho AI validate/analyze images ======
 
+export interface ProductImageBase64WithOrder {
+  base64: string;
+  imageOrder: number;
+}
+
 export interface ProductImageValidateRequestDto {
-  base64Images: string[];
+  images: ProductImageBase64WithOrder[];
 }
 
 export interface ProductImageAnalyzeRequestDto {
-  base64Images: string[];
+  images: ProductImageBase64WithOrder[];
   allowedTypeNames?: string[];
 }
+
 // Theo docs: FE dùng các field này để auto-fill form
 export interface GeminiVisionResult {
   productName?: string;
@@ -327,15 +332,11 @@ export interface GeminiVisionResult {
  * 200 OK nếu hợp lệ, 400 với globalErrors nếu AI không chấp nhận
  */
 export async function validateProductImagesAi(
-  base64Images: string[],
+  images: ProductImageBase64WithOrder[],
 ): Promise<void> {
-  const payload: ProductImageValidateRequestDto = { base64Images };
-  await axiosClient.post<void>(
-    '/api/products/ai/validate-images',
-    payload,
-  );
+  const payload: ProductImageValidateRequestDto = { images };
+  await axiosClient.post<void>('/api/products/ai/validate-images', payload);
 }
-
 /**
  * B. API vừa validate vừa tự tạo các field liên quan bằng AI
  * (moderation + vision) – auto-fill form
@@ -343,11 +344,11 @@ export async function validateProductImagesAi(
  * Body: { base64Images: string[]; allowedTypeNames?: string[] }
  */
 export async function analyzeProductImagesAi(
-  base64Images: string[],
+  images: ProductImageBase64WithOrder[],
   allowedTypeNames?: string[],
 ): Promise<GeminiVisionResult> {
   const payload: ProductImageAnalyzeRequestDto = {
-    base64Images,
+    images,
     ...(allowedTypeNames && allowedTypeNames.length > 0
       ? { allowedTypeNames }
       : {}),
@@ -356,6 +357,84 @@ export async function analyzeProductImagesAi(
   const res = await axiosClient.post<GeminiVisionResult>(
     '/api/products/ai/analyze-images',
     payload,
+  );
+  return res.data;
+}
+
+/* ====== THÊM MỚI: Update ====== */
+
+export interface ProductImageUpdateDto extends ProductImageCreateDto {
+  imageId?: number;
+}
+
+export interface ProductUpdateDto {
+  sku: string;
+  productName: string;
+  brand: string;
+  productDescription: string;
+  unit: number;
+  defaultRetailPrice: number;
+  currency: 'USD' | 'VND';
+  isTaxable: boolean;
+  taxCode: number;
+  isActive: boolean;
+  image: ProductImageUpdateDto[];
+  typeNames: string[];
+}
+
+/* ====== THÊM MỚI: PUT /api/products/accountant/{id} ====== */
+export async function updateProductForAccountant(
+  id: number | string,
+  payload: ProductUpdateDto,
+): Promise<Product> {
+  const res = await axiosClient.put<Product>(
+    `/api/products/accountant/update/${id}`,
+    payload,
+  );
+  return res.data;
+}
+
+/* ================== ACCOUNTANT LIST API ================== */
+
+export interface AccountantProductPageParams {
+  page?: number;
+  size?: number;
+  keyword?: string;
+  brand?: string[];
+  minPrice?: number;
+  maxPrice?: number;
+  active?: boolean;
+  types?: string[];
+}
+
+function toAccountantQueryString(p: AccountantProductPageParams): string {
+  const sp = new URLSearchParams();
+  if (p.page != null) sp.set("page", String(p.page));
+  if (p.size != null) sp.set("size", String(p.size));
+  if (p.keyword) sp.set("keyword", p.keyword);
+  if (p.brand && p.brand.length) p.brand.forEach((b) => sp.append("brand", b));
+  if (p.minPrice != null) sp.set("minPrice", String(p.minPrice));
+  if (p.maxPrice != null) sp.set("maxPrice", String(p.maxPrice));
+  if (p.active != null) sp.set("active", String(p.active));
+  if (p.types && p.types.length) p.types.forEach((t) => sp.append("type", t));
+  return sp.toString();
+}
+
+export async function fetchAllProductsForAccountant(): Promise<Product[]> {
+  const res = await axiosClient.get<Product[]>("/api/products/accountant");
+  return res.data ?? [];
+}
+
+export async function fetchAccountantProductsPage(
+  params: AccountantProductPageParams = {}
+): Promise<PageResponse<Product>> {
+  const defaults: Required<Pick<AccountantProductPageParams, "page" | "size">> = {
+    page: 0,
+    size: 8,
+  };
+  const qs = toAccountantQueryString({ ...defaults, ...params });
+  const res = await axiosClient.get<PageResponse<Product>>(
+    `/api/products/accountant/page?${qs}`
   );
   return res.data;
 }

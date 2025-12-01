@@ -1,15 +1,20 @@
-// src/Pages/Product/accountant/sections/index.tsx
-import React from 'react';
-import CreateProduct from '../../Product/accountant/Product/sections/CreateProduct/CreateProduct.tsx';
+// src/Pages/Accountant/index.tsx
+import { Routes, Route } from "react-router-dom";
+import MainDashboard from "./Dashboard/mainDashboard";
+import GetAllProduct from "./Product/sections/GetAllProducts/GetAllProducts";
+import CreateProduct from "./Product/sections/CreateProduct/CreateProduct";
+import ProductByIdUpdate from "./Product/sections/GetProductById/ProductByIdUpdate/ProductByIdUpdate";
 
-const AccountantProduct: React.FC = () => {
-    return (
-        <main>
-            <h1>Accountant – Product Management</h1>
-            {/* Tạm thời chỉ có màn CreateProduct, sau này có thể thêm list, filter, v.v. */}
-            <CreateProduct />
-        </main>
-    );
-};
+function AccountantRoutes() {
+  return (
+    <Routes>
+      <Route element={<MainDashboard />}>
+        <Route index element={<GetAllProduct />} />
+        <Route path="create" element={<CreateProduct />} />
+        <Route path="update/:id" element={<ProductByIdUpdate />} />
+      </Route>
+    </Routes>
+  );
+}
 
-export default AccountantProduct;
+export default AccountantRoutes;
