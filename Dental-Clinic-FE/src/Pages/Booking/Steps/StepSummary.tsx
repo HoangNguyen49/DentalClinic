@@ -12,10 +12,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
     if (!dateString) return '';
     const date = new Date(dateString);
     return new Intl.DateTimeFormat('vi-VN', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: '2-digit', 
-      day: '2-digit' 
+      weekday: 'long', year: 'numeric', month: '2-digit', day: '2-digit' 
     }).format(date);
   };
 
@@ -24,10 +21,19 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
       return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
   };
 
-  // Tính tổng thời gian & tổng tiền
-  const totalDuration = (data.selectedServices || []).reduce((acc: number, s: any) => acc + (s.defaultDuration || 0), 0);
-  const totalPrice = (data.selectedServices || []).reduce((acc: number, s: any) => acc + (s.price || 0), 0);
+  // --- TÍNH TOÁN CHI PHÍ ---
+  // 1. Tổng tiền dịch vụ
+  const servicesTotal = (data.selectedServices || []).reduce((acc: number, s: any) => acc + (s.price || 0), 0);
+  
+  // 2. Phí đặt lịch (Lấy từ data, nếu không có thì fallback về 0)
+  const bookingFee = data.bookingFee || 0;
+  
+  // 3. Tổng thanh toán cuối cùng
+  const grandTotal = servicesTotal + bookingFee;
 
+  // Tổng thời gian
+  const totalDuration = (data.selectedServices || []).reduce((acc: number, s: any) => acc + (s.defaultDuration || 0), 0);
+  
   const uniqueCategories = Array.from(new Set((data.selectedServices || []).map((s: any) => s.category)));
 
   return (
@@ -41,7 +47,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
       {/* TICKET CARD */}
       <div className="max-w-md mx-auto bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100">
         
-        {/* Header - Gradient */}
+        {/* Header */}
         <div className="bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] p-6 text-white relative overflow-hidden">
             <div className="absolute -right-6 -top-6 w-24 h-24 bg-white/20 rounded-full blur-xl"></div>
             <div className="absolute -left-6 -bottom-6 w-20 h-20 bg-white/20 rounded-full blur-xl"></div>
@@ -60,75 +66,75 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
             </div>
         </div>
 
-        {/* Body Vé */}
+        {/* Body */}
         <div className="p-6 space-y-6">
             
-            {/* 1. Bác sĩ */}
-            <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center border-2 border-blue-100 shrink-0 overflow-hidden">
-                    {data.doctorAvatar ? (
-                        <img src={data.doctorAvatar} alt={data.doctorName} className="w-full h-full object-cover" />
-                    ) : (
-                        <svg className="h-8 w-8 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-                        </svg>
-                    )}
-                </div>
-                <div>
-                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Bác sĩ phụ trách</p>
-                    <p className="font-bold text-gray-800 text-lg">{data.doctorName}</p>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                        {uniqueCategories.map((cat: any, index) => (
-                            <span key={index} className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
-                                {cat}
-                            </span>
-                        ))}
+            {/* 1. Bác sĩ (Chỉ hiện nếu có - VIP) */}
+            {data.doctorName && (
+                <>
+                    <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center border-2 border-blue-100 shrink-0 overflow-hidden">
+                            {data.doctorAvatar ? (
+                                <img src={data.doctorAvatar} alt={data.doctorName} className="w-full h-full object-cover" />
+                            ) : (
+                                <svg className="h-8 w-8 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                                </svg>
+                            )}
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Bác sĩ phụ trách</p>
+                            <p className="font-bold text-gray-800 text-lg">{data.doctorName}</p>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                                {uniqueCategories.map((cat: any, index) => (
+                                    <span key={index} className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-100">
+                                        {cat}
+                                    </span>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>
+                    <div className="border-t border-dashed border-gray-200"></div>
+                </>
+            )}
 
-            <div className="border-t border-dashed border-gray-200"></div>
-
-            {/* 2. Danh sách Dịch vụ & Giá */}
+            {/* 2. Chi tiết thanh toán */}
             <div>
                 <div className="flex justify-between items-center mb-3">
                     <p className="text-xs text-gray-400 uppercase font-bold tracking-wider flex items-center gap-2">
-                        <span>Dịch vụ</span>
-                        <span className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]">
-                            {data.selectedServices?.length || 0}
-                        </span>
+                        <span>Chi tiết dịch vụ</span>
                     </p>
                 </div>
 
                 <div className="bg-gray-50 rounded-xl p-3 space-y-3 border border-gray-100">
-                    {data.selectedServices && data.selectedServices.length > 0 ? (
-                        <>
-                            <div className="max-h-40 overflow-y-auto custom-scrollbar pr-1 space-y-2">
-                                {data.selectedServices.map((service: any, idx: number) => (
-                                    <div key={idx} className="flex justify-between items-start text-sm group border-b border-gray-200/50 pb-2 last:border-0 last:pb-0">
-                                        <div className="flex items-start gap-2 overflow-hidden">
-                                            <span className="text-blue-500 mt-1 text-[10px] shrink-0">●</span>
-                                            <span className="font-medium text-gray-700 truncate" title={service.serviceName}>
-                                                {service.serviceName}
-                                            </span>
-                                        </div>
-                                        <div className="text-right shrink-0 ml-2">
-                                            <div className="font-bold text-gray-900">{formatCurrency(service.price)}</div>
-                                            <div className="text-[10px] text-gray-500">{service.defaultDuration}p</div>
-                                        </div>
-                                    </div>
-                                ))}
+                    {/* Danh sách dịch vụ */}
+                    <div className="max-h-40 overflow-y-auto custom-scrollbar pr-1 space-y-2">
+                        {(data.selectedServices || []).map((service: any, idx: number) => (
+                            <div key={idx} className="flex justify-between items-start text-sm group border-b border-gray-200/50 pb-2 last:border-0 last:pb-0">
+                                <div className="flex items-start gap-2 overflow-hidden">
+                                    <span className="text-blue-500 mt-1 text-[10px] shrink-0">●</span>
+                                    <span className="font-medium text-gray-700 truncate" title={service.serviceName}>
+                                        {service.serviceName}
+                                    </span>
+                                </div>
+                                <div className="text-right shrink-0 ml-2">
+                                    <div className="font-bold text-gray-900">{formatCurrency(service.price)}</div>
+                                </div>
                             </div>
-                            
-                            {/* Tổng cộng */}
-                            <div className="border-t border-gray-200 pt-3 mt-2 flex justify-between items-center">
-                                <span className="text-sm font-bold text-gray-600">Tổng cộng</span>
-                                <span className="text-lg font-extrabold text-[#3366FF]">{formatCurrency(totalPrice)}</span>
-                            </div>
-                        </>
-                    ) : (
-                        <p className="text-sm text-red-500 italic text-center py-2">Chưa chọn dịch vụ nào</p>
-                    )}
+                        ))}
+                    </div>
+
+                    {/* Phí đặt lịch (Thêm mới) */}
+                    <div className="flex justify-between items-center text-sm pt-2 border-t border-dashed border-gray-200 mt-2">
+                        <span className="text-gray-600">Phí đặt lịch ({data.appointmentType === 'VIP' ? 'VIP' : 'Tiêu chuẩn'})</span>
+                        <span className="font-bold text-gray-800">{formatCurrency(bookingFee)}</span>
+                    </div>
+                    
+                    {/* Tổng cộng */}
+                    <div className="border-t border-gray-200 pt-3 mt-2 flex justify-between items-center">
+                        <span className="text-sm font-bold text-gray-600">Tổng cộng</span>
+                        <span className="text-xl font-extrabold text-[#3366FF]">{formatCurrency(grandTotal)}</span>
+                    </div>
                 </div>
             </div>
 
@@ -156,7 +162,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
         </div>
       </div>
 
-      {/* Navigation Buttons */}
+      {/* Buttons */}
       <div className="flex justify-between pt-6 mt-8 border-t border-gray-100">
         <button 
             onClick={onPrev} 

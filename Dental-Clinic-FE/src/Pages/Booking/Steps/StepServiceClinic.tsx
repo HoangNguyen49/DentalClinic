@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-// Import các icon cần dùng
 import { FaTooth, FaShieldAlt, FaMagic, FaBaby, FaSyringe, FaScrewdriver } from 'react-icons/fa';
-import { GiBracers } from 'react-icons/gi'; // Lưu ý: GiBracers (có s) hoặc check lại tên icon chính xác
+import { GiBracers } from 'react-icons/gi';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -33,10 +32,10 @@ interface StepProps {
   };
   updateData: (data: any) => void;
   onNext: () => void;
+  onPrev: () => void; // Nhận hàm onPrev từ cha
 }
 
-// --- ICONS MAPPING ---
-// Định nghĩa kiểu là ReactNode để chứa Component
+// --- ICONS ---
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   "Preventive Care": <FaShieldAlt className="text-blue-500" />,
   "Dental Implants": <FaScrewdriver className="text-gray-500" />,
@@ -46,18 +45,15 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
   "Pediatric Dentistry": <FaBaby className="text-pink-500" />,
 };
 
-// Helper Format tiền
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 };
 
-export default function StepServiceClinic({ data, updateData, onNext }: StepProps) {
+export default function StepServiceClinic({ data, updateData, onNext, onPrev }: StepProps) {
   
   const [clinics, setClinics] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
-  
-  // State quản lý Accordion
   const [expandedServiceId, setExpandedServiceId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -68,11 +64,8 @@ export default function StepServiceClinic({ data, updateData, onNext }: StepProp
           axios.get(`${API_BASE_URL}/api/public/clinics`), 
           axios.get(`${API_BASE_URL}/api/public/services`)
         ]);
-
-        // --- FIX LỖI 1 & 2: ÉP KIỂU DỮ LIỆU ---
         setClinics(clinicsRes.data as any[]);
-        setServices(servicesRes.data as Service[]); // Ép về mảng Service
-
+        setServices(servicesRes.data as Service[]);
       } catch (error) {
         console.error("API Error:", error);
       } finally {
@@ -82,7 +75,6 @@ export default function StepServiceClinic({ data, updateData, onNext }: StepProp
     fetchData();
   }, []);
 
-  // 1. Chọn Clinic
   const handleSelectClinic = (clinic: any) => {
     updateData({ 
       ...data, 
@@ -92,7 +84,6 @@ export default function StepServiceClinic({ data, updateData, onNext }: StepProp
     });
   };
 
-  // 2. Toggle Accordion
   const toggleExpand = (serviceId: number) => {
     if (expandedServiceId === serviceId) {
         setExpandedServiceId(null);
@@ -101,9 +92,8 @@ export default function StepServiceClinic({ data, updateData, onNext }: StepProp
     }
   };
 
-  // 3. Chọn Variant
   const handleToggleVariant = (e: React.MouseEvent, service: Service, variant: ServiceVariant) => {
-    e.stopPropagation(); 
+    e.stopPropagation();
     
     const currentSelected = data.selectedServices || [];
     const exists = currentSelected.find((s: any) => s.id === variant.variantId);
@@ -138,7 +128,7 @@ export default function StepServiceClinic({ data, updateData, onNext }: StepProp
   return (
     <div className="space-y-10 animate-fadeIn">
       
-      {/* PHẦN 1: CHỌN CƠ SỞ */}
+      {/* 1. CHỌN CƠ SỞ */}
       <div>
         <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
@@ -168,7 +158,7 @@ export default function StepServiceClinic({ data, updateData, onNext }: StepProp
         </div>
       </div>
 
-      {/* PHẦN 2: CHỌN DỊCH VỤ (ACCORDION STYLE) */}
+      {/* 2. CHỌN DỊCH VỤ */}
       <div>
         <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
@@ -183,17 +173,14 @@ export default function StepServiceClinic({ data, updateData, onNext }: StepProp
             return (
                 <div key={service.id} className={`border rounded-2xl transition-all duration-300 bg-white overflow-hidden ${hasSelection ? 'border-blue-300 ring-1 ring-blue-100 shadow-sm' : 'border-gray-200'}`}>
                     
-                    {/* HEADER (Click để mở/đóng) */}
                     <div 
                         onClick={() => toggleExpand(service.id)}
                         className={`p-5 flex items-center justify-between cursor-pointer hover:bg-gray-50 transition-colors ${isExpanded ? 'bg-gray-50/80' : ''}`}
                     >
                         <div className="flex items-center gap-4">
-                            {/* --- FIX LỖI 3: Render Icon bằng DIV thay vì IMG --- */}
                             <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center shrink-0 border border-blue-100 text-2xl">
                                 {CATEGORY_ICONS[service.category] || <FaTooth className="text-gray-400"/>}
                             </div>
-                            
                             <div>
                                 <h4 className="text-lg font-bold text-gray-900">{service.serviceName}</h4>
                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -215,7 +202,6 @@ export default function StepServiceClinic({ data, updateData, onNext }: StepProp
                         </div>
                     </div>
 
-                    {/* BODY (Danh sách Variants) */}
                     {isExpanded && (
                         <div className="px-5 pb-5 pt-2 animate-fadeIn">
                             <div className="h-[1px] bg-gray-100 w-full mb-4"></div>
@@ -270,8 +256,15 @@ export default function StepServiceClinic({ data, updateData, onNext }: StepProp
         </div>
       </div>
 
-      {/* NAVIGATION */}
-      <div className="flex justify-end pt-6 border-t border-gray-100 mt-8">
+      {/* NAVIGATION - CĂN 2 BÊN */}
+      <div className="flex justify-between pt-6 border-t border-gray-100 mt-8">
+        <button
+          onClick={onPrev}
+          className="px-8 py-3.5 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-all duration-300"
+        >
+          Quay Lại
+        </button>
+
         <button
           onClick={onNext}
           disabled={!data.clinicId || (data.selectedServices || []).length === 0}
