@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import HomePage from "../pages/Home/index";
 import LoginPage from "../pages/Auth/LoginPage";
 import SignUp from "../pages/Auth/SignUp";
@@ -21,7 +21,10 @@ import Service from "../pages/Service";
 import About from "../pages/About";
 import ContactPage from "../pages/Contact";
 import Product from "../pages/Product";
-import AccountantProduct from "../Pages/Product/accountant";
+import Cart from "../Pages/Product/sections/GetProductsInvoice/index";
+import AccountantRoutes from "../Pages/Product/accountant";
+import ProtectedRouteAccountant from "../app/routes/ProtectedRouteAccountant";
+import PaypalSuccessPage from "../Pages/Product/sections/GetProductsInvoice/Payments/paypal/PaypalSuccessPage";
 
 function App() {
   return (
@@ -30,6 +33,8 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/service" element={<Service />} />
         <Route path="/products/*" element={<Product />} />
+        <Route path="/cart/*" element={<Cart />} />
+        <Route path="/paypal/success" element={<PaypalSuccessPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<LoginPage />} />
@@ -45,7 +50,7 @@ function App() {
             <Route path="appointments" element={<AppointmentList />} />
           </Route>
         </Route>
-        
+
         <Route path="/hr" element={<ProtectedRouteHR />}>
           <Route element={<HRLayout />}>
             <Route path="dashboard" element={<HrDashboardPage />} />
@@ -57,7 +62,10 @@ function App() {
           </Route>
         </Route>
 
-          <Route path="/accountant/create" element={<AccountantProduct />} />
+        <Route element={<ProtectedRouteAccountant />}>
+          <Route path="/accountant/*" element={<AccountantRoutes />} />
+        </Route>
+        
       </Routes>
     </Router>
   );

@@ -5,6 +5,7 @@ import type {
     ProductImageCreateDto,
     ValidationErrorResult,
     GeminiVisionResult,
+    ProductImageBase64WithOrder,
 } from '../../../../../../huybro_api/productApi.ts';
 import {
     createProductForAccountant,
@@ -18,6 +19,7 @@ import {
 export interface ProductImageFormState extends ProductImageCreateDto {
     file?: File | null;
     previewUrl?: string;
+    base64?: string;
 }
 
 export interface ProductCreateFormState
@@ -89,16 +91,33 @@ function fileToBase64(file: File): Promise<string> {
 // KHÔNG tự validate số lượng ảnh ở FE, chỉ build base64 để gửi cho BE
 const buildBase64ImagesFromForm = async (
     form: ProductCreateFormState,
-): Promise<string[]> => {
-    const files: File[] = form.image
-        .map((img) => img.file)
-        .filter((f): f is File => !!f);
+): Promise<ProductImageBase64WithOrder[]> => {
+    const result: ProductImageBase64WithOrder[] = [];
 
-    const base64Images = await Promise.all(
-        files.map((f) => fileToBase64(f)),
-    );
-    return base64Images;
+    for (const img of form.image) {
+        // Ưu tiên dùng base64 đã lưu sẵn (sau lần upload đầu tiên)
+        if (img.base64) {
+            result.push({
+                base64: img.base64,
+                imageOrder: img.imageOrder,
+            });
+            continue;
+        }
+
+        // Nếu chưa có base64 nhưng còn file thì mới đọc lại từ file
+        if (img.file) {
+            const base64 = await fileToBase64(img.file);
+            result.push({
+                base64,
+                imageOrder: img.imageOrder,
+            });
+        }
+    }
+
+    return result;
 };
+
+
 
 export function useCreateProduct(): UseCreateProductResult {
     const [form, setForm] = useState<ProductCreateFormState>(defaultForm);
@@ -116,6 +135,7 @@ export function useCreateProduct(): UseCreateProductResult {
 
     const [aiAnalyzing, setAiAnalyzing] = useState(false);
     const [aiWarning, setAiWarning] = useState<string | null>(null);
+    
 
     useEffect(() => {
         let ignore = false;
@@ -211,6 +231,8 @@ export function useCreateProduct(): UseCreateProductResult {
         setAiWarning(null);
 
         try {
+            const base64 = await fileToBase64(file);
+
             const res = await uploadProductImage(
                 file,
                 form.sku && form.sku.trim().length > 0 ? form.sku.trim() : 'TEMP_SKU',
@@ -226,6 +248,7 @@ export function useCreateProduct(): UseCreateProductResult {
                     imageUrl: res.imageUrl,
                     file,
                     previewUrl: URL.createObjectURL(file),
+                    base64,
                 };
                 return { ...prev, image: images };
             });
@@ -249,6 +272,66 @@ export function useCreateProduct(): UseCreateProductResult {
             setUploadingImage(false);
         }
     };
+    // Khi SKU được cập nhật từ trống/TEMP sang SKU thật,
+    // tự động re-upload các ảnh đang mang đường dẫn TEMP_SKU_...
+    useEffect(() => {
+        const sku = form.sku.trim();
+        if (!sku) return; 
+
+        const imagesNeedingReupload = form.image.filter(
+            (img) =>
+                img.file &&
+                img.imageUrl &&
+                img.imageUrl.includes('TEMP_SKU'),
+        );
+
+        if (imagesNeedingReupload.length === 0) {
+            return;
+        }
+
+        let cancelled = false;
+
+        (async () => {
+            setUploadingImage(true);
+            try {
+                const updates: { imageOrder: number; imageUrl: string }[] = [];
+
+                for (const img of imagesNeedingReupload) {
+                    const res = await uploadProductImage(
+                        img.file as File,
+                        sku,
+                        img.imageOrder,
+                    );
+                    if (cancelled) return;
+                    updates.push({
+                        imageOrder: img.imageOrder,
+                        imageUrl: res.imageUrl,
+                    });
+                }
+
+                if (!cancelled) {
+                    setForm((prev) => ({
+                        ...prev,
+                        image: prev.image.map((img) => {
+                            const found = updates.find(
+                                (u) => u.imageOrder === img.imageOrder,
+                            );
+                            return found ? { ...img, imageUrl: found.imageUrl } : img;
+                        }),
+                    }));
+                }
+            } finally {
+                if (!cancelled) {
+                    setUploadingImage(false);
+                }
+            }
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [form.sku]);
+
 
     // B. analyze-images: dùng nút riêng, có thể bấm trước khi create
     const analyzeImagesWithAi = async (): Promise<void> => {

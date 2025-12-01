@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import i18n from "../../app/providers/i18n";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
+import CartIconButton from "../../Pages/Product/sections/widgets/CartIconButton.tsx";
+
 
 function Header() {
   const navigate = useNavigate();
@@ -39,8 +41,8 @@ function Header() {
     if (storedUser) setUser(JSON.parse(storedUser));
 
     const handleAvatarUpdate = () => {
-    const updatedUser = localStorage.getItem("user");
-    if (updatedUser) setUser(JSON.parse(updatedUser));
+      const updatedUser = localStorage.getItem("user");
+      if (updatedUser) setUser(JSON.parse(updatedUser));
     };
 
     // Đồng bộ khi localStorage thay đổi (khác tab)
@@ -102,7 +104,7 @@ function Header() {
             {t("nav.services")}
           </Link>
           <Link
-           to="/products" className="hover:text-blue-600">
+            to="/products?sortBy=name&order=asc&page=0&size=8" className="hover:text-blue-600">
             {t("nav.products")}
           </Link>
           <Link to="/about" className="hover:text-blue-600">
@@ -123,6 +125,8 @@ function Header() {
             {i18n.language === "en" ? <span>VN</span> : <span>EN</span>}
           </button>
 
+          <CartIconButton />
+          
           {!user ? (
             <Link to="/login">
               <button className="px-5 py-2 rounded-full border-2 border-[#3366FF] text-[#3366FF] font-bold transition hover:bg-[#3366FF] hover:text-white">

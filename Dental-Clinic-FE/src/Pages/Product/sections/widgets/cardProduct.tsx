@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { Product } from "../../../huybro_api/productApi";
-import { getProductImageSrc } from "../../../huybro_api/productApi";
+import type { Product } from "../../../../huybro_api/productApi";
+import { getProductImageSrc } from "../../../../huybro_api/productApi";
 import { useNavigate } from "react-router-dom";
+import { addProductToCart } from "../../../../utils/cartSession";
+import { formatMoney } from "../../../../utils/format";
 
 type Props = {
   product: Product;
@@ -34,21 +36,16 @@ export default function CardProduct({
     };
   }, [hovering, images.length, autoPlayMs]);
 
-  const priceText =
-    product.currency === "USD"
-      ? `$ ${Number(product.defaultRetailPrice).toFixed(2)}`
-      : `${product.currency} ${Number(product.defaultRetailPrice).toFixed(2)}`;
-
   const productId = String(product.productId);
   const navigate = useNavigate();
   const goDetail = () => navigate(`/products/${productId}`);
 
   return (
     <div
-      onClick={goDetail}                
+      onClick={goDetail}
       role="link"
       tabIndex={0}
-      onKeyDown={(e) => {               
+      onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") goDetail();
       }}
       className={[
@@ -143,13 +140,16 @@ export default function CardProduct({
           <div className="flex items-center justify-between pt-3">
             <div className="inline-flex items-center justify-center gap-2 rounded-2xl h-10 sm:h-11 px-4 border border-white/25 bg-white/10 backdrop-blur-2xl leading-none">
               <span className="text-base sm:text-lg font-bold text-[#0D1B3E]">
-                {priceText}
+                {formatMoney(product.defaultRetailPrice, product.currency)}
               </span>
             </div>
 
             <button
               type="button"
-              onClick={(e) => { e.stopPropagation();}}
+              onClick={(e) => {
+                e.stopPropagation();
+                addProductToCart(product, 1);
+              }}
               className="inline-flex items-center justify-center gap-2 rounded-2xl h-10 sm:h-11 px-4 border border-white/25 bg-white/10 backdrop-blur-2xl text-[#0D1B3E] text-base sm:text-lg font-bold active:scale-[0.98] transition leading-none"
               aria-label="Add to cart"
             >

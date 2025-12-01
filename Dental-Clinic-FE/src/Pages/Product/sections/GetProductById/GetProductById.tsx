@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import useGetProductById from "./useGetProductById";
-import {getProductImageSrc} from "../../../../huybro_api/productApi.ts";
+import useGetProductById from "./useGetProductById.ts";
+import { getProductImageSrc } from "../../../../huybro_api/productApi.ts";
+import { addProductToCart } from "../../../../utils/cartSession";
+import { formatMoney } from "../../../../utils/format.ts";
 
 export default function GetProductById() {
   const { id } = useParams();
@@ -82,11 +84,9 @@ export default function GetProductById() {
               {/* Giá */}
               <div className="mt-6 flex items-baseline gap-3">
                 <span className="text-4xl font-bold">
-                  {detail.defaultRetailPrice} {detail.currency}
+                  {formatMoney(detail.defaultRetailPrice, detail.currency)}
                 </span>
-                <span className="text-2xl line-through text-gray-400">$99</span>
               </div>
-              <p className="mt-2 text-sm text-gray-600">Save 50% right now</p>
 
               {/* Số lượt bán */}
               <div className="mt-3 text-sm text-gray-600">
@@ -125,7 +125,12 @@ export default function GetProductById() {
               {/* CTA */}
               <div className="mt-8">
                 <button
-                  className="px-4 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] text-white border border-[#6699FF]/40 transition-transform duration-150 ease-out active:scale-[0.98] focus:outline-none"
+                  className="px-4 py-2 text-sm font-semibold rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] text-white transition-transform duration-150 ease-out active:scale-[0.98] focus:outline-none"
+                  onClick={() => {
+                    if (detail) {
+                      addProductToCart(detail, 1);
+                    }
+                  }}
                 >
                   Add to cart
                 </button>

@@ -1,7 +1,7 @@
 import useGetAllProducts from "../GetAllProducts/useGetAllProducts";
-import CardProduct from "../cardProduct";
-import ToolbarProduct from "../toolbarProduct";
-import PaginationProduct from "../paginationProduct";
+import CardProduct from "../widgets/cardProduct";
+import ToolbarProduct from "../widgets/toolbarProduct";
+import PaginationProduct from "../widgets/paginationProduct";
 
 export default function GetAllProducts() {
   const {
