@@ -5,6 +5,7 @@ import { Calendar, Check, X } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
+import ScheduleTable from "./ScheduleTable";
 
 type ScheduleItem = {
   id: number;
@@ -129,12 +130,7 @@ function CreateScheduleForm() {
 
   const daysOfWeek = getDaysOfWeek(weekStart);
 
-  // Sort doctors by name
-  const sortedDoctors = [...doctors].sort((a, b) => {
-    const nameA = a.fullName || a.name || `Dr. ${a.id}`;
-    const nameB = b.fullName || b.name || `Dr. ${b.id}`;
-    return nameA.localeCompare(nameB);
-  });
+
 
   useEffect(() => {
     fetchDataFromAPI();
@@ -235,10 +231,7 @@ function CreateScheduleForm() {
     });
   };
 
-  // Lấy thông tin ca làm việc trong ngày cho một bác sĩ
-  const getDaySchedule = (doctorId: number, dayKey: string): DaySchedule => {
-    return tableSchedules[doctorId]?.[dayKey] || {};
-  };
+
 
   // Chuyển đổi dữ liệu tableSchedules sang API format để gửi lên server
   const convertTableToAPIFormat = (): CreateScheduleRequest => {
@@ -384,7 +377,7 @@ function CreateScheduleForm() {
       return { isValid: false, errors };
     }
     const [clinic1Id, clinic2Id] = clinicIds;
-    
+
     daysOfWeek.forEach((day) => {
       // Thu thập thông tin phân công cho mỗi ngày
       const clinicShifts: { [clinicId: number]: { morning: boolean; afternoon: boolean } } = {};
@@ -398,7 +391,7 @@ function CreateScheduleForm() {
         const doctor = doctors.find((d: any) => d.id === doctorId);
         if (!doctor) return;
 
-        const doctorSpecialties: string[] = 
+        const doctorSpecialties: string[] =
           (doctor.specialties && Array.isArray(doctor.specialties) && doctor.specialties.length > 0)
             ? doctor.specialties
             : (doctor.specialty || doctor.specialtyName)
@@ -695,10 +688,11 @@ function CreateScheduleForm() {
       );
 
       const generatedRequest = response.data;
-      
+
       // Convert AI result về format tableSchedules
       const newTableSchedules: TableSchedule = {};
-      Object.entries(generatedRequest.dailyAssignments).forEach(([dayKey, assignments]) => {
+      Object.entries(generatedRequest.dailyAssignments).forEach(([rawDayKey, assignments]) => {
+        const dayKey = rawDayKey.toLowerCase();
         assignments.forEach((assignment) => {
           const doctorId = assignment.doctorId;
           const clinicId = assignment.clinicId;
@@ -869,20 +863,18 @@ function CreateScheduleForm() {
               </button>
             </div>
             {aiResult && (
-              <div className={`mt-4 p-3 rounded-lg ${
-                aiResult.success 
-                  ? "bg-green-50 border border-green-200" 
-                  : "bg-red-50 border border-red-200"
-              }`}>
+              <div className={`mt-4 p-3 rounded-lg ${aiResult.success
+                ? "bg-green-50 border border-green-200"
+                : "bg-red-50 border border-red-200"
+                }`}>
                 <div className="flex items-center gap-2">
                   {aiResult.success ? (
                     <span className="text-green-600">✓</span>
                   ) : (
                     <span className="text-red-600">✗</span>
                   )}
-                  <p className={`text-sm ${
-                    aiResult.success ? "text-green-800" : "text-red-800"
-                  }`}>
+                  <p className={`text-sm ${aiResult.success ? "text-green-800" : "text-red-800"
+                    }`}>
                     {aiResult.message}
                   </p>
                 </div>
@@ -900,159 +892,13 @@ function CreateScheduleForm() {
               </p>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-blue-50">
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700 sticky left-0 bg-blue-50 z-10">
-                      No.
-                    </th>
-                    <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700 sticky left-12 bg-blue-50 z-10 min-w-[200px]">
-                      Doctor
-                    </th>
-                    {daysOfWeek.map((day) => (
-                      <th
-                        key={day.key}
-                        className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700 min-w-[150px]"
-                      >
-                        <div className="flex flex-col">
-                          <span>{day.label}</span>
-                          <span className="text-xs font-normal text-gray-600 mt-1">
-                            {day.dateString}
-                          </span>
-                        </div>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {doctors.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={daysOfWeek.length + 2}
-                        className="border border-gray-300 px-4 py-8 text-center text-gray-500"
-                      >
-                        Loading list of doctors...
-                      </td>
-                    </tr>
-                  ) : (
-                    sortedDoctors.map((doctor, index) => {
-                      return (
-                        <tr key={doctor.id} className="hover:bg-gray-50">
-                          <td className="border border-gray-300 px-4 py-3 text-center font-medium text-gray-700 sticky left-0 bg-white z-10">
-                            {String(index + 1).padStart(2, "0")}
-                          </td>
-                          <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-12 bg-white z-10">
-                            <div>
-                              <div className="font-medium">
-                                {doctor.fullName ||
-                                  doctor.name ||
-                                  `Dr. ${doctor.id}`}
-                              </div>
-                              {/* Danh sách chuyên khoa của bác sĩ */}
-                              {(() => {
-                                const doctorSpecialties: string[] = 
-                                  (doctor.specialties && Array.isArray(doctor.specialties) && doctor.specialties.length > 0)
-                                    ? doctor.specialties
-                                    : (doctor.specialty || doctor.specialtyName)
-                                      ? [doctor.specialty || doctor.specialtyName]
-                                      : [];
-                                if (doctorSpecialties.length > 0) {
-                                  return (
-                                    <div className="mt-1 flex flex-wrap gap-1">
-                                      {doctorSpecialties.map((spec, idx) => (
-                                        <span
-                                          key={idx}
-                                          className="text-xs px-2 py-0.5 rounded bg-gray-100 text-gray-600"
-                                          title={spec}
-                                        >
-                                          {spec}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              })()}
-                            </div>
-                          </td>
-                          {daysOfWeek.map((day) => {
-                            const daySchedule = getDaySchedule(doctor.id, day.key);
-                            return (
-                              <td
-                                key={day.key}
-                                className="border border-gray-300 px-4 py-3"
-                              >
-                                <div className="space-y-2">
-                                  <div className="p-2 bg-blue-50 rounded border border-blue-200">
-                                    <div className="text-xs font-semibold text-blue-700 mb-1">
-                                      Morning (08:00 - 11:00)
-                                    </div>
-                                    <select
-                                      value={daySchedule.morning?.clinicId || ""}
-                                      onChange={(e) =>
-                                        updateShiftClinic(
-                                          doctor.id,
-                                          day.key,
-                                          "morning",
-                                          e.target.value ? Number(e.target.value) : null
-                                        )
-                                      }
-                                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      aria-label={`${
-                                        doctor.fullName || doctor.name
-                                      } - ${day.label} - Morning Shift - Clinic`}
-                                    >
-                                      <option value="">
-                                        Select clinic...
-                                      </option>
-                                      {clinics.map((clinic) => (
-                                        <option key={clinic.id} value={clinic.id}>
-                                          {clinic.name || `Clinic ${clinic.id}`}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                  <div className="p-2 bg-orange-50 rounded border border-orange-200">
-                                    <div className="text-xs font-semibold text-orange-700 mb-1">
-                                      Afternoon (13:00 - 18:00)
-                                    </div>
-                                    <select
-                                      value={daySchedule.afternoon?.clinicId || ""}
-                                      onChange={(e) =>
-                                        updateShiftClinic(
-                                          doctor.id,
-                                          day.key,
-                                          "afternoon",
-                                          e.target.value ? Number(e.target.value) : null
-                                        )
-                                      }
-                                      className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                      aria-label={`${
-                                        doctor.fullName || doctor.name
-                                      } - ${day.label} - Afternoon Shift - Clinic`}
-                                    >
-                                      <option value="">
-                                        Select clinic...
-                                      </option>
-                                      {clinics.map((clinic) => (
-                                        <option key={clinic.id} value={clinic.id}>
-                                          {clinic.name || `Clinic ${clinic.id}`}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  </div>
-                                </div>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <ScheduleTable
+              doctors={doctors}
+              daysOfWeek={daysOfWeek}
+              clinics={clinics}
+              tableSchedules={tableSchedules}
+              onUpdateShiftClinic={updateShiftClinic}
+            />
           </div>
 
           <div className="mb-6 bg-white rounded-xl p-6 shadow-md border border-gray-200">

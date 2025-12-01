@@ -119,6 +119,11 @@ export const Table: React.FC<TableProps> = ({
                                         </td>
                                         <td className="px-6 py-5 text-base text-slate-700">
                                             {explanation.workDate}
+                                            {explanation.shiftType && (
+                                                <span className="ml-2 inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">
+                                                    {explanation.shiftType}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-6 py-5 text-base font-medium text-slate-900">
                                             {getExplanationTypeLabel(explanation.explanationType)}

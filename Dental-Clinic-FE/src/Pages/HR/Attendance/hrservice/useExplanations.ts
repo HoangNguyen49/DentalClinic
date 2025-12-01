@@ -41,6 +41,7 @@ export type AttendanceExplanationResponse = {
     explanationStatus?: string | null;
     adminNote?: string | null;
     note?: string | null;
+    shiftType?: string | null;
 };
 
 const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";

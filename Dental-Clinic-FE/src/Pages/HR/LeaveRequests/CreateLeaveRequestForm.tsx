@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
@@ -10,16 +10,61 @@ type Props = {
   onClose: () => void;
 };
 
+type UserInfo = {
+  userId?: number;
+  fullName?: string;
+  email?: string;
+  jobTitle?: string;
+  roles?: string[];
+};
+
 export default function CreateLeaveRequestForm({ onClose }: Props) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
+  const [isDoctor, setIsDoctor] = useState(false);
   const [formData, setFormData] = useState({
     startDate: "",
     endDate: "",
     type: "VACATION",
     reason: "",
+    shiftType: "FULL_DAY" as string,
   });
   const accessToken = localStorage.getItem("accessToken");
+
+  // Check if user is a doctor
+  useEffect(() => {
+    const checkUserRole = async () => {
+      try {
+        const userStr = localStorage.getItem("user");
+        if (userStr) {
+          const user: UserInfo = JSON.parse(userStr);
+          // Check from jobTitle or roles
+          const jobTitle = user.jobTitle?.toUpperCase() || "";
+          const roles = user.roles || [];
+          const isDoctorRole = jobTitle.includes("DOCTOR") || 
+                              jobTitle.includes("BÁC SĨ") ||
+                              roles.some(r => r.toUpperCase().includes("DOCTOR"));
+          setIsDoctor(isDoctorRole);
+        } else {
+          // Fetch user info from API
+          const response = await axios.get<UserInfo>(`${apiBase}/api/users/me`, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          });
+          const jobTitle = response.data.jobTitle?.toUpperCase() || "";
+          const roles = response.data.roles || [];
+          const isDoctorRole = jobTitle.includes("DOCTOR") || 
+                              jobTitle.includes("BÁC SĨ") ||
+                              roles.some(r => r.toUpperCase().includes("DOCTOR"));
+          setIsDoctor(isDoctorRole);
+        }
+      } catch (error) {
+        console.error("Error checking user role:", error);
+        // Default to false if error
+        setIsDoctor(false);
+      }
+    };
+    checkUserRole();
+  }, [accessToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,14 +97,21 @@ export default function CreateLeaveRequestForm({ onClose }: Props) {
 
     setLoading(true);
     try {
+      const requestData: any = {
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        type: formData.type,
+        reason: formData.reason,
+      };
+      
+      // Only include shiftType if user is a doctor
+      if (isDoctor && formData.shiftType) {
+        requestData.shiftType = formData.shiftType;
+      }
+      
       await axios.post(
         `${apiBase}/api/hr/leave-requests`,
-        {
-          startDate: formData.startDate,
-          endDate: formData.endDate,
-          type: formData.type,
-          reason: formData.reason,
-        },
+        requestData,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
@@ -163,6 +215,36 @@ export default function CreateLeaveRequestForm({ onClose }: Props) {
               </option>
             </select>
           </div>
+
+          {isDoctor && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {t("leaveRequest.shiftType", "Ca làm việc")} *
+              </label>
+              <select
+                value={formData.shiftType}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, shiftType: e.target.value }))
+                }
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+                aria-label={t("leaveRequest.shiftType", "Ca làm việc")}
+              >
+                <option value="FULL_DAY">
+                  {t("leaveRequest.shiftTypes.fullDay", "Cả ngày")}
+                </option>
+                <option value="MORNING">
+                  {t("leaveRequest.shiftTypes.morning", "Ca sáng")}
+                </option>
+                <option value="AFTERNOON">
+                  {t("leaveRequest.shiftTypes.afternoon", "Ca chiều")}
+                </option>
+              </select>
+              <p className="mt-1 text-xs text-gray-500">
+                {t("leaveRequest.shiftTypeHint", "Chọn ca bạn muốn xin nghỉ. Nếu chọn cả ngày, bạn sẽ nghỉ cả ca sáng và ca chiều.")}
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">

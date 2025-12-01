@@ -19,6 +19,7 @@ type LeaveRequest = {
   type: string;
   status: string;
   reason: string;
+  shiftType?: string; // MORNING, AFTERNOON, FULL_DAY (only for doctors)
   approvedBy?: number;
   approvedByName?: string;
   createdAt: string;
@@ -199,6 +200,20 @@ export default function LeaveRequestManagement() {
     }
   };
 
+  const getShiftTypeLabel = (shiftType?: string) => {
+    if (!shiftType || shiftType === "FULL_DAY") {
+      return t("leaveRequest.shiftTypes.fullDay", "Cả ngày");
+    }
+    switch (shiftType.toUpperCase()) {
+      case "MORNING":
+        return t("leaveRequest.shiftTypes.morning", "Ca sáng");
+      case "AFTERNOON":
+        return t("leaveRequest.shiftTypes.afternoon", "Ca chiều");
+      default:
+        return shiftType;
+    }
+  };
+
   const getStatusLabel = (status: string) => {
     switch (status.toUpperCase()) {
       case "APPROVED":
@@ -340,6 +355,9 @@ export default function LeaveRequestManagement() {
                   </div>
                   <p className="text-sm text-gray-500 mt-1">
                     {getTypeLabel(request.type)} • {request.clinicName}
+                    {request.shiftType && request.shiftType !== "FULL_DAY" && (
+                      <> • <span className="font-medium">{getShiftTypeLabel(request.shiftType)}</span></>
+                    )}
                   </p>
                 </div>
                 <div>

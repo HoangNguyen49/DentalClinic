@@ -50,6 +50,7 @@ type ExplanationResponse = {
   explanationStatus?: string | null;
   adminNote?: string | null;
   note?: string | null;
+  shiftType?: string | null; // MORNING, AFTERNOON, FULL_DAY (for doctors)
 };
 
 function formatDate(date: Date): string {
@@ -122,6 +123,11 @@ function formatHourValue(value: number): string {
   return `${value.toFixed(1)}h`;
 }
 
+function getShiftTypeLabel(shiftType?: string | null): string {
+  if (!shiftType || shiftType === "FULL_DAY") return "";
+  return shiftType === "MORNING" ? "Ca sáng" : "Ca chiều";
+}
+
 export default function EmployeeAttendanceView() {
   const { t } = useTranslation("web");
   const navigate = useNavigate();
@@ -175,6 +181,9 @@ export default function EmployeeAttendanceView() {
   }, [notifications]);
 
   const [todayAttendance, setTodayAttendance] = useState<AttendanceResponse | null>(null);
+  const [todayAttendanceList, setTodayAttendanceList] = useState<AttendanceResponse[]>([]);
+  const [todaySchedules, setTodaySchedules] = useState<any[]>([]);
+  const [isDoctor, setIsDoctor] = useState(false);
   const [explanationsNeeding, setExplanationsNeeding] = useState<ExplanationResponse[]>([]);
   const [monthlyAttendances, setMonthlyAttendances] = useState<AttendanceResponse[]>([]);
   const [loading, setLoading] = useState(false);
@@ -203,21 +212,43 @@ export default function EmployeeAttendanceView() {
       };
     }
 
+    // Tập hợp các ngày làm việc duy nhất để đếm đúng số ngày (tránh đếm trùng khi có nhiều ca trong một ngày)
+    const uniqueWorkDates = new Set<string>();
+    const workDateStatusMap = new Map<string, { isAbsent: boolean; isLate: boolean; isApproved: boolean }>();
+
     const stats = monthlyAttendances.reduce(
       (acc, attendance) => {
+        const workDate = attendance.workDate ? new Date(attendance.workDate).toISOString().split("T")[0] : "";
         const status = (attendance.attendanceStatus || "").toUpperCase();
-        acc.totalDays += 1;
-        if (status === "ABSENT") {
-          acc.absentDays += 1;
-        } else {
-          acc.presentDays += 1;
+        
+        // Đếm số ngày làm việc duy nhất (không trùng lặp)
+        if (workDate && !uniqueWorkDates.has(workDate)) {
+          uniqueWorkDates.add(workDate);
+          acc.totalDays += 1;
+          
+          // Lưu trạng thái của ngày này
+          workDateStatusMap.set(workDate, {
+            isAbsent: status === "ABSENT",
+            isLate: status === "LATE" || status === "APPROVED_LATE",
+            isApproved: status.startsWith("APPROVED")
+          });
         }
-        if (status === "LATE" || status === "APPROVED_LATE") {
-          acc.lateDays += 1;
+
+        // Cập nhật trạng thái của ngày nếu có thay đổi (ví dụ: một ca là LATE, ca kia là APPROVED_LATE)
+        if (workDate && workDateStatusMap.has(workDate)) {
+          const dayStatus = workDateStatusMap.get(workDate)!;
+          if (status === "LATE" || status === "APPROVED_LATE") {
+            dayStatus.isLate = true;
+          }
+          if (status.startsWith("APPROVED")) {
+            dayStatus.isApproved = true;
+          }
+          if (status === "ABSENT") {
+            dayStatus.isAbsent = true;
+          }
         }
-        if (status.startsWith("APPROVED")) {
-          acc.approvedDays += 1;
-        }
+
+        // Tính tổng giờ công từ tất cả các ca (có thể có nhiều ca trong một ngày)
         acc.totalHours += calculateWorkedHours(attendance);
 
         // Tính tổng số phút đi trễ và ra sớm
@@ -247,8 +278,29 @@ export default function EmployeeAttendanceView() {
       }
     );
 
+    // Reset và đếm lại số ngày present/absent/late/approved dựa trên unique work dates
+    stats.presentDays = 0;
+    stats.absentDays = 0;
+    stats.lateDays = 0;
+    stats.approvedDays = 0;
+    
+    workDateStatusMap.forEach((dayStatus) => {
+      if (dayStatus.isAbsent) {
+        stats.absentDays += 1;
+      } else {
+        stats.presentDays += 1;
+      }
+      if (dayStatus.isLate) {
+        stats.lateDays += 1;
+      }
+      if (dayStatus.isApproved) {
+        stats.approvedDays += 1;
+      }
+    });
+
+    // Tính trung bình giờ công dựa trên số ngày làm việc duy nhất (không phải số attendance records)
     const avgHours =
-      stats.presentDays > 0 ? stats.totalHours / stats.presentDays : 0;
+      stats.presentDays > 0 ? stats.totalActualWorkHours / stats.presentDays : 0;
 
     return { ...stats, avgHours };
   }, [monthlyAttendances]);
@@ -269,29 +321,119 @@ export default function EmployeeAttendanceView() {
     }
   }, [selectedMonth, selectedYear, userId]);
 
-  // Lấy chấm công ngày hôm nay
-  const fetchTodayAttendance = async () => {
-    if (!accessToken || !userId) return;
-    setLoading(true);
+  // Kiểm tra user có phải là bác sĩ không
+  useEffect(() => {
+    if (user?.roles) {
+      const roles = Array.isArray(user.roles) ? user.roles : [user.roles];
+      const isDoctorRole = roles.some((r: string) => r.toUpperCase() === "DOCTOR");
+      setIsDoctor(isDoctorRole);
+    }
+  }, [user]);
+
+  // Lấy schedule hôm nay của bác sĩ
+  const fetchTodaySchedules = async () => {
+    if (!accessToken || !userId || !isDoctor) return;
     try {
-      const response = await axios.get<AttendanceResponse | null>(
-        `${apiBase}/api/hr/attendance/today`,
+      const today = new Date().toISOString().split("T")[0];
+      const response = await axios.get<any[]>(
+        `${apiBase}/api/hr/schedules/date/${today}`,
         {
-          params: { userId },
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      // Backend trả về 200 với null body nếu không có attendance hôm nay (trường hợp hợp lệ)
-      // Double check: đảm bảo attendance trả về là của user hiện tại
-      if (response.data && response.data.userId === userId) {
-        setTodayAttendance(response.data);
+      // Lọc schedule của user hiện tại và chỉ lấy ACTIVE
+      const userSchedules = (response.data || []).filter(
+        (schedule: any) => 
+          schedule.status === "ACTIVE" &&
+          schedule.doctor && 
+          (schedule.doctor.id === userId || schedule.doctor.userId === userId)
+      );
+      setTodaySchedules(userSchedules);
+    } catch (error: any) {
+      console.error("Failed to fetch today schedules:", error);
+      setTodaySchedules([]);
+    }
+  };
+
+  // Xác định shiftType từ startTime
+  const getShiftTypeFromStartTime = (startTime: string): string => {
+    if (!startTime) return "FULL_DAY";
+    const hour = parseInt(startTime.split(":")[0]);
+    // Ca sáng: trước 12:00, Ca chiều: từ 13:00 trở đi
+    if (hour < 12) return "MORNING";
+    if (hour >= 13) return "AFTERNOON";
+    return "FULL_DAY";
+  };
+
+  // Tạo attendance record giả từ schedule để giải trình
+  const createAttendanceFromSchedule = (schedule: any): AttendanceResponse => {
+    const shiftType = getShiftTypeFromStartTime(schedule.startTime);
+    return {
+      id: 0, // Chưa có attendance record, dùng 0 làm placeholder
+      userId: userId!,
+      userName: user?.fullName || "",
+      clinicId: schedule.clinic?.id,
+      clinicName: schedule.clinic?.clinicName || "",
+      workDate: schedule.workDate,
+      checkInTime: null,
+      checkOutTime: null,
+      attendanceStatus: "ABSENT", // Mặc định là ABSENT vì chưa check-in
+      shiftType: shiftType,
+      note: null,
+    };
+  };
+
+  // Lấy chấm công ngày hôm nay
+  const fetchTodayAttendance = async () => {
+    if (!accessToken || !userId) return;
+    
+    // Xác định isDoctor từ user roles (đảm bảo có giá trị ngay cả khi useEffect chưa chạy)
+    let currentIsDoctor = isDoctor;
+    if (user?.roles) {
+      const roles = Array.isArray(user.roles) ? user.roles : [user.roles];
+      currentIsDoctor = roles.some((r: string) => r.toUpperCase() === "DOCTOR");
+    }
+    
+    setLoading(true);
+    try {
+      if (currentIsDoctor) {
+        // Bác sĩ: lấy danh sách tất cả các ca
+        const response = await axios.get<AttendanceResponse[]>(
+          `${apiBase}/api/hr/attendance/today-list`,
+          {
+            params: { userId },
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }
+        );
+        const attendances = (response.data || []).filter(att => att && att.userId === userId);
+        setTodayAttendanceList(attendances);
+        // Set todayAttendance là ca đầu tiên (để tương thích với code cũ)
+        setTodayAttendance(attendances.length > 0 ? attendances[0] : null);
+        
+        // Fetch schedule để biết có ca nào chưa check-in
+        await fetchTodaySchedules();
       } else {
-        setTodayAttendance(null);
+        // Nhân viên thường: lấy 1 attendance record
+        const response = await axios.get<AttendanceResponse | null>(
+          `${apiBase}/api/hr/attendance/today`,
+          {
+            params: { userId },
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }
+        );
+        if (response.data && response.data.userId === userId) {
+          setTodayAttendance(response.data);
+          setTodayAttendanceList([response.data]);
+        } else {
+          setTodayAttendance(null);
+          setTodayAttendanceList([]);
+        }
       }
     } catch (error: any) {
       // Handle cả 404 (nếu backend vẫn throw) và các lỗi khác
       if (error.response?.status === 404) {
         setTodayAttendance(null);
+        setTodayAttendanceList([]);
       } else {
         toast.error(t("attendance.monthlyHistory.loadFailed", "Cannot load today's attendance"));
       }
@@ -391,13 +533,22 @@ export default function EmployeeAttendanceView() {
 
     setSubmitting(true);
     try {
+      const requestBody: any = {
+        attendanceId: selectedExplanation.attendanceId,
+        explanationType: selectedExplanation.explanationType,
+        reason: explanationReason.trim(),
+      };
+      
+      // Nếu attendanceId = 0 (chưa có attendance record), gửi thêm shiftType, clinicId, workDate
+      if (selectedExplanation.attendanceId === 0 || selectedExplanation.attendanceId === null) {
+        requestBody.shiftType = selectedExplanation.shiftType;
+        requestBody.clinicId = selectedExplanation.clinicId;
+        requestBody.workDate = selectedExplanation.workDate;
+      }
+      
       await axios.post(
         `${apiBase}/api/hr/attendance/explanations/submit`,
-        {
-          attendanceId: selectedExplanation.attendanceId,
-          explanationType: selectedExplanation.explanationType,
-          reason: explanationReason.trim(),
-        },
+        requestBody,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
@@ -414,6 +565,85 @@ export default function EmployeeAttendanceView() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  // Kiểm tra attendance có cần giải trình không
+  const needsExplanation = (attendance: AttendanceResponse): { needs: boolean; explanationType?: string } => {
+    if (!attendance) return { needs: false };
+    
+    const status = (attendance.attendanceStatus || "").toUpperCase();
+    const hasCheckIn = attendance.checkInTime != null;
+    const hasCheckOut = attendance.checkOutTime != null;
+    
+    // Kiểm tra xem đã có explanation chưa
+    const hasExplanation = attendance.note && (
+      attendance.note.includes("[EXPLANATION_REQUEST:") ||
+      attendance.note.includes("[APPROVED]") ||
+      attendance.note.includes("[REJECTED]")
+    );
+    
+    if (hasExplanation) return { needs: false };
+    
+    // Các trường hợp cần giải trình - kiểm tra TRƯỚC điều kiện "ngày hôm nay"
+    // 1. LATE - luôn cần giải trình ngay, kể cả khi chưa check-out
+    if (status === "LATE") {
+      return { needs: true, explanationType: "LATE" };
+    }
+    // 2. ABSENT - luôn cần giải trình
+    if (status === "ABSENT") {
+      return { needs: true, explanationType: "ABSENT" };
+    }
+    
+    // Nếu là ngày hôm nay và mới check-in chưa check-out thì chưa cần giải trình
+    // (trừ khi đã có status LATE hoặc ABSENT - đã xử lý ở trên)
+    const today = new Date().toISOString().split("T")[0];
+    const workDate = attendance.workDate ? new Date(attendance.workDate).toISOString().split("T")[0] : null;
+    if (workDate === today && hasCheckIn && !hasCheckOut) {
+      return { needs: false };
+    }
+    if (hasCheckIn && !hasCheckOut) {
+      return { needs: true, explanationType: "MISSING_CHECK_OUT" };
+    }
+    if (!hasCheckIn && hasCheckOut) {
+      return { needs: true, explanationType: "MISSING_CHECK_IN" };
+    }
+    
+    return { needs: false };
+  };
+
+  // Mở dialog giải trình từ attendance record (không phải từ explanation list)
+  const openExplanationDialogFromAttendance = (attendance: AttendanceResponse, explanationTypeOverride?: string) => {
+    // Nếu có explanationTypeOverride (từ schedule chưa check-in), dùng nó
+    // Nếu không, kiểm tra từ attendance
+    const explanationInfo = explanationTypeOverride 
+      ? { needs: true, explanationType: explanationTypeOverride }
+      : needsExplanation(attendance);
+    
+    if (!explanationInfo.needs || !explanationInfo.explanationType) return;
+    
+    // Nếu chưa có attendanceId (từ schedule), cần tạo attendance record trước
+    // Hoặc backend sẽ tự tạo khi submit explanation
+    const explanation: ExplanationResponse = {
+      attendanceId: attendance.id && attendance.id > 0 ? attendance.id : 0, // 0 nếu chưa có attendance
+      userId: attendance.userId,
+      userName: attendance.userName,
+      clinicId: attendance.clinicId,
+      clinicName: attendance.clinicName,
+      workDate: attendance.workDate,
+      checkInTime: attendance.checkInTime,
+      checkOutTime: attendance.checkOutTime,
+      attendanceStatus: attendance.attendanceStatus,
+      explanationType: explanationInfo.explanationType,
+      employeeReason: null,
+      explanationStatus: "PENDING",
+      adminNote: null,
+      note: attendance.note,
+      shiftType: attendance.shiftType,
+    };
+    
+    setSelectedExplanation(explanation);
+    setExplanationReason("");
+    setShowExplanationDialog(true);
   };
 
   // Mở dialog gửi giải trình
@@ -453,30 +683,133 @@ export default function EmployeeAttendanceView() {
             <h2 className="text-xl font-semibold mb-4">{t("attendance.today", "Today")}</h2>
             {loading ? (
               <div className="text-center py-8">{t("attendance.loading", "Loading...")}</div>
+            ) : isDoctor ? (
+              // Bác sĩ: hiển thị tất cả các ca (cả attendance và schedule chưa check-in)
+              <div className="space-y-4">
+                {/* Hiển thị các ca đã có attendance */}
+                {todayAttendanceList.map((attendance, index) => {
+                  const explanationInfo = needsExplanation(attendance);
+                  return (
+                    <div key={attendance.id || `att-${index}`} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          {getShiftTypeLabel(attendance.shiftType) || t("attendance.shift", "Shift")}
+                        </h3>
+                        <span
+                          className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(
+                            attendance.attendanceStatus
+                          )}`}
+                        >
+                          {t(`attendance.statusOptions.${attendance.attendanceStatus || "UNKNOWN"}`, attendance.attendanceStatus || "N/A")}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                        <div>
+                          <p className="text-sm text-gray-600">{t("attendance.checkIn", "Check-in Time")}</p>
+                          <p className="text-lg font-semibold">
+                            {formatTime(attendance.checkInTime)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-600">{t("attendance.checkOut", "Check-out Time")}</p>
+                          <p className="text-lg font-semibold">
+                            {formatTime(attendance.checkOutTime)}
+                          </p>
+                        </div>
+                      </div>
+                      {explanationInfo.needs && (
+                        <button
+                          onClick={() => openExplanationDialogFromAttendance(attendance)}
+                          className="w-full mt-3 px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors shadow-md hover:shadow-lg"
+                        >
+                          {t("attendance.explanationsNeeded.submit", "Gửi giải trình")} - {getShiftTypeLabel(attendance.shiftType)}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })}
+                
+                {/* Hiển thị các ca có schedule nhưng chưa check-in */}
+                {todaySchedules
+                  .filter((schedule) => {
+                    // Chỉ hiển thị schedule chưa có attendance tương ứng
+                    const shiftType = getShiftTypeFromStartTime(schedule.startTime);
+                    return !todayAttendanceList.some(
+                      (att) => att.shiftType === shiftType && att.clinicId === schedule.clinic?.id
+                    );
+                  })
+                  .map((schedule, index) => {
+                    const shiftType = getShiftTypeFromStartTime(schedule.startTime);
+                    const fakeAttendance = createAttendanceFromSchedule(schedule);
+                    return (
+                      <div key={`schedule-${schedule.id || index}`} className="border rounded-lg p-4 bg-yellow-50 border-yellow-200">
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            {getShiftTypeLabel(shiftType) || t("attendance.shift", "Shift")}
+                          </h3>
+                          <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-yellow-200 text-yellow-800">
+                            {t("attendance.statusOptions.ABSENT", "Chưa check-in")}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-3">
+                          <div>
+                            <p className="text-sm text-gray-600">{t("attendance.scheduleTime", "Thời gian lịch")}</p>
+                            <p className="text-lg font-semibold">
+                              {schedule.startTime || ""} - {schedule.endTime || ""}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-600">{t("attendance.clinic", "Cơ sở")}</p>
+                            <p className="text-lg font-semibold">
+                              {schedule.clinic?.clinicName || ""}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => openExplanationDialogFromAttendance(fakeAttendance, "ABSENT")}
+                          className="w-full mt-3 px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors shadow-md hover:shadow-lg"
+                        >
+                          {t("attendance.explanationsNeeded.submit", "Gửi giải trình")} - {getShiftTypeLabel(shiftType)}
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
             ) : todayAttendance ? (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <p className="text-sm text-gray-600">{t("attendance.checkIn", "Check-in Time")}</p>
-                  <p className="text-lg font-semibold">
-                    {formatTime(todayAttendance.checkInTime)}
-                  </p>
+              // Nhân viên thường: hiển thị 1 attendance record
+              <div>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm text-gray-600">{t("attendance.checkIn", "Check-in Time")}</p>
+                    <p className="text-lg font-semibold">
+                      {formatTime(todayAttendance.checkInTime)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">{t("attendance.checkOut", "Check-out Time")}</p>
+                    <p className="text-lg font-semibold">
+                      {formatTime(todayAttendance.checkOutTime)}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">{t("attendance.statusLabel", "Status")}</p>
+                    <span
+                      className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(
+                        todayAttendance.attendanceStatus
+                      )}`}
+                    >
+                      {t(`attendance.statusOptions.${todayAttendance.attendanceStatus || "UNKNOWN"}`, todayAttendance.attendanceStatus || "N/A")}
+                    </span>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-600">{t("attendance.checkOut", "Check-out Time")}</p>
-                  <p className="text-lg font-semibold">
-                    {formatTime(todayAttendance.checkOutTime)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">{t("attendance.statusLabel", "Status")}</p>
-                  <span
-                    className={`inline-block px-3 py-1 rounded-full text-sm font-semibold ${getStatusColor(
-                      todayAttendance.attendanceStatus
-                    )}`}
+                {needsExplanation(todayAttendance).needs && (
+                  <button
+                    onClick={() => openExplanationDialogFromAttendance(todayAttendance)}
+                    className="w-full px-4 py-2 bg-orange-600 text-white font-semibold rounded-lg hover:bg-orange-700 transition-colors shadow-md hover:shadow-lg"
                   >
-                    {t(`attendance.statusOptions.${todayAttendance.attendanceStatus || "UNKNOWN"}`, todayAttendance.attendanceStatus || "N/A")}
-                  </span>
-                </div>
+                    {t("attendance.explanationsNeeded.submit", "Gửi giải trình")}
+                  </button>
+                )}
               </div>
             ) : (
               <div className="text-center py-8 text-gray-500">
@@ -537,6 +870,11 @@ export default function EmployeeAttendanceView() {
                         <div className="flex-1">
                           <p className="text-lg font-bold text-gray-900 mb-2">
                             {t(`attendance.explanationType.${explanation.explanationType || "UNKNOWN"}`, explanation.explanationType || "")}
+                            {explanation.shiftType && explanation.shiftType !== "FULL_DAY" && (
+                              <span className="ml-2 text-sm font-normal text-blue-600">
+                                ({getShiftTypeLabel(explanation.shiftType)})
+                              </span>
+                            )}
                           </p>
                           <p className="text-sm text-gray-600 mb-1">
                             <span className="font-semibold">{t("attendance.explanationsNeeded.date", "Ngày")}:</span> {formatDateDisplay(explanation.workDate)}
@@ -685,6 +1023,9 @@ export default function EmployeeAttendanceView() {
                         {t("attendance.monthlyHistory.clinic", "Clinic / Location")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        {t("attendance.monthlyHistory.shift", "Shift")}
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         {t("attendance.monthlyHistory.checkIn", "Check-in")}
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -721,6 +1062,15 @@ export default function EmployeeAttendanceView() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {attendance.clinicName || "-"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            {attendance.shiftType && attendance.shiftType !== "FULL_DAY" ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                {getShiftTypeLabel(attendance.shiftType)}
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {formatTime(attendance.checkInTime)}
@@ -794,6 +1144,11 @@ export default function EmployeeAttendanceView() {
                   <p className="text-sm text-gray-600 mb-2">
                     {t("attendance.explanationsNeeded.type", "Type")}: <span className="font-semibold">
                       {t(`attendance.explanationType.${selectedExplanation.explanationType || "UNKNOWN"}`, selectedExplanation.explanationType || "")}
+                      {selectedExplanation.shiftType && selectedExplanation.shiftType !== "FULL_DAY" && (
+                        <span className="ml-1 text-blue-600">
+                          ({getShiftTypeLabel(selectedExplanation.shiftType)})
+                        </span>
+                      )}
                     </span>
                   </p>
                   <p className="text-sm text-gray-600">

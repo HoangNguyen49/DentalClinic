@@ -155,7 +155,7 @@ export default function DailyAttendanceTable({
         <tbody>
           {items.map((item, index) => (
             <tr 
-              key={item.userId} 
+              key={item.id ? `attendance-${item.id}` : `user-${item.userId}-${index}`} 
               className="border-b hover:bg-gray-50 cursor-pointer"
               onClick={() => item.id && fetchAttendanceDetail(item.id)}
             >

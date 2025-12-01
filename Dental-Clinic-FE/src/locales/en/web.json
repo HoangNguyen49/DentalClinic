@@ -54,6 +54,8 @@
       "month": "Month",
       "date": "Date",
       "clinic": "Clinic / Location",
+      "scheduleTime": "Schedule Time",
+      "shift": "Shift",
       "checkIn": "Check-in",
       "checkOut": "Check-out",
       "status": "Status",
@@ -114,6 +116,13 @@
     },
     "reason": "Reason",
     "reasonPlaceholder": "Enter leave reason...",
+      "shiftType": "Shift",
+    "shiftTypeHint": "Select the shift you want to take leave. If you select full day, you will be off for both morning and afternoon shifts.",
+    "shiftTypes": {
+      "fullDay": "Full Day",
+      "morning": "Morning Shift",
+      "afternoon": "Afternoon Shift"
+    },
     "clinic": "Clinic",
     "approvedBy": "Approved By",
     "createdAt": "Created At",

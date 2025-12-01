@@ -49,11 +49,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 setUnreadCount(count);
                 return;
             }
-        } catch (error) {}
+        } catch (error) { }
         try {
             const response = await notificationApi.countUnread();
             setUnreadCount(response.data);
-        } catch (error) {}
+        } catch (error) { }
     }, [isFirestoreConnected, userId]);
 
     // Hàm lấy danh sách notification (chỉ dùng khi Firestore không active)
@@ -62,7 +62,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         try {
             const response = await notificationApi.getNotifications(page, size);
             setNotifications(response.data.content);
-        } catch (error) {}
+        } catch (error) { }
     }, [isFirestoreConnected]);
 
     // Đánh dấu 1 notification đã đọc
@@ -73,7 +73,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 prev.map((n) => (n.notificationId === id ? { ...n, isRead: true } : n))
             );
             setUnreadCount((prev) => Math.max(0, prev - 1));
-        } catch (error) {}
+        } catch (error) { }
     };
 
     // Đánh dấu tất cả notification đã đọc
@@ -82,7 +82,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             await notificationApi.markAllAsRead();
             setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
             setUnreadCount(0);
-        } catch (error) {}
+        } catch (error) { }
     };
 
     // Cho phép các component khác đăng ký nhận event notification push
@@ -212,15 +212,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     try {
                         const notification: NotificationResponse = JSON.parse(message.body);
 
-                        // Khi dùng Firestore thì không cập nhật state ở đây
-                        if (!isFirestoreConnected) {
-                            setNotifications((prev) => {
-                                const exists = prev.some(n => n.notificationId === notification.notificationId);
-                                if (exists) return prev;
-                                return [notification, ...prev];
-                            });
-                            setUnreadCount((prev) => prev + 1);
-                        }
+                        // Cập nhật state ngay lập tức khi nhận WebSocket (kể cả khi có Firestore)
+                        setNotifications((prev) => {
+                            const exists = prev.some(n => n.notificationId === notification.notificationId);
+                            if (exists) return prev;
+                            return [notification, ...prev];
+                        });
+                        setUnreadCount((prev) => prev + 1);
 
                         syncUnreadCountFromServer();
 
@@ -228,7 +226,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                         notificationListenersRef.current.forEach((listener) => {
                             try {
                                 listener(notification);
-                            } catch (error) {}
+                            } catch (error) { }
                         });
 
                         // Hiện popup thông báo ngay khi nhận
@@ -241,8 +239,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                 pauseOnHover: true,
                                 draggable: true,
                             });
-                        } catch (toastError) {}
-                    } catch (error) {}
+                        } catch (toastError) { }
+                    } catch (error) { }
                 });
             },
             onDisconnect: () => {

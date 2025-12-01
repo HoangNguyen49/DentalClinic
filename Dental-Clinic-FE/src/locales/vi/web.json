@@ -54,6 +54,8 @@
       "month": "Tháng",
       "date": "Ngày",
       "clinic": "Phòng khám / Khu vực",
+      "scheduleTime": "Thời gian lịch",
+      "shift": "Ca",
       "checkIn": "Giờ vào",
       "checkOut": "Giờ ra",
       "status": "Trạng thái",
@@ -114,6 +116,13 @@
     },
     "reason": "Lý do",
     "reasonPlaceholder": "Nhập lý do xin nghỉ...",
+    "shiftType": "Ca làm việc",
+    "shiftTypeHint": "Chọn ca bạn muốn xin nghỉ. Nếu chọn cả ngày, bạn sẽ nghỉ cả ca sáng và ca chiều.",
+    "shiftTypes": {
+      "fullDay": "Cả ngày",
+      "morning": "Ca sáng",
+      "afternoon": "Ca chiều"
+    },
     "clinic": "Cơ sở",
     "approvedBy": "Duyệt bởi",
     "createdAt": "Tạo lúc",

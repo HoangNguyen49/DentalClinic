@@ -22,6 +22,7 @@ type LeaveRequest = {
   type: string; // VACATION, SICK, PERSONAL, OTHER
   status: string; // PENDING, APPROVED, REJECTED
   reason: string;
+  shiftType?: string; // MORNING, AFTERNOON, FULL_DAY (only for doctors)
   approvedBy?: number;
   approvedByName?: string;
   createdAt: string;
@@ -148,6 +149,20 @@ export default function LeaveRequestList() {
     }
   };
 
+  const getShiftTypeLabel = (shiftType?: string) => {
+    if (!shiftType || shiftType === "FULL_DAY") {
+      return t("leaveRequest.shiftTypes.fullDay", "Cả ngày");
+    }
+    switch (shiftType.toUpperCase()) {
+      case "MORNING":
+        return t("leaveRequest.shiftTypes.morning", "Ca sáng");
+      case "AFTERNOON":
+        return t("leaveRequest.shiftTypes.afternoon", "Ca chiều");
+      default:
+        return shiftType;
+    }
+  };
+
   const getStatusLabel = (status: string) => {
     switch (status.toUpperCase()) {
       case "APPROVED":
@@ -240,6 +255,11 @@ export default function LeaveRequestList() {
                       <p className="text-lg font-semibold">
                         {formatDate(request.startDate)} - {formatDate(request.endDate)}
                       </p>
+                      {request.shiftType && request.shiftType !== "FULL_DAY" && (
+                        <p className="text-sm text-gray-500 mt-1">
+                          {t("leaveRequest.shiftType", "Ca")}: {getShiftTypeLabel(request.shiftType)}
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-sm text-gray-600">{t("leaveRequest.status.pending", "Trạng thái")}</p>
