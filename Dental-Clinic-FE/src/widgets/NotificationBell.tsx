@@ -43,12 +43,14 @@ const NotificationBell: React.FC = () => {
 
         const isHR = hasRole('HR');
         const isAdmin = hasRole('ADMIN');
-        const isEmployee = hasRole('EMPLOYEE');
 
         switch (relatedEntityType.toUpperCase()) {
             case 'LEAVE_REQUEST':
-                // Tất cả điều hướng đến trang quản lý nghỉ phép
-                navigate('/hr/leave-requests');
+                if (isHR) {
+                    navigate('/hr/leave-requests');
+                } else {
+                    navigate('/my-leave-requests');
+                }
                 break;
             case 'ATTENDANCE':
                 if (isHR) {
@@ -60,7 +62,7 @@ const NotificationBell: React.FC = () => {
                     }
                 } else if (isAdmin) {
                     navigate('/admin/attendance');
-                } else if (isEmployee) {
+                } else {
                     // Nhân viên xem bảng chấm công cá nhân
                     navigate('/my-attendance');
                 }
