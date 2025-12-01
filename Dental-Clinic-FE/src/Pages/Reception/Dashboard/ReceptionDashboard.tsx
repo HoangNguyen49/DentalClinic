@@ -26,7 +26,8 @@ export interface DoctorScheduleDTO {
 export interface AppointmentDTO {
   id: number;
   patient: { id: number; fullName: string; patientCode: string; phone: string };
-  doctor: { id: number; fullName: string };
+  // cho phép null để phân biệt lịch đang ở hàng chờ
+  doctor: { id: number; fullName: string } | null;
   startDateTime: string;
   endDateTime: string;
   status: string;
@@ -40,7 +41,7 @@ export interface AppointmentDTO {
 const pad = (n: number) => n.toString().padStart(2, "0");
 
 const getVerticalStyle = (startStr: string, endStr: string) => {
-  let startH, startM, endH, endM;
+  let startH: number, startM: number, endH: number, endM: number;
 
   if (startStr.includes("T")) {
     const s = new Date(startStr);
@@ -84,7 +85,8 @@ const getStatusColor = (status: string) => {
 // =====================
 type DragState = {
   appt: AppointmentDTO;
-  sourceDoctorId: number;
+  // có thể null nếu kéo từ hàng chờ
+  sourceDoctorId: number | null;
   currentX: number;
   currentY: number;
   offsetX: number;
@@ -143,8 +145,8 @@ export default function ReceptionDashboard() {
         axios.get(`${API_BASE_URL}/api/reception/appointments`, config),
       ]);
 
-        setSchedules(schedRes.data as DoctorScheduleDTO[]);
-        setAppointments(apptRes.data as AppointmentDTO[]);
+      setSchedules(schedRes.data as DoctorScheduleDTO[]);
+      setAppointments(apptRes.data as AppointmentDTO[]);
     } catch (error) {
       console.error(error);
       toast.error("Lỗi tải dữ liệu.");
@@ -192,15 +194,39 @@ export default function ReceptionDashboard() {
     (d): d is NonNullable<(typeof uniqueDoctors)[number]> => !!d
   );
 
+  // các lịch chưa có doctor -> hàng chờ
+  const queueAppointments = appointments.filter((a) => !a.doctor);
+
   // =====================
   // Custom drag helpers
   // =====================
-  const cleanupDrag = () => {
-    dragStateRef.current = null;
-    setDragState(null);
-    setHoverSlotTop(null);
-    window.removeEventListener("mousemove", handleDragMove);
-    window.removeEventListener("mouseup", handleDragEnd);
+  const handleDragMove = (e: MouseEvent) => {
+    setDragState((prev) => {
+      if (!prev) return prev;
+
+      const next: DragState = {
+        ...prev,
+        currentX: e.clientX,
+        currentY: e.clientY,
+      };
+      dragStateRef.current = next;
+
+      // tính slot 15p đang hover để highlight
+      if (gridRef.current) {
+        const rect = gridRef.current.getBoundingClientRect();
+        const yInside = e.clientY - rect.top;
+        const slotHeight = HOUR_HEIGHT / 4; // 15 phút = 1/4 giờ
+
+        if (yInside < 0 || yInside > rect.height) {
+          setHoverSlotTop(null);
+        } else {
+          const slotIndex = Math.round(yInside / slotHeight);
+          setHoverSlotTop(slotIndex * slotHeight);
+        }
+      }
+
+      return next;
+    });
   };
 
   const getDoctorAndTimeFromPointer = (
@@ -236,34 +262,12 @@ export default function ReceptionDashboard() {
     return { targetDoctorId: targetDoctor.id, newStartDate };
   };
 
-  const handleDragMove = (e: MouseEvent) => {
-    setDragState((prev) => {
-      if (!prev) return prev;
-
-      // cập nhật toạ độ card
-      const next: DragState = {
-        ...prev,
-        currentX: e.clientX,
-        currentY: e.clientY,
-      };
-      dragStateRef.current = next;
-
-      // tính slot 15p đang hover để highlight
-      if (gridRef.current) {
-        const rect = gridRef.current.getBoundingClientRect();
-        const yInside = e.clientY - rect.top;
-        const slotHeight = HOUR_HEIGHT / 4; // 15 phút = 1/4 giờ
-
-        if (yInside < 0 || yInside > rect.height) {
-          setHoverSlotTop(null);
-        } else {
-          const slotIndex = Math.round(yInside / slotHeight);
-          setHoverSlotTop(slotIndex * slotHeight);
-        }
-      }
-
-      return next;
-    });
+  const cleanupDrag = () => {
+    dragStateRef.current = null;
+    setDragState(null);
+    setHoverSlotTop(null);
+    window.removeEventListener("mousemove", handleDragMove);
+    window.removeEventListener("mouseup", handleDragEnd);
   };
 
   const handleDragEnd = (e: MouseEvent) => {
@@ -292,7 +296,7 @@ export default function ReceptionDashboard() {
   const startDrag = (
     e: React.MouseEvent<HTMLDivElement>,
     appt: AppointmentDTO,
-    sourceDoctorId: number
+    sourceDoctorId: number | null
   ) => {
     e.preventDefault();
     const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
@@ -382,6 +386,66 @@ export default function ReceptionDashboard() {
         </button>
       </div>
 
+      {/* === KHU VỰC HÀNG CHỜ (QUEUE BAR) === */}
+      <div className="bg-orange-50 border-b border-orange-200 p-3 flex items-center min-h-[90px] relative shadow-inner z-20">
+        {/* Label Hàng Chờ */}
+        <div className="flex flex-col items-center justify-center px-4 shrink-0 border-r border-orange-200 mr-2 h-full">
+          <span className="font-bold text-orange-800 text-xs uppercase tracking-wider">
+            Hàng Chờ
+          </span>
+          <div className="flex items-center gap-1 mt-1">
+            <span className="text-[10px] text-orange-600">Chưa xếp:</span>
+            <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+              {queueAppointments.length}
+            </span>
+          </div>
+        </div>
+
+        {/* Danh sách Bong bóng (Scroll ngang) */}
+        <div className="flex gap-3 px-2 items-center overflow-x-auto flex-1 no-scrollbar py-1">
+          {queueAppointments.length === 0 ? (
+            <span className="text-sm text-gray-400 italic ml-2">
+              Hiện không có lịch hẹn nào cần xếp.
+            </span>
+          ) : (
+            queueAppointments.map((appt) => (
+              <div
+                key={appt.id}
+                // Kéo từ hàng chờ -> sourceDoctorId là NULL
+                onMouseDown={(e) => startDrag(e, appt, null)}
+                className="
+                  w-52 bg-white border-l-4 border-orange-400 rounded-lg shadow-sm p-2 cursor-grab active:cursor-grabbing 
+                  hover:shadow-md hover:-translate-y-0.5 transition-all select-none shrink-0 flex flex-col gap-1 group
+                "
+                title="Kéo thả xuống lịch bác sĩ để gán"
+              >
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-xs text-gray-900 truncate max-w-[120px]">
+                    {appt.patient.fullName}
+                  </span>
+                  <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-mono">
+                    {appt.patient.patientCode}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center mt-1">
+                  <span className="text-[10px] text-gray-500 truncate max-w-[100px]">
+                    {appt.services[0]?.serviceName}
+                  </span>
+
+                  {/* Hiển thị buổi (Sáng/Chiều) dựa trên giờ placeholder (8h hoặc 13h) */}
+                  <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                    {new Date(appt.startDateTime).getHours() < 12
+                      ? "CA SÁNG"
+                      : "CA CHIỀU"}
+                  </span>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
       {/* BODY */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {loading ? (
@@ -448,10 +512,7 @@ export default function ReceptionDashboard() {
                 </div>
 
                 {/* DOCTOR COLUMNS + BACKGROUND GRID */}
-                <div
-                  className="flex flex-1 relative min-w-max"
-                  ref={gridRef}
-                >
+                <div className="flex flex-1 relative min-w-max" ref={gridRef}>
                   {/* BACKGROUND GRID: ngang + 30p dotted */}
                   <div className="absolute inset-0 flex flex-col pointer-events-none z-0">
                     {hours.map((h) => (
@@ -506,7 +567,7 @@ export default function ReceptionDashboard() {
                       (s) => s.doctor.id === doc.id
                     );
                     const docAppointments = appointments.filter(
-                      (a) => a.doctor.id === doc.id
+                      (a) => a.doctor && a.doctor.id === doc.id
                     );
 
                     return (
@@ -545,9 +606,7 @@ export default function ReceptionDashboard() {
                                 bg-white border
                                 ${getStatusColor(appt.status)}
                                 ${
-                                  isDraggingThis
-                                    ? "opacity-0"
-                                    : "opacity-100"
+                                  isDraggingThis ? "opacity-0" : "opacity-100"
                                 }
                               `}
                               style={getVerticalStyle(
@@ -632,7 +691,7 @@ export default function ReceptionDashboard() {
                   doctorsList.find(
                     (d) => d.id === pendingReschedule.targetDoctorId
                   ) || pendingReschedule.appt.doctor
-                ).fullName}
+                )?.fullName || "được chọn"}
               </span>
               ?
             </p>
