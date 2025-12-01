@@ -52,7 +52,6 @@ export default function ConfirmationSummarySection({
 
   editableForm,
   isLoggedIn = false,
-  paymentMethod,
   fieldErrors,
   globalError,
   onChangeField,

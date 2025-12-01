@@ -24,7 +24,6 @@ import Product from "../pages/Product";
 import Cart from "../Pages/Product/sections/GetProductsInvoice/index";
 import AccountantRoutes from "../Pages/Product/accountant";
 import ProtectedRouteAccountant from "../app/routes/ProtectedRouteAccountant";
-import PaypalSuccessPage from "../Pages/Product/sections/GetProductsInvoice/Payments/paypal/PaypalSuccessPage";
 
 function App() {
   return (
@@ -34,7 +33,6 @@ function App() {
         <Route path="/service" element={<Service />} />
         <Route path="/products/*" element={<Product />} />
         <Route path="/cart/*" element={<Cart />} />
-        <Route path="/paypal/success" element={<PaypalSuccessPage />} />
         <Route path="/contact" element={<ContactPage />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<LoginPage />} />

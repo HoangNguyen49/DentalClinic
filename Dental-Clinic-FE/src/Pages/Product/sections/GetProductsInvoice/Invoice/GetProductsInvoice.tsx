@@ -7,10 +7,9 @@ import OrderSummarySection from "../../widgets/OrderSummarySection";
 import ConfirmationSummarySection from "../../widgets/ConfirmationSummarySection";
 import { formatMoney } from "../../../../../utils/format";
 
-import type { CheckoutContactInfoDto } from "../../../../../huybro_api/checkoutApi";
 import {
   createCodInvoice,
-  capturePaypalOrder, // Import hàm capture
+  capturePaypalOrder, 
   type CheckoutInvoiceDto,
   extractCheckoutValidationErrors,
 } from "../../../../../huybro_api/checkoutPaymentApi";
@@ -29,9 +28,8 @@ type CheckoutFormState = {
 export default function GetProductsInvoice() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const paypalToken = searchParams.get("token"); // Lấy token từ URL khi PayPal trả về
+  const paypalToken = searchParams.get("token"); 
 
-  // Ref để cuộn trang
   const confirmationRef = useRef<HTMLDivElement>(null);
 
   const {
