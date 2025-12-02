@@ -10,8 +10,9 @@ import ContactPage from "../Pages/Contact";
 import LoginPage from "../Pages/Auth/LoginPage";
 import SignUp from "../Pages/Auth/SignUp";
 import OAuthSuccessHandler from "../Pages/Auth/OAuthSuccessHandler";
-// BỎ DÒNG NÀY: import ForgotPassword ... (Vì đã dùng Modal trong Login)
-import ResetPassword from "../Pages/Auth/ResetPassword"; // Vẫn giữ cái này để hứng link từ email
+import ResetPassword from "../Pages/Auth/ResetPassword"; 
+// [MỚI] Import trang xác thực tài khoản
+import VerifyAccount from "../Pages/Auth/VerifyAccount";
 
 // --- User Pages ---
 import MyAccount from "../Pages/Account/MyAccount";
@@ -48,13 +49,17 @@ function App() {
         {/* ========================================================= */}
         {/* 1. PUBLIC ROUTES (Không cần đăng nhập)                    */}
         {/* ========================================================= */}
-        
+        <Route path="/" element={<HomePage />} />
+        <Route path="/service" element={<Service />} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<SignUp />} />
         <Route path="/oauth/success" element={<OAuthSuccessHandler />} />
-        
-        {/* Route này CẦN THIẾT để nhận link từ email */}
+
+        {/* Route xử lý khi user click link Reset Password từ email */}
         <Route path="/reset-password" element={<ResetPassword />} />
+
+        {/* [MỚI] Route xử lý khi user click link Verify Account từ email */}
+        <Route path="/verify-account" element={<VerifyAccount />} />
 
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<ContactPage />} />
@@ -64,10 +69,6 @@ function App() {
         {/* 2. PROTECTED ROUTES (Yêu cầu Login + Có SĐT)              */}
         {/* ========================================================= */}
         <Route element={<AuthGuard />}>
-          
-          <Route path="/" element={<HomePage />} />
-          <Route path="/service" element={<Service />} />
-
           <Route path="/my-account" element={<MyAccount />} />
           <Route path="/change-password" element={<ChangePassword />} />
           <Route path="/my-attendance" element={<EmployeeAttendanceView />} />
