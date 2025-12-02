@@ -148,7 +148,6 @@ export default function ConfirmationSummarySection({
     );
   }
 
-  // ========== MODE MỚI: FORM + SUMMARY (Checkout page) ==========
   return (
     <>
       <div className="mt-8 bg-white rounded-lg shadow-lg border border-gray-200 p-6 md:p-8">

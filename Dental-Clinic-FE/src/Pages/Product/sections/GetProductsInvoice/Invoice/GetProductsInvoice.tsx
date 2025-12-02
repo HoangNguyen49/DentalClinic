@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom"; // Thêm useSearchParams, useNavigate
+import { useSearchParams, useNavigate } from "react-router-dom";
 import useGetProductsInvoice from "./useGetProductsInvoice";
 import useCheckoutContactInfo from "./useCheckoutContactInfo";
 
 import OrderSummarySection from "../../widgets/OrderSummarySection";
 import ConfirmationSummarySection from "../../widgets/ConfirmationSummarySection";
 import { formatMoney } from "../../../../../utils/format";
-
+import { clearCart as clearCartUI } from "../../../../../utils/cartSession";
 import {
   createCodInvoice,
-  capturePaypalOrder, 
+  capturePaypalOrder,
+  verifyAndCaptureVnpay, 
   type CheckoutInvoiceDto,
   extractCheckoutValidationErrors,
 } from "../../../../../huybro_api/checkoutPaymentApi";
@@ -28,8 +29,9 @@ type CheckoutFormState = {
 export default function GetProductsInvoice() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const paypalToken = searchParams.get("token"); 
-
+  const paypalToken = searchParams.get("token");
+  const vnpSecureHash = searchParams.get("vnp_SecureHash");
+  const isVnpayReturn = !!vnpSecureHash;
   const confirmationRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -50,8 +52,9 @@ export default function GetProductsInvoice() {
 
   // ------------------ Payment Method ------------------
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(() => {
-    // Nếu có token PayPal -> tự động set là BANK_TRANSFER
-    if (paypalToken) return "BANK_TRANSFER";
+    // [SỬA] Nếu có token PayPal hoặc VNPay params -> set BANK_TRANSFER
+    if (paypalToken || isVnpayReturn) return "BANK_TRANSFER";
+    
     const saved = localStorage.getItem("checkout:paymentMethod");
     return saved === "BANK_TRANSFER" ? "BANK_TRANSFER" : "COD";
   });
@@ -74,7 +77,6 @@ export default function GetProductsInvoice() {
   const [submitting, setSubmitting] = useState(false);
   const [createdInvoice, setCreatedInvoice] = useState<CheckoutInvoiceDto | null>(null);
 
-  // Autofill thông tin khi login
   useEffect(() => {
     if (contact) {
       setForm((prev) => ({
@@ -86,31 +88,29 @@ export default function GetProductsInvoice() {
     }
   }, [contact]);
 
-  // LOGIC MỚI: Xử lý khi quay lại từ PayPal
   useEffect(() => {
-    if (paypalToken) {
-      // 1. Set phương thức thanh toán đúng
+    if (paypalToken || isVnpayReturn) {
       setPaymentMethod("BANK_TRANSFER");
-      // 2. Cuộn xuống phần confirm
       setTimeout(() => {
         confirmationRef.current?.scrollIntoView({ behavior: "smooth" });
       }, 500);
     }
-  }, [paypalToken]);
+  }, [paypalToken, isVnpayReturn]);
 
   // ------------------ Computed Labels ------------------
   const paymentMethodLabel = useMemo(() => {
     if (createdInvoice) {
       return `${createdInvoice.paymentMethod} - ${createdInvoice.paymentChannel}`;
     }
-    if (paypalToken) return "PayPal (Authorized)"; // Label đặc biệt khi đã về từ PayPal
-    return paymentMethod === "COD" ? "Cash on Delivery" : "Bank Transfer - PayPal";
-  }, [paymentMethod, createdInvoice, paypalToken]);
+    if (paypalToken) return "PayPal (Authorized)";
+    if (isVnpayReturn) return "VNPay (Authorized)"; // [THÊM]
+    
+    return paymentMethod === "COD" ? "Cash on Delivery" : "Bank Transfer";
+  }, [paymentMethod, createdInvoice, paypalToken, isVnpayReturn]);
 
   const effectiveTotal = createdInvoice?.totalAmount ?? total;
   const effectiveCurrency = (createdInvoice?.currency as string) || currency || "USD";
 
-  // ------------------ Handlers ------------------
   const handleChangeField = (field: keyof CheckoutFormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     setFieldErrors((prev) => {
@@ -120,19 +120,17 @@ export default function GetProductsInvoice() {
     });
   };
 
-  // Hàm xử lý chung cho nút Confirm
+  // ------------------ Handle Confirm ------------------
   const handleConfirmOrder = async () => {
-    // Validate cơ bản
-    if (isEmpty && !paypalToken) return;
+    if (isEmpty && !paypalToken && !isVnpayReturn) return;
 
     setSubmitting(true);
     setGlobalError(null);
     setFieldErrors({});
 
-    // Payload chung
     const payload = {
       paymentType: paymentMethod,
-      paymentChannel: paymentMethod === "COD" ? "CASH_ON_DELIVERY" : "PAYPAL",
+      paymentChannel: paymentMethod === "COD" ? "CASH_ON_DELIVERY" : undefined, // VNPay/PayPal tự set channel
       currency: currency || checkoutCurrency || "USD",
       customerFullName: isLoggedIn ? undefined : form.fullName || undefined,
       customerEmail: isLoggedIn ? undefined : form.email || undefined,
@@ -145,21 +143,28 @@ export default function GetProductsInvoice() {
       let result: CheckoutInvoiceDto;
 
       if (paypalToken) {
-        // CASE 1: Đã đi PayPal về -> Gọi Capture
-        result = await capturePaypalOrder(paypalToken, payload);
-        
-        // Xóa token trên URL để tránh user refresh bị lỗi hoặc capture lại
-        setSearchParams({}); 
+        // CASE 1: PayPal Capture
+        result = await capturePaypalOrder(paypalToken, { ...payload, paymentChannel: "PAYPAL" });
+        setSearchParams({});
+      
+      } else if (isVnpayReturn) {
+        // CASE 2: VNPay Verify & Capture
+        const vnpParams: Record<string, string> = {};
+        searchParams.forEach((value, key) => {
+           vnpParams[key] = value;
+        });
+        result = await verifyAndCaptureVnpay(vnpParams, { ...payload, paymentChannel: "VNPAY" });
+        setSearchParams({});
+
       } else {
-        // CASE 2: COD (Logic cũ)
-        if (paymentMethod !== "COD") return; // Should not happen logic wise
-        result = await createCodInvoice(payload);
+        // CASE 3: COD
+        if (paymentMethod !== "COD") return;
+        result = await createCodInvoice({ ...payload, paymentChannel: "CASH_ON_DELIVERY" });
       }
 
       setCreatedInvoice(result);
+      clearCartUI();
       
-      // Nếu là PayPal capture xong -> Có thể navigate đi chỗ khác hoặc hiện thông báo
-      // Ở đây tôi giữ nguyên UI hiển thị Success Message bên dưới
     } catch (err: any) {
       const { fieldErrors: fe, globalErrors } = extractCheckoutValidationErrors(err);
       setFieldErrors(fe);
@@ -169,21 +174,17 @@ export default function GetProductsInvoice() {
     }
   };
 
-  // Logic enable nút Confirm
   const canConfirm = useMemo(() => {
     if (submitting || createdInvoice) return false;
     
-    // Nếu là PayPal returning -> Cho phép confirm để Capture (cần điền address)
-    if (paypalToken) return true; 
+    if (paypalToken || isVnpayReturn) return true; 
 
-    // Nếu là COD -> Cần giỏ hàng có hàng + User login (nếu bắt buộc)
     if (paymentMethod === "COD") {
-        return !isEmpty && isLoggedIn;
+       return !isEmpty && isLoggedIn;
     }
 
-    // Nếu đang chọn PayPal mà chưa đi (chưa có token) -> Nút này ẩn/disable (vì phải bấm nút vàng PayPal ở trên)
     return false; 
-  }, [submitting, createdInvoice, paypalToken, paymentMethod, isEmpty, isLoggedIn]);
+  }, [submitting, createdInvoice, paypalToken, isVnpayReturn, paymentMethod, isEmpty, isLoggedIn]);
 
 
   // ======================== RENDER ==============================
@@ -200,15 +201,13 @@ export default function GetProductsInvoice() {
               </p>
             </div>
 
-            {/* Empty cart notification (chỉ hiện khi chưa có kết quả invoice và không phải đang xử lý PayPal) */}
-            {isEmpty && !createdInvoice && !paypalToken ? (
+            {isEmpty && !createdInvoice && !paypalToken && !isVnpayReturn ? (
               <div className="bg-white rounded-lg shadow-lg border p-8 text-center">
                 <p className="text-gray-600">Your cart is empty.</p>
               </div>
             ) : (
               <>
                 {/* 1. Order Summary */}
-                {/* Ẩn phần chọn payment method khi đã có token PayPal để tránh user đổi lung tung */}
                 <OrderSummarySection
                   items={items}
                   subtotal={subtotal}
@@ -220,50 +219,48 @@ export default function GetProductsInvoice() {
                   onChangeCurrency={setCheckoutCurrency}
                   formatMoney={formatMoney}
                   paymentMethod={paymentMethod}
-                  onPaymentMethodChange={(m) => !paypalToken && setPaymentMethod(m)} 
+                  onPaymentMethodChange={(m) => !paypalToken && !isVnpayReturn && setPaymentMethod(m)} 
                 />
 
-                {/* 2. Confirmation Summary (Form Address) */}
+                {/* 2. Confirmation Summary */}
                 <div ref={confirmationRef}>
                     <ConfirmationSummarySection
-                    total={effectiveTotal}
-                    currency={effectiveCurrency}
-                    formatMoney={formatMoney}
-                    contact={createdInvoice ? {
-                        fullName: createdInvoice.customerFullName || "",
-                        email: createdInvoice.customerEmail || "",
-                        phone: createdInvoice.customerPhone || ""
-                    } : isLoggedIn ? contact : null} // Fix logic hiển thị contact
-                    
-                    address={createdInvoice?.shippingAddress || form.address}
-                    paymentMethodLabel={paymentMethodLabel}
-                    paymentCompletedTime={createdInvoice?.paymentCompletedAt}
-                    
-                    // Form Mode
-                    editableForm={createdInvoice ? undefined : form}
-                    isLoggedIn={isLoggedIn}
-                    paymentMethod={paymentMethod}
-                    
-                    fieldErrors={fieldErrors}
-                    globalError={globalError}
-                    onChangeField={handleChangeField}
-                    
-                    // Button Logic
-                    onConfirm={handleConfirmOrder}
-                    confirmDisabled={!canConfirm}
-                    confirmLabel={
-                        createdInvoice 
-                        ? "Order Completed" 
-                        : paypalToken 
-                            ? "Confirm & Complete Payment" // Label cho bước Capture
-                            : paymentMethod === "COD"
-                                ? isLoggedIn ? "Place Order (COD)" : "Login to Order"
-                                : "Proceed above with PayPal" // Fallback text
-                    }
+                        total={effectiveTotal}
+                        currency={effectiveCurrency}
+                        formatMoney={formatMoney}
+                        contact={createdInvoice ? {
+                            fullName: createdInvoice.customerFullName || "",
+                            email: createdInvoice.customerEmail || "",
+                            phone: createdInvoice.customerPhone || ""
+                        } : isLoggedIn ? contact : null}
+                        
+                        address={createdInvoice?.shippingAddress || form.address}
+                        paymentMethodLabel={paymentMethodLabel}
+                        paymentCompletedTime={createdInvoice?.paymentCompletedAt}
+                        
+                        editableForm={createdInvoice ? undefined : form}
+                        isLoggedIn={isLoggedIn}
+                        paymentMethod={paymentMethod}
+                        
+                        fieldErrors={fieldErrors}
+                        globalError={globalError}
+                        onChangeField={handleChangeField}
+                        
+                        onConfirm={handleConfirmOrder}
+                        confirmDisabled={!canConfirm}
+                        confirmLabel={
+                            createdInvoice 
+                            ? "Order Completed" 
+                            : (paypalToken || isVnpayReturn)
+                                ? "Confirm & Complete Payment"
+                                : paymentMethod === "COD"
+                                    ? isLoggedIn ? "Place Order (COD)" : "Login to Order"
+                                    : "Proceed above with Payment"
+                        }
                     />
                 </div>
 
-                {/* 3. Success Message Block */}
+                {/* 3. Success Message */}
                 {createdInvoice && (
                   <div className="mt-6 bg-green-50 border border-green-200 text-green-800 rounded-md p-6 shadow-sm">
                     <div className="flex items-center mb-2">
@@ -273,6 +270,7 @@ export default function GetProductsInvoice() {
                     <div className="ml-8 text-sm space-y-1">
                         <p>Invoice Code: <span className="font-mono font-bold">{createdInvoice.invoiceCode}</span></p>
                         <p>Payment Status: <span className="font-bold">{createdInvoice.paymentStatus}</span></p>
+                        <p>Method: <span className="font-semibold">{createdInvoice.paymentChannel}</span></p>
                         <p>A confirmation email has been sent to {createdInvoice.customerEmail}.</p>
                         <button onClick={() => navigate("/")} className="mt-4 text-blue-600 hover:underline">
                             Return to Home
@@ -281,12 +279,14 @@ export default function GetProductsInvoice() {
                   </div>
                 )}
                 
-                {/* 4. PayPal Return Message Block (Trước khi capture) */}
-                {paypalToken && !createdInvoice && !globalError && (
+                {/* 4. Payment Return Message Block */}
+                {(paypalToken || isVnpayReturn) && !createdInvoice && !globalError && (
                     <div className="mt-4 p-4 bg-blue-50 text-blue-700 rounded border border-blue-200 flex items-start">
                          <svg className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" /></svg>
                          <div>
-                             <p className="font-semibold">PayPal payment authorized!</p>
+                             <p className="font-semibold">
+                                {isVnpayReturn ? "VNPay payment authorized!" : "PayPal payment authorized!"}
+                             </p>
                              <p className="text-sm">Please verify your shipping details above and click <b>"Confirm & Complete Payment"</b> to finish.</p>
                          </div>
                     </div>

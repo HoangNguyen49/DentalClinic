@@ -174,8 +174,6 @@ export function extractCheckoutValidationErrors(
     // CASE 4: Lỗi Global Message
     // ---------------------------------------------------------
     if (data.message && typeof data.message === "string" && data.message !== "Validation failed") {
-       // Chỉ lấy message nếu nó không phải câu chung chung "Validation failed"
-       // Hoặc nếu không có fieldError nào thì mới lấy message này làm global
        if (Object.keys(fieldErrors).length === 0) {
           globalErrors.push(data.message);
        }
@@ -188,4 +186,30 @@ export function extractCheckoutValidationErrors(
   }
 
   return { fieldErrors, globalErrors };
+}
+// Vnpay: tạo payment URL từ cart
+export type VnpayPaymentUrlDto = {
+  paymentUrl: string;
+};
+export async function createVnpayUrl(): Promise<VnpayPaymentUrlDto> {
+  const res = await axiosClient.post<VnpayPaymentUrlDto>(
+    "/api/checkout/vnpay/create-payment-url"
+  );
+  return res.data;
+}
+// 2. Verify và Capture (Gửi toàn bộ params từ URL về cho BE)
+export async function verifyAndCaptureVnpay(
+  vnpParams: Record<string, string>, // Map các tham số vnp_...
+  payload: CheckoutCreateRequestDto
+): Promise<CheckoutInvoiceDto> {
+  // Vì BE dùng @RequestParam Map<String, String> và @RequestBody dto
+  // Axios không hỗ trợ gửi cả params và body dạng mix dễ dàng trong 1 object config nếu params quá nhiều
+  const res = await axiosClient.post<CheckoutInvoiceDto>(
+    "/api/checkout/vnpay/verify-and-capture",
+    payload, 
+    {
+      params: vnpParams, 
+    }
+  );
+  return res.data;
 }
