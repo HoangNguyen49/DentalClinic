@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import { Search, Filter, Eye, Calendar, Clock, User, MapPin } from "lucide-react";
+import { Search, Filter, Eye, Calendar, Clock, User, MapPin, Crown, DollarSign } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
@@ -21,6 +21,8 @@ type DoctorAppointmentDTO = {
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
+  appointmentType?: string; // "VIP" hoặc "STANDARD"
+  bookingFee?: number; // Phí đặt lịch hẹn
 };
 
 export default function AppointmentList() {
@@ -222,6 +224,12 @@ export default function AppointmentList() {
                         Room
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Type
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Booking Fee
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -268,6 +276,39 @@ export default function AppointmentList() {
                             {appointment.room?.roomName || "-"}
                             {appointment.chair && ` (Chair ${appointment.chair.chairNumber})`}
                           </div>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          {appointment.appointmentType ? (
+                            <span
+                              className={`inline-flex items-center gap-1 px-2.5 py-0.5 text-xs font-medium rounded-full ${
+                                appointment.appointmentType === "VIP"
+                                  ? "bg-purple-100 text-purple-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {appointment.appointmentType === "VIP" && (
+                                <Crown className="w-3 h-3 text-purple-600" />
+                              )}
+                              {appointment.appointmentType}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 text-xs">-</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                          {appointment.bookingFee !== undefined && appointment.bookingFee !== null ? (
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3 text-gray-400" />
+                              <span>
+                                {new Intl.NumberFormat("vi-VN", {
+                                  style: "currency",
+                                  currency: "VND",
+                                }).format(appointment.bookingFee)}
+                              </span>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap">
                           <span

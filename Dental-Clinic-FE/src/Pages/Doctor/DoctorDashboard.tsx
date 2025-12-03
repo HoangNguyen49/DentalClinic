@@ -8,7 +8,8 @@ import {
   FileText,
   ArrowRight,
   CalendarDays,
- 
+  Crown,
+  DollarSign,
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -22,6 +23,8 @@ type Appointment = {
   patient?: { fullName: string; patientCode: string };
   clinic?: { clinicName: string };
   room?: { roomName: string };
+  appointmentType?: string; // "VIP" hoặc "STANDARD"
+  bookingFee?: number; // Phí đặt lịch hẹn
 };
 
 type MedicalRecord = {
@@ -287,6 +290,33 @@ export default function DoctorDashboard() {
                         <div className="text-xs text-gray-500">
                           {apt.clinic?.clinicName || "N/A"} • {apt.room?.roomName || "N/A"}
                         </div>
+                        {(apt.appointmentType || apt.bookingFee !== undefined) && (
+                          <div className="flex items-center gap-2 mt-1">
+                            {apt.appointmentType && (
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+                                  apt.appointmentType === "VIP"
+                                    ? "bg-purple-100 text-purple-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {apt.appointmentType === "VIP" && (
+                                  <Crown className="w-2.5 h-2.5 text-purple-600" />
+                                )}
+                                {apt.appointmentType}
+                              </span>
+                            )}
+                            {apt.bookingFee !== undefined && apt.bookingFee !== null && (
+                              <span className="text-xs text-gray-600 flex items-center gap-1">
+                                <DollarSign className="w-3 h-3" />
+                                {new Intl.NumberFormat("vi-VN", {
+                                  style: "currency",
+                                  currency: "VND",
+                                }).format(apt.bookingFee)}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <span
                         className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(
@@ -333,6 +363,33 @@ export default function DoctorDashboard() {
                         <div className="text-sm text-gray-600">
                           {apt.patient?.fullName || "Unknown"} ({apt.patient?.patientCode || "N/A"})
                         </div>
+                        {(apt.appointmentType || apt.bookingFee !== undefined) && (
+                          <div className="flex items-center gap-2 mt-1">
+                            {apt.appointmentType && (
+                              <span
+                                className={`inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full ${
+                                  apt.appointmentType === "VIP"
+                                    ? "bg-purple-100 text-purple-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {apt.appointmentType === "VIP" && (
+                                  <Crown className="w-2.5 h-2.5 text-purple-600" />
+                                )}
+                                {apt.appointmentType}
+                              </span>
+                            )}
+                            {apt.bookingFee !== undefined && apt.bookingFee !== null && (
+                              <span className="text-xs text-gray-600 flex items-center gap-1">
+                                <DollarSign className="w-3 h-3" />
+                                {new Intl.NumberFormat("vi-VN", {
+                                  style: "currency",
+                                  currency: "VND",
+                                }).format(apt.bookingFee)}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                       <span
                         className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeClass(

@@ -10,11 +10,31 @@ import {
   Phone,
   Mail,
   FileText,
+  Crown,
+  DollarSign,
 } from "lucide-react";
 import CreateMedicalRecordModal from "./CreateMedicalRecordModal";
+import ServiceVariantsModal from "./ServiceVariantsModal";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
+
+type ServiceVariantDTO = {
+  id: number;
+  variantName: string;
+  description?: string;
+  price?: number;
+};
+
+type ServiceDTO = {
+  id: number;
+  serviceName: string;
+  category?: string;
+  description?: string;
+  defaultDuration?: number;
+  isActive?: boolean;
+  variants?: ServiceVariantDTO[];
+};
 
 type DoctorAppointmentDTO = {
   appointmentId: number;
@@ -36,10 +56,12 @@ type DoctorAppointmentDTO = {
   status: string;
   channel?: string;
   note?: string;
-  service?: { id: number; serviceName: string };
+  service?: ServiceDTO;
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
+  appointmentType?: string; // "VIP" hoặc "STANDARD"
+  bookingFee?: number; // Phí đặt lịch hẹn
 };
 
 export default function AppointmentDetail() {
@@ -54,6 +76,8 @@ export default function AppointmentDetail() {
   const [appointment, setAppointment] = useState<DoctorAppointmentDTO | null>(null);
   const [loading, setLoading] = useState(true);
   const [showMedicalRecordModal, setShowMedicalRecordModal] = useState(false);
+  const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
+  const [showVariantsModal, setShowVariantsModal] = useState(false);
 
   useEffect(() => {
     if (!appointmentId || !doctorId) {
@@ -96,6 +120,32 @@ export default function AppointmentDetail() {
     if (s === "completed") return "bg-green-100 text-green-800";
     if (s === "canceled") return "bg-red-100 text-red-800";
     return "bg-gray-100 text-gray-800";
+  };
+
+  const handleServiceClick = async () => {
+    if (!appointment?.service) return;
+    
+    // If service already has variants, use it directly
+    if (appointment.service.variants !== undefined) {
+      setSelectedService(appointment.service);
+      setShowVariantsModal(true);
+      return;
+    }
+
+    // Otherwise, fetch full service data
+    try {
+      const response = await axios.get<ServiceDTO>(
+        `${apiBase}/api/services/${appointment.service.id}`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+      setSelectedService(response.data);
+      setShowVariantsModal(true);
+    } catch (err) {
+      console.error("Failed to fetch service details:", err);
+      toast.error("Failed to load service details");
+    }
   };
 
   if (loading) {
@@ -174,8 +224,42 @@ export default function AppointmentDetail() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Service</label>
-                    <div className="mt-1 text-gray-900">
+                    <div 
+                      className={`mt-1 ${appointment.service ? 'text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition' : 'text-gray-900'}`}
+                      onClick={handleServiceClick}
+                    >
                       {appointment.service?.serviceName || "N/A"}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Appointment Type</label>
+                    <div className="mt-1 flex items-center gap-2">
+                      {appointment.appointmentType ? (
+                        <span
+                          className={`inline-flex items-center gap-1 px-3 py-1 text-sm font-medium rounded-full ${
+                            appointment.appointmentType === "VIP"
+                              ? "bg-purple-100 text-purple-800"
+                              : "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          <Crown className={`w-3 h-3 ${appointment.appointmentType === "VIP" ? "text-purple-600" : ""}`} />
+                          {appointment.appointmentType}
+                        </span>
+                      ) : (
+                        <span className="text-gray-900">N/A</span>
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">Booking Fee</label>
+                    <div className="mt-1 flex items-center gap-2 text-gray-900">
+                      <DollarSign className="w-4 h-4 text-gray-400" />
+                      {appointment.bookingFee !== undefined && appointment.bookingFee !== null
+                        ? new Intl.NumberFormat("vi-VN", {
+                            style: "currency",
+                            currency: "VND",
+                          }).format(appointment.bookingFee)
+                        : "N/A"}
                     </div>
                   </div>
                   {appointment.note && (
@@ -295,6 +379,16 @@ export default function AppointmentDetail() {
         onClose={() => setShowMedicalRecordModal(false)}
         onSuccess={() => {
           // Could refetch appointment if needed
+        }}
+      />
+
+      {/* Service Variants Modal */}
+      <ServiceVariantsModal
+        isOpen={showVariantsModal}
+        service={selectedService}
+        onClose={() => {
+          setShowVariantsModal(false);
+          setSelectedService(null);
         }}
       />
     </>

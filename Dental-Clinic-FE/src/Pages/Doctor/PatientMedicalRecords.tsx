@@ -5,6 +5,24 @@ import { ArrowLeft, Calendar, Eye } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
+import ServiceVariantsModal from "./ServiceVariantsModal";
+
+type ServiceVariantDTO = {
+  id: number;
+  variantName: string;
+  description?: string;
+  price?: number;
+};
+
+type ServiceDTO = {
+  id: number;
+  serviceName: string;
+  category?: string;
+  description?: string;
+  defaultDuration?: number;
+  isActive?: boolean;
+  variants?: ServiceVariantDTO[];
+};
 
 type MedicalRecordDTO = {
   recordId: number;
@@ -13,7 +31,7 @@ type MedicalRecordDTO = {
   treatmentPlan?: string;
   serviceName?: string;
   serviceId?: number;
-  service?: { id: number; serviceName: string };
+  service?: ServiceDTO;
   clinic?: { id: number; clinicName: string };
   doctor?: { id: number; fullName: string };
   patient?: {
@@ -32,8 +50,10 @@ export default function PatientMedicalRecords() {
   const accessToken = localStorage.getItem("accessToken");
 
   const [records, setRecords] = useState<MedicalRecordDTO[]>([]);
-  const [serviceMap, setServiceMap] = useState<Record<number, string>>({});
+  const [serviceMap, setServiceMap] = useState<Record<number, ServiceDTO>>({});
   const [loading, setLoading] = useState(true);
+  const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
+  const [showVariantsModal, setShowVariantsModal] = useState(false);
 
   useEffect(() => {
     if (!patientId) return;
@@ -62,27 +82,36 @@ export default function PatientMedicalRecords() {
     fetchRecords();
   }, [apiBase, accessToken, patientId]);
 
-  // Fetch services map to show service names when service object is not present
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await axios.get<{ id: number; serviceName: string }[]>(
+        const res = await axios.get<ServiceDTO[]>(
           `${apiBase}/api/services`,
           {
             headers: { Authorization: `Bearer ${accessToken}` },
             withCredentials: true,
           }
         );
-        const map = Object.fromEntries((res.data || []).map((s) => [s.id, s.serviceName]));
+        const map = Object.fromEntries(
+          (res.data || []).map((service) => [service.id, service])
+        );
         setServiceMap(map);
       } catch (err) {
-        console.warn("Could not fetch services", err);
+        console.warn("Could not load services", err);
       }
     };
     fetchServices();
   }, [apiBase, accessToken]);
 
-  
+  const handleServiceClick = (service: ServiceDTO | undefined, serviceId?: number) => {
+    if (service) {
+      setSelectedService(service);
+      setShowVariantsModal(true);
+    } else if (serviceId && serviceMap[serviceId]) {
+      setSelectedService(serviceMap[serviceId]);
+      setShowVariantsModal(true);
+    }
+  };
 
   const patientInfo = useMemo(() => records[0]?.patient, [records]);
 
@@ -136,10 +165,14 @@ export default function PatientMedicalRecords() {
                         <p className="text-xs uppercase tracking-wide text-gray-500">
                           Record #{record.recordId}
                         </p>
-                        <h3 className="text-lg font-semibold text-gray-900">
+                        <h3 
+                          className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition"
+                          onClick={() => handleServiceClick(record.service, record.serviceId)}
+                        >
                           {record.service?.serviceName ||
                             record.serviceName ||
-                            (record.service?.id && serviceMap[record.service.id]) ||
+                            (record.service?.id && serviceMap[record.service.id]?.serviceName) ||
+                            (record.serviceId && serviceMap[record.serviceId]?.serviceName) ||
                             (record.serviceId ? `Service #${record.serviceId}` : "Unknown service")}
                         </h3>
                         <p className="text-sm text-gray-500">
@@ -180,6 +213,15 @@ export default function PatientMedicalRecords() {
           </div>
         </div>
       </div>
+
+      <ServiceVariantsModal
+        isOpen={showVariantsModal}
+        service={selectedService}
+        onClose={() => {
+          setShowVariantsModal(false);
+          setSelectedService(null);
+        }}
+      />
     </>
   );
 }

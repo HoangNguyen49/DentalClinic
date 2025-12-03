@@ -5,6 +5,7 @@ import { ArrowLeft, MapPin, User, Stethoscope, FileText, Trash2, Upload } from "
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
+import ServiceVariantsModal from "./ServiceVariantsModal";
 
 type MedicalRecordImage = {
   imageId: number;
@@ -12,6 +13,23 @@ type MedicalRecordImage = {
   description?: string;
   aiTag?: string;
   createdAt?: string;
+};
+
+type ServiceVariantDTO = {
+  id: number;
+  variantName: string;
+  description?: string;
+  price?: number;
+};
+
+type ServiceDTO = {
+  id: number;
+  serviceName: string;
+  category?: string;
+  description?: string;
+  defaultDuration?: number;
+  isActive?: boolean;
+  variants?: ServiceVariantDTO[];
 };
 
 type MedicalRecordDTO = {
@@ -29,7 +47,7 @@ type MedicalRecordDTO = {
   appointmentDateTime?: string;
   serviceId?: number;
   serviceName?: string;
-  service?: { id: number; serviceName: string };
+  service?: ServiceDTO;
   diagnosis: string;
   treatmentPlan?: string;
   prescriptionNote?: string;
@@ -48,7 +66,9 @@ export default function MedicalRecordDetail() {
   const [images, setImages] = useState<MedicalRecordImage[]>([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [serviceMap, setServiceMap] = useState<Record<number, string>>({});
+  const [serviceMap, setServiceMap] = useState<Record<number, ServiceDTO>>({});
+  const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
+  const [showVariantsModal, setShowVariantsModal] = useState(false);
 
   const fetchRecord = useCallback(async () => {
     if (!patientId || !recordId) return;
@@ -84,7 +104,7 @@ export default function MedicalRecordDetail() {
   useEffect(() => {
     const fetchServices = async () => {
       try {
-        const res = await axios.get<{ id: number; serviceName: string }[]>(
+        const res = await axios.get<ServiceDTO[]>(
           `${apiBase}/api/services`,
           {
             headers: { Authorization: `Bearer ${accessToken}` },
@@ -92,7 +112,7 @@ export default function MedicalRecordDetail() {
           }
         );
         const map = Object.fromEntries(
-          (res.data || []).map((service) => [service.id, service.serviceName])
+          (res.data || []).map((service) => [service.id, service])
         );
         setServiceMap(map);
       } catch (err) {
@@ -107,10 +127,20 @@ export default function MedicalRecordDetail() {
     return (
       record.service?.serviceName ||
       record.serviceName ||
-      (record.service?.id && serviceMap[record.service.id]) ||
+      (record.serviceId && serviceMap[record.serviceId]?.serviceName) ||
       (record.serviceId ? `Service #${record.serviceId}` : "N/A")
     );
   }, [record, serviceMap]);
+
+  const handleServiceClick = () => {
+    if (record?.service) {
+      setSelectedService(record.service);
+      setShowVariantsModal(true);
+    } else if (record?.serviceId && serviceMap[record.serviceId]) {
+      setSelectedService(serviceMap[record.serviceId]);
+      setShowVariantsModal(true);
+    }
+  };
 
   const handleUploadImages = async (files: FileList | null) => {
     if (!files || !patientId || !recordId) return;
@@ -210,7 +240,12 @@ export default function MedicalRecordDetail() {
               <div className="mt-4 grid gap-3 rounded-lg border bg-gray-50 p-3 text-sm text-gray-600 md:grid-cols-2">
                 <p>
                   <span className="font-semibold text-gray-500">Service: </span>
-                  {serviceLabel}
+                  <span
+                    className={`${(record?.service || (record?.serviceId && serviceMap[record.serviceId])) ? 'text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition' : ''}`}
+                    onClick={handleServiceClick}
+                  >
+                    {serviceLabel}
+                  </span>
                 </p>
                 <p>
                   <span className="font-semibold text-gray-500">Appointment Ref: </span>
@@ -334,6 +369,15 @@ export default function MedicalRecordDetail() {
           </div>
         </div>
       </div>
+
+      <ServiceVariantsModal
+        isOpen={showVariantsModal}
+        service={selectedService}
+        onClose={() => {
+          setShowVariantsModal(false);
+          setSelectedService(null);
+        }}
+      />
     </>
   );
 }

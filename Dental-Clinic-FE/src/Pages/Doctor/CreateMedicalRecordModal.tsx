@@ -4,9 +4,27 @@ import { X, Save, Trash2, Plus } from "lucide-react";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
 import medications from "../../data/dental-medications.json";
+import ServiceVariantsModal from "./ServiceVariantsModal";
 
 type MedicationOption = { id: string; name: string; defaultDosage?: string; description?: string };
 type SelectedMedication = { id: string; name: string; quantity: string; instructions: string };
+
+type ServiceVariantDTO = {
+  id: number;
+  variantName: string;
+  description?: string;
+  price?: number;
+};
+
+type ServiceDTO = {
+  id: number;
+  serviceName: string;
+  category?: string;
+  description?: string;
+  defaultDuration?: number;
+  isActive?: boolean;
+  variants?: ServiceVariantDTO[];
+};
 
 type DoctorAppointment = {
   appointmentId: number;
@@ -14,7 +32,9 @@ type DoctorAppointment = {
   endDateTime: string;
   clinic?: { id: number; clinicName: string };
   patient?: { id: number; patientCode: string; fullName: string; phone?: string; email?: string };
-  service?: { id: number; serviceName: string };
+  service?: ServiceDTO;
+  appointmentType?: string; // "VIP" hoặc "STANDARD"
+  bookingFee?: number; // Phí đặt lịch hẹn
 };
 
 type MedicalRecordDTO = {
@@ -24,6 +44,7 @@ type MedicalRecordDTO = {
   appointmentId?: number;
   serviceId?: number;
   serviceName?: string;
+  service?: ServiceDTO;
   diagnosis: string;
   treatmentPlan?: string;
   prescriptionNote?: string;
@@ -67,7 +88,7 @@ export default function CreateMedicalRecordModal({
 
   const clinicInfo = appointment?.clinic || record?.clinic;
   const patientInfo = appointment?.patient || record?.patient;
-  const serviceInfo = appointment?.service?.serviceName || record?.serviceName;
+  const serviceInfo = appointment?.service || record?.service;
   const appointmentId = appointment?.appointmentId ?? record?.appointmentId;
 
   const [diagnosis, setDiagnosis] = useState(record?.diagnosis || "");
@@ -85,6 +106,8 @@ export default function CreateMedicalRecordModal({
   const [medicationInput, setMedicationInput] = useState({ medId: "", quantity: "", instructions: "" });
   const [attachments, setAttachments] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
+  const [showVariantsModal, setShowVariantsModal] = useState(false);
 
   const resetState = () => {
     setDiagnosis(record?.diagnosis || "");
@@ -110,7 +133,7 @@ export default function CreateMedicalRecordModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, record, appointment]);
 
-  const serviceReadOnly = serviceInfo || "N/A";
+  const serviceReadOnly = serviceInfo?.serviceName || "N/A";
   const clinicReadOnly = clinicInfo?.clinicName || "N/A";
   const doctorReadOnly = doctorId ? `Doctor #${doctorId}` : "N/A";
   const appointmentTime = appointment
@@ -119,6 +142,33 @@ export default function CreateMedicalRecordModal({
         "HH:mm"
       )}`
     : "N/A";
+
+  const handleServiceClick = async () => {
+    if (!serviceInfo) return;
+
+    // If service already has variants, use it directly
+    if (serviceInfo.variants !== undefined) {
+      setSelectedService(serviceInfo);
+      setShowVariantsModal(true);
+      return;
+    }
+
+    // Otherwise, fetch full service data
+    try {
+      const response = await axios.get<ServiceDTO>(
+        `${apiBase}/api/services/${serviceInfo.id}`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          withCredentials: true,
+        }
+      );
+      setSelectedService(response.data);
+      setShowVariantsModal(true);
+    } catch (err) {
+      console.error("Failed to fetch service details:", err);
+      toast.error("Failed to load service details");
+    }
+  };
 
   const handleAddMedication = () => {
     if (!medicationInput.medId || !medicationInput.quantity.trim()) {
@@ -153,7 +203,7 @@ export default function CreateMedicalRecordModal({
     clinicId: clinicInfo?.id,
     doctorId,
     appointmentId,
-    serviceId: appointment?.service?.id ?? record?.serviceId,
+    serviceId: serviceInfo?.id ?? record?.serviceId,
     diagnosis: diagnosis.trim(),
     treatmentPlan: treatmentPlan.trim() || undefined,
     prescriptionNote: buildPrescriptionText(selectedMedications, manualPrescriptionNote),
@@ -270,7 +320,13 @@ export default function CreateMedicalRecordModal({
               <span className="font-semibold text-blue-700">Doctor:</span> {doctorReadOnly}
             </p>
             <p>
-              <span className="font-semibold text-blue-700">Service:</span> {serviceReadOnly}
+              <span className="font-semibold text-blue-700">Service:</span>{" "}
+              <span
+                className={serviceInfo ? "text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition" : ""}
+                onClick={handleServiceClick}
+              >
+                {serviceReadOnly}
+              </span>
             </p>
             <p>
               <span className="font-semibold text-blue-700">Appointment Ref:</span>{" "}
@@ -292,11 +348,12 @@ export default function CreateMedicalRecordModal({
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600">Service</label>
-              <input
-                readOnly
-                value={serviceReadOnly}
-                className="mt-1 w-full rounded border bg-gray-100 px-3 py-2 text-gray-700"
-              />
+              <div
+                className={`mt-1 w-full rounded border bg-gray-100 px-3 py-2 ${serviceInfo ? 'text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition' : 'text-gray-700'}`}
+                onClick={handleServiceClick}
+              >
+                {serviceReadOnly}
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600">Record Date</label>
@@ -477,6 +534,15 @@ export default function CreateMedicalRecordModal({
           </div>
         </form>
       </div>
+
+      <ServiceVariantsModal
+        isOpen={showVariantsModal}
+        service={selectedService}
+        onClose={() => {
+          setShowVariantsModal(false);
+          setSelectedService(null);
+        }}
+      />
     </div>
   );
 }
