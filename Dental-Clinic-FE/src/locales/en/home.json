@@ -43,9 +43,9 @@
       "employees": "Total Employees",
       "branches": "Total Branch Offices"
     }
-},
-"contact": {
-    "title": "Let’s Get in Touch With Us",
+  },
+  "contact": {
+    "title": "Let's Get in Touch With Us",
     "form": {
       "name": "Name",
       "email": "Email",
@@ -53,8 +53,8 @@
       "message": "Messages",
       "send": "SEND MESSAGES"
     }
-},
-"hero": {
+  },
+  "hero": {
     "heading": "Gorgeous Smile for a Brighter Life",
     "avatarLeft": {
       "line1": "Hi, Welcome to",
@@ -89,11 +89,10 @@
   },
   "testimonials": {
     "heading": "1500+ Confident Patients Worldwide",
-    "quote1": "Dr. Huston is the best! The office is clean, the staff is kind, and my appointment was quick and stress-free. I’ll definitely be back!",
+    "quote1": "Dr. Huston is the best! The office is clean, the staff is kind, and my appointment was quick and stress-free. I'll definitely be back!",
     "name1": "Liam Elias",
     "detail1": "Routine check-ups and cleanings",
-
-    "quote2": "Amazing experience! The team at Confident is friendly, and Dr. Olivia made sure I felt comfortable throughout my treatment. I’m very happy with the results.",
+    "quote2": "Amazing experience! The team at Confident is friendly, and Dr. Olivia made sure I felt comfortable throughout my treatment. I'm very happy with the results.",
     "name2": "Catherine Reiss",
     "detail2": "Routine check-ups and cleanings",
 
@@ -101,8 +100,7 @@
     "name3": "Jason Mcarter",
     "detail3": "Routine check-ups and cleanings"
   },
-
-   "aboutSection": {
+  "aboutSection": {
     "heading": {
       "part1": "We are Professionally Dedicated to Ensuring Your",
       "part2": "Oral Health",
@@ -114,17 +112,5 @@
       "employees": "Total Employees",
       "branches": "Total Branch Offices"
     }
-},
-
-"contact": {
-  "title": "Let's Get in Touch With Us",
-  "form": {
-    "name": "Name",
-    "email": "Email",
-    "subject": "Subject",
-    "message": "Message",
-    "send": "SEND MESSAGE"
   }
-}
-
 }

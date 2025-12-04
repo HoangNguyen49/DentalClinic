@@ -7,13 +7,17 @@ import {
   FaUsers,
   FaUserPlus,
   FaSignOutAlt,
+  FaFileAlt,
+  FaClipboardCheck,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
+
+import NotificationBell from "../../widgets/NotificationBell";
 
 // Hàm xử lý layout chính của HR (giao diện dashboard nhân sự)
 const HRLayout = () => {
   const navigate = useNavigate();
-  const { i18n } = useTranslation();
+  const { t, i18n } = useTranslation("hr-dashboard");
 
   // Đổi ngôn ngữ tiếng Anh/tiếng Việt
   const toggleLanguage = () => {
@@ -26,7 +30,9 @@ const HRLayout = () => {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("refreshToken");
     localStorage.removeItem("roles");
-    navigate("/login");
+    localStorage.removeItem("user");
+    sessionStorage.clear();
+    navigate("/login", { replace: true });
   };
 
   return (
@@ -43,6 +49,8 @@ const HRLayout = () => {
           <NavItem to="/hr/schedules" label="Schedules" icon={<FaCalendarAlt />} />
           <NavItem to="/hr/schedules/create" label="Create Schedule" icon={<FaCalendarAlt />} />
           <NavItem to="/hr/attendance" label="Attendance" icon={<FaUser />} />
+          <NavItem to="/hr/attendance/explanations" label="Attendance Explanations" icon={<FaClipboardCheck />} />
+          <NavItem to="/hr/leave-requests" label="Leave Requests" icon={<FaFileAlt />} />
         </nav>
         <div className="p-4 border-t">
           <button
@@ -50,7 +58,7 @@ const HRLayout = () => {
             className="w-full flex items-center gap-3 px-4 py-2 rounded-md text-red-600 hover:bg-red-50 transition"
           >
             <FaSignOutAlt />
-            <span>Logout</span>
+            <span>{t("logout", "Logout")}</span>
           </button>
         </div>
       </aside>
@@ -58,6 +66,7 @@ const HRLayout = () => {
         <header className="bg-white shadow px-6 py-4 flex justify-between items-center">
           <h1 className="text-xl font-semibold text-gray-800">HR Dashboard</h1>
           <div className="flex items-center gap-2">
+            <NotificationBell />
             <button
               onClick={toggleLanguage}
               className="px-3 py-2 border rounded hover:bg-gray-100"
@@ -94,8 +103,7 @@ const NavItem = ({
   <NavLink
     to={to}
     className={({ isActive }) =>
-      `flex items-center gap-3 px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition ${
-        isActive ? "bg-blue-200 font-semibold text-blue-700" : ""
+      `flex items-center gap-3 px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition ${isActive ? "bg-blue-200 font-semibold text-blue-700" : ""
       }`
     }
   >

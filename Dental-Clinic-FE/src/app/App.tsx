@@ -1,28 +1,32 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
-import HomePage from "../pages/Home/index";
-import LoginPage from "../pages/Auth/LoginPage";
-import SignUp from "../pages/Auth/SignUp";
-import OAuthSuccessHandler from "../pages/Auth/OAuthSuccessHandler";
-import MyAccount from "../pages/Account/MyAccount";
-import ChangePassword from "../pages/Account/ChangePassword";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import HomePage from "../Pages/Home/index";
+import LoginPage from "../Pages/Auth/LoginPage";
+import SignUp from "../Pages/Auth/SignUp";
+import OAuthSuccessHandler from "../Pages/Auth/OAuthSuccessHandler";
+import MyAccount from "../Pages/Account/MyAccount";
+import ChangePassword from "../Pages/Account/ChangePassword";
 import AdminLayout from "../app/layout/AdminLayouts";
 import HRLayout from "../app/layout/HrLayout";
-import AdminDashboardPage from "../pages/Admin/Dashboard/AdminDashboardPage";
-import ProtectedRouteAdmin from "../app/routes/ProtectedRouteAdmin";
+import AdminDashboardPage from "../Pages/Admin/Dashboard/AdminDashboardPage";
+import ProtectedRouteAdmin from "./routes/ProtectedRouteAdmin";
 import ProtectedRouteHR from "../app/routes/ProtectedRouteHR";
-import AppointmentList from "../pages/Admin/Appointments/AppointmentList";
-import HrDashboardPage from "../pages/HR/Dashboard/HrDashboardPage";
-import ScheduleList from "../pages/HR/Schedules/ScheduleList";
-import CreateScheduleForm from "../pages/HR/Schedules/CreateScheduleForm";
-import EmployeesList from "../pages/HR/Employees/EmployeesList";
-import CreateEmployeeForm from "../pages/HR/Employees/CreateEmployeeForm";
-import EmployeeDetail from "../pages/HR/Employees/EmployeeDetail";
-import Service from "../pages/Service";
-import About from "../pages/About";
-import ContactPage from "../pages/Contact";
-import Product from "../pages/Product";
-import Cart from "../Pages/Product/sections/GetProductsInvoice/index";
+import AppointmentList from "../Pages/Admin/Appointments/AppointmentList";
+import HrDashboardPage from "../Pages/HR/Dashboard/HrDashboardPage";
+import ScheduleList from "../Pages/HR/Schedules/ScheduleList";
+import CreateScheduleForm from "../Pages/HR/Schedules/CreateScheduleForm";
+import EmployeesList from "../Pages/HR/Employees/EmployeesList";
+import CreateEmployeeForm from "../Pages/HR/Employees/CreateEmployeeForm";
+import EmployeeDetail from "../Pages/HR/Employees/EmployeeDetail";
+import DailyAttendanceView from "../Pages/HR/Attendance/DailyAttendanceView";
+import LeaveRequestManagement from "../Pages/HR/LeaveRequests/LeaveRequestManagement";
+import Service from "../Pages/Service";
+import About from "../Pages/About";
+import ContactPage from "../Pages/Contact";
+import Product from "../Pages/Product/index";
 import AccountantRoutes from "../Pages/Product/accountant";
+import Cart from "../Pages/Product/sections/GetProductsInvoice/index";
 import ProtectedRouteAccountant from "../app/routes/ProtectedRouteAccountant";
 
 function App() {
@@ -41,31 +45,52 @@ function App() {
         <Route path="/my-account" element={<MyAccount />} />
         <Route path="/change-password" element={<ChangePassword />} />
 
-        <Route path="/admin" element={<ProtectedRouteAdmin />}>
-          <Route element={<AdminLayout />}>
-            <Route index element={<AdminDashboardPage />} />{" "}
-            <Route path="dashboard" element={<AdminDashboardPage />} />
-            <Route path="appointments" element={<AppointmentList />} />
-          </Route>
-        </Route>
+          <Route element={<AuthGuard />}>
+            <Route path="/admin" element={<ProtectedRouteAdmin />}>
+              <Route element={<AdminLayout />}>
+                <Route index element={<AdminDashboardPage />} />{" "}
+                <Route path="dashboard" element={<AdminDashboardPage />} />
+                <Route path="appointments" element={<AppointmentList />} />
+                <Route
+                  path="attendance"
+                  element={<AdminAttendanceManagement />}
+                />
+                <Route path="clinics" element={<ClinicManagement />} />
+                <Route path="staff" element={<AdminStaffManagement />} />
+              </Route>
+            </Route>
 
-        <Route path="/hr" element={<ProtectedRouteHR />}>
-          <Route element={<HRLayout />}>
-            <Route path="dashboard" element={<HrDashboardPage />} />
-            <Route path="employees" element={<EmployeesList />} />
-            <Route path="employees/create" element={<CreateEmployeeForm />} />
-            <Route path="employees/:id" element={<EmployeeDetail />} />
-            <Route path="schedules" element={<ScheduleList />} />
-            <Route path="schedules/create" element={<CreateScheduleForm />} />
-          </Route>
-        </Route>
+            <Route path="/hr" element={<ProtectedRouteHR />}>
+              <Route element={<HRLayout />}>
+                <Route path="dashboard" element={<HrDashboardPage />} />
+                <Route path="employees" element={<EmployeesList />} />
+                <Route path="employees/create" element={<CreateEmployeeForm />} />
+                <Route path="employees/:id" element={<EmployeeDetail />} />
+                <Route path="attendance" element={<DailyAttendanceView />} />
+                <Route path="attendance/explanations" element={<HrAttendanceManagement />} />
+                <Route path="schedules" element={<ScheduleList />} />
+                <Route path="schedules/create" element={<CreateScheduleForm />} />
+                <Route path="leave-requests" element={<LeaveRequestManagement />} />
+              </Route>
+            </Route>
 
-        <Route element={<ProtectedRouteAccountant />}>
-          <Route path="/accountant/*" element={<AccountantRoutes />} />
-        </Route>
-        
-      </Routes>
-    </Router>
+            <Route path="/reception" element={<ProtectedRouteReception />}>
+              <Route element={<ReceptionLayout />}>
+                <Route path="dashboard" element={<ReceptionDashboard />} />
+                <Route path="walk-in" element={<BookingOffline />} />
+                <Route path="appointments" element={<AppointmentList />} />
+                <Route path="patients" element={<PatientList />} />
+              </Route>
+            </Route>
+
+            <Route element={<ProtectedRouteAccountant />}>
+              <Route path="/accountant/*" element={<AccountantRoutes />} />
+            </Route>
+          </Route>
+        </Routes>
+      </Router>
+      <ToastContainer position="top-right" autoClose={3000} />
+    </NotificationProvider>
   );
 }
 

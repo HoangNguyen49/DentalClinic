@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; 
 import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
 import { toast, ToastContainer } from "react-toastify";
@@ -23,12 +23,13 @@ function MyAccount() {
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
+  const location = useLocation();
   const API = import.meta.env.VITE_API_URL;
-  const DEFAULT_AVATAR =
-    import.meta.env.VITE_DEFAULT_AVATAR_URL ||
-    "https://res.cloudinary.com/dchzko3lj/image/upload/v1762616672/default-avatar_brvdfn.png";
+  const DEFAULT_AVATAR = import.meta.env.VITE_DEFAULT_AVATAR_URL || "https://res.cloudinary.com/dchzko3lj/image/upload/v1762616672/default-avatar_brvdfn.png";
 
-  // ===== Lấy thông tin user hiện tại =====
+  // Logic xác định chế độ "Bắt buộc cập nhật"
+  const isForceUpdate = location.state?.forceUpdate || (user && (!user.phone || user.phone.trim() === ""));
+
   useEffect(() => {
     const fetchUser = async () => {
       const token = localStorage.getItem("accessToken");
@@ -36,7 +37,6 @@ function MyAccount() {
         navigate("/login");
         return;
       }
-
       try {
         const res = await axios.get<UserInfo>(`${API}/api/users/me`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -50,15 +50,11 @@ function MyAccount() {
         setLoading(false);
       }
     };
-
     fetchUser();
   }, [API, navigate]);
 
-  const avatarSrc =
-    previewUrl ||
-    (user?.avatarUrl && user.avatarUrl.trim() !== "" ? user.avatarUrl : DEFAULT_AVATAR);
+  const avatarSrc = previewUrl || (user?.avatarUrl && user.avatarUrl.trim() !== "" ? user.avatarUrl : DEFAULT_AVATAR);
 
-  // ===== Chọn file avatar mới =====
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -67,30 +63,21 @@ function MyAccount() {
     }
   };
 
-  // ===== Upload avatar =====
   const handleUploadAvatar = async () => {
     if (!newAvatar || !user) return;
     const token = localStorage.getItem("accessToken");
     if (!token) {
-      toast.error("Unauthorized: No access token found.");
+      toast.error("Unauthorized");
       return;
     }
-
     try {
       const formData = new FormData();
       formData.append("file", newAvatar);
-
-      const res = await axios.patch<{ userId: number; avatarUrl: string; avatarPublicId?: string }>(
+      const res = await axios.patch<{ userId: number; avatarUrl: string }>(
         `${API}/api/users/${user.userId}/avatar`,
         formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "multipart/form-data",
-          },
-        }
+        { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } }
       );
-
       const updatedUser = { ...user, avatarUrl: res.data.avatarUrl };
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
@@ -100,11 +87,10 @@ function MyAccount() {
       toast.success("Avatar updated successfully!");
     } catch (error: any) {
       console.error(error);
-      toast.error(error?.response?.data?.message || "Failed to update avatar.");
+      toast.error("Failed to update avatar.");
     }
   };
 
-  // ===== Cập nhật thông tin profile =====
   const handleSaveChanges = async () => {
     if (!user) return;
     const token = localStorage.getItem("accessToken");
@@ -113,137 +99,115 @@ function MyAccount() {
       return;
     }
 
+    if (!user.phone || user.phone.trim() === "") {
+        toast.warn("Vui lòng nhập số điện thoại để hoàn tất hồ sơ!");
+        return;
+    }
+
     try {
       const { fullName, email, phone } = user;
       const { data } = await axios.patch<UserInfo>(
         `${API}/api/users/${user.userId}`,
-        { fullName, email, phone }, // để BE validate
+        { fullName, email, phone },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setUser(data);
       localStorage.setItem("user", JSON.stringify(data));
-      toast.success("Profile updated successfully!");
+      toast.success("Cập nhật hồ sơ thành công!");
+
+      if (isForceUpdate) {
+          setTimeout(() => {
+              toast.info("Hoàn tất! Đang chuyển hướng về trang chủ...");
+              navigate("/");
+          }, 1500);
+      }
+
     } catch (error: any) {
       console.error(error);
       toast.error(error?.response?.data?.message || "Failed to update profile.");
     }
   };
 
-  if (loading) {
-    return (
-      <>
-        <Header />
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-          <div className="text-gray-600">Loading...</div>
-        </div>
-        <Footer />
-      </>
-    );
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
 
   return (
     <>
-      <Header />
+      {!isForceUpdate && <Header />}
+      
       <ToastContainer />
-      <div className="min-h-screen p-10 bg-gray-100 flex justify-center items-center">
-        <div className="bg-white p-10 rounded-3xl shadow-lg w-full max-w-5xl flex flex-col md:flex-row items-center gap-10">
-          {/* ===== Left: Info ===== */}
-          <div className="flex-1 space-y-4 w-full">
+      <div className="min-h-screen p-10 bg-gray-100 flex justify-center items-center relative">
+        <div className="bg-white p-10 rounded-3xl shadow-lg w-full max-w-5xl flex flex-col md:flex-row items-center gap-10 relative overflow-hidden">
+          
+          {isForceUpdate && (
+             <div className="absolute top-0 left-0 w-full bg-yellow-100 text-yellow-800 p-3 text-center font-bold z-10 border-b border-yellow-300">
+                ⚠️ Bạn cần cập nhật số điện thoại để hoàn tất đăng ký.
+             </div>
+          )}
+
+          {/* Left Info */}
+          <div className={`flex-1 space-y-4 w-full ${isForceUpdate ? "mt-8" : ""}`}>
             <h2 className="text-3xl font-bold">My Account</h2>
 
             <div>
               <label className="block font-semibold mb-1">Full Name</label>
-              <input
-                type="text"
-                value={user?.fullName || ""}
-                onChange={(e) =>
-                  setUser((prev) =>
-                    prev ? { ...prev, fullName: e.target.value } : prev
-                  )
-                }
-                className="w-full p-2 border rounded"
-              />
+              <input type="text" value={user?.fullName || ""} onChange={(e) => setUser((prev) => (prev ? { ...prev, fullName: e.target.value } : prev))} className="w-full p-2 border rounded" />
             </div>
 
             <div>
               <label className="block font-semibold mb-1">Email</label>
-              <input
-                type="email"
-                value={user?.email || ""}
-                onChange={(e) =>
-                  setUser((prev) =>
-                    prev ? { ...prev, email: e.target.value } : prev
-                  )
-                }
-                className="w-full p-2 border rounded"
-              />
+              <input type="email" value={user?.email || ""} disabled className="w-full p-2 border rounded bg-gray-100 text-gray-500 cursor-not-allowed" />
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">Phone</label>
+              <label className="block font-semibold mb-1">Phone <span className="text-red-500">*</span></label>
               <input
                 type="text"
                 value={user?.phone || ""}
-                onChange={(e) =>
-                  setUser((prev) =>
-                    prev ? { ...prev, phone: e.target.value } : prev
-                  )
-                }
-                className="w-full p-2 border rounded"
+                onChange={(e) => setUser((prev) => (prev ? { ...prev, phone: e.target.value } : prev))}
+                className={`w-full p-2 border rounded ${!user?.phone && isForceUpdate ? "border-red-500 ring-2 ring-red-200" : ""}`}
+                placeholder="Nhập số điện thoại của bạn"
               />
+              {!user?.phone && isForceUpdate && <p className="text-red-500 text-sm mt-1">Bắt buộc nhập số điện thoại.</p>}
             </div>
 
-            <p>
-              <strong>Username:</strong> {user?.username || "-"}
-            </p>
+            <p><strong>Username:</strong> {user?.username || "-"}</p>
 
-            <div className="flex flex-wrap gap-4 items-center">
-              <button
-                onClick={handleSaveChanges}
-                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
-              >
-                Save Changes
+            <div className="flex flex-wrap gap-4 items-center pt-2">
+              <button onClick={handleSaveChanges} className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition font-semibold shadow-md">
+                {isForceUpdate ? "Hoàn tất & Về trang chủ" : "Lưu thay đổi"}
               </button>
-              {user?.hasPassword && (
-                <button
-                  onClick={() => navigate("/change-password")}
-                  className="px-4 py-2 bg-[#3366FF] text-white rounded hover:bg-[#254EDB] transition"
+              
+              {/* --- SỬA ĐỔI TẠI ĐÂY --- */}
+              {/* Luôn hiện nút, chỉ ẩn khi đang bắt buộc update SĐT */}
+              {!isForceUpdate && (
+                <button 
+                    onClick={() => navigate("/change-password")} 
+                    className="px-4 py-2 bg-[#3366FF] text-white rounded hover:bg-[#254EDB] transition"
                 >
-                  Change Password
+                  {/* Hiển thị text linh hoạt */}
+                  {user?.hasPassword ? "Đổi mật khẩu" : "Tạo mật khẩu"}
                 </button>
               )}
             </div>
           </div>
 
-          {/* ===== Right: Avatar ===== */}
-          <div className="md:w-1/2 bg-gradient-to-br from-[#0D1B3E] to-[#3366FF] flex flex-col items-center justify-center p-10 gap-4 rounded-2xl">
-            <img
-              src={avatarSrc}
-              alt="Avatar"
-              className="w-60 h-60 rounded-full object-cover shadow-2xl border-4 border-white"
-            />
-            <label className="bg-white text-[#3366FF] font-semibold px-4 py-2 rounded cursor-pointer hover:bg-gray-100 transition">
+          {/* Right Avatar */}
+          <div className="md:w-1/2 flex flex-col items-center justify-center gap-4">
+            <img src={avatarSrc} alt="Avatar" className="w-60 h-60 rounded-full object-cover shadow-2xl border-4 border-white" />
+            <label className="bg-white text-[#3366FF] font-semibold px-4 py-2 rounded cursor-pointer border border-[#3366FF] hover:bg-blue-50 transition">
               Choose your avatar
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleAvatarChange}
-              />
+              <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
             </label>
             {newAvatar && (
-              <button
-                onClick={handleUploadAvatar}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition"
-              >
-                Upload Avatar
+              <button onClick={handleUploadAvatar} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">
+                Confirm Upload
               </button>
             )}
           </div>
         </div>
       </div>
-      <Footer />
+      {!isForceUpdate && <Footer />}
     </>
   );
 }
