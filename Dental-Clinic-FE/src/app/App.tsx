@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+
+import "react-toastify/dist/ReactToastify.css";
 import HomePage from "../Pages/Home/index";
 import LoginPage from "../Pages/Auth/LoginPage";
 import SignUp from "../Pages/Auth/SignUp";
@@ -9,10 +11,7 @@ import EmployeeAttendanceView from "../Pages/Account/EmployeeAttendanceView";
 import AdminLayout from "../app/layout/AdminLayouts";
 import HRLayout from "../app/layout/HrLayout";
 import AdminDashboardPage from "../Pages/Admin/Dashboard/AdminDashboardPage";
-import ProtectedRouteAdmin from "../app/routes/ProtectedRouteAdmin";
-import ProtectedRouteHR from "../app/routes/ProtectedRouteHR";
-// import AppointmentList from "../Pages/Admin/Appointments/AppointmentList";
-import HrDashboardPage from "../Pages/HR/Dashboard/HrDashboardPage";
+
 import ScheduleList from "../Pages/HR/Schedules/ScheduleList";
 import CreateScheduleForm from "../Pages/HR/Schedules/CreateScheduleForm";
 import EmployeesList from "../Pages/HR/Employees/EmployeesList";
@@ -28,11 +27,14 @@ import AdminStaffManagement from "../Pages/Admin/Staff/AdminStaffManagement";
 import ProtectedRouteDoctor from "./routes/ProtectedRouteDoctor";
 import DoctorLayout from "./layout/DoctorLayout";
 import DoctorDashboard from "../Pages/Doctor/DoctorDashboard";
-import AppointmentList from "../Pages/Doctor/AppointmentList";
 import AppointmentDetail from "../Pages/Doctor/AppointmentDetail";
 import MedicalRecordDetail from "../Pages/Doctor/MedicalRecordDetail";
 import PatientMedicalRecords from "../Pages/Doctor/PatientMedicalRecords";
 import MySchedule from "../Pages/Doctor/MySchedule";
+import AppointmentListDoctor from "../Pages/Doctor/AppointmentListDoctor";
+import HrDashboardPage from "../Pages/HR/Dashboard/HrDashboardPage";
+import ProtectedRouteHR from "./routes/ProtectedRouteHR";
+import ProtectedRouteAdmin from "./routes/ProtectedRouteAdmin";
 
 function App() {
   return (
@@ -76,7 +78,7 @@ function App() {
             <Route index element={<DoctorDashboard />} />
             <Route path="dashboard" element={<DoctorDashboard />} />
             <Route path="schedule" element={<MySchedule />} />
-            <Route path="appointments" element={<AppointmentList />} />
+            <Route path="appointments" element={<AppointmentListDoctor />} />
             <Route path="appointments/:appointmentId" element={<AppointmentDetail />} />
             <Route path="patients/:patientId/records" element={<PatientMedicalRecords />} />
             <Route path="patients/:patientId/records/:recordId" element={<MedicalRecordDetail />} />

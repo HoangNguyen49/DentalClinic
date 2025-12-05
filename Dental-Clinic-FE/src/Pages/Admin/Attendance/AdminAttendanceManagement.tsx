@@ -1,8 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
+import type { ReactNode } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
+import { Calendar, Building2, SlidersHorizontal, CheckCircle2, Clock3, XCircle, FileText } from "lucide-react";
+import { useNotification } from "../../../app/providers/NotificationContext";
 
 type AdminClinic = {
   id: number;
@@ -23,22 +26,6 @@ type AttendanceResponse = {
   note?: string | null;
 };
 
-type AttendanceExplanationResponse = {
-  attendanceId: number;
-  userId: number;
-  userName?: string;
-  clinicId: number;
-  clinicName?: string;
-  workDate: string;
-  checkInTime?: string | null;
-  checkOutTime?: string | null;
-  attendanceStatus?: string | null;
-  explanationType?: string | null;
-  employeeReason?: string | null;
-  explanationStatus?: string | null;
-  adminNote?: string | null;
-  note?: string | null;
-};
 
 type StatusOption = {
   value: string;
@@ -74,49 +61,58 @@ function formatDateTime(value?: string | null) {
 }
 
 // Chuẩn hoá trạng thái
-function normalizeStatus(status?: string | null) {
+function normalizeStatus(
+  status?: string | null,
+  translate?: (key: string, defaultValue?: string) => string
+) {
   if (!status) return "-";
   switch (status) {
     case "ON_TIME":
-      return "On Time";
+      return translate
+        ? translate("attendance.statusOptions.ON_TIME", "On Time")
+        : "On Time";
     case "LATE":
-      return "Late";
+      return translate ? translate("attendance.statusOptions.LATE", "Late") : "Late";
     case "ABSENT":
-      return "Absent";
+      return translate
+        ? translate("attendance.statusOptions.ABSENT", "Absent")
+        : "Absent";
     case "APPROVED_ABSENCE":
-      return "Approved Leave";
+      return translate
+        ? translate("attendance.statusOptions.APPROVED_ABSENCE", "Approved Leave")
+        : "Approved Leave";
     case "APPROVED_LATE":
-      return "Approved Late";
+      return translate
+        ? translate("attendance.statusOptions.APPROVED_LATE", "Approved Late")
+        : "Approved Late";
     default:
-      return status;
+      return translate
+        ? translate("attendance.statusOptions.UNKNOWN", status)
+        : status;
   }
 }
 
 export default function AdminAttendanceManagement() {
   const { t } = useTranslation("admin");
   const accessToken = localStorage.getItem("accessToken");
-  const userStr = localStorage.getItem("user");
-  const user = userStr ? JSON.parse(userStr) : null;
-  const adminUserId = user?.userId || user?.id;
 
   const [clinics, setClinics] = useState<AdminClinic[]>([]);
   const [attendances, setAttendances] = useState<AttendanceResponse[]>([]);
-  const [pendingExplanations, setPendingExplanations] = useState<AttendanceExplanationResponse[]>([]);
   const [loading, setLoading] = useState(false);
-  const [loadingExplanations, setLoadingExplanations] = useState(false);
-  const [activeTab, setActiveTab] = useState<"attendance" | "explanations">("attendance");
   const [filters, setFilters] = useState({
     date: formatDateInput(new Date()),
     clinicId: "all",
-    status: "LATE",
+    status: "all",
   });
-  const [explanationClinicFilter, setExplanationClinicFilter] = useState<string>("all");
+
+  const translateStatusLabel = (key: string, defaultValue?: string) =>
+    t(key, defaultValue ?? key);
 
   // Filter status options with i18n support
   const filteredStatusOptions = useMemo(() => {
     return STATUS_OPTIONS.map((opt) => ({
       ...opt,
-      label: t(`attendance.status.${opt.value}`, opt.label),
+      label: t(`attendance.statusOptions.${opt.value}`, opt.label),
     }));
   }, [t]);
 
@@ -178,42 +174,28 @@ export default function AdminAttendanceManagement() {
     fetchAttendance();
   }, [filters]);
 
-  // Lấy danh sách giải trình đang chờ xét duyệt
-  const fetchPendingExplanations = async () => {
-    if (!accessToken) return;
-    setLoadingExplanations(true);
-    try {
-      const params: Record<string, string> = {};
-      if (explanationClinicFilter && explanationClinicFilter !== "all") {
-        params.clinicId = explanationClinicFilter;
-      }
+  const { notifications } = useNotification();
+  const lastNotificationIdRef = useRef<number | null>(null);
 
-      const response = await axios.get<AttendanceExplanationResponse[]>(
-        `${apiBase}/api/admin/attendance/explanations/pending`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          params,
-        }
-      );
-      setPendingExplanations(response.data || []);
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        t("attendance.messages.loadExplanationsFailed", "Unable to load pending explanations");
-      toast.error(message);
-    } finally {
-      setLoadingExplanations(false);
-    }
-  };
-
-  // effect lấy giải trình khi chọn sang tab giải trình 
+  // Effect lắng nghe notifications để tự động refresh danh sách chấm công
   useEffect(() => {
+    if (!notifications || notifications.length === 0) return;
     if (!accessToken) return;
-    if (activeTab === "explanations") {
-      fetchPendingExplanations();
+
+    const latestNotification = notifications[0];
+    if (!latestNotification || latestNotification.notificationId === lastNotificationIdRef.current) {
+      return;
     }
-  }, [activeTab, explanationClinicFilter, accessToken]);
+
+    // Nếu có thông báo về chấm công (check-in/out, giải trình...)
+    if (latestNotification.relatedEntityType === "ATTENDANCE") {
+      lastNotificationIdRef.current = latestNotification.notificationId;
+
+      // Refresh dữ liệu ngay lập tức
+      fetchAttendance();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notifications]);
 
   // Xử lý thay đổi filter
   const handleFilterChange = (field: "date" | "clinicId" | "status", value: string) => {
@@ -223,423 +205,336 @@ export default function AdminAttendanceManagement() {
     }));
   };
 
-  // Xử lý duyệt cho attendance lẻ
-  const handleApprove = async (attendance: AttendanceResponse, targetStatus: string) => {
-    if (!accessToken) return;
-    const adminNote = prompt(
-      t("attendance.messages.enterAdminNote", "Enter approval note (optional)"),
-      ""
-    );
-
-    try {
-      await axios.patch(
-        `${apiBase}/api/admin/attendance/${attendance.id}`,
-        {
-          newStatus: targetStatus,
-          adminNote: adminNote || "",
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      toast.success(t("attendance.messages.updateSuccess", "Attendance updated"));
-      fetchAttendance();
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        t("attendance.messages.updateFailed", "Unable to update attendance");
-      toast.error(message);
-    }
+  const palette = {
+    background: "bg-slate-50",
+    surface: "bg-white",
+    border: "border-slate-200",
+    subtleText: "text-slate-500",
+    heading: "text-slate-900",
   };
 
-  // Hiển thị nút tác vụ của từng attendance dòng
-  const renderActionButton = (attendance: AttendanceResponse) => {
-    const status = attendance.attendanceStatus?.toUpperCase();
-    if (status === "LATE") {
-      return (
-        <button
-          onClick={() => handleApprove(attendance, "ON_TIME")}
-          className="px-3 py-1.5 text-sm font-medium rounded bg-green-600 text-white hover:bg-green-700 transition"
-        >
-          {t("attendance.actions.approveLate", "Approve Late")}
-        </button>
-      );
-    }
-    if (status === "ABSENT") {
-      return (
-        <button
-          onClick={() => handleApprove(attendance, "APPROVED_ABSENCE")}
-          className="px-3 py-1.5 text-sm font-medium rounded bg-blue-600 text-white hover:bg-blue-700 transition"
-        >
-          {t("attendance.actions.approveLeave", "Approve Leave")}
-        </button>
-      );
-    }
-    return <span className="text-sm text-gray-400">{t("attendance.actions.noAction", "—")}</span>;
-  };
 
-  // Xử lý duyệt hoặc từ chối giải trình
-  const handleProcessExplanation = async (explanation: AttendanceExplanationResponse, action: "APPROVE" | "REJECT") => {
-    if (!accessToken || !adminUserId) return;
-    
-    const adminNote = prompt(
-      action === "APPROVE"
-        ? t("attendance.messages.enterApprovalNote", "Enter approval note (optional)")
-        : t("attendance.messages.enterRejectionNote", "Enter rejection reason (optional)"),
-      ""
-    );
-
-    if (adminNote === null) return;
-
-    try {
-      const response = await axios.post<AttendanceResponse>(
-        `${apiBase}/api/admin/attendance/explanations/process`,
-        {
-          attendanceId: explanation.attendanceId,
-          action: action,
-          adminNote: adminNote || "",
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      // Thông báo chi tiết trạng thái mới
-      const newStatus = response.data.attendanceStatus;
-      if (action === "APPROVE") {
-        let statusMessage = "";
-        if (explanation.explanationType === "LATE") {
-          statusMessage = `Status updated: LATE → ${newStatus || "APPROVED_LATE"}`;
-        } else if (explanation.explanationType === "ABSENT" || explanation.explanationType === "MISSING_CHECK_IN") {
-          statusMessage = `Status updated: ${explanation.attendanceStatus} → ${newStatus || "APPROVED_ABSENCE"}`;
-        } else if (explanation.explanationType === "MISSING_CHECK_OUT") {
-          statusMessage = `Explanation approved. Status unchanged: ${newStatus || explanation.attendanceStatus}`;
-        }
-        
-        toast.success(
-          `${t("attendance.messages.explanationApproved", "Explanation approved successfully")}\n${statusMessage}`,
-          { autoClose: 5000 }
-        );
-      } else {
-        toast.success(
-          `${t("attendance.messages.explanationRejected", "Explanation rejected")}\nStatus unchanged: ${explanation.attendanceStatus}`,
-          { autoClose: 5000 }
-        );
-      }
-
-      await fetchPendingExplanations();
-      await fetchAttendance();
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        t("attendance.messages.processFailed", "Unable to process explanation");
-      toast.error(message);
-    }
-  };
-
-  // Lấy nhãn loại giải trình
-  const getExplanationTypeLabel = (type?: string | null): string => {
-    if (!type) return "-";
-    switch (type.toUpperCase()) {
+  const statusBadgeClass = (status?: string | null) => {
+    switch (status) {
+      case "ON_TIME":
+        return "bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200";
       case "LATE":
-        return t("attendance.explanation.typeLate", "Late Arrival");
+        return "bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200";
       case "ABSENT":
-        return t("attendance.explanation.typeAbsent", "Absent");
-      case "MISSING_CHECK_IN":
-        return t("attendance.explanation.typeMissingCheckIn", "Missing Check-In");
-      case "MISSING_CHECK_OUT":
-        return t("attendance.explanation.typeMissingCheckOut", "Missing Check-Out");
+        return "bg-gradient-to-r from-rose-100 to-rose-50 text-rose-700 border border-rose-200";
+      case "APPROVED_ABSENCE":
+      case "APPROVED_LATE":
+        return "bg-gradient-to-r from-sky-100 to-slate-50 text-sky-700 border border-sky-200";
       default:
-        return type;
+        return "bg-slate-100 text-slate-700 border border-slate-200";
     }
+  };
+
+  const attendanceSummary = useMemo(() => {
+    const summary = {
+      total: attendances.length,
+      onTime: 0,
+      late: 0,
+      absent: 0,
+    };
+
+    attendances.forEach((record) => {
+      switch (record.attendanceStatus) {
+        case "ON_TIME":
+          summary.onTime += 1;
+          break;
+        case "LATE":
+        case "APPROVED_LATE":
+          summary.late += 1;
+          break;
+        case "ABSENT":
+        case "APPROVED_ABSENCE":
+          summary.absent += 1;
+          break;
+        default:
+          break;
+      }
+    });
+
+    return summary;
+  }, [attendances]);
+
+  const FilterField = ({
+    label,
+    icon,
+    children,
+  }: {
+    label: string;
+    icon: ReactNode;
+    children: ReactNode;
+  }) => (
+    <label className="flex flex-col gap-2 text-base font-semibold text-slate-700">
+      <span>{label}</span>
+      <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 shadow-inner">
+        <span className="text-slate-400">{icon}</span>
+        {children}
+      </div>
+    </label>
+  );
+
+  const SummaryCard = ({
+    icon,
+    label,
+    value,
+    tone,
+  }: {
+    icon: ReactNode;
+    label: string;
+    value: string | number;
+    tone: "emerald" | "amber" | "rose" | "slate";
+  }) => {
+    const toneMap: Record<
+      "emerald" | "amber" | "rose" | "slate",
+      { bg: string; text: string; border: string }
+    > = {
+      emerald: {
+        bg: "from-emerald-50 to-white",
+        text: "text-emerald-700",
+        border: "border-emerald-100",
+      },
+      amber: {
+        bg: "from-amber-50 to-white",
+        text: "text-amber-700",
+        border: "border-amber-100",
+      },
+      rose: {
+        bg: "from-rose-50 to-white",
+        text: "text-rose-700",
+        border: "border-rose-100",
+      },
+      slate: {
+        bg: "from-slate-50 to-white",
+        text: "text-slate-700",
+        border: "border-slate-100",
+      },
+    };
+
+    const tones = toneMap[tone];
+
+    return (
+      <div
+        className={`rounded-2xl border ${tones.border} bg-gradient-to-br ${tones.bg} p-5 shadow-sm flex flex-col gap-3`}
+      >
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-2xl bg-white shadow-inner flex items-center justify-center text-slate-500">
+            {icon}
+          </div>
+          <span className={`text-xs font-semibold uppercase tracking-[0.3em] ${tones.text}`}>{label}</span>
+        </div>
+        <span className="text-4xl font-bold text-slate-900">{value}</span>
+      </div>
+    );
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`min-h-screen ${palette.background} p-6`}>
       <ToastContainer position="top-right" autoClose={3000} />
-
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Attendance Management
-        </h1>
-        <p className="text-sm text-gray-600">
-          Review late check-ins or leave requests submitted by employees, update their status, and append admin notes.
-        </p>
-      </div>
-      <div className="border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
-          <button
-            onClick={() => setActiveTab("attendance")}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "attendance"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Attendance Records
-          </button>
-          <button
-            onClick={() => setActiveTab("explanations")}
-            className={`py-4 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "explanations"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Pending Explanations
-            {pendingExplanations.length > 0 && (
-              <span className="ml-2 bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
-                {pendingExplanations.length}
-              </span>
-            )}
-          </button>
-        </nav>
-      </div>
-
-      {activeTab === "attendance" ? (
-        <>
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-                Date
-                <input
-                  type="date"
-                  value={filters.date}
-                  onChange={(e) => handleFilterChange("date", e.target.value)}
-                  className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-                Clinic
-                <select
-                  value={filters.clinicId}
-                  onChange={(e) => handleFilterChange("clinicId", e.target.value)}
-                  className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All clinics</option>
-                  {clinics.map((clinic) => (
-                    <option key={clinic.id} value={clinic.id}>
-                      {clinic.clinicName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-                Status
-                <select
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange("status", e.target.value)}
-                  className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All statuses</option>
-                  {filteredStatusOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-              </label>
+      <div className="max-w-7xl mx-auto space-y-8">
+        <section className="space-y-4">
+          <p className="text-xs font-semibold tracking-[0.35em] uppercase text-slate-400">
+            {t("attendance.sectionLabel", "Operations • Attendance")}
+          </p>
+          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
+            <div className="space-y-3">
+              <h1 className={`text-4xl font-bold ${palette.heading}`}>
+                {t("pageTitles.attendanceManagement", "Attendance Management")}
+              </h1>
+              <p className={`text-base leading-relaxed ${palette.subtleText}`}>
+                {t(
+                  "attendance.pageDescription",
+                  "Review late check-ins or leave requests submitted by employees, update their status, and append admin notes."
+                )}
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => fetchAttendance()}
+                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
+              >
+                {t("attendance.actions.refresh", "Refresh")}
+              </button>
             </div>
           </div>
+        </section>
 
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-x-auto">
+        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <SummaryCard
+            icon={<FileText className="h-5 w-5" />}
+            label={t("attendance.summary.total", "TOTAL RECORDS")}
+            value={attendanceSummary.total}
+            tone="slate"
+          />
+          <SummaryCard
+            icon={<CheckCircle2 className="h-5 w-5" />}
+            label={t("attendance.summary.onTime", "ON TIME")}
+            value={attendanceSummary.onTime}
+            tone="emerald"
+          />
+          <SummaryCard
+            icon={<Clock3 className="h-5 w-5" />}
+            label={t("attendance.summary.late", "LATE")}
+            value={attendanceSummary.late}
+            tone="amber"
+          />
+          <SummaryCard
+            icon={<XCircle className="h-5 w-5" />}
+            label={t("attendance.summary.absent", "ABSENT")}
+            value={attendanceSummary.absent}
+            tone="rose"
+          />
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <FilterField
+              label={t("attendance.filters.date", "Date")}
+              icon={<Calendar className="h-4 w-4" />}
+            >
+              <input
+                type="date"
+                value={filters.date}
+                onChange={(e) => handleFilterChange("date", e.target.value)}
+                className="w-full border-none bg-transparent text-lg text-slate-900 focus:outline-none"
+                aria-label={t("attendance.filters.date", "Date")}
+              />
+            </FilterField>
+            <FilterField
+              label={t("attendance.filters.clinic", "Clinic")}
+              icon={<Building2 className="h-4 w-4" />}
+            >
+              <select
+                value={filters.clinicId}
+                onChange={(e) => handleFilterChange("clinicId", e.target.value)}
+                className="w-full border-none bg-transparent text-lg text-slate-900 focus:outline-none"
+                aria-label={t("attendance.filters.clinic", "Clinic")}
+              >
+                <option value="all">{t("attendance.filters.allClinics", "All clinics")}</option>
+                {clinics.map((clinic) => (
+                  <option key={clinic.id} value={clinic.id}>
+                    {clinic.clinicName}
+                  </option>
+                ))}
+              </select>
+            </FilterField>
+            <FilterField
+              label={t("attendance.filters.status", "Status")}
+              icon={<SlidersHorizontal className="h-4 w-4" />}
+            >
+              <select
+                value={filters.status}
+                onChange={(e) => handleFilterChange("status", e.target.value)}
+                className="w-full border-none bg-transparent text-lg text-slate-900 focus:outline-none"
+                aria-label={t("attendance.filters.status", "Status")}
+              >
+                <option value="all">{t("attendance.filters.allStatus", "All statuses")}</option>
+                {filteredStatusOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </FilterField>
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
-              <thead className="bg-gray-50">
+              <thead className="bg-slate-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Employee
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    {t("attendance.table.employee", "Employee")}
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Clinic
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    {t("attendance.table.clinic", "Clinic")}
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Work Date
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    {t("attendance.table.workDate", "Work Date")}
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Check-in
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    {t("attendance.table.checkIn", "Check-in")}
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Check-out
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    {t("attendance.table.checkOut", "Check-out")}
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Status
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    {t("attendance.table.status", "Status")}
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Note
+                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                    {t("attendance.table.note", "Note")}
                   </th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    Actions
-                  </th>
+                  <th className="px-6 py-4 text-right text-sm font-semibold uppercase tracking-wide text-slate-500" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody className="divide-y divide-slate-100">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
-                      Loading attendance records...
+                    <td colSpan={8} className="px-5 py-8 text-center text-slate-500">
+                      {t("attendance.messages.loading", "Loading attendance records...")}
                     </td>
                   </tr>
                 ) : attendances.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
-                      No attendance records found
+                    <td colSpan={8} className="px-5 py-8 text-center text-slate-500">
+                      {t("attendance.messages.noData", "No attendance records found")}
                     </td>
                   </tr>
                 ) : (
                   attendances.map((attendance) => (
-                    <tr key={attendance.id} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        <div className="font-semibold">{attendance.userName || `#${attendance.userId}`}</div>
-                        <div className="text-xs text-gray-500">ID: {attendance.userId}</div>
+                    <tr key={attendance.id} className="transition hover:bg-slate-50">
+                      <td className="px-6 py-5 text-base text-slate-900">
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-lg font-semibold text-slate-500">
+                            {(attendance.userName || attendance.userId.toString()).charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="text-base font-semibold text-slate-900">
+                              {attendance.userName || `#${attendance.userId}`}
+                            </div>
+                            <div className="text-xs uppercase tracking-wide text-slate-400">
+                              {t("attendance.table.employeeId", { defaultValue: "ID" })}: {attendance.userId}
+                            </div>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {attendance.clinicName || "Unknown clinic"}
+                      <td className="px-6 py-5 text-base text-slate-700">
+                        {attendance.clinicName || t("attendance.table.unknownClinic", "Unknown clinic")}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{attendance.workDate}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
+                      <td className="px-6 py-5 text-base text-slate-700">{attendance.workDate}</td>
+                      <td className="px-6 py-5 text-base text-slate-700">
                         {formatDateTime(attendance.checkInTime)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
+                      <td className="px-6 py-5 text-base text-slate-700">
                         {formatDateTime(attendance.checkOutTime)}
                       </td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-800">
-                        {normalizeStatus(attendance.attendanceStatus)}
+                      <td className="px-6 py-5 text-base font-medium">
+                        <span
+                          className={`inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold ${statusBadgeClass(
+                            attendance.attendanceStatus
+                          )}`}
+                        >
+                          {normalizeStatus(attendance.attendanceStatus, translateStatusLabel)}
+                        </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 whitespace-pre-line">
+                      <td className="px-6 py-5 text-base text-slate-700 whitespace-pre-line">
                         {attendance.note && attendance.note.trim().length > 0
                           ? attendance.note
-                          : "No note provided"}
+                          : t("attendance.table.noNote", "No note provided")}
                       </td>
-                      <td className="px-4 py-3 text-sm text-right">{renderActionButton(attendance)}</td>
+                      <td className="px-6 py-5 text-sm text-right" />
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
           </div>
-        </>
-      ) : (
-        <>
-          <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="flex flex-col gap-2 text-sm font-medium text-gray-700">
-                Clinic
-                <select
-                  value={explanationClinicFilter}
-                  onChange={(e) => setExplanationClinicFilter(e.target.value)}
-                  className="border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="all">All clinics</option>
-                  {clinics.map((clinic) => (
-                    <option key={clinic.id} value={clinic.id}>
-                      {clinic.clinicName}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <div className="flex items-end">
-                <button
-                  onClick={fetchPendingExplanations}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
-                >
-                  Refresh
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-x-auto">
-            {loadingExplanations ? (
-              <div className="px-4 py-6 text-center text-gray-500">
-                Loading...
-              </div>
-            ) : pendingExplanations.length === 0 ? (
-              <div className="px-4 py-6 text-center text-gray-500">
-                No pending explanations
-              </div>
-            ) : (
-              <table className="min-w-full border-collapse">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Employee
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Clinic
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Work Date
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Reason
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {pendingExplanations.map((explanation) => (
-                    <tr key={explanation.attendanceId} className="hover:bg-gray-50 transition">
-                      <td className="px-4 py-3 text-sm text-gray-900">
-                        <div className="font-semibold">{explanation.userName || `#${explanation.userId}`}</div>
-                        <div className="text-xs text-gray-500">ID: {explanation.userId}</div>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {explanation.clinicName || "Unknown clinic"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{explanation.workDate}</td>
-                      <td className="px-4 py-3 text-sm font-medium text-gray-800">
-                        {getExplanationTypeLabel(explanation.explanationType)}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700 max-w-xs">
-                        <div className="truncate" title={explanation.employeeReason || ""}>
-                          {explanation.employeeReason || "-"}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-sm font-medium">
-                        <span className="px-2 py-1 rounded-full bg-yellow-100 text-yellow-800 text-xs">
-                          Pending
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-right space-x-2">
-                        <button
-                          onClick={() => handleProcessExplanation(explanation, "APPROVE")}
-                          className="px-3 py-1.5 text-sm font-medium rounded bg-green-600 text-white hover:bg-green-700 transition"
-                        >
-                          Approve
-                        </button>
-                        <button
-                          onClick={() => handleProcessExplanation(explanation, "REJECT")}
-                          className="px-3 py-1.5 text-sm font-medium rounded bg-red-600 text-white hover:bg-red-700 transition"
-                        >
-                          Reject
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </>
-      )}
+        </section>
+      </div>
     </div>
   );
 }

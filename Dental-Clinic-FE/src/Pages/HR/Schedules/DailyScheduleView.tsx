@@ -71,12 +71,13 @@ export default function DailyScheduleView({
     );
   }
 
+  // Lấy danh sách lịch bác sĩ theo ngày đã chọn
   const doctorSchedules = schedulesByDate[selectedDate] || [];
   const isWeekend =
-    selectedDayInfo.dayName === t("list.days.sat") ||
-    selectedDayInfo.dayName === t("list.days.sun");
+    selectedDayInfo.dayName === "Saturday" ||
+    selectedDayInfo.dayName === "Sunday";
 
-  // Nếu không có lịch cho ngày đã chọn
+  // Nếu không có lịch làm việc trong ngày đã chọn
   if (doctorSchedules.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
@@ -84,7 +85,7 @@ export default function DailyScheduleView({
           <thead>
             <tr>
               <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800 sticky left-0 z-20">
-                {t("create.table.doctor")}
+                {t("common.doctor")}
               </th>
               <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800">
                 {t("list.shifts.morning")}
@@ -111,21 +112,21 @@ export default function DailyScheduleView({
     );
   }
 
-  // Sắp xếp bác sĩ theo tên (không nhóm theo specialty)
+  // Sắp xếp lịch bác sĩ theo tên
   const sortedDoctorSchedules = [...doctorSchedules].sort((a, b) => {
     const nameA = a.doctor?.fullName || "";
     const nameB = b.doctor?.fullName || "";
     return nameA.localeCompare(nameB);
   });
 
-  // Hiển thị bảng lịch làm việc theo ngày
+  // Hiển thị bảng lịch làm việc trong ngày
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-x-auto">
       <table className="w-full border-collapse min-w-[800px]">
         <thead>
           <tr>
             <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800 sticky left-0 z-20">
-              {t("create.table.doctor")}
+              {t("common.doctor")}
             </th>
             <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800">
               {t("list.shifts.morning")}
@@ -162,30 +163,29 @@ export default function DailyScheduleView({
                       </div>
                       {docSchedule.morning.clinic && (
                         <div className="text-xs text-blue-900 font-medium truncate mb-0.5">
-                          🏥 {docSchedule.morning.clinic.clinicName}
+                          {docSchedule.morning.clinic.clinicName}
                         </div>
                       )}
                       {docSchedule.morning.room && (
                         <div className="text-xs text-blue-800 truncate mb-0.5">
-                          🚪 {docSchedule.morning.room.roomName}
+                          {docSchedule.morning.room.roomName}
                         </div>
                       )}
                       {docSchedule.morning.status && (
                         <div className="text-xs text-blue-600 mt-1">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                            docSchedule.morning.status.toLowerCase() === 'active' 
-                              ? 'bg-green-200 text-green-800' 
-                              : docSchedule.morning.status.toLowerCase() === 'cancelled'
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${docSchedule.morning.status.toLowerCase() === 'active'
+                            ? 'bg-green-200 text-green-800'
+                            : docSchedule.morning.status.toLowerCase() === 'cancelled'
                               ? 'bg-red-200 text-red-800'
                               : 'bg-gray-200 text-gray-800'
-                          }`}>
+                            }`}>
                             {docSchedule.morning.status}
                           </span>
                         </div>
                       )}
                       {docSchedule.morning.note && (
                         <div className="text-xs text-blue-700 mt-1 italic truncate" title={docSchedule.morning.note}>
-                          📝 {docSchedule.morning.note}
+                          {docSchedule.morning.note}
                         </div>
                       )}
                     </div>
@@ -212,30 +212,29 @@ export default function DailyScheduleView({
                       </div>
                       {docSchedule.afternoon.clinic && (
                         <div className="text-xs text-orange-900 font-medium truncate mb-0.5">
-                          🏥 {docSchedule.afternoon.clinic.clinicName}
+                          {docSchedule.afternoon.clinic.clinicName}
                         </div>
                       )}
                       {docSchedule.afternoon.room && (
                         <div className="text-xs text-orange-800 truncate mb-0.5">
-                          🚪 {docSchedule.afternoon.room.roomName}
+                          {docSchedule.afternoon.room.roomName}
                         </div>
                       )}
                       {docSchedule.afternoon.status && (
                         <div className="text-xs text-orange-600 mt-1">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                            docSchedule.afternoon.status.toLowerCase() === 'active' 
-                              ? 'bg-green-200 text-green-800' 
-                              : docSchedule.afternoon.status.toLowerCase() === 'cancelled'
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${docSchedule.afternoon.status.toLowerCase() === 'active'
+                            ? 'bg-green-200 text-green-800'
+                            : docSchedule.afternoon.status.toLowerCase() === 'cancelled'
                               ? 'bg-red-200 text-red-800'
                               : 'bg-gray-200 text-gray-800'
-                          }`}>
+                            }`}>
                             {docSchedule.afternoon.status}
                           </span>
                         </div>
                       )}
                       {docSchedule.afternoon.note && (
                         <div className="text-xs text-orange-700 mt-1 italic truncate" title={docSchedule.afternoon.note}>
-                          📝 {docSchedule.afternoon.note}
+                          {docSchedule.afternoon.note}
                         </div>
                       )}
                     </div>

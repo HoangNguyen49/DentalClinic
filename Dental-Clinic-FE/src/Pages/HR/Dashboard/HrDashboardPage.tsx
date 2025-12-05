@@ -16,7 +16,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
 
-// Các kiểu dữ liệu cho các entity
+// Dữ liệu thống kê nhân viên
 type EmployeeStatistics = {
   totalEmployees?: number;
   activeEmployees?: number;
@@ -76,19 +76,30 @@ type SchedulePreview = {
   note?: string;
 };
 
+type AttendanceStatistics = {
+  totalRecords?: number;
+  presentCount?: number;
+  lateCount?: number;
+  absentCount?: number;
+  leaveCount?: number;
+  averageHours?: number;
+  totalHours?: number;
+};
+
 function HrDashboardPage() {
   const { t, i18n } = useTranslation("hr-dashboard");
   const navigate = useNavigate();
   const [statistics, setStatistics] = useState<EmployeeStatistics>({});
   const [recentEmployees, setRecentEmployees] = useState<EmployeePreview[]>([]);
   const [currentSchedule, setCurrentSchedule] = useState<SchedulePreview[]>([]);
+  const [attendanceStats, setAttendanceStats] = useState<AttendanceStatistics>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
   const accessToken = localStorage.getItem("accessToken");
 
-  // useEffect chính cho việc load dữ liệu dashboard (chỉ chạy một lần khi load page)
+  // Chỉ chạy khi load trang: tải toàn bộ dữ liệu dashboard
   useEffect(() => {
     if (apiBase && accessToken) {
       fetchDashboardData();
@@ -104,17 +115,15 @@ function HrDashboardPage() {
     }
   }, []);
 
-  // Hàm chính lấy toàn bộ dữ liệu dashboard từ API
-  // Bao gồm: thống kê, danh sách nhân viên gần đây, lịch làm việc tuần hiện tại
+  // Hàm chính lấy dữ liệu dashboard từ API
   const fetchDashboardData = async () => {
     if (!apiBase || !accessToken) {
       setLoading(false);
       return;
     }
-
     setLoading(true);
     try {
-      // Lấy thống kê nhân sự
+      // Thống kê nhân sự
       const statsRes = await axios.get<EmployeeStatistics>(
         `${apiBase}/api/hr/employees/statistics`,
         {
@@ -125,7 +134,7 @@ function HrDashboardPage() {
       );
       setStatistics(statsRes.data || {});
 
-      // Lấy 5 nhân viên gần đây nhất
+      // Lấy 5 nhân viên mới nhất
       const employeesRes = await axios.get<{
         content: EmployeePreview[];
         totalElements: number;
@@ -136,17 +145,10 @@ function HrDashboardPage() {
       });
       setRecentEmployees(employeesRes.data?.content || []);
 
-      // Lấy lịch làm việc của tuần hiện tại (bắt đầu từ thứ Hai)
+      // Lấy lịch làm việc tuần hiện tại
       try {
-        const today = new Date();
-        const day = today.getDay();
-        // Tính thứ Hai của tuần hiện tại
-        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-        const monday = new Date(today.setDate(diff));
-        const weekStart = monday.toISOString().split("T")[0];
-
         const scheduleRes = await axios.get<SchedulePreview[]>(
-          `${apiBase}/api/hr/schedules/${weekStart}`,
+          `${apiBase}/api/hr/schedules/current`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -156,10 +158,50 @@ function HrDashboardPage() {
         const schedules = scheduleRes.data || [];
         setCurrentSchedule(schedules);
       } catch (err: any) {
-        setCurrentSchedule([]);
+        // Nếu không có API /current thì fallback theo tuần
+        try {
+          const today = new Date();
+          const day = today.getDay();
+          const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+          const monday = new Date(today.setDate(diff));
+          const weekStart = monday.toISOString().split("T")[0];
+          const fallbackRes = await axios.get<SchedulePreview[]>(
+            `${apiBase}/api/hr/schedules/${weekStart}`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+          setCurrentSchedule(fallbackRes.data || []);
+        } catch {
+          setCurrentSchedule([]);
+        }
+      }
+
+      // Lấy thống kê attendance (30 ngày gần nhất)
+      try {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+        const attendanceRes = await axios.get<AttendanceStatistics>(
+          `${apiBase}/api/hr/attendance/statistics`,
+          {
+            params: {
+              startDate: startDate.toISOString().split("T")[0],
+              endDate: endDate.toISOString().split("T")[0],
+            },
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        setAttendanceStats(attendanceRes.data || {});
+      } catch (err: any) {
+        setAttendanceStats({});
       }
     } catch (err: any) {
-      // Xử lý lỗi API và set dữ liệu rỗng để không crash
+      // Nếu lỗi API, set về rỗng và show toast báo lỗi
       const errorMessage = err?.response?.data?.message || err?.message || t("messages.unableToLoad");
       toast.error(errorMessage);
       setStatistics({});
@@ -170,7 +212,7 @@ function HrDashboardPage() {
     }
   };
 
-  // Hiển thị các hành động nhanh
+  // Danh sách thao tác nhanh
   const quickActions = [
     {
       title: t("quickActions.employeeList.title"),
@@ -209,7 +251,7 @@ function HrDashboardPage() {
     },
   ];
 
-  // Thống kê nhanh ở đầu dashboard
+  // Dữ liệu thống kê card nhỏ (bên trên)
   const statsCards = [
     {
       title: t("stats.totalEmployees"),
@@ -235,6 +277,18 @@ function HrDashboardPage() {
       icon: <Calendar className="w-8 h-8 text-purple-600" />,
       color: "bg-purple-50 border-purple-200",
     },
+    {
+      title: t("stats.attendancePresent"),
+      value: attendanceStats.presentCount || 0,
+      icon: <UserCheck className="w-8 h-8 text-green-600" />,
+      color: "bg-green-50 border-green-200",
+    },
+    {
+      title: t("stats.attendanceTotalHours"),
+      value: attendanceStats.totalHours ? Math.round(attendanceStats.totalHours) : 0,
+      icon: <Clock className="w-8 h-8 text-orange-600" />,
+      color: "bg-orange-50 border-orange-200",
+    },
   ];
 
   if (loading) {
@@ -249,6 +303,7 @@ function HrDashboardPage() {
   }
 
   if (error) {
+    // Nếu gặp lỗi, show màn hình lỗi và nút reload
     return (
       <div className="p-6 min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center bg-white rounded-lg p-8 shadow-md">
@@ -269,6 +324,7 @@ function HrDashboardPage() {
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="p-6 min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="max-w-7xl mx-auto space-y-6">
+          {/* Header dashboard */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
@@ -293,7 +349,8 @@ function HrDashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* Cards thống kê nhanh */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {statsCards.map((card, index) => (
               <div
                 key={index}
@@ -316,6 +373,7 @@ function HrDashboardPage() {
             ))}
           </div>
 
+          {/* Quick Actions */}
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
             <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
               <BarChart3 className="w-6 h-6 text-blue-600" />
@@ -342,7 +400,9 @@ function HrDashboardPage() {
             </div>
           </div>
 
+          {/* Bảng danh sách NV gần đây và lịch trong tuần */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Nhân viên gần đây */}
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -423,6 +483,7 @@ function HrDashboardPage() {
               </div>
             </div>
 
+            {/* Lịch làm việc trong tuần */}
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
               <div className="flex items-center justify-between mb-5">
                 <h2 className="text-xl font-semibold text-gray-800 flex items-center gap-2">
@@ -462,7 +523,7 @@ function HrDashboardPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-gray-800 truncate text-sm">
-                          {schedule.doctor?.fullName || `Doctor #${schedule.id}`}
+                          {schedule.doctor?.fullName || `${t("common.doctor")} #${schedule.id}`}
                         </p>
                         <p className="text-xs text-gray-600 truncate mt-0.5 flex items-center gap-1">
                           <Building2 className="w-3 h-3" />
@@ -482,11 +543,10 @@ function HrDashboardPage() {
                       </div>
                       <div className="flex-shrink-0">
                         <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            schedule.status === "ACTIVE"
+                          className={`px-2 py-1 rounded-full text-xs font-medium ${schedule.status === "ACTIVE"
                               ? "bg-green-100 text-green-700"
                               : "bg-gray-100 text-gray-700"
-                          }`}
+                            }`}
                         >
                           {schedule.status}
                         </span>
@@ -498,10 +558,8 @@ function HrDashboardPage() {
             </div>
           </div>
 
-          {(
-            statistics.byDepartment ||
-            statistics.byRole ||
-            statistics.byClinic) && (
+          {/* Biểu đồ phân bổ theo phòng ban, vai trò, cơ sở */}
+          {(statistics.byDepartment || statistics.byRole || statistics.byClinic) && (
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
               <h2 className="text-xl font-semibold text-gray-800 mb-5 flex items-center gap-2">
                 <BarChart3 className="w-6 h-6 text-orange-600" />
@@ -581,4 +639,3 @@ function HrDashboardPage() {
 }
 
 export default HrDashboardPage;
-

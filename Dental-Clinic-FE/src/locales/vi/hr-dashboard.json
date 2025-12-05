@@ -7,7 +7,9 @@
     "totalEmployees": "Tổng nhân viên",
     "active": "Đang hoạt động",
     "inactive": "Không hoạt động",
-    "schedulesThisWeek": "Lịch tuần này"
+    "schedulesThisWeek": "Lịch tuần này",
+    "attendancePresent": "Có Mặt (30 ngày)",
+    "attendanceTotalHours": "Tổng Giờ (30 ngày)"
   },
   "quickActions": {
     "title": "Thao Tác Nhanh",
@@ -63,6 +65,51 @@
   },
   "common": {
     "na": "N/A"
+  },
+  "faceProfileApproval": {
+    "title": "Duyệt yêu cầu cập nhật khuôn mặt chấm công",
+    "subtitle": "Xem và duyệt các yêu cầu cập nhật khuôn mặt từ nhân viên",
+    "searchPlaceholder": "Tìm kiếm theo tên, email, mã nhân viên...",
+    "employee": "Nhân viên",
+    "employeeCode": "Mã",
+    "newImage": "Ảnh mới",
+    "requestDate": "Ngày yêu cầu",
+    "status": "Trạng thái",
+    "actions": "Thao tác",
+    "viewImage": "Xem ảnh",
+    "noImage": "Không có ảnh",
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "close": "Đóng",
+    "approveRequest": "Duyệt yêu cầu",
+    "rejectRequest": "Từ chối",
+    "rejectModal": {
+      "title": "Từ chối yêu cầu cập nhật khuôn mặt",
+      "employee": "Nhân viên",
+      "reasonLabel": "Lý do từ chối (tùy chọn)",
+      "reasonPlaceholder": "Nhập lý do từ chối...",
+      "cancel": "Hủy",
+      "confirmReject": "Xác nhận từ chối"
+    },
+    "imageModal": {
+      "title": "Ảnh khuôn mặt mới"
+    },
+    "status": {
+      "pending": "Chờ duyệt",
+      "approved": "Đã duyệt",
+      "rejected": "Đã từ chối"
+    },
+    "messages": {
+      "loading": "Đang tải...",
+      "noRequests": "Không có yêu cầu nào đang chờ duyệt",
+      "noSearchResults": "Không tìm thấy yêu cầu nào",
+      "loadFailed": "Không thể tải danh sách yêu cầu cập nhật khuôn mặt",
+      "approveSuccess": "Đã duyệt yêu cầu cập nhật khuôn mặt thành công",
+      "approveFailed": "Không thể duyệt yêu cầu",
+      "rejectSuccess": "Đã từ chối yêu cầu cập nhật khuôn mặt",
+      "rejectFailed": "Không thể từ chối yêu cầu"
+    },
+    "menuLabel": "Duyệt khuôn mặt"
   }
 }
 

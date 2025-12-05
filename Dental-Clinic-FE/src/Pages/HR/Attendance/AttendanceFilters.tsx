@@ -16,6 +16,7 @@ type AttendanceFiltersProps = {
   onMonthChange: (month: number) => void;
 };
 
+// Bộ lọc chế độ xem chấm công trên đầu trang
 export default function AttendanceFilters({
   viewMode,
   workDate,
@@ -26,10 +27,9 @@ export default function AttendanceFilters({
   onMonthChange,
 }: AttendanceFiltersProps) {
   const { t } = useTranslation("attendance");
-  
+
   return (
     <>
-      {/* Header Filter */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">
           {viewMode === "daily" ? t("filters.dailyAttendance") : t("filters.monthlyAttendance")}
@@ -46,6 +46,7 @@ export default function AttendanceFilters({
             />
           ) : (
             <div className="flex items-center gap-2">
+              {/* Chọn năm */}
               <select
                 value={selectedYear}
                 onChange={(e) => onYearChange(parseInt(e.target.value))}
@@ -59,6 +60,7 @@ export default function AttendanceFilters({
                   </option>
                 ))}
               </select>
+              {/* Chọn tháng */}
               <select
                 value={selectedMonth}
                 onChange={(e) => onMonthChange(parseInt(e.target.value))}
@@ -76,17 +78,18 @@ export default function AttendanceFilters({
           )}
         </div>
       </div>
-
     </>
   );
 }
 
-// Separate component for list filter
+// Bộ lọc table danh sách chấm công, filter theo phòng ban, tìm kiếm, view mode
 export function AttendanceListFilter({
   viewMode,
   selectedDepartment,
   searchTerm,
   departments,
+  selectedYear,
+  selectedMonth,
   onViewModeChange,
   onDepartmentChange,
   onSearchChange,
@@ -95,18 +98,50 @@ export function AttendanceListFilter({
   selectedDepartment: number | null;
   searchTerm: string;
   departments: Department[];
+  selectedYear: number;
+  selectedMonth: number;
   onViewModeChange: (mode: "daily" | "monthly") => void;
   onDepartmentChange: (deptId: number | null) => void;
   onSearchChange: (term: string) => void;
 }) {
   const { t } = useTranslation("attendance");
-  
+
+  // Tính tổng số ngày làm việc trong tháng (không tính chủ nhật)
+  const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
+  let workingDaysExcludingSunday = 0;
+  for (let day = 1; day <= daysInMonth; day++) {
+    const date = new Date(selectedYear, selectedMonth - 1, day);
+    if (date.getDay() !== 0) {
+      workingDaysExcludingSunday++;
+    }
+  }
+
   return (
     <div className="flex justify-between items-center mb-4">
-      <h2 className="text-xl font-semibold text-gray-800">
-        {viewMode === "daily" ? t("table.dailyAttendanceList") : t("table.monthlyAttendanceList")}
-      </h2>
+      <div>
+        <h2 className="text-xl font-semibold text-gray-800">
+          {viewMode === "daily" ? t("table.dailyAttendanceList") : t("table.monthlyAttendanceList")}
+        </h2>
+        {viewMode === "monthly" && (
+          <p className="text-sm text-gray-500 mt-1">
+            {new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString("en-US", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}{" "}
+            –{" "}
+            {new Date(selectedYear, selectedMonth, 0).toLocaleDateString("en-US", {
+              day: "2-digit",
+              month: "short",
+              year: "numeric",
+            })}{" "}
+            ·{" "}
+            {t("table.workingDaysExSunday", { count: workingDaysExcludingSunday })}
+          </p>
+        )}
+      </div>
       <div className="flex items-center gap-4">
+        {/* Ô tìm kiếm nhân viên */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
@@ -117,6 +152,7 @@ export function AttendanceListFilter({
             className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
           />
         </div>
+        {/* Filter phòng ban */}
         <select
           value={selectedDepartment || ""}
           onChange={(e) =>
@@ -135,8 +171,9 @@ export function AttendanceListFilter({
             </option>
           ))}
         </select>
+        {/* Đổi chế độ xem daily/monthly */}
         <div className="flex items-center gap-2">
-          <select 
+          <select
             value={viewMode}
             onChange={(e) => onViewModeChange(e.target.value as "daily" | "monthly")}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -151,4 +188,3 @@ export function AttendanceListFilter({
     </div>
   );
 }
-

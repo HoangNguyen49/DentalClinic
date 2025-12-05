@@ -20,9 +20,12 @@ type SummaryCardsProps = {
 export default function SummaryCards({ stats, loadingSummary }: SummaryCardsProps) {
   const { t } = useTranslation("attendance");
   
+  // Hiển thị các thẻ thống kê tổng kết hôm nay
   return (
-    <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 max-w-7xl mx-auto transition-opacity duration-300 ${loadingSummary ? 'opacity-50' : 'opacity-100'}`}>
-      {/* Today Presents Card */}
+    <div
+      className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 max-w-7xl mx-auto transition-opacity duration-300 ${loadingSummary ? 'opacity-50' : 'opacity-100'}`}
+    >
+      {/* Tổng số đi làm hôm nay */}
       <div className="bg-green-50 rounded-lg shadow-sm border border-green-100 p-5">
         <div className="mb-3">
           <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center mb-3">
@@ -44,8 +47,7 @@ export default function SummaryCards({ stats, loadingSummary }: SummaryCardsProp
             : t("summaryCards.noComparisonData")}
         </p>
       </div>
-
-      {/* Today Late Card */}
+      {/* Tổng số đi trễ hôm nay */}
       <div className="bg-orange-50 rounded-lg shadow-sm border border-orange-100 p-5">
         <div className="mb-3">
           <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center mb-3">
@@ -67,8 +69,7 @@ export default function SummaryCards({ stats, loadingSummary }: SummaryCardsProp
             : t("summaryCards.noComparisonData")}
         </p>
       </div>
-
-      {/* Today Absents Card */}
+      {/* Tổng số vắng hôm nay */}
       <div className="bg-red-50 rounded-lg shadow-sm border border-red-100 p-5">
         <div className="mb-3">
           <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center mb-3">
@@ -90,8 +91,7 @@ export default function SummaryCards({ stats, loadingSummary }: SummaryCardsProp
             : t("summaryCards.noComparisonData")}
         </p>
       </div>
-
-      {/* Today Leave Card */}
+      {/* Tổng số nghỉ phép hôm nay */}
       <div className="bg-blue-50 rounded-lg shadow-sm border border-blue-100 p-5">
         <div className="mb-3">
           <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center mb-3">
@@ -113,8 +113,7 @@ export default function SummaryCards({ stats, loadingSummary }: SummaryCardsProp
             : t("summaryCards.noComparisonData")}
         </p>
       </div>
-
-      {/* Today Offday Card */}
+      {/* Tổng số nghỉ OFF hôm nay */}
       <div className="bg-gray-50 rounded-lg shadow-sm border border-gray-100 p-5">
         <div className="mb-3">
           <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center mb-3">
@@ -139,4 +138,3 @@ export default function SummaryCards({ stats, loadingSummary }: SummaryCardsProp
     </div>
   );
 }
-

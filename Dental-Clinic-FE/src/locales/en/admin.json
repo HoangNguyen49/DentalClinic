@@ -1,4 +1,8 @@
 {
+  "brand": {
+    "name": "Dental Admin",
+    "subtitle": "Sunshine Dental Care"
+  },
   "nav": {
     "dashboard": "Dashboard",
     "appointments": "Appointments",
@@ -13,6 +17,51 @@
     "attendance": "Attendance",
     "clinics": "Clinics",
     "backToWebsite": "Back to Website"
+  },
+  "dashboard": {
+    "subtitle": "Admin control center",
+    "description": "Oversee appointments, staff, inventory, and operations in one place.",
+    "actions": {
+      "manage": "Manage & monitor"
+    },
+    "sections": {
+      "appointments": {
+        "title": "Appointment Management",
+        "description": "Receive requests and manage appointment states."
+      },
+      "treatments": {
+        "title": "Treatment Plans",
+        "description": "Create and track treatment plans per patient."
+      },
+      "rooms": {
+        "title": "Rooms • Chairs • Doctors",
+        "description": "Control clinics, chairs, and doctor schedules."
+      },
+      "invoices": {
+        "title": "Billing & Payments",
+        "description": "Issue invoices and monitor payment history."
+      },
+      "medical": {
+        "title": "Medical Imaging",
+        "description": "Store and manage X-ray and treatment photos."
+      },
+      "inventory": {
+        "title": "Inventory",
+        "description": "Track supplies, consumables, and usage."
+      },
+      "reports": {
+        "title": "Reports & Analytics",
+        "description": "View revenue charts, appointments, new patients."
+      },
+      "staff": {
+        "title": "Staff Management",
+        "description": "Attendance, permissions, and departments."
+      },
+      "crm": {
+        "title": "CRM & Customer Care",
+        "description": "Send reminders, birthday emails, and sales."
+      }
+    }
   },
   "pageTitles": {
     "adminDashboard": "Admin Dashboard",
@@ -75,6 +124,7 @@
     "noData": "No attendance records found"
   },
   "attendance": {
+    "sectionLabel": "Operations • Attendance",
     "pageDescription": "Review late check-ins or leave requests submitted by employees, update their status, and append admin notes.",
     "tabs": {
       "attendance": "Attendance Records",
@@ -86,6 +136,12 @@
       "status": "Status",
       "allClinics": "All clinics",
       "allStatus": "All statuses"
+    },
+    "summary": {
+      "total": "Total Records",
+      "onTime": "On Time",
+      "late": "Late",
+      "absent": "Absent"
     },
     "status": {
       "ON_TIME": "On Time",
@@ -105,7 +161,8 @@
       "note": "Note",
       "actions": "Actions",
       "noNote": "No note provided",
-      "unknownClinic": "Unknown clinic"
+      "unknownClinic": "Unknown clinic",
+      "employeeId": "ID"
     },
     "explanation": {
       "type": "Type",
@@ -123,6 +180,7 @@
     "actions": {
       "approveLate": "Approve Late",
       "approveLeave": "Approve Leave",
+      "rejectExplanation": "Reject Explanation",
       "approve": "Approve",
       "reject": "Reject",
       "refresh": "Refresh",
@@ -142,7 +200,9 @@
       "enterRejectionNote": "Enter rejection reason (optional)",
       "explanationApproved": "Explanation approved successfully",
       "explanationRejected": "Explanation rejected",
+      "missingCheckOutApproved": "Explanation approved. Check-out time automatically set to 18:00 and work hours recalculated.",
       "processFailed": "Unable to process explanation",
+      "addAdminNotePlaceholder": "Add HR note (optional)",
       "loading": "Loading attendance records...",
       "noData": "No attendance records found",
       "noPendingExplanations": "No pending explanations"

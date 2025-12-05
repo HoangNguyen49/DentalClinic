@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import employeeService from "../../../services/hr/employeeService";
+import type { Employee, Department } from "../../../services/hr/employeeService";
 import {
   Search,
   Filter,
@@ -15,52 +16,22 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
 
-type Employee = {
-  id: number;
-  code: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  username: string;
-  avatarUrl?: string;
-  isActive: boolean;
-  department?: { id: number; departmentName: string };
-  role?: { id: number; roleName: string };
-  clinic?: { id: number; clinicName: string };
-  roleAtClinic?: string;
-  specialty?: string;
-  room?: { id: number; roomName: string; clinicId?: number; clinicName?: string };
-  createdAt?: string;
-  lastLoginAt?: string;
-};
-
-type PageResponse<T> = {
-  content: T[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-  first: boolean;
-  last: boolean;
-};
-
-type Department = {
-  id: number;
-  departmentName: string;
-};
-
-// Component để xử lý dropdown với auto-positioning
-function DropdownCell({ 
-  isOpen, 
-  onToggle, 
-  onViewProfile, 
-  onDelete, 
-  t 
-}: { 
-  isOpen: boolean; 
-  onToggle: () => void; 
-  onViewProfile: () => void; 
-  onDelete: () => void; 
+// Dropdown thao tác từng nhân viên - xử lý vị trí và hành động
+function DropdownCell({
+  isOpen,
+  onToggle,
+  onViewProfile,
+  onHardDelete,
+  hasApprovedResignation,
+  isHr,
+  t
+}: {
+  isOpen: boolean;
+  onToggle: () => void;
+  onViewProfile: () => void;
+  onHardDelete?: () => void;
+  hasApprovedResignation?: boolean;
+  isHr?: boolean;
   t: (key: string) => string;
 }) {
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -68,41 +39,38 @@ function DropdownCell({
 
   useEffect(() => {
     if (isOpen && buttonRef.current && dropdownRef.current) {
-      // Đơn giản: kiểm tra xem button có ở cuối trang không
+      // Căn vị trí dropdown để tránh bị tràn lề màn hình
       const updatePosition = () => {
         if (!buttonRef.current || !dropdownRef.current) return;
-        
         const btnRect = buttonRef.current.getBoundingClientRect();
         const viewportHeight = window.innerHeight;
         const viewportWidth = window.innerWidth;
-        const margin = 4;
-        
-        // Kiểm tra xem button có ở cuối trang không (trong 200px cuối cùng của viewport)
-        const isNearBottom = btnRect.bottom > (viewportHeight - 200);
-        
-        if (isNearBottom) {
-          // Ở cuối trang → hiển thị lên trên bằng fixed positioning
-          dropdownRef.current.style.position = 'fixed';
-          dropdownRef.current.style.top = 'auto';
-          // bottom = khoảng cách từ đáy viewport đến đỉnh button
-          dropdownRef.current.style.bottom = `${viewportHeight - btnRect.top + margin}px`;
-          dropdownRef.current.style.right = `${viewportWidth - btnRect.right}px`;
-          dropdownRef.current.style.left = 'auto';
-          dropdownRef.current.style.marginBottom = '0';
-          dropdownRef.current.style.marginTop = '0';
+        const margin = 8;
+        const dropdownWidth = 208;
+
+        dropdownRef.current.style.position = 'fixed';
+        dropdownRef.current.style.zIndex = '9999';
+
+        // Nếu còn đủ chỗ bên phải thì dropdown bật phải, ngược lại qua trái
+        const spaceOnRight = viewportWidth - btnRect.right;
+        if (spaceOnRight >= dropdownWidth + margin) {
+          dropdownRef.current.style.left = `${btnRect.right + margin}px`;
+          dropdownRef.current.style.right = 'auto';
         } else {
-          // Ở đầu/giữa trang → hiển thị xuống dưới bằng absolute positioning
-          dropdownRef.current.style.position = 'absolute';
-          dropdownRef.current.style.top = '100%';
-          dropdownRef.current.style.bottom = 'auto';
-          dropdownRef.current.style.right = '0';
+          dropdownRef.current.style.right = `${viewportWidth - btnRect.left + margin}px`;
           dropdownRef.current.style.left = 'auto';
-          dropdownRef.current.style.marginTop = `${margin}px`;
-          dropdownRef.current.style.marginBottom = '0';
+        }
+
+        // Nếu gần sát đáy thì bật lên trên, ngược lại bám top
+        const isNearBottom = btnRect.bottom > (viewportHeight - 200);
+        if (isNearBottom) {
+          dropdownRef.current.style.bottom = `${viewportHeight - btnRect.top}px`;
+          dropdownRef.current.style.top = 'auto';
+        } else {
+          dropdownRef.current.style.top = `${btnRect.top}px`;
+          dropdownRef.current.style.bottom = 'auto';
         }
       };
-      
-      // Đợi DOM render xong
       setTimeout(updatePosition, 0);
     }
   }, [isOpen]);
@@ -120,31 +88,36 @@ function DropdownCell({
       >
         <MoreVertical className="w-4 h-4 text-gray-600" />
       </button>
-
       {isOpen && (
         <>
+          <div className="fixed inset-0 z-[100]" onClick={onToggle}></div>
           <div
-            className="fixed inset-0 z-10"
-            onClick={onToggle}
-          ></div>
-          <div 
             ref={dropdownRef}
-            className="absolute right-0 w-48 bg-white rounded-lg shadow-lg border border-gray-200 z-50 py-1"
+            className="w-52 bg-white rounded-xl border border-gray-200 shadow-xl ring-1 ring-black ring-opacity-5 py-1.5 transition-all duration-200"
           >
             <button
-              onClick={onViewProfile}
-              className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewProfile();
+              }}
+              className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-gray-50 hover:text-[#3366FF] flex items-center gap-3 transition-colors duration-150"
             >
               <Eye className="w-4 h-4" />
               {t("list.table.viewProfile")}
             </button>
-            <button
-              onClick={onDelete}
-              className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-            >
-              <Trash2 className="w-4 h-4" />
-              {t("list.table.deleteEmployee")}
-            </button>
+            {/* Chỉ HR mới được xóa vĩnh viễn và chỉ khi đã duyệt nghỉ việc */}
+            {isHr && hasApprovedResignation && onHardDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onHardDelete();
+                }}
+                className="w-full px-4 py-2.5 text-left text-sm text-red-700 hover:bg-red-100 hover:text-red-800 flex items-center gap-3 transition-colors duration-150 font-semibold border-t border-red-200 mt-1 pt-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                {t("list.table.hardDeleteEmployee")}
+              </button>
+            )}
           </div>
         </>
       )}
@@ -153,10 +126,9 @@ function DropdownCell({
 }
 
 function EmployeesList() {
-  const { t, i18n } = useTranslation("employees");
+  const { t, i18n } = useTranslation(["employees", "web"]);
   const navigate = useNavigate();
   const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
-  const accessToken = localStorage.getItem("accessToken");
 
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -165,67 +137,51 @@ function EmployeesList() {
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
-  // Lọc - filter
+  // Filter, search
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const [departmentId, setDepartmentId] = useState<number | null>(null);
   const [roleId, setRoleId] = useState<number | null>(null);
-  const [isActive, setIsActive] = useState<boolean | null>(null);
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [roles, setRoles] = useState<{ id: number; roleName: string }[]>([]);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
+
+  // Trạng thái hoạt động của nhân viên
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive" | "resignation">("active");
 
   useEffect(() => {
     fetchMasterData();
   }, []);
 
   useEffect(() => {
+    // Khi thay đổi filter hoặc phân trang thì gọi lại danh sách
     fetchEmployees();
-  }, [page, size, search, departmentId, roleId, isActive]);
+  }, [page, size, search, departmentId, roleId, statusFilter]);
 
-  // Lấy danh sách phòng ban và vai trò từ backend
+  // Lấy phòng ban và role để lọc danh sách
   const fetchMasterData = async () => {
     try {
-      const departmentsRes = await axios.get<Department[]>(
-        `${apiBase}/api/hr/management/departments`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
+      const departmentsRes = await employeeService.getDepartments();
       setDepartments(departmentsRes.data || []);
 
-      const rolesRes = await axios.get<{ id: number; roleName: string }[]>(
-        `${apiBase}/api/hr/management/roles`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
+      const rolesRes = await employeeService.getRoles();
       setRoles(rolesRes.data || []);
     } catch (err: any) {
       console.error("Error fetching master data:", err);
-      // Báo lỗi khi không lấy được phòng ban/vai trò
       let errorMsg = t("messages.cannotLoadMasterData");
-
       if (err?.response?.data) {
         const errorData = err.response.data;
         errorMsg = errorData.message || errorData.error || errorMsg;
       } else if (err?.message) {
         errorMsg = err.message;
       }
-
       toast.error(errorMsg);
     }
   };
 
-  // Lấy danh sách nhân viên từ backend và xử lý lỗi
+  // Lấy danh sách nhân viên theo phân trang, bộ lọc
   const fetchEmployees = async () => {
-    if (!accessToken || !apiBase) {
-      toast.error(t("messages.pleaseLogin"));
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     try {
       const params: any = {
@@ -235,43 +191,34 @@ function EmployeesList() {
       if (search && search.trim()) params.search = search.trim();
       if (departmentId !== null && departmentId !== undefined) params.departmentId = Number(departmentId);
       if (roleId !== null && roleId !== undefined) params.roleId = Number(roleId);
-      if (isActive !== null && isActive !== undefined) params.isActive = Boolean(isActive);
+      // Không gửi isActive nếu lọc theo nghỉ việc
+      if (statusFilter !== "resignation" && statusFilter !== "all") {
+        params.isActive = statusFilter === "active";
+      }
 
-      const response = await axios.get<PageResponse<Employee>>(
-        `${apiBase}/api/hr/employees`,
-        {
-          params,
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
+      const response = await employeeService.getEmployees(params);
+      let employeesList = response.data.content || [];
 
-      const employeesList = response.data.content || [];
+      // Nếu chọn nghỉ việc thì chỉ giữ lại những ai đã duyệt đơn nghỉ
+      if (statusFilter === "resignation") {
+        employeesList = employeesList.filter((emp: Employee) => emp.hasApprovedResignation === true);
+      }
       let totalElementsValue = response.data.totalElements;
-      
-      // Nếu totalElements = 0 nhưng có content, có thể backend trả về sai
-      // Gọi statistics endpoint để lấy total chính xác (giống dashboard)
+
+      // Nếu BE trả về 0 nhưng vẫn có data thì lấy số lượng bằng API thống kê
       if ((!totalElementsValue || totalElementsValue === 0) && employeesList.length > 0) {
         try {
           const statsParams: any = {};
           if (departmentId !== null && departmentId !== undefined) {
             statsParams.departmentId = departmentId;
           }
-          // Không truyền roleId và isActive vào statistics vì endpoint này không hỗ trợ
-          
-          const statsRes = await axios.get<{ totalEmployees?: number }>(
-            `${apiBase}/api/hr/employees/statistics`,
-            {
-              params: statsParams,
-              headers: { Authorization: `Bearer ${accessToken}` },
-            }
-          );
-          
+          // Không truyền roleId, isActive khi thống kê
+          const statsRes = await employeeService.getEmployeeStatistics(statsParams);
           if (statsRes.data?.totalEmployees !== undefined && statsRes.data.totalEmployees > 0) {
             totalElementsValue = statsRes.data.totalEmployees;
-            console.log("Using totalEmployees from statistics endpoint:", totalElementsValue);
           }
         } catch (statsErr) {
-          console.warn("Failed to fetch statistics, using totalElements from page response:", statsErr);
+          // Nếu lỗi thì giữ số cũ
         }
       }
 
@@ -279,19 +226,15 @@ function EmployeesList() {
       setTotalPages(response.data.totalPages || 0);
       setTotalElements(totalElementsValue ?? 0);
     } catch (err: any) {
-      console.error("Error fetching employees:", err);
-      // Báo lỗi khi không lấy được danh sách nhân viên
+      // Lỗi khi lấy danh sách nhân viên
       let errorMsg = t("messages.cannotLoadList");
-
       if (err?.response?.data) {
         const errorData = err.response.data;
         errorMsg = errorData.message || errorData.error || errorMsg;
       } else if (err?.message) {
         errorMsg = err.message;
       }
-
       toast.error(errorMsg);
-      // Reset về 0 khi có lỗi
       setEmployees([]);
       setTotalPages(0);
       setTotalElements(0);
@@ -306,54 +249,52 @@ function EmployeesList() {
     setPage(0);
   };
 
-  // Xử lý xóa tất cả filter
   const handleResetFilters = () => {
     setSearch("");
     setSearchInput("");
     setDepartmentId(null);
     setRoleId(null);
-    setIsActive(null);
+    setStatusFilter("active");
     setPage(0);
   };
 
-  // Đưa trang về đầu khi thay đổi filter
+  // Khi đổi filter thì reset về trang đầu
   const handleFilterChange = () => {
     setPage(0);
   };
 
-  // Xử lý xóa nhân viên (confirm và truyền reason), xử lý lỗi trả về
-  const handleDelete = async (employeeId: number, employeeName: string) => {
-    if (!accessToken) {
-      toast.error(t("delete.needLogin"));
-      return;
-    }
+  // Hàm xóa vĩnh viễn nhân viên - chỉ HR mới dùng và phải nhập lý do
+  const handleHardDelete = async (employeeId: number, employeeName: string) => {
+    // Hiển thị cảnh báo xác nhận
+    const warningMessage = t("web:leaveRequest.resignation.hardDelete.confirmMessage", { name: employeeName });
 
-    const confirmMessage = t("delete.confirm", { name: employeeName });
-    if (!window.confirm(confirmMessage)) return;
+    if (!window.confirm(warningMessage)) return;
 
-    const reason = prompt(t("delete.reason"));
+    let reason = prompt(t("web:leaveRequest.resignation.hardDelete.reasonPrompt"));
+
     if (!reason || reason.trim() === "") {
-      toast.warning(t("delete.enterReason"));
+      toast.warning(t("web:leaveRequest.resignation.hardDelete.enterReason"));
       return;
     }
+
+    if (reason.trim().length < 10) {
+      toast.warning(t("web:leaveRequest.resignation.hardDelete.reasonTooShort"));
+      return;
+    }
+
+    // Xác nhận lần cuối
+    const finalConfirm = window.confirm(
+      t("web:leaveRequest.resignation.hardDelete.finalConfirm", { name: employeeName })
+    );
+
+    if (!finalConfirm) return;
 
     try {
-      await axios.delete(
-        `${apiBase}/api/hr/employees/${employeeId}`,
-        {
-          params: { reason: reason.trim() },
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      toast.success(t("delete.success"));
+      await employeeService.hardDeleteEmployee(employeeId, reason.trim());
+      toast.success(t("web:leaveRequest.resignation.hardDelete.success"));
       fetchEmployees();
     } catch (err: any) {
-      console.error("Error deleting employee:", err);
-      let errorMsg = t("delete.failed");
-
+      let errorMsg = t("web:leaveRequest.resignation.hardDelete.failed");
       if (err?.response?.data) {
         const errorData = err.response.data;
         if (typeof errorData === "string") {
@@ -364,16 +305,42 @@ function EmployeesList() {
           errorMsg = errorData.error;
         }
       } else if (err?.response?.status === 401) {
-        errorMsg = t("delete.sessionExpired");
+        errorMsg = t("web:auth.sessionExpired");
       } else if (err?.response?.status === 403) {
-        errorMsg = t("delete.noPermission");
+        errorMsg = t("web:leaveRequest.resignation.hardDelete.noPermission");
       } else if (err?.response?.status === 404) {
-        errorMsg = t("delete.notExist");
+        errorMsg = t("messages.employeeNotFound");
       } else if (err?.message) {
         errorMsg = err.message;
       }
+      // Hiển thị thông báo lỗi với thời gian dài hơn để HR đọc kỹ
+      toast.error(errorMsg, {
+        autoClose: 8000,
+        style: {
+          whiteSpace: 'pre-line',
+          maxWidth: '500px'
+        }
+      });
+    }
+  };
 
-      toast.error(errorMsg);
+  // Kiểm tra xem user hiện tại có phải HR không
+  const isHr = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        const roles = user.roles || [];
+        return roles.some((r: string) => r.toUpperCase() === "HR");
+      }
+      const rolesStr = localStorage.getItem("roles");
+      if (rolesStr) {
+        const roles = JSON.parse(rolesStr);
+        return Array.isArray(roles) && roles.some((r: string) => r.toUpperCase() === "HR");
+      }
+      return false;
+    } catch {
+      return false;
     }
   };
 
@@ -477,24 +444,25 @@ function EmployeesList() {
                 </select>
               </div>
 
+              {/* Lọc theo trạng thái */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   {t("list.status.label")}
                 </label>
                 <select
-                  value={isActive === null ? "" : isActive ? "true" : "false"}
+                  value={statusFilter}
                   onChange={(e) => {
-                    const value = e.target.value;
-                    const newValue = value === "" ? null : value === "true";
-                    setIsActive(newValue);
+                    const value = e.target.value as "all" | "active" | "inactive" | "resignation";
+                    setStatusFilter(value);
                     handleFilterChange();
                   }}
                   className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   aria-label={t("list.status.label")}
                 >
-                  <option value="">{t("list.status.all")}</option>
-                  <option value="true">{t("list.status.active")}</option>
-                  <option value="false">{t("list.status.locked")}</option>
+                  <option value="all">{t("list.status.all")}</option>
+                  <option value="active">{t("list.status.active")}</option>
+                  <option value="inactive">{t("list.status.locked")}</option>
+                  <option value="resignation">{t("list.status.resignation")}</option>
                 </select>
               </div>
             </div>
@@ -518,7 +486,7 @@ function EmployeesList() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto overflow-y-visible">
+                <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
@@ -545,7 +513,6 @@ function EmployeesList() {
                     <tbody className="bg-white divide-y divide-gray-200">
                       {employees.map((employee) => {
                         const isDropdownOpen = openDropdown === employee.id;
-
                         return (
                           <tr
                             key={employee.id}
@@ -560,7 +527,7 @@ function EmployeesList() {
                                       alt={employee.fullName}
                                       className="w-full h-full object-cover"
                                       onError={(e) => {
-                                        // Fallback to initial if image fails to load
+                                        // Nếu lỗi tải ảnh, hiện ký tự đầu
                                         const target = e.currentTarget as HTMLImageElement;
                                         target.style.display = 'none';
                                         const parent = target.parentElement;
@@ -591,11 +558,10 @@ function EmployeesList() {
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap">
                               <span
-                                className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${
-                                  employee.isActive
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-red-100 text-red-700"
-                                }`}
+                                className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${employee.isActive
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                                  }`}
                               >
                                 {employee.isActive ? t("status.active") : t("status.inactive")}
                               </span>
@@ -603,24 +569,26 @@ function EmployeesList() {
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
                               {employee.createdAt
                                 ? new Date(employee.createdAt).toLocaleDateString(i18n.language === 'vi' ? 'vi-VN' : 'en-CA', {
-                                    year: "numeric",
-                                    month: "2-digit",
-                                    day: "2-digit",
-                                  })
+                                  year: "numeric",
+                                  month: "2-digit",
+                                  day: "2-digit",
+                                })
                                 : t("common.na")}
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                              <DropdownCell 
+                              <DropdownCell
                                 isOpen={isDropdownOpen}
                                 onToggle={() => setOpenDropdown(isDropdownOpen ? null : employee.id)}
                                 onViewProfile={() => {
                                   navigate(`/hr/employees/${employee.id}`);
                                   setOpenDropdown(null);
                                 }}
-                                onDelete={() => {
-                                  handleDelete(employee.id, employee.fullName);
+                                onHardDelete={employee.hasApprovedResignation && isHr() ? () => {
+                                  handleHardDelete(employee.id, employee.fullName);
                                   setOpenDropdown(null);
-                                }}
+                                } : undefined}
+                                hasApprovedResignation={employee.hasApprovedResignation}
+                                isHr={isHr()}
                                 t={t}
                               />
                             </td>
@@ -631,6 +599,7 @@ function EmployeesList() {
                   </table>
                 </div>
 
+                {/* Phân trang bảng nhân viên */}
                 <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-700">
