@@ -67,7 +67,16 @@ function CreateEmployeeForm() {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      const departmentsData = departmentsRes.data || [];
+      // ✅ Filter bỏ ADMIN, ADMINISTRATION, và Human Resources
+      const forbiddenDepartmentNames = ["ADMIN", "ADMINISTRATION", "HUMAN RESOURCES", "HUMAN RESOURCE"];
+      const departmentsData = (departmentsRes.data || []).filter((dept) => {
+        if (!dept.departmentName) return false;
+        const name = dept.departmentName.toUpperCase();
+        // Kiểm tra exact match hoặc contains
+        return !forbiddenDepartmentNames.some(forbidden => 
+          name === forbidden || name.includes(forbidden)
+        );
+      });
       setDepartments(departmentsData);
 
       const rolesRes = await axios.get<Role[]>(
@@ -76,12 +85,15 @@ function CreateEmployeeForm() {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      const filteredRoles = (rolesRes.data || []).filter(
-        (role) =>
-          role.roleName &&
-          role.roleName.toUpperCase() !== "ADMIN" &&
-          role.roleName.toUpperCase() !== "USER"
-      );
+      const filteredRoles = (rolesRes.data || []).filter((role) => {
+        if (!role.roleName) return false;
+        const normalized = role.roleName.toUpperCase();
+        // ✅ Bỏ ADMIN, USER, và HR
+        return normalized !== "ADMIN" && 
+               normalized !== "USER" && 
+               normalized !== "HR" &&
+               !normalized.includes("HR");
+      });
       setRoles(filteredRoles);
 
       const clinicsRes = await axios.get<Clinic[]>(
@@ -153,24 +165,30 @@ function CreateEmployeeForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Chỉ kiểm tra cơ bản ở frontend, validation thực sự sẽ từ backend
-    if (!fullName || !email || !roleId) {
+    // ✅ Validation: Tất cả các trường đều bắt buộc (kể cả avatar)
+    if (!fullName || !email || !phone || !code || !roleId || !departmentId || !clinicId) {
       toast.error(t("create.validation.fillRequired"));
+      return;
+    }
+
+    // ✅ Avatar là bắt buộc
+    if (!avatarFile) {
+      toast.error(t("create.validation.avatarRequired") || "Vui lòng chọn hình đại diện");
       return;
     }
 
     setLoading(true);
     try {
-      // Tạo nhân viên (validation từ backend)
+      // ✅ Tạo nhân viên (tất cả trường đều bắt buộc)
       const employeeRequest = {
-        code: code || undefined,
+        code,
         fullName,
         email,
-        phone: phone || undefined,
+        phone,
         password,
-        departmentId: departmentId || undefined,
+        departmentId,
         roleId,
-        clinicId: clinicId || undefined,
+        clinicId,
         specialties: specialties.length > 0 ? specialties : undefined,
       };
 
@@ -187,8 +205,12 @@ function CreateEmployeeForm() {
 
       const employeeId = createRes.data.id;
 
-      // Upload avatar nếu có file
-      if (avatarFile && employeeId) {
+      // ✅ Upload avatar (bắt buộc)
+      if (!avatarFile) {
+        throw new Error("Avatar is required");
+      }
+      
+      if (employeeId) {
         try {
           const formData = new FormData();
           formData.append("file", avatarFile);
@@ -325,6 +347,7 @@ function CreateEmployeeForm() {
                       onChange={handleAvatarChange}
                       className="hidden"
                       aria-label={t("create.avatar.upload")}
+                      required
                     />
                     <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md border-2 border-white">
                       <Plus className="w-5 h-5" />
@@ -342,7 +365,7 @@ function CreateEmployeeForm() {
                 </div>
               ) : (
                 <div className="relative">
-                  <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center border-2 border-gray-200">
+                  <div className="w-32 h-32 rounded-full bg-gray-100 flex items-center justify-center border-2 border-red-300">
                     <User className="w-16 h-16 text-gray-400" />
                   </div>
                   <label className="absolute bottom-0 right-0 cursor-pointer" title={t("create.avatar.upload")} aria-label={t("create.avatar.upload")}>
@@ -352,11 +375,13 @@ function CreateEmployeeForm() {
                       onChange={handleAvatarChange}
                       className="hidden"
                       aria-label={t("create.avatar.upload")}
+                      required
                     />
                     <div className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 shadow-md border-2 border-white">
                       <Plus className="w-5 h-5" />
                     </div>
                   </label>
+                  <p className="text-xs text-red-500 mt-2 text-center">*</p>
                 </div>
               )}
             </div>
@@ -365,12 +390,13 @@ function CreateEmployeeForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t("create.form.employeeCode.label")}
+                {t("create.form.employeeCode.label")} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={code}
                 onChange={(e) => setCode(e.target.value)}
+                required
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder={t("create.form.employeeCode.placeholder")}
                 aria-label={t("create.form.employeeCode.label")}
@@ -407,12 +433,13 @@ function CreateEmployeeForm() {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                {t("create.form.phone.label")}
+                {t("create.form.phone.label")} <span className="text-red-500">*</span>
               </label>
               <input
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
+                required
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder={t("create.form.phone.placeholder")}
               />
@@ -466,7 +493,7 @@ function CreateEmployeeForm() {
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t("create.form.department.label")}
+                  {t("create.form.department.label")} <span className="text-red-500">*</span>
                 </label>
                 <select
                   value={departmentId || ""}
@@ -475,6 +502,7 @@ function CreateEmployeeForm() {
                       e.target.value ? Number(e.target.value) : null
                     )
                   }
+                  required
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3E%3Cpath stroke=%27%236b7280%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27m6 8 4 4 4-4%27/%3E%3C/svg%3E')] bg-no-repeat bg-right-2.5 bg-[length:1.5em_1.5em] pr-10"
                   aria-label={t("create.form.department.label")}
                 >
@@ -500,7 +528,7 @@ function CreateEmployeeForm() {
                 return (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      {t("create.form.clinic.label")} <span className="text-gray-500 text-xs">({t("create.form.clinic.optional")})</span>
+                      {t("create.form.clinic.label")} <span className="text-red-500">*</span>
                     </label>
                     <select
                       value={clinicId || ""}
@@ -509,6 +537,7 @@ function CreateEmployeeForm() {
                           e.target.value ? Number(e.target.value) : null
                         )
                       }
+                      required
                       className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-[url('data:image/svg+xml;charset=utf-8,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 fill=%27none%27 viewBox=%270 0 20 20%27%3E%3Cpath stroke=%27%236b7280%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%271.5%27 d=%27m6 8 4 4 4-4%27/%3E%3C/svg%3E')] bg-no-repeat bg-right-2.5 bg-[length:1.5em_1.5em] pr-10"
                       aria-label={t("create.form.clinic.label")}
                     >

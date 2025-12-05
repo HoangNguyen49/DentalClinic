@@ -76,12 +76,23 @@ type SchedulePreview = {
   note?: string;
 };
 
+type AttendanceStatistics = {
+  totalRecords?: number;
+  presentCount?: number;
+  lateCount?: number;
+  absentCount?: number;
+  leaveCount?: number;
+  averageHours?: number;
+  totalHours?: number;
+};
+
 function HrDashboardPage() {
   const { t, i18n } = useTranslation("hr-dashboard");
   const navigate = useNavigate();
   const [statistics, setStatistics] = useState<EmployeeStatistics>({});
   const [recentEmployees, setRecentEmployees] = useState<EmployeePreview[]>([]);
   const [currentSchedule, setCurrentSchedule] = useState<SchedulePreview[]>([]);
+  const [attendanceStats, setAttendanceStats] = useState<AttendanceStatistics>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -136,17 +147,10 @@ function HrDashboardPage() {
       });
       setRecentEmployees(employeesRes.data?.content || []);
 
-      // Lấy lịch làm việc của tuần hiện tại (bắt đầu từ thứ Hai)
+      // Lấy lịch làm việc tuần hiện tại (sử dụng endpoint /current)
       try {
-        const today = new Date();
-        const day = today.getDay();
-        // Tính thứ Hai của tuần hiện tại
-        const diff = today.getDate() - day + (day === 0 ? -6 : 1);
-        const monday = new Date(today.setDate(diff));
-        const weekStart = monday.toISOString().split("T")[0];
-
         const scheduleRes = await axios.get<SchedulePreview[]>(
-          `${apiBase}/api/hr/schedules/${weekStart}`,
+          `${apiBase}/api/hr/schedules/current`,
           {
             headers: {
               Authorization: `Bearer ${accessToken}`,
@@ -156,7 +160,49 @@ function HrDashboardPage() {
         const schedules = scheduleRes.data || [];
         setCurrentSchedule(schedules);
       } catch (err: any) {
-        setCurrentSchedule([]);
+        // Fallback: tự tính nếu endpoint không hoạt động
+        try {
+          const today = new Date();
+          const day = today.getDay();
+          const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+          const monday = new Date(today.setDate(diff));
+          const weekStart = monday.toISOString().split("T")[0];
+          const fallbackRes = await axios.get<SchedulePreview[]>(
+            `${apiBase}/api/hr/schedules/${weekStart}`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+          setCurrentSchedule(fallbackRes.data || []);
+        } catch {
+          setCurrentSchedule([]);
+        }
+      }
+  
+      // Lấy thống kê attendance (30 ngày gần nhất)
+      try {
+        const endDate = new Date();
+        const startDate = new Date();
+        startDate.setDate(startDate.getDate() - 30);
+        
+        const attendanceRes = await axios.get<AttendanceStatistics>(
+          `${apiBase}/api/hr/attendance/statistics`,
+          {
+            params: {
+              startDate: startDate.toISOString().split("T")[0],
+              endDate: endDate.toISOString().split("T")[0],
+            },
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        setAttendanceStats(attendanceRes.data || {});
+      } catch (err: any) {
+        // Không hiển thị lỗi nếu không có quyền hoặc chưa có dữ liệu
+        setAttendanceStats({});
       }
     } catch (err: any) {
       // Xử lý lỗi API và set dữ liệu rỗng để không crash
@@ -235,6 +281,18 @@ function HrDashboardPage() {
       icon: <Calendar className="w-8 h-8 text-purple-600" />,
       color: "bg-purple-50 border-purple-200",
     },
+    {
+      title: t("stats.attendancePresent", "Present (30 days)"),
+      value: attendanceStats.presentCount || 0,
+      icon: <UserCheck className="w-8 h-8 text-green-600" />,
+      color: "bg-green-50 border-green-200",
+    },
+    {
+      title: t("stats.attendanceTotalHours", "Total Hours (30 days)"),
+      value: attendanceStats.totalHours ? Math.round(attendanceStats.totalHours) : 0,
+      icon: <Clock className="w-8 h-8 text-orange-600" />,
+      color: "bg-orange-50 border-orange-200",
+    },
   ];
 
   if (loading) {
@@ -293,7 +351,7 @@ function HrDashboardPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
             {statsCards.map((card, index) => (
               <div
                 key={index}

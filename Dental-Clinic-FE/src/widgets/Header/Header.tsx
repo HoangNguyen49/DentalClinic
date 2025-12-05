@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import i18n from "../../app/providers/i18n";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
+import NotificationBell from "../NotificationBell";
+import CartIconButton from "../../Pages/Product/sections/widgets/CartIconButton.tsx";
 
 function Header() {
   const navigate = useNavigate();
@@ -37,10 +39,10 @@ function Header() {
     // Cập nhật lại trang khi User upload avatar
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
-    
+
     const handleAvatarUpdate = () => {
-    const updatedUser = localStorage.getItem("user");
-    if (updatedUser) setUser(JSON.parse(updatedUser));
+      const updatedUser = localStorage.getItem("user");
+      if (updatedUser) setUser(JSON.parse(updatedUser));
     };
 
     // Đồng bộ khi localStorage thay đổi (khác tab)
@@ -71,21 +73,30 @@ function Header() {
     navigate("/login");
   };
 
+  const handleGetInTouch = () => {
+    navigate("/booking");
+  }
+
   // check role ADMIN
   const isAdmin = Array.isArray(user?.roles)
     ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_ADMIN" || r.toUpperCase() === "ADMIN")
     : user?.role?.toUpperCase() === "ADMIN";
-  
+
+  // check role RECEPTION
+  const isReception = Array.isArray(user?.roles)
+    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_RECEPTION" || r.toUpperCase() === "RECEPTION")
+    : user?.role?.toUpperCase() === "RECEPTION";
+
   // check role HR
   const isHR = Array.isArray(user?.roles)
     ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_HR" || r.toUpperCase() === "HR")
     : user?.role?.toUpperCase() === "HR";
-  
+
   // check role USER
   const isUser = Array.isArray(user?.roles)
     ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_USER" || r.toUpperCase() === "USER")
     : user?.role?.toUpperCase() === "USER";
-  
+
   // Ẩn "My Attendance" nếu là USER hoặc ADMIN
   const shouldHideMyAttendance = isUser || isAdmin;
 
@@ -114,6 +125,9 @@ function Header() {
           <Link to="/service" className="hover:text-blue-600">
             {t("nav.services")}
           </Link>
+          <Link to="/products" className="hover:text-blue-600">
+            {t("nav.products")}
+          </Link>
           <Link to="/about" className="hover:text-blue-600">
             {t("nav.about")}
           </Link>
@@ -131,6 +145,11 @@ function Header() {
           >
             {i18n.language === "en" ? <span>VN</span> : <span>EN</span>}
           </button>
+
+          {/* Notification Bell - chỉ hiển thị khi user đã login */}
+          {user && <NotificationBell />}
+
+          <CartIconButton />
 
           {!user ? (
             <Link to="/login">
@@ -162,12 +181,26 @@ function Header() {
                   >
                     {t("account.myAccount")}
                   </Link>
+                  <Link
+                    to="/my-appointments"
+                    className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition border-b border-gray-100"
+                  >
+                    📅 Lịch hẹn của tôi
+                  </Link>
                   {!shouldHideMyAttendance && (
                     <Link
                       to="/my-attendance"
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
                     >
                       {t("account.myAttendance")}
+                    </Link>
+                  )}
+                  {!shouldHideMyAttendance && (
+                    <Link
+                      to="/my-leave-requests"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                    >
+                      {t("account.myLeaveRequests")}
                     </Link>
                   )}
                   {isHR && (
@@ -186,6 +219,14 @@ function Header() {
                       {t("account.adminDashboard")}
                     </Link>
                   )}
+                  {isReception && (
+                    <Link
+                      to="/reception/dashboard"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                    >
+                      {t("account.receptionDashboard", "Reception Dashboard")}
+                    </Link>
+                  )}
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#EF4444] transition"
@@ -198,7 +239,9 @@ function Header() {
           )}
 
           {/* Get In Touch Button */}
-          <button className="group relative inline-flex h-[56px] items-center justify-center rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] px-6 font-bold text-white transition-all duration-300 ease-in-out overflow-hidden">
+          <button
+            onClick={handleGetInTouch}
+            className="group relative inline-flex h-[56px] items-center justify-center rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] px-6 font-bold text-white transition-all duration-300 ease-in-out overflow-hidden">
             <div className="absolute right-0 top-0 h-full w-0 bg-[#6699FF] opacity-0 transition-all duration-500 ease-in-out group-hover:w-full group-hover:opacity-80" />
             <span className="relative z-10 flex items-center gap-2">
               {t("cta.getInTouch")}

@@ -133,11 +133,14 @@
     "aiGeneration": {
       "title": "Tạo Lịch Tự Động bằng AI",
       "description": "Nhập mô tả yêu cầu bằng tiếng Anh hoặc tiếng Việt, AI sẽ tự động phân tích và tạo lịch cho bạn.",
-      "placeholder": "Nhập mô tả yêu cầu tạo lịch (tiếng Anh hoặc tiếng Việt)...\nVí dụ tiếng Việt: Phân công bác sĩ Oral Surgery ở cả 2 clinic vào thứ 2, 3, 4 cả sáng và chiều\nVí dụ tiếng Anh: Assign Oral Surgery doctors to both clinics on Monday, Tuesday, Wednesday for both morning and afternoon shifts",
+      "placeholder": "Ví dụ: Phân công bác sĩ Oral Surgery ở cả 2 clinic vào thứ 2, 3, 4 cả sáng và chiều...",
       "button": "Tạo Lịch",
       "generating": "Đang tạo...",
-      "success": "Tạo lịch thành công!",
-      "error": "Lỗi khi tạo lịch"
+      "success": "AI đã tạo thành công {{count}} phân công. Vui lòng xem lại và chỉnh sửa nếu cần.",
+      "error": "Lỗi khi tạo lịch",
+      "messages": {
+        "pleaseInput": "Vui lòng nhập mô tả để tạo lịch bằng AI"
+      }
     }
   },
   "common": {

@@ -72,7 +72,6 @@ function ScheduleList() {
       }
     };
 
-
     // Lấy ngày thứ hai của tuần từ một ngày bất kỳ (dùng để xác định tuần hiện tại)
     const getMondayOfWeek = (date: Date): string => {
       const d = new Date(date);
@@ -88,7 +87,7 @@ function ScheduleList() {
     setCurrentWeekStart(monday);
     setSelectedDate(todayStr);
     fetchClinics();
-    // Ưu tiên hiển thị lịch theo ngày
+    // Always display the daily schedule first
     fetchSchedule(todayStr, "daily");
   }, []);
 
@@ -140,6 +139,7 @@ function ScheduleList() {
   }, [location.state]);
 
   // Lấy dữ liệu lịch làm việc
+  // Get schedules for a given date and mode (daily or weekly)
   const fetchSchedule = async (date: string, mode: "daily" | "weekly") => {
     setLoading(true);
     try {
@@ -170,16 +170,67 @@ function ScheduleList() {
   };
 
   // Chuyển sang tuần trước/tuần sau
-  const navigateWeek = (direction: "prev" | "next") => {
-    const current = new Date(currentWeekStart);
-    const newDate = new Date(current);
-    newDate.setDate(current.getDate() + (direction === "next" ? 7 : -7));
-    const newWeekStart = newDate.toISOString().split("T")[0];
-    setCurrentWeekStart(newWeekStart);
-    fetchSchedule(newWeekStart, "weekly");
+  // Navigate to the previous or next week
+  const navigateWeek = async (direction: "prev" | "next") => {
+    if (direction === "next") {
+      // Sử dụng endpoint /next-week nếu đang ở tuần hiện tại
+      const today = new Date();
+      const day = today.getDay();
+      const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(today.setDate(diff));
+      const currentWeekStartStr = monday.toISOString().split("T")[0];
+      
+      if (currentWeekStart === currentWeekStartStr) {
+        // Đang ở tuần hiện tại, dùng endpoint /next-week
+        setLoading(true);
+        try {
+          const response = await axios.get<ScheduleItem[]>(
+            `${apiBase}/api/hr/schedules/next-week`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+          setSchedules(response.data || []);
+          // Cập nhật currentWeekStart để hiển thị đúng
+          const nextWeekDate = new Date(monday);
+          nextWeekDate.setDate(monday.getDate() + 7);
+          setCurrentWeekStart(nextWeekDate.toISOString().split("T")[0]);
+        } catch (err: any) {
+          console.error("Error fetching next week:", err);
+          // Fallback: tự tính
+          const current = new Date(currentWeekStart);
+          const newDate = new Date(current);
+          newDate.setDate(current.getDate() + 7);
+          const newWeekStart = newDate.toISOString().split("T")[0];
+          setCurrentWeekStart(newWeekStart);
+          fetchSchedule(newWeekStart, "weekly");
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Không phải tuần hiện tại, tự tính
+        const current = new Date(currentWeekStart);
+        const newDate = new Date(current);
+        newDate.setDate(current.getDate() + 7);
+        const newWeekStart = newDate.toISOString().split("T")[0];
+        setCurrentWeekStart(newWeekStart);
+        fetchSchedule(newWeekStart, "weekly");
+      }
+    } else {
+      // Tuần trước: tự tính
+      const current = new Date(currentWeekStart);
+      const newDate = new Date(current);
+      newDate.setDate(current.getDate() - 7);
+      const newWeekStart = newDate.toISOString().split("T")[0];
+      setCurrentWeekStart(newWeekStart);
+      fetchSchedule(newWeekStart, "weekly");
+    }
   };
 
   // Chuyển sang ngày trước/ngày sau
+  // Navigate to the previous or next day
   const navigateDay = (direction: "prev" | "next") => {
     const current = new Date(selectedDate);
     const newDate = new Date(current);
@@ -190,6 +241,7 @@ function ScheduleList() {
   };
 
   // Đổi kiểu xem giữa daily/weekly
+  // Switch between daily and weekly view modes
   const handleViewModeChange = (mode: "daily" | "weekly") => {
     setViewMode(mode);
     if (mode === "daily") {
@@ -200,12 +252,14 @@ function ScheduleList() {
   };
 
   // Chọn ngày trong daily view
+  // Change the date in daily view
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
     fetchSchedule(date, "daily");
   };
 
   // Trả về danh sách các ngày trong một tuần (bắt đầu từ thứ Hai)
+  // Get the list of days for a week (starting from Monday)
   const getDaysOfWeek = (
     weekStart: string
   ): Array<{ date: string; dayName: string; dayNum: number; isToday: boolean }> => {
@@ -254,6 +308,7 @@ function ScheduleList() {
   const weekDays = currentWeekStart ? getDaysOfWeek(currentWeekStart) : [];
 
   // Trả về thông tin ngày đang chọn cho daily view
+  // Get the selected day info for daily view
   const getSelectedDayInfo = () => {
     if (!selectedDate) return null;
     const date = new Date(selectedDate);
@@ -285,6 +340,7 @@ function ScheduleList() {
   const selectedDayInfo = getSelectedDayInfo();
 
   // Gom lịch theo ngày và bác sĩ
+  // Group schedules by date and doctor
   type DoctorDaySchedule = {
     doctor: HrDocDto | null;
     morning?: ScheduleItem;
@@ -308,6 +364,7 @@ function ScheduleList() {
       }
 
       // Phân loại ca sáng hoặc chiều dựa theo giờ bắt đầu
+      // Categorize as morning or afternoon based on startTime
       const startTime = schedule.startTime || "00:00";
       if (startTime < "12:00") {
         acc[date][doctorId].morning = schedule;
@@ -321,12 +378,14 @@ function ScheduleList() {
   );
 
   // Tạo danh sách lịch theo ngày (không nhóm theo specialty)
+  // Create daily schedules (not grouped by specialty)
   const schedulesByDate = Object.keys(schedulesByDateAndDoctor).reduce((acc, date) => {
     acc[date] = Object.values(schedulesByDateAndDoctor[date]);
     return acc;
   }, {} as Record<string, DoctorDaySchedule[]>);
 
   // Lấy thông tin tên tháng, ngày đầy đủ để hiển thị ở header
+  // Get month and formatted date for header display
   const getMonthAndDate = (
     weekStart: string
   ): { month: string; shortMonth: string; date: string } => {
@@ -375,6 +434,7 @@ function ScheduleList() {
     : { month: "", date: "" };
 
   // Định dạng giờ hợp lệ cho giao diện
+  // Format a time string for display
   const formatTime = (time: string): string => {
     if (!time) return "";
     const [hours, minutes] = time.split(":");
@@ -431,16 +491,16 @@ function ScheduleList() {
                     <button
                       onClick={() => navigateWeek("prev")}
                       className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      aria-label={t("list.previousWeek")}
-                      title={t("list.previousWeek")}
+                      aria-label="Previous week"
+                      title="Previous week"
                     >
                       <ChevronLeft className="w-5 h-5 text-gray-600" />
                     </button>
                     <button
                       onClick={() => navigateWeek("next")}
                       className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      aria-label={t("list.nextWeek")}
-                      title={t("list.nextWeek")}
+                      aria-label="Next week"
+                      title="Next week"
                     >
                       <ChevronRight className="w-5 h-5 text-gray-600" />
                     </button>
@@ -450,16 +510,16 @@ function ScheduleList() {
                     <button
                       onClick={() => navigateDay("prev")}
                       className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      aria-label={t("list.previousDay")}
-                      title={t("list.previousDay")}
+                      aria-label="Previous day"
+                      title="Previous day"
                     >
                       <ChevronLeft className="w-5 h-5 text-gray-600" />
                     </button>
                     <button
                       onClick={() => navigateDay("next")}
                       className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      aria-label={t("list.nextDay")}
-                      title={t("list.nextDay")}
+                      aria-label="Next day"
+                      title="Next day"
                     >
                       <ChevronRight className="w-5 h-5 text-gray-600" />
                     </button>
@@ -468,7 +528,6 @@ function ScheduleList() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              {/* Chuyển đổi giữa daily/weekly view */}
               <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => handleViewModeChange("daily")}
@@ -478,7 +537,7 @@ function ScheduleList() {
                       : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
-                  {t("list.viewMode.daily")}
+                  Daily
                 </button>
                 <button
                   onClick={() => handleViewModeChange("weekly")}
@@ -488,7 +547,7 @@ function ScheduleList() {
                       : "text-gray-600 hover:text-gray-900"
                   }`}
                 >
-                  {t("list.viewMode.weekly")}
+                  Weekly
                 </button>
               </div>
               {viewMode === "daily" && (
@@ -497,7 +556,7 @@ function ScheduleList() {
                   value={selectedDate}
                   onChange={(e) => handleDateChange(e.target.value)}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  title={t("list.selectDate")}
+                  title="Select date"
                 />
               )}
               <button
@@ -505,7 +564,7 @@ function ScheduleList() {
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-sm"
               >
                 <Plus className="w-5 h-5" />
-                {t("list.createNewSchedule")}
+                Create new schedule
               </button>
             </div>
           </div>

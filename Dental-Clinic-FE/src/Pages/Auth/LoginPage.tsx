@@ -25,10 +25,10 @@ type LoginResponse = {
 function LoginPage() {
   const { t } = useTranslation(["login", "web"]);
   const navigate = useNavigate();
-  // Lấy API URL từ biến môi trường Vite (hoặc dùng mặc định localhost:8080)
+  // Lấy API URL từ biến môi trường Vite
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-  // --- QUẢN LÝ TRẠNG THÁI TABS (CHUYỂN ĐỔI GIỮA EMAIL VÀ SỐ ĐIỆN THOẠI) ---
+  // --- QUẢN LÝ TRẠNG THÁI TABS ---
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const [phoneMode, setPhoneMode] = useState<'password' | 'otp'>('password');
 
@@ -51,7 +51,7 @@ function LoginPage() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [isSendingLink, setIsSendingLink] = useState(false);
 
-  // --- EFFECT ĐẾM NGƯỢC THỜI GIAN GỬI LẠI OTP ---
+  // --- EFFECT ĐẾM NGƯỢC THỜI GIAN ---
   useEffect(() => {
     let timer: any;
     if (countdown > 0) {
@@ -62,7 +62,7 @@ function LoginPage() {
     return () => clearInterval(timer);
   }, [countdown]);
 
-  // --- HÀM GỬI LẠI EMAIL KÍCH HOẠT (TÍNH NĂNG C) ---
+  // --- HÀM GỬI LẠI EMAIL KÍCH HOẠT ---
   const handleResendVerification = async (emailToResend: string) => {
       try {
           await axios.post(`${API_URL}/api/auth/resend-verification`, { email: emailToResend });
@@ -73,51 +73,57 @@ function LoginPage() {
   };
 
   // =================================================================
-  // HÀM XỬ LÝ KHI ĐĂNG NHẬP THÀNH CÔNG (DÙNG CHUNG)
+  // HÀM XỬ LÝ KHI ĐĂNG NHẬP THÀNH CÔNG (CORE LOGIC)
   // =================================================================
   const handleLoginSuccess = (data: LoginResponse) => {
-    // Chuẩn hóa role
+    // 1. Chuẩn hóa role (Bỏ chữ ROLE_ nếu có và viết hoa)
     const normalizedRoles = (data.roles ?? []).map((r) =>
       r?.toString().replace(/^ROLE_/i, "").toUpperCase()
     );
 
-    // Lưu thông tin vào LocalStorage
+    // 2. Lưu thông tin vào LocalStorage
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("roles", JSON.stringify(normalizedRoles));
+    
+    // Lưu User Info đầy đủ (Gộp logic của cả Tuấn và Long)
     localStorage.setItem("user", JSON.stringify({
       userId: data.userId,
       fullName: data.fullName,
       email: data.email,
       avatarUrl: data.avatarUrl,
       phone: data.phone,
-      hasPassword: true,
+      hasPassword: true, // Mặc định true khi login thường
       provider: "local",
       roles: normalizedRoles
     }));
 
-    // Cập nhật header cho axios
+    // 3. Cập nhật header cho axios
     axios.defaults.headers.common["Authorization"] = `Bearer ${data.accessToken}`;
     toast.success(t("login:loginSuccess"));
 
-    // Điều hướng sau 1.5s
+    // 4. ĐIỀU HƯỚNG (MERGE LOGIC CỦA LONG VÀO ĐÂY)
     setTimeout(() => {
+      // Nếu chưa có SĐT -> Bắt buộc cập nhật (Logic của Tuấn)
       if (!data.phone || data.phone.trim() === "") {
         navigate("/my-account", { state: { forceUpdate: true } });
       } else {
+        // Phân quyền điều hướng (Đã thêm RECEPTION của Long)
         if (normalizedRoles.includes("ADMIN")) navigate("/admin/dashboard");
         else if (normalizedRoles.includes("HR")) navigate("/hr/dashboard");
-        else navigate("/");
+        else if (normalizedRoles.includes("RECEPTION")) navigate("/reception/dashboard"); // <-- MỚI THÊM CỦA LONG
+        else if (normalizedRoles.includes("DOCTOR")) navigate("/doctor/schedule");
+        else navigate("/"); // User thường về trang chủ
       }
     }, 1500);
   };
 
   // =================================================================
-  // HELPER XỬ LÝ LỖI (HIỂN THỊ NÚT MỞ KHÓA HOẶC GỬI LẠI MAIL)
+  // HELPER XỬ LÝ LỖI
   // =================================================================
   const handleLoginError = (err: any) => {
     const msg = err?.response?.data?.message || t("login:loginFailed");
     
-    // 1. Kiểm tra lỗi KHÓA TÀI KHOẢN
+    // Kiểm tra lỗi KHÓA TÀI KHOẢN
     if (typeof msg === 'string' && (msg.toLowerCase().includes("locked") || msg.toLowerCase().includes("khóa"))) {
         toast.error(
             <div className="flex flex-col">
@@ -135,7 +141,7 @@ function LoginPage() {
         return;
     }
 
-    // 2. Kiểm tra lỗi CHƯA KÍCH HOẠT EMAIL
+    // Kiểm tra lỗi CHƯA KÍCH HOẠT EMAIL
     if (typeof msg === 'string' && (msg.toLowerCase().includes("not active") || msg.toLowerCase().includes("chưa được kích hoạt"))) {
         toast.error(
             <div className="flex flex-col">
@@ -197,8 +203,6 @@ function LoginPage() {
   // =================================================================
   // 3. ĐĂNG NHẬP SĐT + OTP
   // =================================================================
-  
-  // Bước 1: Gửi OTP
   const handleSendOtp = async () => {
     if (!phone) return toast.error("Vui lòng nhập số điện thoại");
     
@@ -206,7 +210,7 @@ function LoginPage() {
     try {
       await axios.post(`${API_URL}/api/auth/login-phone/step1`, { phone });
       setOtpSent(true);
-      setCountdown(60); // Đếm ngược 60 giây
+      setCountdown(60);
       toast.info("Mã OTP đã được gửi!");
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Gửi OTP thất bại");
@@ -215,7 +219,6 @@ function LoginPage() {
     }
   };
 
-  // Bước 2: Xác thực OTP
   const handleOtpLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone || !otp) return toast.error("Vui lòng nhập mã OTP");
@@ -256,7 +259,7 @@ function LoginPage() {
       <Header />
       <ToastContainer position="top-right" autoClose={5000} />
       
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6 md:p-16">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-6 md:p-16 font-instrument">
         <div className="flex w-full max-w-6xl rounded-[2rem] shadow-2xl bg-white overflow-hidden relative border border-gray-200">
           
           {/* CỘT TRÁI */}
@@ -460,7 +463,6 @@ function LoginPage() {
                                             {loading ? "Verifying..." : "Login with OTP"}
                                         </button>
                                         
-                                        {/* Nút gửi lại OTP */}
                                         <button 
                                             onClick={handleSendOtp} 
                                             disabled={loading || countdown > 0}

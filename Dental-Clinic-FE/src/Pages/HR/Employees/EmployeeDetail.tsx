@@ -41,6 +41,7 @@ function EmployeeDetail() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [loading, setLoading] = useState(true);
   const [avatarError, setAvatarError] = useState(false);
+  const [toggling, setToggling] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -96,6 +97,57 @@ function EmployeeDetail() {
       });
     } catch {
       return dateString;
+    }
+  };
+
+  const handleToggleStatus = async () => {
+    if (!accessToken || !apiBase || !id || !employee) return;
+
+    const newStatus = !employee.isActive;
+    const action = newStatus ? t("detail.actions.activate", "activate") : t("detail.actions.deactivate", "deactivate");
+    const confirmMessage = t("detail.actions.confirmToggle", "Are you sure you want to {{action}} {{name}}'s account?", {
+      action,
+      name: employee.fullName
+    });
+    
+    if (!window.confirm(confirmMessage)) return;
+
+    const reason = prompt(t("detail.actions.reason", "Please enter a reason:"));
+    if (!reason || reason.trim() === "") {
+      toast.warning(t("detail.actions.reasonRequired", "Reason is required"));
+      return;
+    }
+
+    setToggling(true);
+    try {
+      const response = await axios.put<Employee>(
+        `${apiBase}/api/hr/employees/${id}/toggle-status`,
+        null,
+        {
+          params: {
+            isActive: newStatus,
+            reason: reason.trim(),
+          },
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      setEmployee(response.data);
+      toast.success(
+        newStatus
+          ? t("detail.actions.activated", "Account activated successfully")
+          : t("detail.actions.deactivated", "Account deactivated successfully")
+      );
+    } catch (err: any) {
+      console.error("Error toggling status:", err);
+      let errorMsg = t("detail.actions.toggleFailed", "Failed to toggle account status");
+      if (err?.response?.data?.message) {
+        errorMsg = err.response.data.message;
+      }
+      toast.error(errorMsg);
+    } finally {
+      setToggling(false);
     }
   };
 
@@ -346,6 +398,32 @@ function EmployeeDetail() {
                                 </div>
                               </div>
                             )}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Actions Section */}
+                      <div>
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-xl font-bold text-gray-900">{t("detail.sections.actions", "Actions")}</h3>
+                        </div>
+                        <div className="bg-white rounded-lg border border-gray-200 p-6">
+                          <div className="flex gap-3">
+                            <button
+                              onClick={handleToggleStatus}
+                              disabled={loading || toggling}
+                              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                employee.isActive
+                                  ? "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                                  : "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                            >
+                              {toggling
+                                ? t("detail.actions.processing", "Processing...")
+                                : employee.isActive
+                                ? t("detail.actions.deactivate", "Deactivate Account")
+                                : t("detail.actions.activate", "Activate Account")}
+                            </button>
                           </div>
                         </div>
                       </div>
