@@ -1,37 +1,38 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HomePage from "../pages/Home/index";
-import Service from "../pages/Service";
-import About from "../pages/About";
-import ContactPage from "../pages/Contact";
-import LoginPage from "../pages/Auth/LoginPage";
-import SignUp from "../pages/Auth/SignUp";
-import OAuthSuccessHandler from "../pages/Auth/OAuthSuccessHandler";
-import MyAccount from "../pages/Account/MyAccount";
-import ChangePassword from "../pages/Account/ChangePassword";
-import EmployeeAttendanceView from "../pages/Account/EmployeeAttendanceView";
+import HomePage from "../Pages/Home/index";
+import LoginPage from "../Pages/Auth/LoginPage";
+import SignUp from "../Pages/Auth/SignUp";
+import OAuthSuccessHandler from "../Pages/Auth/OAuthSuccessHandler";
+import MyAccount from "../Pages/Account/MyAccount";
+import ChangePassword from "../Pages/Account/ChangePassword";
+import EmployeeAttendanceView from "../Pages/Account/EmployeeAttendanceView";
 import AdminLayout from "../app/layout/AdminLayouts";
 import HRLayout from "../app/layout/HrLayout";
-import AdminDashboardPage from "../pages/Admin/Dashboard/AdminDashboardPage";
-import ProtectedRouteAdmin from "./routes/ProtectedRouteAdmin";
+import AdminDashboardPage from "../Pages/Admin/Dashboard/AdminDashboardPage";
+import ProtectedRouteAdmin from "../app/routes/ProtectedRouteAdmin";
 import ProtectedRouteHR from "../app/routes/ProtectedRouteHR";
-import AppointmentList from "../pages/Admin/Appointments/AppointmentList";
-import HrDashboardPage from "../pages/HR/Dashboard/HrDashboardPage";
-import ScheduleList from "../pages/HR/Schedules/ScheduleList";
-import CreateScheduleForm from "../pages/HR/Schedules/CreateScheduleForm";
-import EmployeesList from "../pages/HR/Employees/EmployeesList";
-import CreateEmployeeForm from "../pages/HR/Employees/CreateEmployeeForm";
-import EmployeeDetail from "../pages/HR/Employees/EmployeeDetail";
-import DailyAttendanceView from "../pages/HR/Attendance/DailyAttendanceView";
-import ClinicManagement from "../pages/Admin/Clinics/ClinicManagement";
-import AdminAttendanceManagement from "../pages/Admin/Attendance/AdminAttendanceManagement";
-import AdminStaffManagement from "../pages/Admin/Staff/AdminStaffManagement";
-import ReceptionLayout from "../app/layout/ReceptionLayout";
-import ProtectedRouteReception from "../app/routes/ProtectedRouteReception";
-import ReceptionDashboard from "../pages/Reception/Dashboard/ReceptionDashboard";
-import BookingOffline from "../pages/Reception/BookingCRM/BookingOffline";
-import BookingPage from "../pages/Booking/BookingPage";
-import PatientList from "../pages/Reception/Patient/PatientList";
-import AuthGuard from "./routes/AuthGuard";
+// import AppointmentList from "../Pages/Admin/Appointments/AppointmentList";
+import HrDashboardPage from "../Pages/HR/Dashboard/HrDashboardPage";
+import ScheduleList from "../Pages/HR/Schedules/ScheduleList";
+import CreateScheduleForm from "../Pages/HR/Schedules/CreateScheduleForm";
+import EmployeesList from "../Pages/HR/Employees/EmployeesList";
+import CreateEmployeeForm from "../Pages/HR/Employees/CreateEmployeeForm";
+import EmployeeDetail from "../Pages/HR/Employees/EmployeeDetail";
+import DailyAttendanceView from "../Pages/HR/Attendance/DailyAttendanceView";
+import Service from "../Pages/Service";
+import About from "../Pages/About";
+import ContactPage from "../Pages/Contact";
+import ClinicManagement from "../Pages/Admin/Clinics/ClinicManagement";
+import AdminAttendanceManagement from "../Pages/Admin/Attendance/AdminAttendanceManagement";
+import AdminStaffManagement from "../Pages/Admin/Staff/AdminStaffManagement";
+import ProtectedRouteDoctor from "./routes/ProtectedRouteDoctor";
+import DoctorLayout from "./layout/DoctorLayout";
+import DoctorDashboard from "../Pages/Doctor/DoctorDashboard";
+import AppointmentList from "../Pages/Doctor/AppointmentList";
+import AppointmentDetail from "../Pages/Doctor/AppointmentDetail";
+import MedicalRecordDetail from "../Pages/Doctor/MedicalRecordDetail";
+import PatientMedicalRecords from "../Pages/Doctor/PatientMedicalRecords";
+import MySchedule from "../Pages/Doctor/MySchedule";
 
 function App() {
   return (
@@ -47,43 +48,39 @@ function App() {
         <Route path="/my-account" element={<MyAccount />} />
         <Route path="/change-password" element={<ChangePassword />} />
         <Route path="/my-attendance" element={<EmployeeAttendanceView />} />
-        <Route path="/booking" element={<BookingPage />} />
 
-        <Route element={<AuthGuard />}>
-          <Route path="/admin" element={<ProtectedRouteAdmin />}>
-            <Route element={<AdminLayout />}>
-              <Route index element={<AdminDashboardPage />} />{" "}
-              <Route path="dashboard" element={<AdminDashboardPage />} />
-              <Route path="appointments" element={<AppointmentList />} />
-              <Route
-                path="attendance"
-                element={<AdminAttendanceManagement />}
-              />
-              <Route path="clinics" element={<ClinicManagement />} />
-              <Route path="staff" element={<AdminStaffManagement />} />
-            </Route>
+        <Route path="/admin" element={<ProtectedRouteAdmin />}>
+          <Route element={<AdminLayout />}>
+            <Route index element={<AdminDashboardPage />} />{" "}
+            <Route path="dashboard" element={<AdminDashboardPage />} />
+            <Route path="attendance" element={<AdminAttendanceManagement />} />
+            <Route path="clinics" element={<ClinicManagement />} />
+            <Route path="staff" element={<AdminStaffManagement />} />
           </Route>
+        </Route>
 
-          <Route path="/hr" element={<ProtectedRouteHR />}>
-            <Route element={<HRLayout />}>
-              <Route path="dashboard" element={<HrDashboardPage />} />
-              <Route path="employees" element={<EmployeesList />} />
-              <Route path="employees/create" element={<CreateEmployeeForm />} />
-              <Route path="employees/:id" element={<EmployeeDetail />} />
-              <Route path="attendance" element={<DailyAttendanceView />} />
-              <Route path="schedules" element={<ScheduleList />} />
-              <Route path="schedules/create" element={<CreateScheduleForm />} />
-            </Route>
+        <Route path="/hr" element={<ProtectedRouteHR />}>
+          <Route element={<HRLayout />}>
+            <Route path="dashboard" element={<HrDashboardPage />} />
+            <Route path="employees" element={<EmployeesList />} />
+            <Route path="employees/create" element={<CreateEmployeeForm />} />
+            <Route path="employees/:id" element={<EmployeeDetail />} />
+            <Route path="attendance" element={<DailyAttendanceView />} />
+            <Route path="schedules" element={<ScheduleList />} />
+            <Route path="schedules/create" element={<CreateScheduleForm />} />
           </Route>
+        </Route>
 
-          <Route path="/reception" element={<ProtectedRouteReception />}>
-            <Route element={<ReceptionLayout />}>
-              <Route path="dashboard" element={<ReceptionDashboard />} />
-              <Route path="walk-in" element={<BookingOffline />} />
-              <Route path="appointments" element={<AppointmentList />} />
-              <Route path="patients" element={<PatientList />} />
-            </Route>
-          </Route>
+        <Route path="/doctor" element={<ProtectedRouteDoctor />}>
+          <Route element={<DoctorLayout />}>
+            <Route index element={<DoctorDashboard />} />
+            <Route path="dashboard" element={<DoctorDashboard />} />
+            <Route path="schedule" element={<MySchedule />} />
+            <Route path="appointments" element={<AppointmentList />} />
+            <Route path="appointments/:appointmentId" element={<AppointmentDetail />} />
+            <Route path="patients/:patientId/records" element={<PatientMedicalRecords />} />
+            <Route path="patients/:patientId/records/:recordId" element={<MedicalRecordDetail />} />
+        </Route>
         </Route>
       </Routes>
     </Router>
