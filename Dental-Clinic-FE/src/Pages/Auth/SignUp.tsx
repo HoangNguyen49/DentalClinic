@@ -75,7 +75,7 @@ function SignUp() {
         `${import.meta.env.VITE_API_URL}/api/auth/sign-up`,
         {
           fullName,
-          username,       // optional ở BE, FE vẫn gửi nếu có
+          username,       
           email,
           phone,
           password,
