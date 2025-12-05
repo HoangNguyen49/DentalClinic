@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import i18n from "../../app/providers/i18n";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
+import { hasRole } from "../../app/routes/shared/auth";
 
 function Header() {
   const navigate = useNavigate();
@@ -76,29 +77,19 @@ function Header() {
   }
 
   // check role ADMIN
-  const isAdmin = Array.isArray(user?.roles)
-    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_ADMIN" || r.toUpperCase() === "ADMIN")
-    : user?.role?.toUpperCase() === "ADMIN";
+  const isAdmin = hasRole("ADMIN");
 
   // check role RECEPTION
-  const isReception = Array.isArray(user?.roles)
-    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_RECEPTION" || r.toUpperCase() === "RECEPTION")
-    : user?.role?.toUpperCase() === "RECEPTION";
+  const isReception = hasRole("RECEPTION");
   
   // check role HR
-  const isHR = Array.isArray(user?.roles)
-    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_HR" || r.toUpperCase() === "HR")
-    : user?.role?.toUpperCase() === "HR";
+  const isHR = hasRole("HR");
   
   // check role USER
-  const isUser = Array.isArray(user?.roles)
-    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_USER" || r.toUpperCase() === "USER")
-    : user?.role?.toUpperCase() === "USER";
+  const isUser = hasRole("USER");
 
-    //check role DOCTOR
-  const isDoctor = Array.isArray(user?.roles)
-    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_DOCTOR" || r.toUpperCase() === "DOCTOR")
-    : user?.role?.toUpperCase() === "DOCTOR";
+  // check role DOCTOR - sử dụng hàm hasRole để đảm bảo logic nhất quán với ProtectedRouteDoctor
+  const isDoctor = hasRole("DOCTOR");
   
   // Ẩn "My Attendance" nếu là USER hoặc ADMIN
   const shouldHideMyAttendance = isUser || isAdmin || isDoctor;
