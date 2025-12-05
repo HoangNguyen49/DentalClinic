@@ -451,11 +451,11 @@ export default function DoctorDashboard() {
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button
-                onClick={() => navigate("/doctor/appointments")}
+                onClick={() => navigate("/doctor/appointments/calendar")}
                 className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
               >
                 <Calendar className="w-6 h-6 text-blue-600" />
-                <span className="font-medium">View Appointment</span>
+                <span className="font-medium">View Calendar</span>
               </button>
               <button
                 onClick={() => navigate("/doctor/medical-records/create")}
