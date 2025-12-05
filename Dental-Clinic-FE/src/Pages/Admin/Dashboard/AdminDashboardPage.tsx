@@ -11,12 +11,15 @@ import {
   Stethoscope,
   Users,
   BarChart2,
+  Settings,
 } from "lucide-react";
 
+// Trang Dashboard chính cho Admin
 function AdminDashboardPage() {
   const navigate = useNavigate();
   const { t } = useTranslation("admin");
 
+  // Định nghĩa bảng màu sử dụng cho UI
   const palette = useMemo(
     () => ({
       background: "bg-slate-50",
@@ -30,6 +33,7 @@ function AdminDashboardPage() {
     []
   );
 
+  // Các khu vực chức năng chính của dashboard
   const sections = [
     {
       key: "appointments",
@@ -121,11 +125,22 @@ function AdminDashboardPage() {
       icon: <BellRing className="w-10 h-10 text-orange-500" />,
       link: "/admin/crm",
     },
+    {
+      key: "system",
+      title: t("dashboard.sections.system.title", "Cấu hình hệ thống"),
+      description: t(
+        "dashboard.sections.system.description",
+        "Thiết lập tham số, ngày nghỉ lễ và xem nhật ký hệ thống."
+      ),
+      icon: <Settings className="w-10 h-10 text-slate-600" />,
+      link: "/admin/system",
+    },
   ];
 
   return (
     <div className={`p-6 min-h-screen ${palette.background}`}>
       <div className="max-w-7xl mx-auto space-y-8">
+        {/* Tiêu đề và mô tả dashboard */}
         <section className="space-y-2">
           <p className={`text-sm font-medium uppercase tracking-[0.2em] ${palette.subtleText}`}>
             {t("dashboard.subtitle", "Admin control center")}
@@ -145,11 +160,12 @@ function AdminDashboardPage() {
           </div>
         </section>
 
+        {/* Danh sách các chức năng chính */}
         <section className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
           {sections.map((section) => (
             <button
               key={section.key}
-              onClick={() => navigate(section.link)}
+              onClick={() => navigate(section.link)} // Điều hướng tới trang tương ứng khi click
               className={`
                 text-left rounded-2xl border transition-all
                 ${palette.surface} ${palette.border} ${palette.shadow}

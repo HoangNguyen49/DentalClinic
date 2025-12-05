@@ -12,6 +12,7 @@ import {
   FaHospital,
   FaClock,
   FaSignOutAlt,
+  FaCogs,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
@@ -79,8 +80,10 @@ const AdminLayout = () => {
             icon={<FaBoxes />}
           />
           <NavItem to="/admin/reports" label={t("nav.reports", "Reports")} icon={<FaChartBar />} />
+          <NavItem to="/admin/leave-requests" label={t("nav.leaveRequests", "Leave Requests")} icon={<FaClipboardList />} />
           <NavItem to="/admin/staff" label={t("nav.staff", "Staff")} icon={<FaUser />} />
           <NavItem to="/admin/crm" label={t("nav.crm", "CRM")} icon={<FaComments />} />
+          <NavItem to="/admin/system" label={t("nav.system", "System")} icon={<FaCogs />} />
         </nav>
         <div className="p-4 border-t">
           <button

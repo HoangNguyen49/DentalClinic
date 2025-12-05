@@ -65,6 +65,51 @@
   },
   "common": {
     "na": "N/A"
+  },
+  "faceProfileApproval": {
+    "title": "Face Profile Update Approval",
+    "subtitle": "View and approve face profile update requests from employees",
+    "searchPlaceholder": "Search by name, email, employee code...",
+    "employee": "Employee",
+    "employeeCode": "Code",
+    "newImage": "New Image",
+    "requestDate": "Request Date",
+    "status": "Status",
+    "actions": "Actions",
+    "viewImage": "View Image",
+    "noImage": "No Image",
+    "approve": "Approve",
+    "reject": "Reject",
+    "close": "Close",
+    "approveRequest": "Approve Request",
+    "rejectRequest": "Reject",
+    "rejectModal": {
+      "title": "Reject Face Profile Update Request",
+      "employee": "Employee",
+      "reasonLabel": "Rejection Reason (optional)",
+      "reasonPlaceholder": "Enter rejection reason...",
+      "cancel": "Cancel",
+      "confirmReject": "Confirm Reject"
+    },
+    "imageModal": {
+      "title": "New Face Image"
+    },
+    "status": {
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "messages": {
+      "loading": "Loading...",
+      "noRequests": "No pending requests",
+      "noSearchResults": "No requests found",
+      "loadFailed": "Failed to load face profile update requests",
+      "approveSuccess": "Face profile update request approved successfully",
+      "approveFailed": "Failed to approve request",
+      "rejectSuccess": "Face profile update request rejected",
+      "rejectFailed": "Failed to reject request"
+    },
+    "menuLabel": "Face Profile Approvals"
   }
 }
 

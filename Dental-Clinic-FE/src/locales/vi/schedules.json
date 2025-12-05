@@ -71,6 +71,10 @@
       "selectMonday": "Vui lòng chọn Thứ Hai. Đã tự động điều chỉnh...",
       "onlyNextWeek": "Chỉ được phép lên lịch cho tuần tiếp theo trở đi. Đã mặc định về tuần tiếp theo."
     },
+    "unavailable": {
+      "title": "Bác sĩ nghỉ phép (Unavailable)",
+      "description": "Vui lòng không xếp lịch cho các bác sĩ này vào thời gian đã duyệt."
+    },
     "assignClinics": {
       "title": "Phân công cơ sở",
       "description": "Chỉ định cơ sở và ca làm việc cho mỗi bác sĩ mỗi ngày. Mỗi bác sĩ có thể có nhiều ca trong một ngày, với các cơ sở khác nhau cho mỗi ca."
@@ -102,6 +106,7 @@
       "noAssignments": "Chưa có bác sĩ nào được phân công. Vui lòng chọn ít nhất một bác sĩ tại một cơ sở cho một ngày trong tuần.",
       "dayNoDoctors": "{{day}} ({{date}}): Chưa có bác sĩ nào được phân công cho ngày này.",
       "clinicNoDoctors": "{{day}} ({{date}}): Cơ sở \"{{clinic}}\" chưa có bác sĩ nào được phân công.",
+      "missingClinicAssignment": "Vào {{day}} ({{date}}), chưa có bác sĩ nào được phân công cho {{clinic}}.",
       "scheduleValid": "Lịch hợp lệ!",
       "foundErrors": "Tìm thấy {{count}} lỗi:",
       "andMore": "... và {{count}} lỗi nữa.",
@@ -128,7 +133,8 @@
     },
     "shifts": {
       "morning": "Ca Sáng",
-      "afternoon": "Ca Chiều"
+      "afternoon": "Ca Chiều",
+      "fullDay": "Cả ngày"
     },
     "aiGeneration": {
       "title": "Tạo Lịch Tự Động bằng AI",
@@ -137,6 +143,7 @@
       "button": "Tạo Lịch",
       "generating": "Đang tạo...",
       "success": "AI đã tạo thành công {{count}} phân công. Vui lòng xem lại và chỉnh sửa nếu cần.",
+      "resultMessage": "Đã tạo {{count}} phân công cho {{days}} ngày.",
       "error": "Lỗi khi tạo lịch",
       "messages": {
         "pleaseInput": "Vui lòng nhập mô tả để tạo lịch bằng AI"
@@ -148,4 +155,3 @@
     "clinic": "Cơ Sở"
   }
 }
-

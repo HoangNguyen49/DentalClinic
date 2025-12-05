@@ -4,13 +4,12 @@ import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { useNotification } from "../../../../app/providers/NotificationContext";
 
-// Kiểu dữ liệu clinic cho HR
+// Kiểu dữ liệu phòng khám HR
 export type HrClinic = {
     id: number;
     clinicName: string;
 };
 
-// Kiểu dữ liệu Attendance cơ bản
 export type AttendanceResponse = {
     id: number;
     userId: number;
@@ -25,7 +24,7 @@ export type AttendanceResponse = {
     note?: string | null;
 };
 
-// Kiểu dữ liệu giải trình chấm công
+// Dữ liệu giải trình chấm công
 export type AttendanceExplanationResponse = {
     attendanceId: number;
     userId: number;
@@ -46,7 +45,7 @@ export type AttendanceExplanationResponse = {
 
 const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-// Hook quản lý giải trình & giải thích lỗi chấm công
+// Quản lý giải trình chấm công
 export const useExplanations = () => {
     const { t } = useTranslation("admin");
     const accessToken = localStorage.getItem("accessToken");
@@ -63,10 +62,10 @@ export const useExplanations = () => {
     const [customTimes, setCustomTimes] = useState<Record<number, string>>({});
     const [highlightedAttendanceId, setHighlightedAttendanceId] = useState<number | null>(null);
 
-    // ref scroll vào bảng giải trình
+    // Ref bảng giải trình để scroll tới khi có noti
     const explanationsTableRef = useRef<HTMLDivElement>(null);
 
-    // Lấy danh sách clinic cho HR
+    // Lấy danh sách phòng khám cho HR
     const fetchClinics = useCallback(async () => {
         if (!accessToken) return;
         try {
@@ -83,7 +82,7 @@ export const useExplanations = () => {
         }
     }, [accessToken, t]);
 
-    // Lấy danh sách giải trình chưa xử lý
+    // Lấy giải trình chưa xử lý
     const fetchPendingExplanations = useCallback(async (): Promise<AttendanceExplanationResponse[] | undefined> => {
         if (!accessToken) return undefined;
         setLoadingExplanations(true);
@@ -118,7 +117,6 @@ export const useExplanations = () => {
         }
     }, [accessToken, explanationClinicFilter, t]);
 
-    // Khởi tạo lần đầu
     useEffect(() => {
         if (!accessToken) {
             toast.error(t("attendance.messages.noAccessToken", "Missing access token"));
@@ -132,10 +130,9 @@ export const useExplanations = () => {
         fetchPendingExplanations();
     }, [explanationClinicFilter, accessToken, fetchPendingExplanations]);
 
-    // Nhận thông báo realtime để cập nhật giải trình mới hoặc thay đổi trạng thái
+    // Nhận thông báo realtime và cập nhật bảng giải trình
     useEffect(() => {
         if (!accessToken) return;
-
         const unsubscribe = onNotificationReceived((notification) => {
             const relatedEntityType = notification.relatedEntityType?.toUpperCase();
             if (
@@ -145,7 +142,6 @@ export const useExplanations = () => {
                 notification.type === "EXPLANATION_REJECTED"
             ) {
                 const newAttendanceId = notification.relatedEntityId;
-                // Hiển thị giải trình vừa cập nhật trên màn hình
                 if (explanationsTableRef.current) {
                     explanationsTableRef.current.scrollIntoView({
                         behavior: "smooth",
@@ -154,7 +150,6 @@ export const useExplanations = () => {
                 } else {
                     window.scrollTo({ top: 0, behavior: "smooth" });
                 }
-
                 if (newAttendanceId) {
                     setHighlightedAttendanceId(newAttendanceId);
                     setTimeout(() => {
@@ -164,11 +159,10 @@ export const useExplanations = () => {
                 fetchPendingExplanations();
             }
         });
-
         return unsubscribe;
     }, [accessToken, onNotificationReceived, fetchPendingExplanations]);
 
-    // Xử lý duyệt/ từ chối giải trình chấm công
+    // Duyệt hoặc từ chối giải trình
     const handleProcessExplanation = async (
         explanation: AttendanceExplanationResponse,
         action: "APPROVE" | "REJECT"
@@ -177,7 +171,7 @@ export const useExplanations = () => {
         const adminNote = (actionNotes[explanation.attendanceId] || "").trim();
         const customTime = customTimes[explanation.attendanceId] || "";
 
-        // Tối ưu giao diện trước khi gửi request, ẩn giải trình khỏi bảng trước
+        // Ẩn item khỏi bảng (hiện lại nếu lỗi request)
         const explanationId = explanation.attendanceId;
         setPendingExplanations((prev) => prev.filter((exp) => exp.attendanceId !== explanationId));
         setActionNotes((prev) => {
@@ -207,8 +201,7 @@ export const useExplanations = () => {
                     },
                 }
             );
-
-            // Thông báo kết quả xử lý giải trình
+            // Thông báo kết quả xử lý
             const newStatus = response.data.attendanceStatus;
             if (action === "APPROVE") {
                 let statusMessage = "";
@@ -222,7 +215,6 @@ export const useExplanations = () => {
                         "Explanation approved. Check-out time set to 18:00 and work hours recalculated automatically."
                     );
                 }
-
                 toast.success(
                     `${t("attendance.messages.explanationApproved", "Explanation approved successfully")}\n${statusMessage}`,
                     { autoClose: 5000 }
@@ -235,7 +227,7 @@ export const useExplanations = () => {
             }
             fetchPendingExplanations();
         } catch (error: any) {
-            // Rollback dữ liệu khi xử lý lỗi (restore lại item đã xóa khỏi bảng)
+            // Nếu lỗi: rollback item vào bảng
             setPendingExplanations((prev) => {
                 const exists = prev.some((exp) => exp.attendanceId === explanationId);
                 if (!exists) {
@@ -243,14 +235,12 @@ export const useExplanations = () => {
                 }
                 return prev;
             });
-
             if (adminNote) {
                 setActionNotes((prev) => ({ ...prev, [explanationId]: adminNote }));
             }
             if (customTime) {
                 setCustomTimes((prev) => ({ ...prev, [explanationId]: customTime }));
             }
-
             const message =
                 error?.response?.data?.message ||
                 error?.message ||
@@ -259,7 +249,7 @@ export const useExplanations = () => {
         }
     };
 
-    // Ghi chú thay đổi của HR cho giải trình
+    // Ghi chú của HR cho giải trình
     const handleNoteChange = (attendanceId: number, value: string) => {
         setActionNotes((prev) => ({
             ...prev,
@@ -267,7 +257,7 @@ export const useExplanations = () => {
         }));
     };
 
-    // Thay đổi custom time cho approve giải trình
+    // Đổi giờ custom cho approve giải trình
     const handleCustomTimeChange = (attendanceId: number, value: string) => {
         setCustomTimes((prev) => ({
             ...prev,
@@ -275,7 +265,7 @@ export const useExplanations = () => {
         }));
     };
 
-    // Expose các state & hàm quan trọng cho component gọi hook
+    // Trả ra các state & hàm cho component dùng
     return {
         clinics,
         pendingExplanations,

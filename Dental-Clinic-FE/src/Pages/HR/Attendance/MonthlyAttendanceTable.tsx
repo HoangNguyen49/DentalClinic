@@ -14,10 +14,9 @@ export type MonthlyAttendanceItem = {
   totalWorkedHours: number;
   totalWorkedMinutes: number;
   totalWorkedDisplay: string;
-  // Thông tin cho tính lương theo giờ
-  totalLateMinutes?: number;   // Tổng số phút đi trễ trong tháng
-  totalEarlyMinutes?: number;  // Tổng số phút ra sớm trong tháng
-  actualWorkedDays?: number;   // Số ngày đi làm thực tế (có check-in)
+  totalLateMinutes?: number;    // tổng phút trễ trong tháng
+  totalEarlyMinutes?: number;   // tổng phút ra sớm trong tháng
+  actualWorkedDays?: number;    // số ngày đi làm thực tế
 };
 
 type MonthlyAttendanceTableProps = {
@@ -30,13 +29,11 @@ const formatHourValue = (value: number) => {
   return Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1);
 };
 
+// format tổng giờ công/tháng
 const formatWorkedHours = (item: MonthlyAttendanceItem): string => {
-  // Ưu tiên sử dụng totalWorkedDisplay từ backend
   if (item.totalWorkedDisplay) {
-    return item.totalWorkedDisplay;
+    return item.totalWorkedDisplay; // ưu tiên backend format
   }
-  
-  // Fallback: tính từ totalWorkedHours và totalWorkedMinutes
   const totalHours = (item.totalWorkedHours || 0) + (item.totalWorkedMinutes || 0) / 60;
   return `${formatHourValue(totalHours)} h`;
 };
@@ -44,6 +41,7 @@ const formatWorkedHours = (item: MonthlyAttendanceItem): string => {
 export default function MonthlyAttendanceTable({ items }: MonthlyAttendanceTableProps) {
   const { t } = useTranslation("attendance");
 
+  // Tính tổng dòng cuối bảng
   const totals = items.reduce(
     (acc, item) => {
       const totalMinutes =
@@ -71,7 +69,8 @@ export default function MonthlyAttendanceTable({ items }: MonthlyAttendanceTable
       actualWorkedDays: 0,
     }
   );
-  
+
+  // chuyển phút thành định dạng dễ đọc
   const formatMinutes = (minutes: number): string => {
     if (!minutes || minutes === 0) return "0";
     const hours = Math.floor(minutes / 60);
@@ -161,4 +160,3 @@ export default function MonthlyAttendanceTable({ items }: MonthlyAttendanceTable
     </div>
   );
 }
-

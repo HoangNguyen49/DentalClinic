@@ -63,6 +63,7 @@ export default function DailyAttendanceTable({
   const [attendanceDetail, setAttendanceDetail] = useState<AttendanceDetail | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
   
+  // Định dạng giờ vào dạng 12h
   const formatTime = (timeStr: string | null): string => {
     if (!timeStr) return "-";
     const date = new Date(timeStr);
@@ -73,6 +74,7 @@ export default function DailyAttendanceTable({
     return `${displayHours}:${minutes.toString().padStart(2, "0")}${period}`;
   };
 
+  // Gán class css cho badge trạng thái
   const getStatusColor = (color: string): string => {
     const colors: Record<string, string> = {
       green: "bg-green-100 text-green-800",
@@ -85,6 +87,7 @@ export default function DailyAttendanceTable({
     return colors[color] || "bg-gray-100 text-gray-800";
   };
 
+  // Lấy chi tiết chấm công khi click vào dòng có id
   const fetchAttendanceDetail = async (id: number) => {
     if (!accessToken || !apiBase) return;
     
@@ -110,6 +113,7 @@ export default function DailyAttendanceTable({
     }
   };
 
+  // Đóng modal chi tiết
   const closeModal = () => {
     setSelectedAttendanceId(null);
     setAttendanceDetail(null);
@@ -160,10 +164,12 @@ export default function DailyAttendanceTable({
               onClick={() => item.id && fetchAttendanceDetail(item.id)}
             >
               <td className="px-4 py-3 text-sm text-gray-700">
-                <div className="flex items-center gap-2">
-                  {item.id || index + 1}
+                <div className="flex items-center justify-center gap-2">
+                  <span className="font-medium text-gray-600">
+                    {item.id ? `#${item.id}` : `#${index + 1}`}
+                  </span>
                   {item.id && (
-                    <Eye className="w-4 h-4 text-gray-400 hover:text-blue-600" />
+                    <Eye className="w-4 h-4 text-gray-400 hover:text-blue-600 transition-colors" />
                   )}
                 </div>
               </td>
@@ -236,8 +242,7 @@ export default function DailyAttendanceTable({
           {t("table.noAttendanceRecordsFound")}
         </div>
       )}
-      
-      {/* Modal chi tiết attendance */}
+      {/* Hiển thị popup modal chi tiết chấm công nếu có */}
       {selectedAttendanceId && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
@@ -292,7 +297,9 @@ export default function DailyAttendanceTable({
                           : "-"}
                       </div>
                     </div>
-                    {attendanceDetail.actualWorkHours !== undefined && (
+                    {attendanceDetail.actualWorkHours !== undefined && 
+                     attendanceDetail.actualWorkHours !== null && 
+                     typeof attendanceDetail.actualWorkHours === 'number' && (
                       <div>
                         <label className="text-xs text-gray-500 mb-1 block">{t("detail.actualHours", "Actual Work Hours")}</label>
                         <div className="text-sm font-medium text-gray-900">
@@ -330,4 +337,3 @@ export default function DailyAttendanceTable({
     </div>
   );
 }
-

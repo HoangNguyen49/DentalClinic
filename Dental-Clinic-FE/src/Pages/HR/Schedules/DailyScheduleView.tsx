@@ -59,13 +59,13 @@ export default function DailyScheduleView({
       <div className="bg-white rounded-xl p-12 shadow-sm border border-gray-200 text-center">
         <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
         <p className="text-gray-500 text-lg mb-2">
-          No work schedules for this date
+          {t("list.noSchedulesForDate")}
         </p>
         <button
           onClick={() => navigate("/hr/schedules/create")}
           className="mt-4 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition"
         >
-          Create new work schedule
+          {t("list.createNewSchedule")}
         </button>
       </div>
     );
@@ -85,13 +85,13 @@ export default function DailyScheduleView({
           <thead>
             <tr>
               <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800 sticky left-0 z-20">
-                Doctor
+                {t("common.doctor")}
               </th>
               <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800">
-                Morning
+                {t("list.shifts.morning")}
               </th>
               <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800">
-                Afternoon
+                {t("list.shifts.afternoon")}
               </th>
             </tr>
           </thead>
@@ -102,8 +102,8 @@ export default function DailyScheduleView({
                 className="border border-gray-300 px-4 py-12 text-center text-gray-400"
               >
                 {isWeekend
-                  ? "No sessions"
-                  : "No work schedules for this date"}
+                  ? t("list.noSessions")
+                  : t("list.noSchedulesForDate")}
               </td>
             </tr>
           </tbody>
@@ -126,13 +126,13 @@ export default function DailyScheduleView({
         <thead>
           <tr>
             <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800 sticky left-0 z-20">
-              Doctor
+              {t("common.doctor")}
             </th>
             <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800">
-              Morning
+              {t("list.shifts.morning")}
             </th>
             <th className="border border-gray-300 px-4 py-3 bg-gray-50 font-semibold text-gray-800">
-              Afternoon
+              {t("list.shifts.afternoon")}
             </th>
           </tr>
         </thead>
@@ -146,7 +146,7 @@ export default function DailyScheduleView({
                 {/* Hiển thị tên bác sĩ */}
                 <td className="border border-gray-300 px-4 py-3 font-medium text-gray-800 sticky left-0 bg-white z-10">
                   {docSchedule.doctor?.fullName ||
-                    `Doctor #${docSchedule.doctor?.id || index}`}
+                    `${t("common.doctor")} #${docSchedule.doctor?.id || index}`}
                 </td>
                 {/* Hiển thị ca sáng */}
                 <td className="border border-gray-300 px-4 py-3">
@@ -163,37 +163,36 @@ export default function DailyScheduleView({
                       </div>
                       {docSchedule.morning.clinic && (
                         <div className="text-xs text-blue-900 font-medium truncate mb-0.5">
-                          🏥 {docSchedule.morning.clinic.clinicName}
+                          {docSchedule.morning.clinic.clinicName}
                         </div>
                       )}
                       {docSchedule.morning.room && (
                         <div className="text-xs text-blue-800 truncate mb-0.5">
-                          🚪 {docSchedule.morning.room.roomName}
+                          {docSchedule.morning.room.roomName}
                         </div>
                       )}
                       {docSchedule.morning.status && (
                         <div className="text-xs text-blue-600 mt-1">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                            docSchedule.morning.status.toLowerCase() === 'active' 
-                              ? 'bg-green-200 text-green-800' 
-                              : docSchedule.morning.status.toLowerCase() === 'cancelled'
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${docSchedule.morning.status.toLowerCase() === 'active'
+                            ? 'bg-green-200 text-green-800'
+                            : docSchedule.morning.status.toLowerCase() === 'cancelled'
                               ? 'bg-red-200 text-red-800'
                               : 'bg-gray-200 text-gray-800'
-                          }`}>
+                            }`}>
                             {docSchedule.morning.status}
                           </span>
                         </div>
                       )}
                       {docSchedule.morning.note && (
                         <div className="text-xs text-blue-700 mt-1 italic truncate" title={docSchedule.morning.note}>
-                          📝 {docSchedule.morning.note}
+                          {docSchedule.morning.note}
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
                       <div className="text-xs text-gray-400">
-                        No sessions
+                        {t("list.noSessions")}
                       </div>
                     </div>
                   )}
@@ -213,37 +212,36 @@ export default function DailyScheduleView({
                       </div>
                       {docSchedule.afternoon.clinic && (
                         <div className="text-xs text-orange-900 font-medium truncate mb-0.5">
-                          🏥 {docSchedule.afternoon.clinic.clinicName}
+                          {docSchedule.afternoon.clinic.clinicName}
                         </div>
                       )}
                       {docSchedule.afternoon.room && (
                         <div className="text-xs text-orange-800 truncate mb-0.5">
-                          🚪 {docSchedule.afternoon.room.roomName}
+                          {docSchedule.afternoon.room.roomName}
                         </div>
                       )}
                       {docSchedule.afternoon.status && (
                         <div className="text-xs text-orange-600 mt-1">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${
-                            docSchedule.afternoon.status.toLowerCase() === 'active' 
-                              ? 'bg-green-200 text-green-800' 
-                              : docSchedule.afternoon.status.toLowerCase() === 'cancelled'
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${docSchedule.afternoon.status.toLowerCase() === 'active'
+                            ? 'bg-green-200 text-green-800'
+                            : docSchedule.afternoon.status.toLowerCase() === 'cancelled'
                               ? 'bg-red-200 text-red-800'
                               : 'bg-gray-200 text-gray-800'
-                          }`}>
+                            }`}>
                             {docSchedule.afternoon.status}
                           </span>
                         </div>
                       )}
                       {docSchedule.afternoon.note && (
                         <div className="text-xs text-orange-700 mt-1 italic truncate" title={docSchedule.afternoon.note}>
-                          📝 {docSchedule.afternoon.note}
+                          {docSchedule.afternoon.note}
                         </div>
                       )}
                     </div>
                   ) : (
                     <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
                       <div className="text-xs text-gray-400">
-                        No sessions
+                        {t("list.noSessions")}
                       </div>
                     </div>
                   )}

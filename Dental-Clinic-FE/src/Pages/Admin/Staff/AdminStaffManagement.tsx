@@ -4,6 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
 
+// Kiểu dữ liệu nhân viên quản trị
 type AdminStaff = {
   id: number;
   code?: string;
@@ -18,10 +19,12 @@ type AdminStaff = {
   createdAt?: string;
   lastLoginAt?: string;
   avatarUrl?: string | null;
+  hasApprovedResignation?: boolean; // Đã duyệt nghỉ việc chưa
 };
 
 const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
+// Định dạng ngày/tháng/năm
 function formatDate(value?: string) {
   if (!value) return "-";
   try {
@@ -31,6 +34,7 @@ function formatDate(value?: string) {
   }
 }
 
+// Quản lý nhân viên cho admin
 export default function AdminStaffManagement() {
   const { t } = useTranslation("admin");
   const [staff, setStaff] = useState<AdminStaff[]>([]);
@@ -39,6 +43,7 @@ export default function AdminStaffManagement() {
 
   const accessToken = localStorage.getItem("accessToken");
 
+  // Lấy danh sách nhân viên từ API
   const fetchStaff = async (keyword?: string) => {
     if (!accessToken) {
       toast.error(t("attendance.messages.noAccessToken", "Missing access token"));
@@ -64,9 +69,9 @@ export default function AdminStaffManagement() {
 
   useEffect(() => {
     fetchStaff();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Xử lý tìm kiếm
   const handleSearch = () => {
     fetchStaff(search.trim());
   };
@@ -85,6 +90,7 @@ export default function AdminStaffManagement() {
         </p>
       </div>
 
+      {/* Thanh tìm kiếm và nút clear */}
       <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col gap-4 md:flex-row md:items-end">
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -120,6 +126,7 @@ export default function AdminStaffManagement() {
         </div>
       </div>
 
+      {/* Bảng danh sách nhân viên */}
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-x-auto">
         <table className="min-w-full border-collapse">
           <thead className="bg-gray-50">
@@ -143,6 +150,9 @@ export default function AdminStaffManagement() {
                 {t("staff.table.status", "Status")}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                {t("staff.table.resignation", "Resignation")}
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
                 {t("staff.table.createdAt", "Created At")}
               </th>
               <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
@@ -151,15 +161,16 @@ export default function AdminStaffManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
+            {/* Hiển thị loading hoặc không có dữ liệu */}
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
                   {t("staff.messages.loading", "Loading staff...")}
                 </td>
               </tr>
             ) : staff.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
                   {t("staff.messages.noData", "No staff found")}
                 </td>
               </tr>
@@ -219,6 +230,15 @@ export default function AdminStaffManagement() {
                         ? t("staff.table.active", "Active")
                         : t("staff.table.inactive", "Inactive")}
                     </span>
+                  </td>
+                  <td className="px-4 py-3 text-sm">
+                    {person.hasApprovedResignation ? (
+                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
+                        {t("staff.table.approvedResignation", "Approved Resignation")}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">{formatDate(person.createdAt)}</td>
                   <td className="px-4 py-3 text-sm text-gray-700">{formatDate(person.lastLoginAt)}</td>

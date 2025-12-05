@@ -22,7 +22,8 @@
       "label": "Status",
       "all": "All",
       "active": "Active",
-      "locked": "Locked"
+      "locked": "Locked",
+      "resignation": "Resignation"
     },
     "clearFilters": "Clear Filters",
     "table": {
@@ -36,7 +37,13 @@
       "actions": "Actions",
       "viewProfile": "View Profile",
       "deleteEmployee": "Delete Employee",
+      "restoreEmployee": "Restore Account",
+      "hardDeleteEmployee": "Hard Delete",
       "moreActions": "More actions"
+    },
+    "tabs": {
+      "active": "Active Employees",
+      "deleted": "Deleted Employees"
     },
     "pagination": {
       "show": "Show",
@@ -115,7 +122,13 @@
     "validation": {
       "fillRequired": "Please fill in all required information",
       "selectImage": "Please select an image file",
-      "imageSize": "Image size must not exceed 5MB"
+      "imageSize": "Image size must not exceed 5MB",
+      "selectRole": "Please select a role for the employee.",
+      "selectClinic": "Please select a clinic for this employee."
+    },
+    "faceRegistration": {
+      "title": "Note about face registration",
+      "description": "New employees will be required to register their face for attendance when logging in for the first time. There is no need to upload a photo here."
     },
     "messages": {
       "failedToLoad": "Failed to load drop-down data",
@@ -134,6 +147,14 @@
       "clinicId": "Clinic",
       "roomId": "Room"
     }
+  },
+  "specialties": {
+    "preventiveCare": "Preventive Care",
+    "dentalImplants": "Dental Implants",
+    "orthodontics": "Orthodontics",
+    "cosmeticDentistry": "Cosmetic Dentistry",
+    "oralSurgery": "Oral Surgery",
+    "pediatricDentistry": "Pediatric Dentistry"
   },
   "detail": {
     "back": "Back",
@@ -181,7 +202,7 @@
     }
   },
   "delete": {
-    "confirm": "Are you sure you want to delete employee \"{name}\"?\n\nNote: This action will lock this employee account.",
+    "confirm": "Are you sure you want to delete employee \"{{name}}\"?\n\nNote: This action will lock this employee account.",
     "reason": "Reason for deleting the employee:",
     "enterReason": "Please enter a reason for deleting the employee",
     "success": "Delete employee successfully",
@@ -191,9 +212,26 @@
     "notExist": "This employee does not exist.",
     "needLogin": "You need to log in to perform this action"
   },
+  "restore": {
+    "confirm": "Are you sure you want to restore employee \"{{name}}\"'s account?\n\nNote: The system will automatically update the face profile from the avatar image for attendance. The employee must have an avatar.",
+    "reason": "Reason for restoring:",
+    "enterReason": "Please enter a reason for restoring",
+    "success": "Account restored successfully. Face profile has been updated.",
+    "failed": "Cannot restore account",
+    "sessionExpired": "Session expired. Please log in again.",
+    "noPermission": "You do not have permission to perform this action.",
+    "notExist": "This employee does not exist.",
+    "needLogin": "You need to log in to perform this action",
+    "alreadyActive": "This account is already active",
+    "noAvatar": "Cannot restore: Employee does not have an avatar. Please upload avatar first.",
+    "faceSyncFailed": "Restore failed: Unable to update face profile. Please check the avatar image and try again.",
+    "avatarRequired": "Please select a new avatar image to restore the account.",
+    "invalidImageType": "Invalid file type. Please select an image file (JPG, PNG, WEBP, GIF)."
+  },
   "messages": {
     "pleaseLogin": "Please log in",
     "cannotLoadMasterData": "Cannot load department/role data",
+    "employeeNotFound": "Employee not found",
     "cannotLoadList": "Cannot load employee list"
   },
   "status": {
@@ -204,4 +242,3 @@
     "na": "N/A"
   }
 }
-

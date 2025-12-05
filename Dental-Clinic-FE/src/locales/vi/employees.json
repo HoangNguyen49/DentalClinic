@@ -22,7 +22,8 @@
       "label": "Trạng Thái",
       "all": "Tất cả",
       "active": "Đang hoạt động",
-      "locked": "Đã khóa"
+      "locked": "Đã khóa",
+      "resignation": "Nghỉ việc"
     },
     "clearFilters": "Xóa Bộ Lọc",
     "table": {
@@ -36,7 +37,13 @@
       "actions": "Thao Tác",
       "viewProfile": "Xem Hồ Sơ",
       "deleteEmployee": "Xóa Nhân Viên",
+      "restoreEmployee": "Kích Hoạt Lại",
+      "hardDeleteEmployee": "Xóa vĩnh viễn",
       "moreActions": "Thêm thao tác"
+    },
+    "tabs": {
+      "active": "Nhân Viên Đang Hoạt Động",
+      "deleted": "Nhân Viên Đã Xóa"
     },
     "pagination": {
       "show": "Hiển thị",
@@ -115,7 +122,13 @@
     "validation": {
       "fillRequired": "Vui lòng điền đầy đủ thông tin bắt buộc",
       "selectImage": "Vui lòng chọn file ảnh",
-      "imageSize": "Kích thước ảnh không được vượt quá 5MB"
+      "imageSize": "Kích thước ảnh không được vượt quá 5MB",
+      "selectRole": "Vui lòng chọn vai trò cho nhân viên.",
+      "selectClinic": "Vui lòng chọn phòng khám cho nhân viên này."
+    },
+    "faceRegistration": {
+      "title": "Lưu ý về đăng ký khuôn mặt",
+      "description": "Nhân viên mới sẽ được yêu cầu đăng ký khuôn mặt để chấm công khi đăng nhập lần đầu. Không cần tải ảnh lên tại đây."
     },
     "messages": {
       "failedToLoad": "Tải dữ liệu dropdown thất bại",
@@ -134,6 +147,14 @@
       "clinicId": "Cơ Sở",
       "roomId": "Phòng"
     }
+  },
+  "specialties": {
+    "preventiveCare": "Chăm sóc phòng ngừa",
+    "dentalImplants": "Cấy ghép nha khoa",
+    "orthodontics": "Chỉnh nha",
+    "cosmeticDentistry": "Nha khoa thẩm mỹ",
+    "oralSurgery": "Phẫu thuật miệng",
+    "pediatricDentistry": "Nha khoa trẻ em"
   },
   "detail": {
     "back": "Quay lại",
@@ -181,7 +202,7 @@
     }
   },
   "delete": {
-    "confirm": "Bạn có chắc chắn muốn xóa nhân viên \"{name}\"?\n\nLưu ý: Hành động này sẽ khóa tài khoản nhân viên này.",
+    "confirm": "Bạn có chắc chắn muốn xóa nhân viên \"{{name}}\"?\n\nLưu ý: Hành động này sẽ khóa tài khoản nhân viên này.",
     "reason": "Lý do xóa nhân viên:",
     "enterReason": "Vui lòng nhập lý do xóa nhân viên",
     "success": "Xóa nhân viên thành công",
@@ -191,9 +212,26 @@
     "notExist": "Nhân viên này không tồn tại.",
     "needLogin": "Bạn cần đăng nhập để thực hiện hành động này"
   },
+  "restore": {
+    "confirm": "Bạn có chắc chắn muốn kích hoạt lại tài khoản của nhân viên \"{{name}}\"?\n\nLưu ý: Hệ thống sẽ tự động cập nhật lại khuôn mặt từ ảnh đại diện để có thể chấm công. Nhân viên phải có ảnh đại diện.",
+    "reason": "Lý do kích hoạt lại:",
+    "enterReason": "Vui lòng nhập lý do kích hoạt lại",
+    "success": "Kích hoạt lại tài khoản thành công. Khuôn mặt đã được cập nhật.",
+    "failed": "Không thể kích hoạt lại tài khoản",
+    "sessionExpired": "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.",
+    "noPermission": "Bạn không có quyền thực hiện hành động này.",
+    "notExist": "Nhân viên này không tồn tại.",
+    "needLogin": "Bạn cần đăng nhập để thực hiện hành động này",
+    "alreadyActive": "Tài khoản này đã đang hoạt động",
+    "noAvatar": "Không thể kích hoạt lại: Nhân viên chưa có ảnh đại diện. Vui lòng cập nhật ảnh đại diện trước.",
+    "faceSyncFailed": "Kích hoạt lại tài khoản thất bại: Không thể cập nhật khuôn mặt. Vui lòng kiểm tra ảnh đại diện và thử lại.",
+    "avatarRequired": "Vui lòng chọn ảnh đại diện mới để kích hoạt lại tài khoản.",
+    "invalidImageType": "File không hợp lệ. Vui lòng chọn file ảnh (JPG, PNG, WEBP, GIF)."
+  },
   "messages": {
     "pleaseLogin": "Vui lòng đăng nhập",
     "cannotLoadMasterData": "Không thể tải dữ liệu phòng ban/vai trò",
+    "employeeNotFound": "Nhân viên không tồn tại",
     "cannotLoadList": "Không thể tải danh sách nhân viên"
   },
   "status": {
@@ -204,4 +242,3 @@
     "na": "N/A"
   }
 }
-

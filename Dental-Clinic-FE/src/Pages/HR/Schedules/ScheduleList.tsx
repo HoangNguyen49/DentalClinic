@@ -179,7 +179,7 @@ function ScheduleList() {
       const diff = today.getDate() - day + (day === 0 ? -6 : 1);
       const monday = new Date(today.setDate(diff));
       const currentWeekStartStr = monday.toISOString().split("T")[0];
-      
+
       if (currentWeekStart === currentWeekStartStr) {
         // Đang ở tuần hiện tại, dùng endpoint /next-week
         setLoading(true);
@@ -467,14 +467,14 @@ function ScheduleList() {
                   {viewMode === "weekly"
                     ? month
                     : selectedDayInfo
-                    ? `${selectedDayInfo.dayName}, ${selectedDayInfo.dayNum}`
-                    : ""}
+                      ? `${selectedDayInfo.dayName}, ${selectedDayInfo.dayNum}`
+                      : ""}
                 </div>
                 <div className="text-sm text-gray-600">
                   {viewMode === "weekly"
                     ? headerDate
                     : selectedDayInfo
-                    ? new Date(selectedDate).toLocaleDateString(
+                      ? new Date(selectedDate).toLocaleDateString(
                         i18n.language === "vi" ? "vi-VN" : "en-US",
                         {
                           day: "numeric",
@@ -482,7 +482,7 @@ function ScheduleList() {
                           year: "numeric",
                         }
                       )
-                    : ""}
+                      : ""}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -491,16 +491,16 @@ function ScheduleList() {
                     <button
                       onClick={() => navigateWeek("prev")}
                       className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      aria-label="Previous week"
-                      title="Previous week"
+                      aria-label={t("list.previousWeek")}
+                      title={t("list.previousWeek")}
                     >
                       <ChevronLeft className="w-5 h-5 text-gray-600" />
                     </button>
                     <button
                       onClick={() => navigateWeek("next")}
                       className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      aria-label="Next week"
-                      title="Next week"
+                      aria-label={t("list.nextWeek")}
+                      title={t("list.nextWeek")}
                     >
                       <ChevronRight className="w-5 h-5 text-gray-600" />
                     </button>
@@ -510,16 +510,16 @@ function ScheduleList() {
                     <button
                       onClick={() => navigateDay("prev")}
                       className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      aria-label="Previous day"
-                      title="Previous day"
+                      aria-label={t("list.previousDay")}
+                      title={t("list.previousDay")}
                     >
                       <ChevronLeft className="w-5 h-5 text-gray-600" />
                     </button>
                     <button
                       onClick={() => navigateDay("next")}
                       className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 transition-colors"
-                      aria-label="Next day"
-                      title="Next day"
+                      aria-label={t("list.nextDay")}
+                      title={t("list.nextDay")}
                     >
                       <ChevronRight className="w-5 h-5 text-gray-600" />
                     </button>
@@ -531,23 +531,21 @@ function ScheduleList() {
               <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => handleViewModeChange("daily")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === "daily"
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === "daily"
                       ? "bg-white text-purple-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-900"
-                  }`}
+                    }`}
                 >
-                  Daily
+                  {t("list.viewMode.daily")}
                 </button>
                 <button
                   onClick={() => handleViewModeChange("weekly")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === "weekly"
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === "weekly"
                       ? "bg-white text-purple-600 shadow-sm"
                       : "text-gray-600 hover:text-gray-900"
-                  }`}
+                    }`}
                 >
-                  Weekly
+                  {t("list.viewMode.weekly")}
                 </button>
               </div>
               {viewMode === "daily" && (
@@ -556,7 +554,7 @@ function ScheduleList() {
                   value={selectedDate}
                   onChange={(e) => handleDateChange(e.target.value)}
                   className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  title="Select date"
+                  title={t("list.selectDate")}
                 />
               )}
               <button
@@ -564,7 +562,7 @@ function ScheduleList() {
                 className="flex items-center gap-2 px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition shadow-sm"
               >
                 <Plus className="w-5 h-5" />
-                Create new schedule
+                {t("list.createNewSchedule")}
               </button>
             </div>
           </div>

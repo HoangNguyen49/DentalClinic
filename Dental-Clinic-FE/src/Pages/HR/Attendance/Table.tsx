@@ -25,20 +25,20 @@ export const Table: React.FC<TableProps> = ({
     onProcess,
     tableRef,
 }) => {
-    const { t } = useTranslation("admin");
+    const { t } = useTranslation("web");
 
-    // Lấy nhãn tiếng anh dựa trên type explanation
+    // trả về nhãn loại giải trình
     const getExplanationTypeLabel = (type?: string | null): string => {
         if (!type) return "-";
         switch (type.toUpperCase()) {
             case "LATE":
-                return t("attendance.explanation.typeLate", "Late Arrival");
+                return t("attendance.explanationType.LATE");
             case "ABSENT":
-                return t("attendance.explanation.typeAbsent", "Absent");
+                return t("attendance.explanationType.ABSENT");
             case "MISSING_CHECK_IN":
-                return t("attendance.explanation.typeMissingCheckIn", "Missing Check-In");
+                return t("attendance.explanationType.MISSING_CHECK_IN");
             case "MISSING_CHECK_OUT":
-                return t("attendance.explanation.typeMissingCheckOut", "Missing Check-Out");
+                return t("attendance.explanationType.MISSING_CHECK_OUT");
             default:
                 return type;
         }
@@ -51,11 +51,11 @@ export const Table: React.FC<TableProps> = ({
         >
             {loading ? (
                 <div className="px-5 py-8 text-center text-slate-500">
-                    Loading attendance records...
+                    {t("attendance.hrManagement.loading")}
                 </div>
             ) : explanations.length === 0 ? (
                 <div className="px-5 py-8 text-center text-slate-500">
-                    No pending explanations
+                    {t("attendance.hrManagement.noPending")}
                 </div>
             ) : (
                 <div className="overflow-x-auto">
@@ -63,31 +63,31 @@ export const Table: React.FC<TableProps> = ({
                         <thead className="bg-slate-50">
                             <tr>
                                 <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
-                                    Employee
+                                    {t("attendance.hrManagement.table.employee")}
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
-                                    Clinic
+                                    {t("attendance.hrManagement.table.clinic")}
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
-                                    Work Date
+                                    {t("attendance.hrManagement.table.workDate")}
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
-                                    Type
+                                    {t("attendance.hrManagement.table.type")}
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
-                                    Reason
+                                    {t("attendance.hrManagement.table.reason")}
                                 </th>
                                 <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
-                                    Status
+                                    {t("attendance.hrManagement.table.status")}
                                 </th>
                                 <th className="px-6 py-4 text-right text-sm font-semibold uppercase tracking-wide text-slate-500">
-                                    Actions
+                                    {t("attendance.hrManagement.table.actions")}
                                 </th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
                             {explanations.map((explanation) => {
-                                // Kiểm tra xem có highlight dòng này không
+                                // highlight dòng đang chọn
                                 const isHighlighted = highlightedAttendanceId === explanation.attendanceId;
                                 return (
                                     <tr
@@ -115,7 +115,7 @@ export const Table: React.FC<TableProps> = ({
                                             </div>
                                         </td>
                                         <td className="px-6 py-5 text-base text-slate-700">
-                                            {explanation.clinicName || "Unknown clinic"}
+                                            {explanation.clinicName || t("attendance.hrManagement.unknownClinic")}
                                         </td>
                                         <td className="px-6 py-5 text-base text-slate-700">
                                             {explanation.workDate}
@@ -135,47 +135,47 @@ export const Table: React.FC<TableProps> = ({
                                         </td>
                                         <td className="px-6 py-5 text-base font-medium">
                                             <span className="inline-flex items-center rounded-full border border-amber-100 bg-amber-50 px-4 py-1.5 text-sm font-semibold text-amber-700">
-                                                Pending
+                                                {t("attendance.explanationStatus.PENDING")}
                                             </span>
                                         </td>
                                         <td className="px-6 py-5 text-base text-right space-y-3">
-                                            {/* // nhập ghi chú của HR */}
+                                            {/* nhập ghi chú HR */}
                                             <textarea
                                                 rows={2}
                                                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
-                                                placeholder="Add HR note (optional)"
+                                                placeholder={t("attendance.hrManagement.addNotePlaceholder")}
                                                 value={actionNotes[explanation.attendanceId] || ""}
                                                 onChange={(e) => onNoteChange(explanation.attendanceId, e.target.value)}
                                             />
-                                            {/* // nếu là loại thiếu check out thì cho nhập giờ check out thực tế */}
+                                            {/* nhập giờ check out thực tế nếu thiếu check out */}
                                             {explanation.explanationType === "MISSING_CHECK_OUT" && (
                                                 <div className="mt-2">
                                                     <label className="text-xs font-semibold text-slate-500 block mb-1">
-                                                        Actual Check-out Time (Optional)
+                                                        {t("attendance.hrManagement.actualCheckOutTime")}
                                                     </label>
                                                     <input
                                                         type="time"
                                                         className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 shadow-inner focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200"
                                                         value={customTimes[explanation.attendanceId] || ""}
                                                         onChange={(e) => onTimeChange(explanation.attendanceId, e.target.value)}
-                                                        aria-label="Actual Check-out Time (Optional)"
+                                                        aria-label={t("attendance.hrManagement.actualCheckOutTime")}
                                                     />
                                                 </div>
                                             )}
                                             <div className="flex flex-col gap-2 md:flex-row md:justify-end">
-                                                {/* // duyệt giải trình */}
+                                                {/* duyệt giải trình */}
                                                 <button
                                                     onClick={() => onProcess(explanation, "APPROVE")}
                                                     className="rounded-xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:-translate-y-0.5 hover:bg-emerald-700"
                                                 >
-                                                    Approve
+                                                    {t("attendance.hrManagement.approve")}
                                                 </button>
-                                                {/* // từ chối giải trình */}
+                                                {/* từ chối giải trình */}
                                                 <button
                                                     onClick={() => onProcess(explanation, "REJECT")}
                                                     className="rounded-xl bg-rose-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-rose-500/30 transition hover:-translate-y-0.5 hover:bg-rose-700"
                                                 >
-                                                    Reject
+                                                    {t("attendance.hrManagement.reject")}
                                                 </button>
                                             </div>
                                         </td>

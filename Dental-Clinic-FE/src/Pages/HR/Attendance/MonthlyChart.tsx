@@ -31,6 +31,7 @@ type MonthlyChartProps = {
 
 export default function MonthlyChart({ monthlySummary, loading, loadingSummary }: MonthlyChartProps) {
   const { t } = useTranslation("attendance");
+  // loại bỏ các phòng ban không nên hiển thị trong biểu đồ
   const forbiddenDepartments = [
     "ADMIN",
     "ADMINISTRATION",
@@ -53,7 +54,7 @@ export default function MonthlyChart({ monthlySummary, loading, loadingSummary }
           {t("chart.monthlyAttendanceStatistics")}
         </h2>
       </div>
-
+      {/* Hiển thị trạng thái loading hoặc không có dữ liệu */}
       {loading ? (
         <div className="text-center py-8">{t("messages.loading")}</div>
       ) : sanitizedSummary.length === 0 ? (
@@ -77,6 +78,7 @@ export default function MonthlyChart({ monthlySummary, loading, loadingSummary }
               bottom: 60,
             }}
           >
+            {/* Định nghĩa gradient màu cho các cột biểu đồ */}
             <defs>
               <linearGradient id="absentGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#8b5cf6" stopOpacity={1} />
@@ -131,6 +133,7 @@ export default function MonthlyChart({ monthlySummary, loading, loadingSummary }
               wrapperStyle={{ paddingTop: '20px', color: '#374151' }}
               iconType="square"
             />
+            {/* Các cột dữ liệu chấm công sẽ được gom (stack) vào cùng một cột trên biểu đồ */}
             <Bar 
               dataKey="Absent" 
               stackId="a" 
@@ -172,4 +175,3 @@ export default function MonthlyChart({ monthlySummary, loading, loadingSummary }
     </div>
   );
 }
-

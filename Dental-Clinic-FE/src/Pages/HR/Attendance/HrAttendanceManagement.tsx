@@ -3,9 +3,11 @@ import "react-toastify/dist/ReactToastify.css";
 import { useExplanations } from "./hrservice/useExplanations";
 import { Filters } from "./Filters";
 import { Table } from "./Table";
+import { useTranslation } from "react-i18next";
 
 export default function HrAttendanceManagement() {
-  // Hook quản lý và lấy dữ liệu giải trình chấm công
+  const { t } = useTranslation("web");
+  // Lấy dữ liệu giải trình chấm công và các handler
   const {
     clinics,
     pendingExplanations,
@@ -17,9 +19,9 @@ export default function HrAttendanceManagement() {
     highlightedAttendanceId,
     explanationsTableRef,
     fetchPendingExplanations,
-    handleProcessExplanation,      // Xử lý hành động duyệt hoặc từ chối giải trình
-    handleNoteChange,              // Xử lý thay đổi ghi chú cho từng giải trình
-    handleCustomTimeChange,        // Xử lý thay đổi giờ checkin/checkout thủ công
+    handleProcessExplanation,      // Duyệt hoặc từ chối giải trình
+    handleNoteChange,              // Thay đổi ghi chú giải trình
+    handleCustomTimeChange,        // Thay đổi giờ thủ công
   } = useExplanations();
 
   const palette = {
@@ -34,25 +36,27 @@ export default function HrAttendanceManagement() {
       <div className="max-w-7xl mx-auto space-y-8">
         <section className="space-y-4">
           <p className="text-xs font-semibold tracking-[0.35em] uppercase text-slate-400">
-            HR • Attendance Explanations
+            {t("attendance.hrManagement.breadcrumb")}
           </p>
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
             <div className="space-y-3">
-              <h1 className={`text-4xl font-bold ${palette.heading}`}>Pending Explanations</h1>
+              <h1 className={`text-4xl font-bold ${palette.heading}`}>{t("attendance.hrManagement.title")}</h1>
               <p className={`text-base leading-relaxed ${palette.subtleText}`}>
-                Review and process attendance explanations submitted by employees.
+                {t("attendance.hrManagement.subtitle")}
               </p>
             </div>
           </div>
         </section>
 
+        {/* Bộ lọc phòng khám và refresh */}
         <Filters
           clinics={clinics}
           selectedClinic={explanationClinicFilter}
-          onClinicChange={setExplanationClinicFilter} // Đổi clinic lọc
-          onRefresh={fetchPendingExplanations} // Làm mới danh sách giải trình
+          onClinicChange={setExplanationClinicFilter}
+          onRefresh={fetchPendingExplanations}
         />
 
+        {/* Bảng giải trình chấm công */}
         <Table
           explanations={pendingExplanations}
           loading={loadingExplanations}

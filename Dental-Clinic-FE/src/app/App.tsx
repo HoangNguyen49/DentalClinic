@@ -23,6 +23,7 @@ import EmployeeDetail from "../Pages/HR/Employees/EmployeeDetail";
 import DailyAttendanceView from "../Pages/HR/Attendance/DailyAttendanceView";
 import LeaveRequestList from "../Pages/HR/LeaveRequests/LeaveRequestList";
 import LeaveRequestManagement from "../Pages/HR/LeaveRequests/LeaveRequestManagement";
+import FaceProfileApprovalManagement from "../Pages/HR/Employees/FaceProfileApprovalManagement";
 import Service from "../Pages/Service";
 import About from "../Pages/About";
 import ContactPage from "../Pages/Contact";
@@ -35,6 +36,8 @@ import ClinicManagement from "../Pages/Admin/Clinics/ClinicManagement";
 import AdminAttendanceManagement from "../Pages/Admin/Attendance/AdminAttendanceManagement";
 import HrAttendanceManagement from "../Pages/HR/Attendance/HrAttendanceManagement";
 import AdminStaffManagement from "../Pages/Admin/Staff/AdminStaffManagement";
+import AdminSystemPage from "../Pages/Admin/System/AdminSystemPage";
+import AdminLeaveApproval from "../Pages/Admin/LeaveRequests/AdminLeaveApproval";
 import ReceptionLayout from "../app/layout/ReceptionLayout";
 import ProtectedRouteReception from "../app/routes/ProtectedRouteReception";
 import ReceptionDashboard from "../Pages/Reception/Dashboard/ReceptionDashboard";
@@ -77,6 +80,8 @@ function App() {
                 />
                 <Route path="clinics" element={<ClinicManagement />} />
                 <Route path="staff" element={<AdminStaffManagement />} />
+                <Route path="system" element={<AdminSystemPage />} />
+                <Route path="leave-requests" element={<AdminLeaveApproval />} />
               </Route>
             </Route>
 
@@ -91,6 +96,7 @@ function App() {
                 <Route path="schedules" element={<ScheduleList />} />
                 <Route path="schedules/create" element={<CreateScheduleForm />} />
                 <Route path="leave-requests" element={<LeaveRequestManagement />} />
+                <Route path="face-profile-approvals" element={<FaceProfileApprovalManagement />} />
               </Route>
             </Route>
 

@@ -12,6 +12,8 @@ const NotificationBell: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+    const [badgeAnimation, setBadgeAnimation] = useState<'bounce' | 'pulse' | ''>('');
+    const prevUnreadCountRef = useRef(unreadCount);
 
     // Đóng dropdown khi bấm ra ngoài
     useEffect(() => {
@@ -23,6 +25,57 @@ const NotificationBell: React.FC = () => {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Thêm CSS animation tùy chỉnh vào document
+    useEffect(() => {
+        const styleId = 'notification-badge-animation';
+        if (!document.getElementById(styleId)) {
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.textContent = `
+                @keyframes badgePop {
+                    0% { 
+                        transform: scale(1) translateY(0); 
+                    }
+                    25% { 
+                        transform: scale(1.4) translateY(-6px); 
+                    }
+                    50% { 
+                        transform: scale(1.2) translateY(-3px); 
+                    }
+                    75% { 
+                        transform: scale(1.1) translateY(-1px); 
+                    }
+                    100% { 
+                        transform: scale(1) translateY(0); 
+                    }
+                }
+                .animate-badgePop {
+                    animation: badgePop 0.6s ease-in-out;
+                }
+            `;
+            document.head.appendChild(style);
+        }
+        return () => {
+            // Không xóa style vì có thể component khác cũng dùng
+        };
+    }, []);
+
+    // Animation khi số thông báo thay đổi
+    useEffect(() => {
+        // Nếu số thông báo tăng lên (có thông báo mới)
+        if (unreadCount > prevUnreadCountRef.current) {
+            // Animation bounce khi có thông báo mới
+            setBadgeAnimation('bounce');
+            // Reset animation sau khi hoàn thành
+            const timer = setTimeout(() => {
+                setBadgeAnimation('');
+            }, 600);
+            return () => clearTimeout(timer);
+        }
+        // Cập nhật previous count
+        prevUnreadCountRef.current = unreadCount;
+    }, [unreadCount]);
 
     // Đánh dấu 1 thông báo là đã đọc
     const handleMarkAsRead = (e: React.MouseEvent, id: number) => {
@@ -46,7 +99,9 @@ const NotificationBell: React.FC = () => {
 
         switch (relatedEntityType.toUpperCase()) {
             case 'LEAVE_REQUEST':
-                if (isHR) {
+                if (isAdmin) {
+                    navigate('/admin/leave-requests');
+                } else if (isHR) {
                     navigate('/hr/leave-requests');
                 } else {
                     navigate('/my-leave-requests');
@@ -81,7 +136,14 @@ const NotificationBell: React.FC = () => {
                 <span className="sr-only">Open notifications</span>
                 <Bell className="w-6 h-6" />
                 {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[20px] px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-lg border-2 border-white">
+                    <span 
+                        className={`absolute -top-1 -right-1 inline-flex items-center justify-center min-w-[20px] px-1.5 py-0.5 text-xs font-bold leading-none text-white bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-lg border-2 border-white transition-all duration-300 ${
+                            badgeAnimation === 'bounce' 
+                                ? 'animate-badgePop' 
+                                : ''
+                        }`}
+                        key={`badge-${unreadCount}`}
+                    >
                         {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                 )}

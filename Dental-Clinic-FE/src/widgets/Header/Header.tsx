@@ -74,7 +74,7 @@ function Header() {
   };
 
   const handleGetInTouch = () => {
-      navigate("/booking");
+    navigate("/booking");
   }
 
   // check role ADMIN
@@ -86,17 +86,22 @@ function Header() {
   const isReception = Array.isArray(user?.roles)
     ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_RECEPTION" || r.toUpperCase() === "RECEPTION")
     : user?.role?.toUpperCase() === "RECEPTION";
-  
+
   // check role HR
   const isHR = Array.isArray(user?.roles)
     ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_HR" || r.toUpperCase() === "HR")
     : user?.role?.toUpperCase() === "HR";
-  
+
   // check role USER
   const isUser = Array.isArray(user?.roles)
     ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_USER" || r.toUpperCase() === "USER")
     : user?.role?.toUpperCase() === "USER";
-  
+
+  // check role ACCOUNTANT
+  const isAccountant = Array.isArray(user?.roles)
+    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_ACCOUNTANT" || r.toUpperCase() === "ACCOUNTANT")
+    : user?.role?.toUpperCase() === "ACCOUNTANT";
+
   // Ẩn "My Attendance" nếu là USER hoặc ADMIN
   const shouldHideMyAttendance = isUser || isAdmin;
 
@@ -150,7 +155,7 @@ function Header() {
           {user && <NotificationBell />}
 
           <CartIconButton />
-          
+
           {!user ? (
             <Link to="/login">
               <button className="px-5 py-2 rounded-full border-2 border-[#3366FF] text-[#3366FF] font-bold transition hover:bg-[#3366FF] hover:text-white">
@@ -213,12 +218,20 @@ function Header() {
                       {t("account.adminDashboard")}
                     </Link>
                   )}
-                  {isReception &&(
+                  {isReception && (
                     <Link
                       to="/reception/dashboard"
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
                     >
                       {t("account.receptionDashboard", "Reception Dashboard")}
+                    </Link>
+                  )}
+                  {isAccountant && (
+                    <Link
+                      to="/accountant"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                    >
+                      {t("account.accountantDashboard", "Accountant Dashboard")}
                     </Link>
                   )}
                   <button
@@ -233,9 +246,9 @@ function Header() {
           )}
 
           {/* Get In Touch Button */}
-          <button 
-          onClick={handleGetInTouch}
-          className="group relative inline-flex h-[56px] items-center justify-center rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] px-6 font-bold text-white transition-all duration-300 ease-in-out overflow-hidden">
+          <button
+            onClick={handleGetInTouch}
+            className="group relative inline-flex h-[56px] items-center justify-center rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] px-6 font-bold text-white transition-all duration-300 ease-in-out overflow-hidden">
             <div className="absolute right-0 top-0 h-full w-0 bg-[#6699FF] opacity-0 transition-all duration-500 ease-in-out group-hover:w-full group-hover:opacity-80" />
             <span className="relative z-10 flex items-center gap-2">
               {t("cta.getInTouch")}

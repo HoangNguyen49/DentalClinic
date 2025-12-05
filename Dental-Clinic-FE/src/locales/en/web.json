@@ -8,7 +8,8 @@
   },
   "auth": {
     "login": "Login",
-    "logout": "Logout"
+    "logout": "Logout",
+    "sessionExpired": "Session expired"
   },
   "account": {
     "myAccount": "My Account",
@@ -46,6 +47,31 @@
       "submitFailed": "Failed to submit explanation",
       "enterReason": "Please enter explanation reason",
       "noExplanationsForDate": "No explanations needed for this date"
+    },
+    "hrManagement": {
+      "breadcrumb": "HR • Attendance Explanations",
+      "title": "Pending Explanations",
+      "subtitle": "Review and process attendance explanations submitted by employees.",
+      "loading": "Loading attendance records...",
+      "noPending": "No pending explanations",
+      "unknownClinic": "Unknown clinic",
+      "addNotePlaceholder": "Add HR note (optional)",
+      "actualCheckOutTime": "Actual Check-out Time (Optional)",
+      "table": {
+        "employee": "Employee",
+        "clinic": "Clinic",
+        "workDate": "Work Date",
+        "type": "Type",
+        "reason": "Reason",
+        "status": "Status",
+        "actions": "Actions"
+      },
+      "approve": "Approve",
+      "reject": "Reject"
+    },
+    "filters": {
+      "clinic": "Clinic",
+      "allClinics": "All clinics"
     },
     "monthlyHistory": {
       "title": "Monthly Attendance History",
@@ -116,7 +142,7 @@
     },
     "reason": "Reason",
     "reasonPlaceholder": "Enter leave reason...",
-      "shiftType": "Shift",
+    "shiftType": "Shift",
     "shiftTypeHint": "Select the shift you want to take leave. If you select full day, you will be off for both morning and afternoon shifts.",
     "shiftTypes": {
       "fullDay": "Full Day",
@@ -153,6 +179,45 @@
       "fillAllFields": "Please fill in all required fields",
       "invalidDateRange": "Start date must be before end date",
       "pastDate": "Cannot create request for past dates"
+    },
+    "employee": "Employee",
+    "time": "Time",
+    "monthlyLeave": "Leave this month",
+    "replacement": "Replacement",
+    "none": "None",
+    "remainingLeave": "Remaining Leave",
+    "available": "Available",
+    "allApproved": "All Approved Requests",
+    "resignation": {
+      "filter": "Resignation Requests (Deletable)",
+      "noApproved": "No approved resignation requests yet",
+      "tip": "Tip: Select \"Resignation Requests\" tab to view approved resignation requests that can be permanently deleted",
+      "adminConfirmed": "Confirmed. HR will perform permanent deletion in Employee Management page.",
+      "title": "RESIGNATION APPLICATION",
+      "subtitle": "Request for permanent deletion",
+      "important": "IMPORTANT",
+      "processTitle": "Permanent deletion process",
+      "step1": "HR Approved",
+      "step2": "Admin Confirm",
+      "step3": "Data Deletion",
+      "warningTitle": "WARNING: PERMANENT DELETION",
+      "warningMessage": "You are reviewing a resignation request. If approved, the employee account will be deactivated. Then, HR can perform permanent data deletion.",
+      "hardDelete": {
+        "button": "Hard Delete",
+        "confirmTitle": "WARNING: PERMANENT DELETION",
+        "confirmMessage": "You are about to PERMANENTLY DELETE employee \"{{name}}\".\n\nThis action CANNOT be undone and will delete:\n- All attendance data\n- Leave request history\n- Personal info and account\n- Face data\n\nAre you sure you want to proceed?",
+        "reasonPrompt": "Enter reason for permanent deletion (min 10 chars):",
+        "reasonTooShort": "Reason must be at least 10 characters",
+        "success": "Permanently deleted employee successfully",
+        "failed": "Failed to permanently delete employee",
+        "enterReason": "Please enter a reason",
+        "finalConfirm": "Confirm permanent deletion of employee \"{{name}}\"?\n\nThis action CANNOT be undone!",
+        "noPermission": "You do not have permission to permanently delete employees. Only HR has this permission."
+      },
+      "note": "Note: Resignation requests need to be approved by HR and confirmed by Admin. Once approved, you may be permanently deleted from the system.",
+      "dateNote": "Resignation Date: You will be resigned 1 month after the application date ({{date}}).",
+      "autoDateTitle": "Resignation date is automatically set to 1 month after application date",
+      "warning": "⚠️ Resignation Request: Once approved by HR and confirmed by Admin, you may be permanently deleted from the system."
     }
   },
   "common": {
@@ -168,20 +233,20 @@
     "page": "Page"
   },
   "cta": {
-    "getInTouch": "Get In Touch"
+    "getInTouch": "Liên hệ ngay"
   },
   "footer": {
-    "address": "Ở ĐÂU CÒN LÂU MỚI NÓI VÌ CHƯA CODE XONG",
-    "slogan": "Smile Bright, Live Better",
-    "doctors": "Doctors",
-    "license": "License",
-    "about": "About Us",
+    "address": "40 đường Sanguin, Oklahoma, Hoa Kỳ",
+    "slogan": "Tỏa sáng nụ cười, sống tốt hơn",
+    "doctors": "Bác sĩ",
+    "license": "Giấy phép",
+    "about": "Về chúng tôi",
     "workingHours": {
-      "title": "Working Hours",
-      "weekday": "Mon - Fri: 09:00 AM - 18:00 PM",
-      "weekend": "Sat - Sun: 09:00 AM - 16:00 PM"
+      "title": "Giờ làm việc",
+      "weekday": "Thứ 2 - Thứ 6: 09:00 - 18:00",
+      "weekend": "Thứ 7 - Chủ nhật: 09:00 - 16:00"
     },
-    "poweredBy": "Powered by",
-    "copyright": "Copyright"
+    "poweredBy": "Vận hành bởi",
+    "copyright": "Bản quyền"
   }
 }

@@ -16,7 +16,7 @@ type AttendanceFiltersProps = {
   onMonthChange: (month: number) => void;
 };
 
-// Bộ lọc giao diện trên đầu trang, chọn theo ngày hoặc theo tháng
+// Bộ lọc chế độ xem chấm công trên đầu trang
 export default function AttendanceFilters({
   viewMode,
   workDate,
@@ -27,12 +27,12 @@ export default function AttendanceFilters({
   onMonthChange,
 }: AttendanceFiltersProps) {
   const { t } = useTranslation("attendance");
-  
+
   return (
     <>
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold text-gray-800">
-          {viewMode === "daily" ? "Daily Attendance" : "Monthly Attendance"}
+          {viewMode === "daily" ? t("filters.dailyAttendance") : t("filters.monthlyAttendance")}
         </h1>
         <div className="flex items-center gap-4">
           {viewMode === "daily" ? (
@@ -41,17 +41,18 @@ export default function AttendanceFilters({
               value={workDate}
               onChange={(e) => onWorkDateChange(e.target.value)}
               className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              title="Select Work Date"
-              aria-label="Select Work Date"
+              title={t("filters.selectWorkDate")}
+              aria-label={t("filters.selectWorkDate")}
             />
           ) : (
             <div className="flex items-center gap-2">
+              {/* Chọn năm */}
               <select
                 value={selectedYear}
                 onChange={(e) => onYearChange(parseInt(e.target.value))}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                title="Select Year"
-                aria-label="Select Year"
+                title={t("filters.selectYear")}
+                aria-label={t("filters.selectYear")}
               >
                 {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - 2 + i).map((year) => (
                   <option key={year} value={year}>
@@ -59,12 +60,13 @@ export default function AttendanceFilters({
                   </option>
                 ))}
               </select>
+              {/* Chọn tháng */}
               <select
                 value={selectedMonth}
                 onChange={(e) => onMonthChange(parseInt(e.target.value))}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                title="Select Month"
-                aria-label="Select Month"
+                title={t("filters.selectMonth")}
+                aria-label={t("filters.selectMonth")}
               >
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((month) => (
                   <option key={month} value={month}>
@@ -80,7 +82,7 @@ export default function AttendanceFilters({
   );
 }
 
-// Bộ lọc bên danh sách bảng chấm công
+// Bộ lọc table danh sách chấm công, filter theo phòng ban, tìm kiếm, view mode
 export function AttendanceListFilter({
   viewMode,
   selectedDepartment,
@@ -102,7 +104,9 @@ export function AttendanceListFilter({
   onDepartmentChange: (deptId: number | null) => void;
   onSearchChange: (term: string) => void;
 }) {
-  // Tính số ngày làm việc trong tháng, không tính chủ nhật
+  const { t } = useTranslation("attendance");
+
+  // Tính tổng số ngày làm việc trong tháng (không tính chủ nhật)
   const daysInMonth = new Date(selectedYear, selectedMonth, 0).getDate();
   let workingDaysExcludingSunday = 0;
   for (let day = 1; day <= daysInMonth; day++) {
@@ -111,12 +115,12 @@ export function AttendanceListFilter({
       workingDaysExcludingSunday++;
     }
   }
-  
+
   return (
     <div className="flex justify-between items-center mb-4">
       <div>
         <h2 className="text-xl font-semibold text-gray-800">
-          {viewMode === "daily" ? "Daily Attendance List" : "Monthly Attendance List"}
+          {viewMode === "daily" ? t("table.dailyAttendanceList") : t("table.monthlyAttendanceList")}
         </h2>
         {viewMode === "monthly" && (
           <p className="text-sm text-gray-500 mt-1">
@@ -132,21 +136,23 @@ export function AttendanceListFilter({
               year: "numeric",
             })}{" "}
             ·{" "}
-            {`Total working days: ${workingDaysExcludingSunday} (no Sundays)`}
+            {t("table.workingDaysExSunday", { count: workingDaysExcludingSunday })}
           </p>
         )}
       </div>
       <div className="flex items-center gap-4">
+        {/* Ô tìm kiếm nhân viên */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Search"
+            placeholder={t("filters.search")}
             value={searchTerm}
             onChange={(e) => onSearchChange(e.target.value)}
             className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 w-64"
           />
         </div>
+        {/* Filter phòng ban */}
         <select
           value={selectedDepartment || ""}
           onChange={(e) =>
@@ -155,26 +161,27 @@ export function AttendanceListFilter({
             )
           }
           className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          title="Filter by Department"
-          aria-label="Filter by Department"
+          title={t("filters.filterByDepartment")}
+          aria-label={t("filters.filterByDepartment")}
         >
-          <option value="">All Departments</option>
+          <option value="">{t("filters.allDepartments")}</option>
           {departments.map((dept) => (
             <option key={dept.id} value={dept.id}>
               {dept.departmentName}
             </option>
           ))}
         </select>
+        {/* Đổi chế độ xem daily/monthly */}
         <div className="flex items-center gap-2">
-          <select 
+          <select
             value={viewMode}
             onChange={(e) => onViewModeChange(e.target.value as "daily" | "monthly")}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            title="Select Period"
-            aria-label="Select Period"
+            title={t("filters.selectPeriod")}
+            aria-label={t("filters.selectPeriod")}
           >
-            <option value="daily">Daily</option>
-            <option value="monthly">Monthly</option>
+            <option value="daily">{t("filters.daily")}</option>
+            <option value="monthly">{t("filters.monthly")}</option>
           </select>
         </div>
       </div>

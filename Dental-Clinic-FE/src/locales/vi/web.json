@@ -8,7 +8,8 @@
   },
   "auth": {
     "login": "Đăng nhập",
-    "logout": "Đăng xuất"
+    "logout": "Đăng xuất",
+    "sessionExpired": "Phiên đăng nhập đã hết hạn"
   },
   "account": {
     "myAccount": "Tài khoản của tôi",
@@ -46,6 +47,31 @@
       "submitFailed": "Gửi giải trình thất bại",
       "enterReason": "Vui lòng nhập lý do giải trình",
       "noExplanationsForDate": "Không có giải trình cần xử lý cho ngày này"
+    },
+    "hrManagement": {
+      "breadcrumb": "HR • Giải trình chấm công",
+      "title": "Giải trình chờ xử lý",
+      "subtitle": "Xem xét và xử lý các giải trình chấm công do nhân viên gửi.",
+      "loading": "Đang tải dữ liệu chấm công...",
+      "noPending": "Không có giải trình chờ xử lý",
+      "unknownClinic": "Không xác định",
+      "addNotePlaceholder": "Thêm ghi chú HR (tùy chọn)",
+      "actualCheckOutTime": "Giờ ra thực tế (Tùy chọn)",
+      "table": {
+        "employee": "Nhân viên",
+        "clinic": "Phòng khám",
+        "workDate": "Ngày làm việc",
+        "type": "Loại",
+        "reason": "Lý do",
+        "status": "Trạng thái",
+        "actions": "Thao tác"
+      },
+      "approve": "Duyệt",
+      "reject": "Từ chối"
+    },
+    "filters": {
+      "clinic": "Phòng khám",
+      "allClinics": "Tất cả phòng khám"
     },
     "monthlyHistory": {
       "title": "Lịch sử chấm công tháng",
@@ -153,6 +179,45 @@
       "fillAllFields": "Vui lòng điền đầy đủ thông tin",
       "invalidDateRange": "Ngày bắt đầu phải trước ngày kết thúc",
       "pastDate": "Không thể tạo đơn cho ngày trong quá khứ"
+    },
+    "employee": "Nhân viên",
+    "time": "Thời gian",
+    "monthlyLeave": "Ngày nghỉ tháng này",
+    "replacement": "Người thay thế",
+    "none": "Không có",
+    "remainingLeave": "Phép còn lại",
+    "available": "Có",
+    "allApproved": "Tất cả đơn đã duyệt",
+    "resignation": {
+      "filter": "Đơn nghỉ việc (có thể xóa)",
+      "noApproved": "Chưa có đơn nghỉ việc nào đã được duyệt",
+      "tip": "Tip: Chọn tab \"Đơn nghỉ việc\" để xem các đơn nghỉ việc đã được duyệt và có thể xóa vĩnh viễn",
+      "adminConfirmed": "Đã xác nhận. HR sẽ thực hiện xóa vĩnh viễn trong trang Quản lý nhân viên.",
+      "title": "ĐƠN NGHỈ VIỆC",
+      "subtitle": "Yêu cầu xác nhận xóa vĩnh viễn",
+      "important": "QUAN TRỌNG",
+      "processTitle": "Quy trình xóa vĩnh viễn",
+      "step1": "HR duyệt",
+      "step2": "Admin xác nhận",
+      "step3": "Xóa dữ liệu",
+      "warningTitle": "CẢNH BÁO: XÓA VĨNH VIỄN",
+      "warningMessage": "Bạn đang xem xét đơn nghỉ việc. Nếu được duyệt, tài khoản nhân viên sẽ bị vô hiệu hóa. Sau đó, HR có thể thực hiện xóa vĩnh viễn dữ liệu.",
+      "hardDelete": {
+        "button": "Xóa vĩnh viễn",
+        "confirmTitle": "CẢNH BÁO: XÓA VĨNH VIỄN",
+        "confirmMessage": "Bạn sắp XÓA VĨNH VIỄN nhân viên \"{{name}}\".\n\nHành động này KHÔNG THỂ HOÀN TÁC và sẽ xóa:\n- Tất cả dữ liệu chấm công\n- Lịch sử đơn nghỉ phép\n- Thông tin cá nhân và tài khoản\n- Dữ liệu khuôn mặt\n\nBạn có chắc chắn muốn tiếp tục?",
+        "reasonPrompt": "Nhập lý do xóa vĩnh viễn (tối thiểu 10 ký tự):",
+        "reasonTooShort": "Lý do phải có ít nhất 10 ký tự",
+        "success": "Đã xóa vĩnh viễn nhân viên thành công",
+        "failed": "Xóa vĩnh viễn thất bại",
+        "enterReason": "Vui lòng nhập lý do",
+        "finalConfirm": "Xác nhận xóa vĩnh viễn nhân viên \"{{name}}\"?\n\nHành động này KHÔNG THỂ HOÀN TÁC!",
+        "noPermission": "Bạn không có quyền xóa vĩnh viễn nhân viên. Chỉ HR mới có quyền này."
+      },
+      "note": "Lưu ý: Đơn nghỉ việc cần được HR duyệt và Admin xác nhận. Sau khi được duyệt, bạn có thể bị xóa vĩnh viễn khỏi hệ thống.",
+      "dateNote": "Ngày nghỉ việc: Bạn sẽ được nghỉ việc sau 1 tháng kể từ ngày nộp đơn ({{date}}).",
+      "autoDateTitle": "Ngày nghỉ việc được tự động set là 1 tháng sau ngày nộp đơn",
+      "warning": " Đơn nghỉ việc: Sau khi được HR duyệt và Admin xác nhận, bạn có thể bị xóa vĩnh viễn khỏi hệ thống."
     }
   },
   "common": {
