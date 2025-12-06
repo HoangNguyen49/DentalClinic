@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Thêm useNavigate
+import { useParams, useNavigate } from "react-router-dom"; 
 import useGetProductById from "./useGetProductById.ts";
 import { getProductImageSrc } from "../../../../huybro_api/productApi.ts";
 import { addProductToCart } from "../../../../utils/cartSession";
 import { formatMoney } from "../../../../utils/format.ts";
+import { ArrowRight } from "lucide-react";
 
 export default function GetProductById() {
   const { id } = useParams();
@@ -69,13 +70,6 @@ export default function GetProductById() {
               {/* Ảnh chính 1:1 – tràn khung */}
               <div className="lg:col-span-6">
                 <div className="rounded-2xl overflow-hidden border border-black/10 relative">
-                  {/* [NEW] Sale Tag - Giữ style tối giản */}
-                  {detail.discountPercentage && detail.discountPercentage > 0 && (
-                    <div className="absolute top-3 left-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full z-10 shadow-sm">
-                      -{detail.discountPercentage}%
-                    </div>
-                  )}
-
                   <div className="relative aspect-square w-full bg-gray-50">
                     {images[imgIdx] ? (
                       <img
@@ -98,29 +92,41 @@ export default function GetProductById() {
                   {detail.productName}
                 </h1>
 
-                {/* Giá */}
-                <div className="mt-6 flex items-baseline gap-3">
-                  <span className="text-4xl font-bold">
-                    {formatMoney(detail.defaultRetailPrice, detail.currency)}
-                  </span>
-                  {/* [NEW] Hiển thị giá cũ nếu có sale */}
-                  {originalPrice && (
-                    <span className="text-lg text-gray-400 line-through decoration-gray-400">
-                      {formatMoney(originalPrice, detail.currency)}
-                    </span>
-                  )}
-                </div>
+              {/* Giá */}
+              <div className="mt-6 flex items-baseline gap-3">
+                {/* Giá hiện tại */}
+                <span className="text-4xl font-bold text-black">
+                  {formatMoney(detail.defaultRetailPrice, detail.currency)}
+                </span>
+
+                {/* Chỉ hiển thị Giá Gốc & Tag % khi discount > 0 */}
+                {originalPrice && detail.discountPercentage && detail.discountPercentage > 0 && (
+                   <>
+                     {/* Giá gốc gạch ngang: Màu xám trung tính */}
+                     <span className="text-lg text-gray-400 line-through decoration-gray-400">
+                       {formatMoney(originalPrice, detail.currency)}
+                     </span>
+                     
+                     {/* Tag giảm giá: Chữ Xanh Đen Đậm (blue-900) - Nền Xanh Nhạt (blue-50) */}
+                     <span className="px-2 py-0.5 text-xs font-bold text-blue-900 bg-blue-50 border border-blue-100 rounded">
+                        -{detail.discountPercentage}%
+                     </span>
+                   </>
+                )}
+              </div>
 
                 {/* Số lượt bán & Tồn kho */}
-                <div className="mt-3 text-sm text-gray-600 flex items-center gap-3">
-                  <div>
-                    Sold: <span className="font-medium text-black">{detail.soldCount}</span> units
-                  </div>
-                  <span className="text-gray-300">|</span>
-                  <div className={`${detail.unit > 0 ? "text-green-600" : "text-red-500"}`}>
-                     Stock: <span className="font-medium">{detail.unit}</span> available
-                  </div>
+              <div className="mt-3 text-sm text-gray-600 flex items-center gap-3">
+                <div>
+                   Sold: <span className="font-medium text-black">{detail.soldCount}</span>
                 </div>
+                <span className="text-gray-300">|</span>
+                
+                {/* Sửa: Bỏ text-green-600, dùng text-black mặc định, chỉ đỏ khi <= 0 */}
+                <div className={detail.unit > 0 ? "text-gray-900" : "text-red-600"}>
+                   Stock: <span className="font-medium">{detail.unit}</span> available
+                </div>
+              </div>
 
                 {/* Brands & Types */}
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -224,31 +230,52 @@ export default function GetProductById() {
               </div>
             </div>
 
-            {/* [NEW] Related Products Section - Style tương tự UI gốc */}
+           {/* [NEW] Related Products Section - Tech Blue Style */}
             {detail.relatedProducts && detail.relatedProducts.length > 0 && (
-                <div className="mt-16 pt-8 border-t border-black/10">
-                    <h3 className="text-xl font-semibold mb-6">You might also like</h3>
+                <div className="mt-16 pt-8 border-t border-black/5">
+                    <h3 className="text-xl font-sans mb-6 tracking-tight text-gray-900">You might also like</h3>
+                    
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {detail.relatedProducts.map((rel) => (
                             <div 
                                 key={rel.productId} 
-                                className="cursor-pointer group"
-                                onClick={() => navigate(`/product/${rel.productId}`)}
+                                className="group cursor-pointer relative"
+                                onClick={() => navigate(`../${rel.productId}`)}
                             >
-                                <div className="rounded-xl overflow-hidden border border-black/10 bg-gray-50 aspect-square mb-3">
-                                    {rel.image && rel.image.length > 0 ? (
-                                        <img 
-                                            src={getProductImageSrc(rel.image[0].imageUrl)} 
-                                            alt={rel.productName} 
-                                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                                        />
-                                    ) : (
-                                        <div className="w-full h-full grid place-items-center text-gray-300 text-xs">No Img</div>
-                                    )}
-                                </div>
-                                <div className="font-medium text-black truncate">{rel.productName}</div>
-                                <div className="text-sm text-gray-500 font-semibold">
-                                    {formatMoney(rel.defaultRetailPrice, rel.currency)}
+                                {/* Border Container: Hover -> Blue Border & Blue Shadow */}
+                                <div className="rounded-xl border border-gray-200 bg-white p-2 transition-all duration-300 group-hover:border-blue-600 group-hover:shadow-lg group-hover:shadow-blue-50">
+                                    {/* Image */}
+                                    <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 relative mb-3">
+                                        {rel.image && rel.image.length > 0 ? (
+                                            <img 
+                                                src={getProductImageSrc(rel.image[0].imageUrl)} 
+                                                alt={rel.productName} 
+                                                className="w-full h-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full grid place-items-center text-gray-300 text-xs">No Img</div>
+                                        )}
+                                    </div>
+
+                                    {/* Content inside card */}
+                                    <div>
+                                        {/* Tên sản phẩm chuyển xanh khi hover */}
+                                        <h4 className="font-medium text-sm text-gray-900 truncate pr-2 transition-colors group-hover:text-blue-600">
+                                            {rel.productName}
+                                        </h4>
+                                        
+                                        <div className="flex justify-between items-center mt-1 h-6">
+                                            <p className="text-sm font-bold text-gray-900">
+                                                {formatMoney(rel.defaultRetailPrice, rel.currency)}
+                                            </p>
+                                            
+                                            {/* Lucide Arrow Icon: Blue & Slide Effect */}
+                                            <ArrowRight 
+                                                size={18} 
+                                                className="text-blue-600 opacity-0 -translate-x-2 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0" 
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         ))}
