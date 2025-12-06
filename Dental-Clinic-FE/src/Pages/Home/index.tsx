@@ -6,6 +6,7 @@ import TeamSection from "./sections/TeamSection";
 import TestimonialsSection from "./sections/TestimonialsSection";
 import ContactSection from "./sections/ContactSection";
 import Footer from "../../widgets/Footer/Footer";
+import AIChatWidget from "../../widgets/AIChatWidget/AIChatWidget";
 
 function HomePage() {
   return (
@@ -18,6 +19,7 @@ function HomePage() {
       <TestimonialsSection />
       <ContactSection />
       <Footer />
+      <AIChatWidget />
     </>
   );
 }
