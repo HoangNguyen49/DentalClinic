@@ -16,6 +16,8 @@ export interface Product {
   updatedAt: string;
   image: { imageId: number; imageUrl: string; imageOrder: number }[];
   typeNames: string[];
+  latestImportPrice?: number;  
+  latestProfitMargin?: number; 
 }
 
 export async function fetchAllProducts(): Promise<Product[]> {

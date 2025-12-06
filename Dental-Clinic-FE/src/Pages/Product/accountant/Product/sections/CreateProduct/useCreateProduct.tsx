@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchAllProducts } from '../../../../../../huybro_api/productApi.ts';
+import { fetchAllProductsForAccountant } from '../../../../../../huybro_api/productApi.ts';
 import type {
     ProductCreateDto,
     ProductImageCreateDto,
@@ -57,12 +57,12 @@ const defaultForm: ProductCreateFormState = {
     productName: '',
     brand: '',
     productDescription: '',
-    unit: 1,
-    defaultRetailPrice: 0,
+    unit: 0,                
+    defaultRetailPrice: 0,  
     currency: 'USD',
     isTaxable: true,
     taxCode: 10,
-    isActive: true,
+    isActive: false,        
     image: defaultImages,
     typeNames: [],
 };
@@ -141,7 +141,7 @@ export function useCreateProduct(): UseCreateProductResult {
         let ignore = false;
         (async () => {
             try {
-                const all = await fetchAllProducts();
+                const all = await fetchAllProductsForAccountant();
                 if (ignore) return;
                 const typeSet = new Set<string>();
                 for (const p of all ?? []) {
