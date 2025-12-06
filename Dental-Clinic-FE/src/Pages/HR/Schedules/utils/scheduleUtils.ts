@@ -1,8 +1,19 @@
 import type { CreateScheduleRequest } from "../../../../services/hr/scheduleService";
+import { WORK_HOURS_CONSTANTS } from "../../../../utils/workHoursConstants";
 
 export const SHIFTS = [
-    { id: "morning", name: "Morning", startTime: "08:00", endTime: "11:00" },
-    { id: "afternoon", name: "Afternoon", startTime: "13:00", endTime: "18:00" },
+    {
+        id: "morning",
+        name: "Morning",
+        startTime: WORK_HOURS_CONSTANTS.MORNING_SHIFT.START,
+        endTime: WORK_HOURS_CONSTANTS.MORNING_SHIFT.END,
+    },
+    {
+        id: "afternoon",
+        name: "Afternoon",
+        startTime: WORK_HOURS_CONSTANTS.AFTERNOON_SHIFT.START,
+        endTime: WORK_HOURS_CONSTANTS.AFTERNOON_SHIFT.END,
+    },
 ];
 
 // --- Types for Creating Schedule (Input) ---
@@ -232,12 +243,12 @@ export const validateScheduleFrontend = (
             } else {
                 if (!shifts.morning) {
                     errors.push(
-                        `${clinicName} must have doctors assigned in the morning shift (08:00-11:00) on ${day.label} (${day.dateString}).`
+                        `${clinicName} must have doctors assigned in the morning shift (${WORK_HOURS_CONSTANTS.MORNING_SHIFT.START}-${WORK_HOURS_CONSTANTS.MORNING_SHIFT.END}) on ${day.label} (${day.dateString}).`
                     );
                 }
                 if (!shifts.afternoon) {
                     errors.push(
-                        `${clinicName} must have doctors assigned in the afternoon shift (13:00-18:00) on ${day.label} (${day.dateString}).`
+                        `${clinicName} must have doctors assigned in the afternoon shift (${WORK_HOURS_CONSTANTS.AFTERNOON_SHIFT.START}-${WORK_HOURS_CONSTANTS.AFTERNOON_SHIFT.END}) on ${day.label} (${day.dateString}).`
                     );
                 }
             }

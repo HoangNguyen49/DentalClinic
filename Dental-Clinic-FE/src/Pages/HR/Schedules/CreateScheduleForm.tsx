@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Calendar, Check, X, User, CalendarX, Info } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
@@ -42,6 +42,25 @@ function CreateScheduleForm() {
     navigate,
     t
   );
+
+  // Ensure weekStart is always a Monday
+  useEffect(() => {
+    if (weekStart) {
+      const date = new Date(weekStart + 'T00:00:00');
+      const dayOfWeek = date.getDay();
+      if (dayOfWeek !== 1) {
+        // Not Monday, auto-correct to nearest Monday
+        const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        date.setDate(date.getDate() + diff);
+        const correctedMonday = date.toISOString().split("T")[0];
+        if (correctedMonday >= getNextMonday()) {
+          setWeekStart(correctedMonday);
+        } else {
+          setWeekStart(getNextMonday());
+        }
+      }
+    }
+  }, [weekStart]);
 
   // Cập nhật cơ sở cho từng ca sáng/chiều
   const updateShiftClinic = (
@@ -119,7 +138,8 @@ function CreateScheduleForm() {
                     value={weekStart}
                     onChange={(e) => {
                       const selectedDate = e.target.value;
-                      const date = new Date(selectedDate);
+                      // Parse with explicit time to avoid timezone issues
+                      const date = new Date(selectedDate + 'T00:00:00');
                       if (date.getDay() !== 1) {
                         toast.warning(t("create.startWeek.selectMonday"));
                         const day = date.getDay();
@@ -146,15 +166,28 @@ function CreateScheduleForm() {
                     aria-label="Week start"
                   />
                   <button
-                    onClick={() => {
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Next week button clicked!');
+                      console.log('Current weekStart:', weekStart);
+                      
                       // Nhảy đến Monday tiếp theo
-                      const currentMonday = new Date(weekStart);
+                      const currentMonday = new Date(weekStart + 'T00:00:00');
                       const nextMonday = new Date(currentMonday);
                       nextMonday.setDate(currentMonday.getDate() + 7);
-                      const nextMondayStr = nextMonday.toISOString().split("T")[0];
+                      
+                      // Format date properly to avoid timezone issues
+                      const year = nextMonday.getFullYear();
+                      const month = String(nextMonday.getMonth() + 1).padStart(2, '0');
+                      const day = String(nextMonday.getDate()).padStart(2, '0');
+                      const nextMondayStr = `${year}-${month}-${day}`;
+                      
+                      console.log('Setting weekStart to:', nextMondayStr);
                       setWeekStart(nextMondayStr);
                     }}
-                    className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm font-medium"
+                    className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition text-sm font-medium cursor-pointer"
                   >
                     {t("create.startWeek.button")}
                   </button>

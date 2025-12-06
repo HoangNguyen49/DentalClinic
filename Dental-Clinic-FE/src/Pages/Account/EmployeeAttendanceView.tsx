@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
 import { useNotification } from "../../app/providers/NotificationContext";
+import { determineShiftType } from "../../utils/workHoursConstants";
 
 const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -65,6 +66,7 @@ function formatDateDisplay(date: Date | string): string {
   return `${day}/${month}/${year}`;
 }
 
+// format giờ cho ô hiển thị
 function formatTime(value?: string | null): string {
   if (!value) return "-";
   try {
@@ -79,6 +81,7 @@ function formatTime(value?: string | null): string {
   }
 }
 
+// màu theo trạng thái chấm công
 function getStatusColor(status?: string | null): string {
   if (!status) return "bg-gray-100 text-gray-800";
   switch (status.toUpperCase()) {
@@ -95,6 +98,7 @@ function getStatusColor(status?: string | null): string {
   }
 }
 
+// màu cho trạng thái giải trình
 function getExplanationStatusColor(status?: string | null): string {
   if (!status) return "bg-gray-100 text-gray-800";
   switch (status.toUpperCase()) {
@@ -109,6 +113,7 @@ function getExplanationStatusColor(status?: string | null): string {
   }
 }
 
+// tính số giờ làm
 function calculateWorkedHours(attendance: AttendanceResponse): number {
   if (!attendance.checkInTime || !attendance.checkOutTime) return 0;
   const start = new Date(attendance.checkInTime).getTime();
@@ -118,11 +123,13 @@ function calculateWorkedHours(attendance: AttendanceResponse): number {
   return diffMs / (1000 * 60 * 60);
 }
 
+// Định dạng số giờ hiển thị
 function formatHourValue(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return "-";
   return `${value.toFixed(1)}h`;
 }
 
+// Gán nhãn ca dựa vào loại ca
 function getShiftTypeLabel(shiftType?: string | null): string {
   if (!shiftType || shiftType === "FULL_DAY") return "";
   return shiftType === "MORNING" ? "Ca sáng" : "Ca chiều";
@@ -355,14 +362,9 @@ export default function EmployeeAttendanceView() {
     }
   };
 
-  // Xác định shiftType từ startTime
+  // Sử dụng helper từ workHoursConstants để đồng bộ với Backend
   const getShiftTypeFromStartTime = (startTime: string): string => {
-    if (!startTime) return "FULL_DAY";
-    const hour = parseInt(startTime.split(":")[0]);
-    // Ca sáng: trước 12:00, Ca chiều: từ 13:00 trở đi
-    if (hour < 12) return "MORNING";
-    if (hour >= 13) return "AFTERNOON";
-    return "FULL_DAY";
+    return determineShiftType(startTime);
   };
 
   // Tạo attendance record giả từ schedule để giải trình
@@ -541,9 +543,45 @@ export default function EmployeeAttendanceView() {
       
       // Nếu attendanceId = 0 (chưa có attendance record), gửi thêm shiftType, clinicId, workDate
       if (selectedExplanation.attendanceId === 0 || selectedExplanation.attendanceId === null) {
+        // Validation: Kiểm tra các trường bắt buộc
+        if (!selectedExplanation.clinicId) {
+          toast.error(t("attendance.explanationsNeeded.missingClinicId", "Clinic ID is required"));
+          setSubmitting(false);
+          return;
+        }
+        if (!selectedExplanation.workDate) {
+          toast.error(t("attendance.explanationsNeeded.missingWorkDate", "Work date is required"));
+          setSubmitting(false);
+          return;
+        }
+        if (!selectedExplanation.shiftType) {
+          toast.error(t("attendance.explanationsNeeded.missingShiftType", "Shift type is required"));
+          setSubmitting(false);
+          return;
+        }
+        
         requestBody.shiftType = selectedExplanation.shiftType;
         requestBody.clinicId = selectedExplanation.clinicId;
-        requestBody.workDate = selectedExplanation.workDate;
+        // Đảm bảo workDate ở format yyyy-MM-dd
+        const workDateValue = selectedExplanation.workDate;
+        if (typeof workDateValue === 'string') {
+          // Nếu là string, kiểm tra format và chuẩn hóa
+          try {
+            const parsedDate = new Date(workDateValue);
+            if (!isNaN(parsedDate.getTime())) {
+              requestBody.workDate = formatDate(parsedDate);
+            } else {
+              // Nếu không parse được, gửi nguyên string (có thể đã đúng format yyyy-MM-dd)
+              requestBody.workDate = workDateValue;
+            }
+          } catch (e) {
+            // Nếu không parse được, gửi nguyên string
+            requestBody.workDate = workDateValue;
+          }
+        } else {
+          // Nếu là Date object hoặc giá trị khác
+          requestBody.workDate = workDateValue;
+        }
       }
       
       await axios.post(

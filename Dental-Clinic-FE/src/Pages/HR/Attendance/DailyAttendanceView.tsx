@@ -158,8 +158,12 @@ function DailyAttendanceView() {
       );
       setDepartments(response.data || []);
     } catch (err: any) {
-      console.error("Failed to fetch departments:", err);
-      // nếu lỗi thì để bộ lọc department rỗng
+      // Chỉ log lỗi nếu không phải connection refused (backend chưa chạy)
+      if (err.code !== "ERR_NETWORK" && err.code !== "ECONNREFUSED") {
+        console.error("Failed to fetch departments:", err);
+        toast.error(t("messages.failedToLoadDepartments", "Failed to load departments"));
+      }
+      // Nếu lỗi thì để bộ lọc department rỗng (không block UI)
       setDepartments([]);
     }
   };
