@@ -16,7 +16,6 @@ import {
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
-import NotificationBell from "../../widgets/NotificationBell";
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -102,7 +101,6 @@ const AdminLayout = () => {
         <header className="bg-white shadow px-6 py-4 flex justify-between items-center">
           <h1 className="text-xl font-semibold text-gray-800">{t("pageTitles.adminDashboard")}</h1>
           <div className="flex items-center gap-2">
-            <NotificationBell />
             <button
               onClick={toggleLanguage}
               className="px-3 py-2 border rounded hover:bg-gray-100"

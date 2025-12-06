@@ -7,7 +7,6 @@ import SignUp from "../Pages/Auth/SignUp";
 import OAuthSuccessHandler from "../Pages/Auth/OAuthSuccessHandler";
 import MyAccount from "../Pages/Account/MyAccount";
 import ChangePassword from "../Pages/Account/ChangePassword";
-import EmployeeAttendanceView from "../Pages/Account/EmployeeAttendanceView";
 import AdminLayout from "../app/layout/AdminLayouts";
 import HRLayout from "../app/layout/HrLayout";
 import AdminDashboardPage from "../Pages/Admin/Dashboard/AdminDashboardPage";
@@ -17,12 +16,10 @@ import CreateScheduleForm from "../Pages/HR/Schedules/CreateScheduleForm";
 import EmployeesList from "../Pages/HR/Employees/EmployeesList";
 import CreateEmployeeForm from "../Pages/HR/Employees/CreateEmployeeForm";
 import EmployeeDetail from "../Pages/HR/Employees/EmployeeDetail";
-import DailyAttendanceView from "../Pages/HR/Attendance/DailyAttendanceView";
 import Service from "../Pages/Service";
 import About from "../Pages/About";
 import ContactPage from "../Pages/Contact";
 import ClinicManagement from "../Pages/Admin/Clinics/ClinicManagement";
-import AdminAttendanceManagement from "../Pages/Admin/Attendance/AdminAttendanceManagement";
 import AdminStaffManagement from "../Pages/Admin/Staff/AdminStaffManagement";
 import ProtectedRouteDoctor from "./routes/ProtectedRouteDoctor";
 import DoctorLayout from "./layout/DoctorLayout";
@@ -49,13 +46,11 @@ function App() {
         <Route path="/oauth/success" element={<OAuthSuccessHandler />} />
         <Route path="/my-account" element={<MyAccount />} />
         <Route path="/change-password" element={<ChangePassword />} />
-        <Route path="/my-attendance" element={<EmployeeAttendanceView />} />
 
         <Route path="/admin" element={<ProtectedRouteAdmin />}>
           <Route element={<AdminLayout />}>
             <Route index element={<AdminDashboardPage />} />{" "}
             <Route path="dashboard" element={<AdminDashboardPage />} />
-            <Route path="attendance" element={<AdminAttendanceManagement />} />
             <Route path="clinics" element={<ClinicManagement />} />
             <Route path="staff" element={<AdminStaffManagement />} />
           </Route>
@@ -67,7 +62,6 @@ function App() {
             <Route path="employees" element={<EmployeesList />} />
             <Route path="employees/create" element={<CreateEmployeeForm />} />
             <Route path="employees/:id" element={<EmployeeDetail />} />
-            <Route path="attendance" element={<DailyAttendanceView />} />
             <Route path="schedules" element={<ScheduleList />} />
             <Route path="schedules/create" element={<CreateScheduleForm />} />
           </Route>

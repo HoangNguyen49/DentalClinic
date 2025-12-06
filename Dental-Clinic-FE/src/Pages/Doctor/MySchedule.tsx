@@ -3,7 +3,6 @@ import axios from "axios";
 import { ChevronLeft, ChevronRight, Calendar, Clock, MapPin, DoorOpen, FileText } from "lucide-react";
 import { toast } from "react-toastify";
 import { format, startOfWeek, addDays, addWeeks, subWeeks, isSameDay } from "date-fns";
-import { vi } from "date-fns/locale";
 
 type ClinicResponse = {
   id: number;
@@ -39,27 +38,27 @@ export default function MySchedule() {
   const [loading, setLoading] = useState(true);
   const [weekStart, setWeekStart] = useState<Date>(startOfWeek(new Date(), { weekStartsOn: 1 }));
 
-  // Format date thành YYYY-MM-DD
+  // Format date to YYYY-MM-DD
   const formatDateString = (date: Date): string => {
     return format(date, "yyyy-MM-dd");
   };
 
-  // Format time từ "HH:mm:ss" thành "HH:mm"
+  // Format time from "HH:mm:ss" to "HH:mm"
   const formatTime = (time: string): string => {
     if (!time) return "";
     return time.substring(0, 5);
   };
 
-  // Lấy danh sách ngày trong tuần (Thứ 2 đến Chủ nhật)
+  // Get week days (Monday to Saturday)
   const getWeekDays = (monday: Date): Date[] => {
     const days: Date[] = [];
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 6; i++) {
       days.push(addDays(monday, i));
     }
     return days;
   };
 
-  // Fetch schedule từ API
+  // Fetch schedule from API
   const fetchSchedule = async (weekStartDate: Date) => {
     setLoading(true);
     try {
@@ -80,7 +79,7 @@ export default function MySchedule() {
         err?.response?.data?.message ||
         err?.response?.data?.error ||
         err?.message ||
-        "Không thể tải lịch làm việc";
+        "Failed to load work schedule";
       toast.error(errorMsg);
       setSchedules([]);
     } finally {
@@ -92,28 +91,28 @@ export default function MySchedule() {
     fetchSchedule(weekStart);
   }, [weekStart]);
 
-  // Chuyển tuần trước
+  // Go to previous week
   const handlePreviousWeek = () => {
     setWeekStart(subWeeks(weekStart, 1));
   };
 
-  // Chuyển tuần sau
+  // Go to next week
   const handleNextWeek = () => {
     setWeekStart(addWeeks(weekStart, 1));
   };
 
-  // Về tuần hiện tại
+  // Go to current week
   const handleCurrentWeek = () => {
     setWeekStart(startOfWeek(new Date(), { weekStartsOn: 1 }));
   };
 
-  // Lấy lịch cho một ngày cụ thể
+  // Get schedule for a specific day
   const getSchedulesForDate = (date: Date): DoctorScheduleDto[] => {
     const dateStr = formatDateString(date);
     return schedules.filter((schedule) => schedule.workDate === dateStr);
   };
 
-  // Sắp xếp lịch theo thời gian
+  // Sort schedule by time
   const sortSchedulesByTime = (schedules: DoctorScheduleDto[]): DoctorScheduleDto[] => {
     return [...schedules].sort((a, b) => {
       const timeA = a.startTime || "00:00";
@@ -122,9 +121,9 @@ export default function MySchedule() {
     });
   };
 
-  // Lấy tên thứ trong tuần
+  // Get day name
   const getDayName = (date: Date): string => {
-    const dayNames = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
+    const dayNames = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     return dayNames[date.getDay()];
   };
 
@@ -138,15 +137,15 @@ export default function MySchedule() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-[#0D1B3E] mb-2">Lịch Làm Việc Của Tôi</h1>
-              <p className="text-gray-600">Xem và quản lý lịch làm việc của bạn</p>
+              <h1 className="text-3xl font-bold text-[#0D1B3E] mb-2">My Work Schedule</h1>
+              <p className="text-gray-600">View and manage your work schedule</p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCurrentWeek}
                 className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
               >
-                Tuần này
+                This Week
               </button>
             </div>
           </div>
@@ -164,11 +163,11 @@ export default function MySchedule() {
             </button>
             <div className="text-center">
               <h2 className="text-xl font-semibold text-gray-800">
-                {format(weekStart, "dd MMM yyyy", { locale: vi })} -{" "}
-                {format(addDays(weekStart, 6), "dd MMM yyyy", { locale: vi })}
+                {format(weekStart, "dd MMM yyyy")} -{" "}
+                {format(addDays(weekStart, 5), "dd MMM yyyy")}
               </h2>
               <p className="text-sm text-gray-500 mt-1">
-                Tuần {format(weekStart, "w", { locale: vi })} - {format(weekStart, "yyyy", { locale: vi })}
+                Week {format(weekStart, "w")} - {format(weekStart, "yyyy")}
               </p>
             </div>
             <button
@@ -185,7 +184,7 @@ export default function MySchedule() {
         {loading && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600">Đang tải lịch làm việc...</p>
+            <p className="text-gray-600">Loading work schedule...</p>
           </div>
         )}
 
@@ -222,12 +221,12 @@ export default function MySchedule() {
                         </div>
                         {isToday && (
                           <span className="px-2 py-1 text-xs font-medium bg-blue-600 text-white rounded">
-                            Hôm nay
+                            Today
                           </span>
                         )}
                       </div>
                       <div className="text-sm text-gray-600">
-                        {daySchedules.length > 0 ? `${daySchedules.length} ca làm việc` : "Không có ca"}
+                        {daySchedules.length > 0 ? `${daySchedules.length} shifts` : "No shifts"}
                       </div>
                     </div>
                   </div>
@@ -237,7 +236,7 @@ export default function MySchedule() {
                     {daySchedules.length === 0 ? (
                       <div className="text-center py-8">
                         <p className="text-gray-400">
-                          {isWeekend ? "Cuối tuần - Không có ca làm việc" : "Không có lịch làm việc cho ngày này"}
+                          {isWeekend ? "Weekend - No shifts" : "No work schedule for this day"}
                         </p>
                       </div>
                     ) : (
@@ -263,7 +262,7 @@ export default function MySchedule() {
                                     <div className="flex items-center gap-2">
                                       <MapPin className="h-4 w-4 text-blue-600" />
                                       <span className="text-sm text-gray-700">
-                                        <span className="font-medium">Phòng khám:</span> {schedule.clinic.clinicName}
+                                        <span className="font-medium">Clinic:</span> {schedule.clinic.clinicName}
                                       </span>
                                     </div>
                                   )}
@@ -271,7 +270,7 @@ export default function MySchedule() {
                                     <div className="flex items-center gap-2">
                                       <DoorOpen className="h-4 w-4 text-green-600" />
                                       <span className="text-sm text-gray-700">
-                                        <span className="font-medium">Phòng:</span> {schedule.room.roomName}
+                                        <span className="font-medium">Room:</span> {schedule.room.roomName}
                                       </span>
                                     </div>
                                   )}
@@ -299,7 +298,7 @@ export default function MySchedule() {
                                   <div className="flex items-start gap-2 mt-3 pt-3 border-t border-gray-200">
                                     <FileText className="h-4 w-4 text-gray-500 mt-0.5" />
                                     <div>
-                                      <span className="text-xs font-medium text-gray-600">Ghi chú:</span>
+                                      <span className="text-xs font-medium text-gray-600">Note:</span>
                                       <p className="text-sm text-gray-700 mt-1">{schedule.note}</p>
                                     </div>
                                   </div>
@@ -321,8 +320,8 @@ export default function MySchedule() {
         {!loading && schedules.length === 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <Calendar className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500 text-lg mb-2">Không có lịch làm việc cho tuần này</p>
-            <p className="text-gray-400 text-sm">Vui lòng liên hệ HR để được phân công lịch làm việc</p>
+            <p className="text-gray-500 text-lg mb-2">No work schedule for this week</p>
+            <p className="text-gray-400 text-sm">Please contact HR to be assigned a work schedule</p>
           </div>
         )}
       </div>
