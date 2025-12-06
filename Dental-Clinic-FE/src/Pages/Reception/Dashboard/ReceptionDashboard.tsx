@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import QuickBookingModal from "./QuickBookingModal";
+import AppointmentEditModal from "./AppointmentEditModal";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 const START_HOUR = 8;
@@ -26,8 +28,12 @@ export interface DoctorScheduleDTO {
 export interface AppointmentDTO {
   id: number;
   patient: { id: number; fullName: string; patientCode: string; phone: string };
-  // cho phép null để phân biệt lịch đang ở hàng chờ
   doctor: { id: number; fullName: string } | null;
+
+  // Thêm các trường cho List View
+  clinic?: { id: number; clinicName: string };
+  createdByUserName?: string;
+
   startDateTime: string;
   endDateTime: string;
   status: string;
@@ -40,8 +46,19 @@ export interface AppointmentDTO {
 // =====================
 const pad = (n: number) => n.toString().padStart(2, "0");
 
+const formatDateTime = (isoString: string) => {
+  const date = new Date(isoString);
+  return new Intl.DateTimeFormat("vi-VN", {
+    hour: "2-digit",
+    minute: "2-digit",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(date);
+};
+
 const getVerticalStyle = (startStr: string, endStr: string) => {
-  let startH: number, startM: number, endH: number, endM: number;
+  let startH, startM, endH, endM;
 
   if (startStr.includes("T")) {
     const s = new Date(startStr);
@@ -80,12 +97,53 @@ const getStatusColor = (status: string) => {
   }
 };
 
+// Badge cho List View
+const getStatusBadge = (status: string) => {
+  switch (status) {
+    case "CONFIRMED":
+      return (
+        <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200">
+          Đã xác nhận
+        </span>
+      );
+    case "PENDING":
+      return (
+        <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-700 text-xs font-bold border border-yellow-200">
+          Chờ duyệt
+        </span>
+      );
+    case "IN_PROGRESS":
+      return (
+        <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-bold border border-green-200">
+          Đang khám
+        </span>
+      );
+    case "COMPLETED":
+      return (
+        <span className="px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
+          Hoàn thành
+        </span>
+      );
+    case "CANCELLED":
+      return (
+        <span className="px-2 py-1 rounded bg-red-100 text-red-600 text-xs font-bold border border-red-200">
+          Đã hủy
+        </span>
+      );
+    default:
+      return (
+        <span className="px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs">
+          {status}
+        </span>
+      );
+  }
+};
+
 // =====================
 // Custom drag state
 // =====================
 type DragState = {
   appt: AppointmentDTO;
-  // có thể null nếu kéo từ hàng chờ
   sourceDoctorId: number | null;
   currentX: number;
   currentY: number;
@@ -95,6 +153,9 @@ type DragState = {
 };
 
 export default function ReceptionDashboard() {
+  // VIEW MODE STATE
+  const [viewMode, setViewMode] = useState<"TIMELINE" | "LIST">("TIMELINE");
+  const [showQuickBooking, setShowQuickBooking] = useState(false);
   const [schedules, setSchedules] = useState<DoctorScheduleDTO[]>([]);
   const [appointments, setAppointments] = useState<AppointmentDTO[]>([]);
   const [selectedDate, setSelectedDate] = useState(
@@ -117,11 +178,12 @@ export default function ReceptionDashboard() {
     newStartDate: Date;
   } | null>(null);
 
-  // slot highlight (top px tương ứng slot 15p đang hover)
+  // slot highlight
   const [hoverSlotTop, setHoverSlotTop] = useState<number | null>(null);
 
   const scrollRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null); // vùng cột bác sĩ
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [editingAppt, setEditingAppt] = useState<AppointmentDTO | null>(null);
 
   // =====================
   // API calls
@@ -160,9 +222,10 @@ export default function ReceptionDashboard() {
   }, [selectedDate, selectedClinicId]);
 
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
+    // Chỉ chạy timer khi ở mode Timeline
+    if (viewMode === "LIST") return;
 
-    // Auto scroll 1 lần khi mount
+    const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     if (scrollRef.current) {
       const currentHour = new Date().getHours();
       if (currentHour > START_HOUR) {
@@ -170,9 +233,8 @@ export default function ReceptionDashboard() {
           (currentHour - START_HOUR) * HOUR_HEIGHT - 50;
       }
     }
-
     return () => clearInterval(timer);
-  }, []);
+  }, [viewMode]);
 
   // =====================
   // Data prep
@@ -193,9 +255,22 @@ export default function ReceptionDashboard() {
   const doctorsList = uniqueDoctors.filter(
     (d): d is NonNullable<(typeof uniqueDoctors)[number]> => !!d
   );
+  // Chỉ lấy những lịch KHÁC 'CANCELLED' (và 'REJECTED' nếu có)
+  const activeAppointments = appointments.filter(
+    (a) => a.status !== "CANCELLED" && a.status !== "REJECTED"
+  );
 
-  // các lịch chưa có doctor -> hàng chờ
-  const queueAppointments = appointments.filter((a) => !a.doctor);
+  const assignedAppointments = activeAppointments.filter(
+    (a) => a.doctor !== null
+  );
+
+  const queueAppointments = activeAppointments.filter((a) => a.doctor === null);
+
+  // 2. Dữ liệu cho List View (Giữ nguyên tất cả để xem lịch sử)
+  const sortedAppointments = [...appointments].sort(
+    (a, b) =>
+      new Date(a.startDateTime).getTime() - new Date(b.startDateTime).getTime()
+  );
 
   // =====================
   // Custom drag helpers
@@ -203,7 +278,6 @@ export default function ReceptionDashboard() {
   const handleDragMove = (e: MouseEvent) => {
     setDragState((prev) => {
       if (!prev) return prev;
-
       const next: DragState = {
         ...prev,
         currentX: e.clientX,
@@ -211,11 +285,10 @@ export default function ReceptionDashboard() {
       };
       dragStateRef.current = next;
 
-      // tính slot 15p đang hover để highlight
       if (gridRef.current) {
         const rect = gridRef.current.getBoundingClientRect();
         const yInside = e.clientY - rect.top;
-        const slotHeight = HOUR_HEIGHT / 4; // 15 phút = 1/4 giờ
+        const slotHeight = HOUR_HEIGHT / 4;
 
         if (yInside < 0 || yInside > rect.height) {
           setHoverSlotTop(null);
@@ -224,19 +297,13 @@ export default function ReceptionDashboard() {
           setHoverSlotTop(slotIndex * slotHeight);
         }
       }
-
       return next;
     });
   };
 
-  const getDoctorAndTimeFromPointer = (
-    clientX: number,
-    clientY: number
-  ): { targetDoctorId: number; newStartDate: Date } | null => {
+  const getDoctorAndTimeFromPointer = (clientX: number, clientY: number) => {
     if (!gridRef.current || doctorsList.length === 0) return null;
-
     const rect = gridRef.current.getBoundingClientRect();
-
     const xInside = clientX - rect.left;
     const yInside = clientY - rect.top;
     if (xInside < 0 || yInside < 0) return null;
@@ -253,13 +320,14 @@ export default function ReceptionDashboard() {
     const snappedHourDecimal = Math.round(hourDecimal * 4) / 4;
     const newStartHour = Math.floor(snappedHourDecimal);
     const newStartMinute = (snappedHourDecimal - newStartHour) * 60;
-
     const newStartIsoLocal = `${selectedDate}T${pad(newStartHour)}:${pad(
       newStartMinute
     )}:00`;
-    const newStartDate = new Date(newStartIsoLocal);
 
-    return { targetDoctorId: targetDoctor.id, newStartDate };
+    return {
+      targetDoctorId: targetDoctor.id,
+      newStartDate: new Date(newStartIsoLocal),
+    };
   };
 
   const cleanupDrag = () => {
@@ -276,20 +344,13 @@ export default function ReceptionDashboard() {
       cleanupDrag();
       return;
     }
-
     const info = getDoctorAndTimeFromPointer(e.clientX, e.clientY);
-    // kết thúc drag (ẩn overlay & bỏ listener, clear highlight)
     cleanupDrag();
-
     if (!info) return;
-
-    const { targetDoctorId, newStartDate } = info;
-
-    // mở modal confirm
     setPendingReschedule({
       appt: current.appt,
-      targetDoctorId,
-      newStartDate,
+      targetDoctorId: info.targetDoctorId,
+      newStartDate: info.newStartDate,
     });
   };
 
@@ -300,7 +361,6 @@ export default function ReceptionDashboard() {
   ) => {
     e.preventDefault();
     const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
-
     const baseState: DragState = {
       appt,
       sourceDoctorId,
@@ -310,39 +370,31 @@ export default function ReceptionDashboard() {
       offsetY: e.clientY - rect.top,
       cardWidth: rect.width,
     };
-
     dragStateRef.current = baseState;
     setDragState(baseState);
-
     window.addEventListener("mousemove", handleDragMove);
     window.addEventListener("mouseup", handleDragEnd);
   };
 
-  // =====================
-  // Confirm handlers
-  // =====================
   const handleConfirmReschedule = async () => {
     if (!pendingReschedule) return;
-
     const { appt, targetDoctorId, newStartDate } = pendingReschedule;
-
     try {
       const token = localStorage.getItem("accessToken");
+      const payload: any = {
+        newStartDateTime: newStartDate.toISOString(),
+        newDoctorId: targetDoctorId,
+        reason: "Drag & Drop",
+      };
       await axios.patch(
         `${API_BASE_URL}/api/reception/appointments/${appt.id}/reschedule`,
-        {
-          newStartDateTime: newStartDate.toISOString(),
-          newDoctorId: targetDoctorId,
-          reason: "Drag & Drop",
-        },
+        payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-
       toast.success("Dời lịch thành công! ✅");
       fetchData();
     } catch (error: any) {
-      const msg = error?.response?.data?.message || "Không thể dời lịch.";
-      toast.error(msg);
+      toast.error(error?.response?.data?.message || "Không thể dời lịch.");
     } finally {
       setPendingReschedule(null);
     }
@@ -357,7 +409,7 @@ export default function ReceptionDashboard() {
   // =====================
   return (
     <div className="h-[calc(100vh-2rem)] flex flex-col bg-gray-50 rounded-xl shadow-sm border border-gray-200 overflow-hidden font-instrument">
-      {/* PAGE HEADER */}
+      {/* HEADER */}
       <div className="p-4 bg-white border-b border-gray-200 flex justify-between items-center shadow-sm z-30">
         <div className="flex items-center gap-4">
           <h2 className="text-xl font-bold text-gray-800">Lịch Tổng Quát</h2>
@@ -380,273 +432,399 @@ export default function ReceptionDashboard() {
             <option value="1">📍 Clinic Q1</option>
             <option value="2">📍 Clinic Q9</option>
           </select>
+
+          {/* --- NÚT CHUYỂN ĐỔI VIEW --- */}
+          <div className="flex bg-gray-100 rounded-lg p-1 ml-4 border border-gray-200">
+            <button
+              onClick={() => setViewMode("TIMELINE")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                viewMode === "TIMELINE"
+                  ? "bg-white text-[#3366FF] shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Lịch Biểu
+            </button>
+            <button
+              onClick={() => setViewMode("LIST")}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                viewMode === "LIST"
+                  ? "bg-white text-[#3366FF] shadow-sm"
+                  : "text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              Danh Sách
+            </button>
+          </div>
         </div>
-        <button className="bg-[#3366FF] text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 transition">
+
+        <button
+          onClick={() => setShowQuickBooking(true)}
+          className="bg-[#3366FF] text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 transition"
+        >
           + Đặt Lịch
         </button>
       </div>
 
-      {/* === KHU VỰC HÀNG CHỜ (QUEUE BAR) === */}
-      <div className="bg-orange-50 border-b border-orange-200 p-3 flex items-center min-h-[90px] relative shadow-inner z-20">
-        {/* Label Hàng Chờ */}
-        <div className="flex flex-col items-center justify-center px-4 shrink-0 border-r border-orange-200 mr-2 h-full">
-          <span className="font-bold text-orange-800 text-xs uppercase tracking-wider">
-            Hàng Chờ
-          </span>
-          <div className="flex items-center gap-1 mt-1">
-            <span className="text-[10px] text-orange-600">Chưa xếp:</span>
-            <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
-              {queueAppointments.length}
-            </span>
-          </div>
-        </div>
-
-        {/* Danh sách Bong bóng (Scroll ngang) */}
-        <div className="flex gap-3 px-2 items-center overflow-x-auto flex-1 no-scrollbar py-1">
-          {queueAppointments.length === 0 ? (
-            <span className="text-sm text-gray-400 italic ml-2">
-              Hiện không có lịch hẹn nào cần xếp.
-            </span>
-          ) : (
-            queueAppointments.map((appt) => (
-              <div
-                key={appt.id}
-                // Kéo từ hàng chờ -> sourceDoctorId là NULL
-                onMouseDown={(e) => startDrag(e, appt, null)}
-                className="
-                  w-52 bg-white border-l-4 border-orange-400 rounded-lg shadow-sm p-2 cursor-grab active:cursor-grabbing 
-                  hover:shadow-md hover:-translate-y-0.5 transition-all select-none shrink-0 flex flex-col gap-1 group
-                "
-                title="Kéo thả xuống lịch bác sĩ để gán"
-              >
-                <div className="flex justify-between items-center">
-                  <span className="font-bold text-xs text-gray-900 truncate max-w-[120px]">
-                    {appt.patient.fullName}
-                  </span>
-                  <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-mono">
-                    {appt.patient.patientCode}
-                  </span>
-                </div>
-
-                <div className="flex justify-between items-center mt-1">
-                  <span className="text-[10px] text-gray-500 truncate max-w-[100px]">
-                    {appt.services[0]?.serviceName}
-                  </span>
-
-                  {/* Hiển thị buổi (Sáng/Chiều) dựa trên giờ placeholder (8h hoặc 13h) */}
-                  <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
-                    {new Date(appt.startDateTime).getHours() < 12
-                      ? "CA SÁNG"
-                      : "CA CHIỀU"}
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* BODY */}
+      {/* BODY CONTAINER */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {loading ? (
           <div className="p-20 text-center text-gray-500">Đang tải...</div>
         ) : (
-          <div className="flex flex-1 overflow-hidden">
-            {/* SCROLLABLE GRID */}
-            <div
-              className="flex-1 overflow-y-auto relative flex flex-col"
-              ref={scrollRef}
-            >
-              {/* STICKY ROW: time header (blank) + doctor headers */}
-              <div className="sticky top-0 z-20 flex bg-white border-b border-gray-200">
-                {/* Blank cell cho cột giờ */}
-                <div className="w-16 shrink-0 bg-white border-r border-gray-200" />
-                {/* Header từng bác sĩ canh thẳng cột */}
-                <div className="flex flex-1">
-                  {uniqueDoctors.map((doc) =>
-                    doc ? (
-                      <div
-                        key={doc.id}
-                        className="flex-1 min-w-[220px] border-r border-gray-200 flex justify-center px-1 pt-1"
-                      >
-                        <div className="w-full bg-gray-900 text-white text-xs font-semibold py-2 rounded-t-md text-center shadow-sm">
-                          {doc.fullName}
-                        </div>
-                      </div>
-                    ) : null
-                  )}
-                </div>
-              </div>
-
-              {/* MAIN GRID: time column + doctor columns */}
-              <div className="flex flex-1">
-                {/* TIME COLUMN */}
-                <div className="w-16 shrink-0 bg-white border-r border-gray-200 z-10 relative">
-                  {hours.map((h) => (
-                    <div
-                      key={h}
-                      style={{ height: `${HOUR_HEIGHT}px` }}
-                      className="relative border-b border-gray-100"
-                    >
-                      {/* giờ tròn */}
-                      <span className="absolute top-1 right-1 text-xs font-bold text-gray-500">
-                        {h}:00
+          <>
+            {/* === OPTION 1: TIMELINE VIEW === */}
+            {viewMode === "TIMELINE" && (
+              <>
+                {/* QUEUE BAR */}
+                <div className="bg-orange-50 border-b border-orange-200 p-3 flex items-center min-h-[90px] relative shadow-inner z-20 overflow-x-auto">
+                  <div className="flex flex-col items-center justify-center px-4 shrink-0 border-r border-orange-200 mr-2 h-full">
+                    <span className="font-bold text-orange-800 text-xs uppercase tracking-wider">
+                      Hàng Chờ
+                    </span>
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="text-[10px] text-orange-600">
+                        Chưa xếp:
                       </span>
-
-                      {/* hiển thị thêm 8:15 / 8:30 / 8:45 khi đang kéo */}
-                      {dragState && (
-                        <>
-                          <span className="absolute top-1/4 right-1 text-[10px] text-gray-400">
-                            {h}:{pad(15)}
-                          </span>
-                          <span className="absolute top-1/2 right-1 text-[10px] text-gray-400">
-                            {h}:{pad(30)}
-                          </span>
-                          <span className="absolute top-3/4 right-1 text-[10px] text-gray-400">
-                            {h}:{pad(45)}
-                          </span>
-                        </>
-                      )}
+                      <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
+                        {queueAppointments.length}
+                      </span>
                     </div>
-                  ))}
-                </div>
-
-                {/* DOCTOR COLUMNS + BACKGROUND GRID */}
-                <div className="flex flex-1 relative min-w-max" ref={gridRef}>
-                  {/* BACKGROUND GRID: ngang + 30p dotted */}
-                  <div className="absolute inset-0 flex flex-col pointer-events-none z-0">
-                    {hours.map((h) => (
-                      <div
-                        key={h}
-                        style={{ height: `${HOUR_HEIGHT}px` }}
-                        className="border-b border-gray-200 w-full relative"
-                      >
-                        {/* 30p */}
-                        <div className="absolute top-1/2 w-full border-b border-dotted border-gray-200" />
-
-                        {/* thêm vạch 15p & 45p khi đang drag */}
-                        {dragState && (
-                          <>
-                            <div className="absolute top-1/4 w-full border-b border-dotted border-gray-100" />
-                            <div className="absolute top-3/4 w-full border-b border-dotted border-gray-100" />
-                          </>
-                        )}
-                      </div>
-                    ))}
                   </div>
-
-                  {/* HIGHLIGHT SLOT 15P ĐANG HOVER*/}
-                  {dragState && hoverSlotTop !== null && (
-                    <div
-                      className="absolute left-0 right-0 z-10 pointer-events-none"
-                      style={{
-                        top: hoverSlotTop,
-                        height: HOUR_HEIGHT / 4,
-                      }}
-                    >
-                      <div className="h-full w-full bg-blue-200/30 border-y border-blue-300/60 rounded-sm transform scale-y-110 transition-transform" />
-                    </div>
-                  )}
-
-                  {/* CURRENT TIME LINE */}
-                  {currentHourPos > 0 && (
-                    <div
-                      className="absolute left-0 right-0 h-0.5 bg-red-500 z-30 pointer-events-none flex items-center"
-                      style={{ top: `${currentHourPos}px` }}
-                    >
-                      <div className="w-full bg-red-500 h-[1px]" />
-                      <div className="absolute left-0 -ml-1 w-2 h-2 bg-red-500 rounded-full" />
-                    </div>
-                  )}
-
-                  {/* CỘT TỪNG BÁC SĨ */}
-                  {uniqueDoctors.map((doc) => {
-                    if (!doc) return null;
-
-                    const docSchedules = schedules.filter(
-                      (s) => s.doctor.id === doc.id
-                    );
-                    const docAppointments = appointments.filter(
-                      (a) => a.doctor && a.doctor.id === doc.id
-                    );
-
-                    return (
-                      <div
-                        key={doc.id}
-                        className="flex-1 min-w-[220px] border-r border-gray-200 relative hover:bg-blue-50/10 transition-colors"
-                      >
-                        {/* Ca làm việc (nền màu nhạt) */}
-                        {docSchedules.map((sche) => (
-                          <div
-                            key={`sch-${sche.id}`}
-                            className="absolute left-2 right-2 bg-blue-50 border border-blue-100 rounded-lg flex flex-col justify-end p-1 pointer-events-none"
-                            style={getVerticalStyle(
-                              sche.startTime,
-                              sche.endTime
-                            )}
-                          >
-                            <span className="text-[9px] text-blue-300 font-bold uppercase text-right tracking-wide">
-                              {sche.room?.roomName}
+                  <div className="flex gap-3 px-2 items-center">
+                    {queueAppointments.length === 0 ? (
+                      <span className="text-sm text-gray-400 italic ml-2">
+                        Hiện không có lịch hẹn nào cần xếp.
+                      </span>
+                    ) : (
+                      queueAppointments.map((appt) => (
+                        <div
+                          key={appt.id}
+                          onMouseDown={(e) => startDrag(e, appt, null)}
+                          onClick={() => setEditingAppt(appt)}
+                          className="w-52 bg-white border-l-4 border-orange-400 rounded-lg shadow-sm p-2 cursor-grab active:cursor-grabbing hover:shadow-md hover:-translate-y-0.5 transition-all select-none shrink-0 flex flex-col gap-1 group"
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-bold text-xs text-gray-900 truncate max-w-[120px]">
+                              {appt.patient.fullName}
+                            </span>
+                            <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded font-mono">
+                              {appt.patient.patientCode}
                             </span>
                           </div>
-                        ))}
+                          <div className="flex justify-between items-center mt-1">
+                            <span className="text-[10px] text-gray-500 truncate max-w-[100px]">
+                              {appt.services[0]?.serviceName}
+                            </span>
+                            <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
+                              {new Date(appt.startDateTime).getHours() < 12
+                                ? "CA SÁNG"
+                                : "CA CHIỀU"}
+                            </span>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
 
-                        {/* Lịch hẹn (cards) */}
-                        {docAppointments.map((appt) => {
-                          const isDraggingThis =
-                            dragState?.appt.id === appt.id;
-
-                          return (
+                {/* TIMELINE GRID */}
+                <div className="flex flex-1 overflow-hidden">
+                  <div
+                    className="flex-1 overflow-y-auto relative flex flex-col"
+                    ref={scrollRef}
+                  >
+                    <div className="sticky top-0 z-20 flex bg-white border-b border-gray-200 shadow-sm">
+                      <div className="w-16 shrink-0 bg-white border-r border-gray-200" />
+                      <div className="flex flex-1">
+                        {uniqueDoctors.map((doc) =>
+                          doc ? (
                             <div
-                              key={`appt-${appt.id}`}
-                              onMouseDown={(e) => startDrag(e, appt, doc.id)}
-                              className={`
-                                absolute left-2 right-2 rounded-md shadow-sm cursor-grab 
-                                hover:shadow-md hover:z-50 transition-all select-none flex flex-col p-3
-                                bg-white border
-                                ${getStatusColor(appt.status)}
-                                ${
-                                  isDraggingThis ? "opacity-0" : "opacity-100"
-                                }
-                              `}
-                              style={getVerticalStyle(
-                                appt.startDateTime,
-                                appt.endDateTime
-                              )}
+                              key={doc.id}
+                              className="flex-1 min-w-[220px] border-r border-gray-200 flex justify-center px-1 pt-1"
                             >
-                              {/* Tên bệnh nhân */}
-                              <div className="text-[15px] font-semibold text-gray-900 truncate leading-tight">
-                                {appt.patient.fullName}
-                              </div>
-
-                              {/* Dịch vụ */}
-                              <div className="text-[13px] text-gray-700 mt-1 truncate">
-                                {appt.services[0]?.serviceName}
-                              </div>
-
-                              {/* Giờ */}
-                              <div className="text-[13px] text-gray-500 font-semibold mt-auto">
-                                {new Date(appt.startDateTime).getHours()}:
-                                {pad(
-                                  new Date(appt.startDateTime).getMinutes()
-                                )}{" "}
-                                - {new Date(appt.endDateTime).getHours()}:
-                                {pad(new Date(appt.endDateTime).getMinutes())}
+                              <div className="w-full bg-gray-900 text-white text-xs font-semibold py-2 rounded-t-md text-center shadow-sm">
+                                {doc.fullName}
                               </div>
                             </div>
-                          );
-                        })}
+                          ) : null
+                        )}
                       </div>
-                    );
-                  })}
+                    </div>
+                    <div
+                      className="flex flex-1 relative min-w-max"
+                      ref={gridRef}
+                    >
+                      <div className="w-16 shrink-0 bg-white border-r border-gray-200 z-10 relative">
+                        {hours.map((h) => (
+                          <div
+                            key={h}
+                            style={{ height: `${HOUR_HEIGHT}px` }}
+                            className="relative border-b border-gray-100"
+                          >
+                            <span className="absolute top-1 right-1 text-xs font-bold text-gray-500">
+                              {h}:00
+                            </span>
+                            {dragState && (
+                              <>
+                                <span className="absolute top-1/4 right-1 text-[10px] text-gray-400">
+                                  {h}:15
+                                </span>
+                                <span className="absolute top-1/2 right-1 text-[10px] text-gray-400">
+                                  {h}:30
+                                </span>
+                                <span className="absolute top-3/4 right-1 text-[10px] text-gray-400">
+                                  {h}:45
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                      <div className="absolute inset-0 flex flex-col pointer-events-none z-0">
+                        {hours.map((h) => (
+                          <div
+                            key={h}
+                            style={{ height: `${HOUR_HEIGHT}px` }}
+                            className="border-b border-gray-200 w-full relative"
+                          >
+                            <div className="absolute top-1/2 w-full border-b border-dotted border-gray-100" />
+                          </div>
+                        ))}
+                      </div>
+                      {dragState && hoverSlotTop !== null && (
+                        <div
+                          className="absolute left-0 right-0 z-10 pointer-events-none"
+                          style={{ top: hoverSlotTop, height: HOUR_HEIGHT / 4 }}
+                        >
+                          <div className="h-full w-full bg-blue-400/20 border-y border-blue-500/50" />
+                        </div>
+                      )}
+                      {currentHourPos > 0 && (
+                        <div
+                          className="absolute left-0 right-0 h-0.5 bg-red-500 z-30 pointer-events-none"
+                          style={{ top: `${currentHourPos}px` }}
+                        >
+                          <div className="absolute left-0 -ml-1 w-2 h-2 bg-red-500 rounded-full" />
+                        </div>
+                      )}
+
+                      {/* DOCTOR COLUMNS */}
+                      {uniqueDoctors.map((doc) => {
+                        if (!doc) return null;
+                        const docSchedules = schedules.filter(
+                          (s) => s.doctor.id === doc.id
+                        );
+                        const docAppointments = assignedAppointments.filter(
+                          (a) => a.doctor && a.doctor.id === doc.id
+                        );
+                        return (
+                          <div
+                            key={doc.id}
+                            className="flex-1 min-w-[220px] border-r border-gray-200 relative hover:bg-blue-50/5 transition-colors"
+                          >
+                            {docSchedules.map((sche) => (
+                              <div
+                                key={`sch-${sche.id}`}
+                                className="absolute left-2 right-2 bg-blue-50 border border-blue-100 rounded-lg flex flex-col justify-end p-1 pointer-events-none"
+                                style={getVerticalStyle(
+                                  sche.startTime,
+                                  sche.endTime
+                                )}
+                              >
+                                <span className="text-[9px] text-blue-300 font-bold uppercase text-right tracking-wide">
+                                  {sche.room?.roomName}
+                                </span>
+                              </div>
+                            ))}
+                            {docAppointments.map((appt) => {
+                              const isDraggingThis =
+                                dragState?.appt.id === appt.id;
+                              return (
+                                <div
+                                  key={`appt-${appt.id}`}
+                                  onMouseDown={(e) =>
+                                    startDrag(e, appt, doc.id)
+                                  }
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingAppt(appt);
+                                  }}
+                                  className={`absolute left-2 right-2 rounded-md shadow-sm cursor-grab hover:shadow-md hover:z-50 transition-all select-none flex flex-col p-3 bg-white border ${getStatusColor(
+                                    appt.status
+                                  )} ${
+                                    isDraggingThis ? "opacity-0" : "opacity-100"
+                                  }`}
+                                  style={getVerticalStyle(
+                                    appt.startDateTime,
+                                    appt.endDateTime
+                                  )}
+                                >
+                                  <div className="text-[15px] font-semibold text-gray-900 truncate leading-tight">
+                                    {appt.patient.fullName}
+                                  </div>
+                                  <div
+                                    className="text-[13px] text-gray-700 mt-1 truncate"
+                                    title={appt.services[0]?.serviceName}
+                                  >
+                                    {appt.services[0]?.serviceName}
+                                  </div>
+                                  <div className="text-[13px] text-gray-500 font-semibold mt-auto">
+                                    {new Date(appt.startDateTime).getHours()}:
+                                    {pad(
+                                      new Date(appt.startDateTime).getMinutes()
+                                    )}{" "}
+                                    - {new Date(appt.endDateTime).getHours()}:
+                                    {pad(
+                                      new Date(appt.endDateTime).getMinutes()
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* === OPTION 2: LIST VIEW === */}
+            {viewMode === "LIST" && (
+              <div className="flex-1 overflow-auto bg-gray-50 p-6">
+                <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                  <table className="w-full text-sm text-left text-gray-500 border-collapse">
+                    <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-10 border-b border-gray-200">
+                      <tr>
+                        <th className="px-6 py-3 font-bold">Thời gian</th>
+                        <th className="px-6 py-3 font-bold">Trạng thái</th>
+                        <th className="px-6 py-3 font-bold">Chi nhánh</th>
+                        <th className="px-6 py-3 font-bold">Bác sĩ</th>
+                        <th className="px-6 py-3 font-bold">Dịch vụ</th>
+                        <th className="px-6 py-3 font-bold">Khách hàng</th>
+                        <th className="px-6 py-3 font-bold">Người lập</th>
+                        <th className="px-6 py-3 text-center font-bold">
+                          Hành động
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {sortedAppointments.map((appt) => (
+                        <tr
+                          key={appt.id}
+                          className="bg-white hover:bg-gray-50 transition-colors"
+                        >
+                          <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                            {formatDateTime(appt.startDateTime)}
+                          </td>
+                          <td className="px-6 py-4">
+                            {getStatusBadge(appt.status)}
+                          </td>
+                          <td className="px-6 py-4">
+                            {appt.clinic?.clinicName || "Clinic Q1"}
+                          </td>
+                          <td className="px-6 py-4">
+                            {appt.doctor ? (
+                              <div className="flex items-center gap-2">
+                                <div className="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold">
+                                  Dr
+                                </div>
+                                <span className="font-semibold text-gray-800">
+                                  {appt.doctor.fullName}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-orange-500 italic text-xs bg-orange-50 px-2 py-1 rounded border border-orange-100">
+                                Chưa xếp bác sĩ
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 max-w-xs">
+                            <div
+                              className="truncate"
+                              title={appt.services[0]?.serviceName}
+                            >
+                              {appt.services[0]?.serviceName}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="font-bold text-gray-900">
+                              {appt.patient.fullName}
+                            </div>
+                            <div className="text-xs text-gray-400 font-mono">
+                              {appt.patient.patientCode}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="text-gray-600">
+                              {appt.createdByUserName || "Admin"}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <button
+                              onClick={() => setEditingAppt(appt)}
+                              className="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-2 rounded-lg transition"
+                              title="Chỉnh sửa"
+                            >
+                              <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="h-4 w-4"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                  d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                />
+                              </svg>
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {sortedAppointments.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+                      <p>Chưa có lịch hẹn nào.</p>
+                    </div>
+                  )}
                 </div>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </div>
 
-      {/* OVERLAY CARD THEO CHUỘT */}
+      {/* DRAG OVERLAY (Giữ nguyên) */}
       {dragState && (
         <div
           className="pointer-events-none fixed z-[9999]"
@@ -656,62 +834,70 @@ export default function ReceptionDashboard() {
             width: dragState.cardWidth,
           }}
         >
-          <div className="rounded-md shadow-lg bg-white border border-yellow-400 p-3 opacity-95">
-            <div className="text-[15px] font-semibold text-gray-900 truncate leading-tight">
+          <div className="rounded shadow-xl bg-white border-2 border-blue-500 p-2 opacity-90 transform rotate-2 cursor-grabbing">
+            <div className="font-bold text-sm text-gray-900 truncate">
               {dragState.appt.patient.fullName}
             </div>
-            <div className="text-[13px] text-gray-700 mt-1 truncate">
+            <div className="text-xs text-gray-600">
               {dragState.appt.services[0]?.serviceName}
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL CONFIRM DỜI LỊCH */}
+      {/* MODAL CONFIRM (Giữ nguyên) */}
       {pendingReschedule && (
-        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40">
-          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm p-5 space-y-4">
-            <h3 className="text-lg font-semibold text-gray-900">
+        <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4">
+            <h3 className="text-lg font-bold text-gray-800">
               Xác nhận dời lịch
             </h3>
-
-            <p className="text-sm text-gray-600 leading-relaxed">
-              Bạn có chắc muốn dời lịch của{" "}
-              <span className="font-semibold">
-                {pendingReschedule.appt.patient.fullName}
-              </span>{" "}
-              sang{" "}
-              <span className="font-mono">
+            <p className="text-sm text-gray-600">
+              Gán lịch cho <b>{pendingReschedule.appt.patient.fullName}</b> sang{" "}
+              <span className="font-bold text-blue-600">
                 {pad(pendingReschedule.newStartDate.getHours())}:
                 {pad(pendingReschedule.newStartDate.getMinutes())}
-              </span>{" "}
-              cho bác sĩ{" "}
-              <span className="font-semibold">
-                {(
-                  doctorsList.find(
-                    (d) => d.id === pendingReschedule.targetDoctorId
-                  ) || pendingReschedule.appt.doctor
-                )?.fullName || "được chọn"}
               </span>
               ?
             </p>
-
-            <div className="flex justify-end gap-3 pt-2">
+            <div className="flex justify-end gap-3">
               <button
                 onClick={handleCancelReschedule}
-                className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition"
+                className="px-4 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200"
               >
                 Hủy
               </button>
               <button
                 onClick={handleConfirmReschedule}
-                className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#3366FF] hover:bg-blue-700 transition shadow-sm"
+                className="px-4 py-2 rounded-lg text-white bg-[#3366FF] hover:bg-blue-700 shadow-lg"
               >
-                Dời lịch
+                Xác nhận
               </button>
             </div>
           </div>
         </div>
+      )}
+
+      {showQuickBooking && (
+        <QuickBookingModal
+          onClose={() => setShowQuickBooking(false)}
+          onSuccess={() => {
+            setShowQuickBooking(false);
+            fetchData();
+          }}
+        />
+      )}
+
+      {/* MODAL CHỈNH SỬA */}
+      {editingAppt && (
+        <AppointmentEditModal
+          appointment={editingAppt}
+          onClose={() => setEditingAppt(null)}
+          onSuccess={() => {
+            setEditingAppt(null);
+            fetchData();
+          }}
+        />
       )}
     </div>
   );
