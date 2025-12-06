@@ -342,22 +342,24 @@ export default function EmployeeAttendanceView() {
     if (!accessToken || !userId || !isDoctor) return;
     try {
       const today = new Date().toISOString().split("T")[0];
+      // Sử dụng endpoint đúng: /api/hr/schedules/my-schedule/date/{date}
       const response = await axios.get<any[]>(
-        `${apiBase}/api/hr/schedules/date/${today}`,
+        `${apiBase}/api/hr/schedules/my-schedule/date/${today}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      // Lọc schedule của user hiện tại và chỉ lấy ACTIVE
+      // Endpoint này đã trả về schedule của user hiện tại, chỉ cần lọc ACTIVE
       const userSchedules = (response.data || []).filter(
-        (schedule: any) => 
-          schedule.status === "ACTIVE" &&
-          schedule.doctor && 
-          (schedule.doctor.id === userId || schedule.doctor.userId === userId)
+        (schedule: any) => schedule.status === "ACTIVE"
       );
       setTodaySchedules(userSchedules);
     } catch (error: any) {
-      console.error("Failed to fetch today schedules:", error);
+      // Xử lý lỗi một cách graceful - không log error nếu là 500 (có thể do backend chưa có schedule)
+      if (error.response?.status !== 500) {
+        console.error("Failed to fetch today schedules:", error);
+      }
+      // Set empty array để không ảnh hưởng đến UI
       setTodaySchedules([]);
     }
   };
@@ -533,6 +535,12 @@ export default function EmployeeAttendanceView() {
       return;
     }
 
+    // Validation: Kiểm tra explanationType (bắt buộc theo backend)
+    if (!selectedExplanation.explanationType) {
+      toast.error(t("attendance.explanationsNeeded.missingExplanationType", "Explanation type is required"));
+      return;
+    }
+
     setSubmitting(true);
     try {
       const requestBody: any = {
@@ -565,22 +573,42 @@ export default function EmployeeAttendanceView() {
         // Đảm bảo workDate ở format yyyy-MM-dd
         const workDateValue = selectedExplanation.workDate;
         if (typeof workDateValue === 'string') {
-          // Nếu là string, kiểm tra format và chuẩn hóa
+          // Kiểm tra nếu đã là format yyyy-MM-dd
+          if (/^\d{4}-\d{2}-\d{2}$/.test(workDateValue)) {
+            requestBody.workDate = workDateValue;
+          } else {
+            // Parse và format lại
+            try {
+              const parsedDate = new Date(workDateValue);
+              if (!isNaN(parsedDate.getTime())) {
+                requestBody.workDate = formatDate(parsedDate);
+              } else {
+                toast.error(t("attendance.explanationsNeeded.invalidWorkDate", "Invalid work date format"));
+                setSubmitting(false);
+                return;
+              }
+            } catch (e) {
+              toast.error(t("attendance.explanationsNeeded.invalidWorkDate", "Invalid work date format"));
+              setSubmitting(false);
+              return;
+            }
+          }
+        } else {
+          // Nếu không phải string, thử parse như Date
           try {
-            const parsedDate = new Date(workDateValue);
+            const parsedDate = new Date(workDateValue as any);
             if (!isNaN(parsedDate.getTime())) {
               requestBody.workDate = formatDate(parsedDate);
             } else {
-              // Nếu không parse được, gửi nguyên string (có thể đã đúng format yyyy-MM-dd)
-              requestBody.workDate = workDateValue;
+              toast.error(t("attendance.explanationsNeeded.invalidWorkDate", "Invalid work date format"));
+              setSubmitting(false);
+              return;
             }
           } catch (e) {
-            // Nếu không parse được, gửi nguyên string
-            requestBody.workDate = workDateValue;
+            toast.error(t("attendance.explanationsNeeded.invalidWorkDate", "Invalid work date format"));
+            setSubmitting(false);
+            return;
           }
-        } else {
-          // Nếu là Date object hoặc giá trị khác
-          requestBody.workDate = workDateValue;
         }
       }
       
@@ -1198,12 +1226,18 @@ export default function EmployeeAttendanceView() {
                     {t("attendance.explanationsNeeded.reasonLabel", "Explanation Reason *")}
                   </label>
                   <textarea
+                    autoFocus
                     value={explanationReason}
                     onChange={(e) => setExplanationReason(e.target.value)}
                     placeholder={t("attendance.explanationsNeeded.reasonPlaceholder", "Please explain the reason...")}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={submitting}
+                    maxLength={500}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {explanationReason.length}/500 {t("attendance.explanationsNeeded.characters", "characters")}
+                  </p>
                 </div>
                 <div className="flex gap-2 justify-end">
                   <button

@@ -36,38 +36,74 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     // Hàm lấy số lượng notification chưa đọc
     const fetchUnreadCount = useCallback(async () => {
+        const token = getToken();
+        if (!token) {
+            return; // Không gọi API nếu không có token
+        }
         try {
             const response = await notificationApi.countUnread();
             setUnreadCount(response.data);
-        } catch (error) { }
+        } catch (error: any) {
+            // Chỉ log lỗi nếu không phải 401 (unauthorized)
+            if (error.response?.status !== 401) {
+                console.error('[Notification] Failed to fetch unread count:', error);
+            }
+        }
     }, []);
 
     // Hàm lấy danh sách notification
     const fetchNotifications = useCallback(async (page = 0, size = 50) => {
+        const token = getToken();
+        if (!token) {
+            return; // Không gọi API nếu không có token
+        }
         try {
             const response = await notificationApi.getNotifications(page, size);
             setNotifications(response.data.content);
-        } catch (error) { }
+        } catch (error: any) {
+            // Chỉ log lỗi nếu không phải 401 (unauthorized)
+            if (error.response?.status !== 401) {
+                console.error('[Notification] Failed to fetch notifications:', error);
+            }
+        }
     }, []);
 
     // Đánh dấu 1 notification đã đọc
     const markAsRead = async (id: number) => {
+        const token = getToken();
+        if (!token) {
+            return; // Không gọi API nếu không có token
+        }
         try {
             await notificationApi.markAsRead(id);
             setNotifications((prev) =>
                 prev.map((n) => (n.notificationId === id ? { ...n, isRead: true } : n))
             );
             setUnreadCount((prev) => Math.max(0, prev - 1));
-        } catch (error) { }
+        } catch (error: any) {
+            // Chỉ log lỗi nếu không phải 401 (unauthorized)
+            if (error.response?.status !== 401) {
+                console.error('[Notification] Failed to mark as read:', error);
+            }
+        }
     };
 
     // Đánh dấu tất cả notification đã đọc
     const markAllAsRead = async () => {
+        const token = getToken();
+        if (!token) {
+            return; // Không gọi API nếu không có token
+        }
         try {
             await notificationApi.markAllAsRead();
             setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
             setUnreadCount(0);
-        } catch (error) { }
+        } catch (error: any) {
+            // Chỉ log lỗi nếu không phải 401 (unauthorized)
+            if (error.response?.status !== 401) {
+                console.error('[Notification] Failed to mark all as read:', error);
+            }
+        }
     };
 
     // Cho phép các component khác đăng ký nhận event notification push
@@ -85,10 +121,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             return;
         }
 
-        // Luôn fetch dữ liệu mới nhất từ API khi component mount
-        fetchUnreadCount();
-        fetchNotifications();
-
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
         const baseUrl = apiUrl.replace(/\/+$/, '');
         const socketUrl = `${baseUrl}/ws`;
@@ -105,7 +137,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 console.log('[WebSocket] Connected successfully');
                 setIsConnected(true);
 
-                // Fetch lại lần nữa khi connect thành công để đảm bảo sync
+                // Fetch dữ liệu khi connect thành công để đảm bảo sync
                 fetchUnreadCount();
                 fetchNotifications();
 
