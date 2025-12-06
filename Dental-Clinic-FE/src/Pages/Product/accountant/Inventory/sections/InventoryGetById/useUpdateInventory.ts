@@ -133,7 +133,7 @@ export function useUpdateInventory() {
 
         try {
             await updateInventory(payload);
-            navigate('/accountant/inventory/view'); 
+            navigate('/accountant/inventory'); 
         } catch (err) {
             const parsed = extractValidationErrors(err);
             setFieldErrors(parsed.fieldErrors);

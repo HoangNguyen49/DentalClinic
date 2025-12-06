@@ -1,5 +1,12 @@
 import axiosClient, { API_BASE_URL } from './axiosClient';
 
+// DTO con cho lịch sử mua
+export interface ProductPurchaseHistoryDto {
+  customerName: string;
+  price: number;
+  quantity: number;
+  purchaseDate: string;
+}
 export interface Product {
   productId: number;
   sku: string;
@@ -18,6 +25,11 @@ export interface Product {
   typeNames: string[];
   latestImportPrice?: number;  
   latestProfitMargin?: number; 
+  // --- NEW FIELDS ---
+  soldCount: number;             // Đã bán
+  discountPercentage?: number;   // % Sale
+  recentPurchases?: ProductPurchaseHistoryDto[]; // Danh sách người mua
+  relatedProducts?: Product[];   // Gợi ý
 }
 
 export async function fetchAllProducts(): Promise<Product[]> {
