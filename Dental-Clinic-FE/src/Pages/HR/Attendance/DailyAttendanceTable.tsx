@@ -225,7 +225,11 @@ export default function DailyAttendanceTable({
               )}
               {hasWorked && (
                 <td className="px-4 py-3 text-sm text-center text-gray-700">
-                  {item.workedDisplay && item.workedDisplay !== "0 hr 00 min" ? item.workedDisplay : "-"}
+                  {typeof item.workedHours === "number" && item.workedHours > 0
+                    ? `${item.workedHours.toFixed(2)} h`
+                    : item.workedDisplay && item.workedDisplay !== "0 hr 00 min"
+                      ? item.workedDisplay
+                      : "-"}
                 </td>
               )}
               {hasRemarks && (
@@ -304,6 +308,16 @@ export default function DailyAttendanceTable({
                         <label className="text-xs text-gray-500 mb-1 block">{t("detail.actualHours", "Actual Work Hours")}</label>
                         <div className="text-sm font-medium text-gray-900">
                           {attendanceDetail.actualWorkHours.toFixed(2)} {t("detail.hours", "hours")}
+                        </div>
+                      </div>
+                    )}
+                    {attendanceDetail.expectedWorkHours !== undefined &&
+                     attendanceDetail.expectedWorkHours !== null &&
+                     typeof attendanceDetail.expectedWorkHours === 'number' && (
+                      <div>
+                        <label className="text-xs text-gray-500 mb-1 block">{t("detail.expectedHours", "Expected Work Hours")}</label>
+                        <div className="text-sm font-medium text-gray-900">
+                          {attendanceDetail.expectedWorkHours.toFixed(2)} {t("detail.hours", "hours")}
                         </div>
                       </div>
                     )}

@@ -23,7 +23,8 @@ export const useScheduleData = (weekStart: string) => {
     const fetchApprovedLeaves = async () => {
         if (!weekStart) return;
         try {
-            const monday = new Date(weekStart);
+            // Parse with explicit time to avoid timezone issues
+            const monday = new Date(weekStart + 'T00:00:00');
             const saturday = new Date(monday);
             saturday.setDate(monday.getDate() + 5);
 
