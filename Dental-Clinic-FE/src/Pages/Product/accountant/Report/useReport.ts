@@ -17,7 +17,7 @@ export const useReport = () => {
   const [filters, setFilters] = useState<ReportFilter>({
     startDate: "",
     endDate: "",
-    currency: "VND",
+    currency: "USD",
   });
 
   // 3. Hàm gọi API lấy dữ liệu Dashboard

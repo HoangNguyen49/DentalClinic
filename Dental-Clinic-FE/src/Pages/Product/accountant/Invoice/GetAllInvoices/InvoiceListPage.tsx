@@ -53,7 +53,6 @@ const InvoiceListPage: React.FC = () => {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-3">
-             {/* ... (Phần Search và Filter giữ nguyên) ... */}
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -144,7 +143,7 @@ const InvoiceListPage: React.FC = () => {
                         <div className="text-xs text-gray-500 font-mono mt-0.5">{inv.customerPhone}</div>
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <span className="text-sm font-bold text-gray-900">{formatMoney(inv.totalAmount)}</span>
+                        <span className="text-sm font-bold text-gray-900">{formatMoney(inv.totalAmount, inv.currency)}</span>
                       </td>
                       <td className="px-6 py-4 text-center">{getStatusBadge(inv.invoiceStatus)}</td>
                       <td className="px-6 py-4 text-center">

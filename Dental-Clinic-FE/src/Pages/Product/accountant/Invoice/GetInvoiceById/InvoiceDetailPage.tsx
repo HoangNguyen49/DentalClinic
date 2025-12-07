@@ -1,11 +1,11 @@
 import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useInvoiceDetail } from "./useInvoiceDetail"; // Đảm bảo đường dẫn đúng
+import { useInvoiceDetail } from "./useInvoiceDetail";
 import { 
   ArrowLeft, CheckCircle2, Lock, ShieldCheck, 
   MapPin, Phone, User, Package, CreditCard, Info, AlertCircle 
-} from "lucide-react"; // Cần cài lucide-react
-
+} from "lucide-react"; 
+import { formatMoney } from "../../../../../utils/format";
 const InvoiceDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -110,7 +110,7 @@ const InvoiceDetailPage: React.FC = () => {
                           {item.quantity}
                         </td>
                         <td className="px-6 py-4 text-right font-medium text-gray-900 text-sm">
-                           {new Intl.NumberFormat('vi-VN').format(item.lineTotalAmount)}
+                          {formatMoney(item.lineTotalAmount, invoice.currency)}
                         </td>
                       </tr>
                     ))}
@@ -120,7 +120,7 @@ const InvoiceDetailPage: React.FC = () => {
                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end items-center gap-4">
                   <span className="text-sm text-gray-500 uppercase font-bold">Total Amount</span>
                   <span className="text-2xl font-bold text-blue-600">
-                     {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(invoice.totalAmount)}
+                     {formatMoney(invoice.totalAmount, invoice.currency)}
                   </span>
                </div>
             </div>

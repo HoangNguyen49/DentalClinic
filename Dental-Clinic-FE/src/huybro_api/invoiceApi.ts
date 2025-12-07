@@ -16,6 +16,7 @@ export interface ProductInvoiceListDto {
   paymentMethod: string;
   createdAt: string;
   updatedAt: string;
+  currency: string;
 }
 
 // 2. Response chuẩn cho Phân trang

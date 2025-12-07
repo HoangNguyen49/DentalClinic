@@ -51,7 +51,7 @@ const Report = () => {
           
           {/* Currency Switcher */}
           <div className="bg-gray-100 p-1 rounded-xl flex items-center">
-            {(["VND", "USD"] as const).map((curr) => (
+            {(["USD", "VND"] as const).map((curr) => (
               <button
                 key={curr}
                 onClick={() => updateFilter("currency", curr)}
