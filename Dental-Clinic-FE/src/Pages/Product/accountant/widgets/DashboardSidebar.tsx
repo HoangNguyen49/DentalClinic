@@ -26,6 +26,16 @@ function DashboardSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // --- XỬ LÝ LOGOUT TẠI CHỖ ---
+  const handleLogout = () => {
+    // 1. Xóa dữ liệu phiên đăng nhập
+    localStorage.removeItem("user");
+    localStorage.removeItem("accessToken");
+    
+    // 2. Điều hướng về trang Login
+    navigate("/login");
+  };
+
   // ============================
   //   CẤU TRÚC MENU MỚI
   // ============================
@@ -58,7 +68,7 @@ function DashboardSidebar() {
     {
       title: "Inventory Control",
       items: [
-         {
+          {
           label: "Inventory Overview",
           href: "/accountant/inventory",
           icon: <Warehouse className="w-4 h-4" />,
@@ -68,7 +78,7 @@ function DashboardSidebar() {
           href: "/accountant/inventory/import",
           icon: <PackagePlus className="w-4 h-4" />,
         },
-       
+        
       ],
     },
     {
@@ -154,7 +164,7 @@ function DashboardSidebar() {
       {/* FOOTER / LOGOUT - Fixed at bottom */}
       <div className="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0">
         <button
-          onClick={() => navigate("/logout")}
+          onClick={handleLogout} 
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors text-sm font-medium"
         >
           <LogOut className="w-4 h-4" />

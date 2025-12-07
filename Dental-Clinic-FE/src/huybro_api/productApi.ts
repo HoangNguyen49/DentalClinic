@@ -29,7 +29,8 @@ export interface Product {
   soldCount: number;             // Đã bán
   discountPercentage?: number;   // % Sale
   recentPurchases?: ProductPurchaseHistoryDto[]; // Danh sách người mua
-  relatedProducts?: Product[];   // Gợi ý
+  relatedProducts?: Product[];   // Sản phẩm liên quan
+  originalPrice?: number;   // Giá gốc (nếu có giảm giá)
 }
 
 export async function fetchAllProducts(): Promise<Product[]> {
