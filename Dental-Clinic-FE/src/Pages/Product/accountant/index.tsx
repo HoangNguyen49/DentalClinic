@@ -13,6 +13,7 @@ import InventoryHistory from "./Inventory/sections/InventoryHistory/InventoryHis
 import UpdateInventory from "./Inventory/sections/InventoryGetById/UpdateInventory";
 import InvoiceListPage from "./Invoice/GetAllInvoices/InvoiceListPage";
 import InvoiceDetailPage from "./Invoice/GetInvoiceById/InvoiceDetailPage";
+import Report from "./Report/Report";
 
 function AccountantRoutes() {
   return (
@@ -47,6 +48,8 @@ function AccountantRoutes() {
         
         {/* Route xem chi tiết: /accountant/invoices/ */}
         <Route path="invoices/:id" element={<InvoiceDetailPage />} />
+
+        <Route path="reports" element={<Report />} />
 
       </Route>
     </Routes>

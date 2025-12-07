@@ -126,7 +126,7 @@ const InventoryExport: React.FC = () => {
                 </div>
 
                 {/* TABLE AREA */}
-                <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden min-h-[400px]">
+                <div className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden">
                     {error && (
                         <div className="p-4 bg-red-50 text-red-700 text-sm border-b border-red-100">
                             {error}
