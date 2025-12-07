@@ -1,10 +1,10 @@
-// src/Pages/Product/widgets/OrderSummarySection.tsx
 import { Truck, CreditCard } from "lucide-react";
 import { getCartItemImageSrc } from "../../../../huybro_api/cartApi";
 import type { InvoiceItem } from "../GetProductsInvoice/Invoice/useGetProductsInvoice";
 import { updateCartItemQuantity } from "../../../../utils/cartSession";
 import type { CheckoutCurrency } from "../../../../huybro_api/cartApi";
 import PaypalPayButton from "../GetProductsInvoice/Payments/paypal/PaypalPayButton";
+import VnpayPayButton from "../GetProductsInvoice/Payments/vnpay/VnpayPayButton";
 
 type PaymentMethod = "COD" | "BANK_TRANSFER";
 
@@ -18,8 +18,6 @@ type Props = {
   checkoutCurrency: CheckoutCurrency;
   onChangeCurrency: (c: CheckoutCurrency) => void;
   formatMoney: (value: number, currency: string | null) => string;
-
-  // NEW: controlled from parent
   paymentMethod: PaymentMethod;
   onPaymentMethodChange?: (m: PaymentMethod) => void;
 };
@@ -61,7 +59,9 @@ export default function OrderSummarySection({
     }
   };
 
+  // Logic disable nút dựa trên tiền tệ
   const paypalDisabled = checkoutCurrency !== "USD";
+  const vnpayDisabled = checkoutCurrency !== "VND";
 
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden border border-gray-200">
@@ -283,6 +283,7 @@ export default function OrderSummarySection({
           <button
             type="button"
             onClick={() => handleSelectPaymentMethod("BANK_TRANSFER")}
+            // [ĐÃ SỬA] justifycenter -> justify-center
             className={[
               "flex items-center justify-center text-center p-4 rounded-lg transition-colors",
               paymentMethod === "BANK_TRANSFER"
@@ -297,24 +298,11 @@ export default function OrderSummarySection({
 
         {paymentMethod === "BANK_TRANSFER" && (
           <div className="mt-6 p-6 bg-white rounded-lg border border-gray-200">
-            <h4 className="font-semibold text-gray-800 mb-4 text-center md:text-left">
+            <h4 className="font-semibold text-gray-800 mb-4 text-center">
               Choose a transfer method
             </h4>
             <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-              {/* VNPay placeholder (chưa triển khai) */}
-              <button
-                type="button"
-                className="w-full md:w-auto flex items-center justify-center px-6 py-3 rounded-lg 
-                border border-gray-300 bg-white hover:bg-gray-100 
-                transition-colors"
-              >
-                <img
-                  src="https://pay.vnpay.vn/images/brands/logo-en.svg"
-                  alt="VNPay Logo"
-                  className="h-6 w-auto mr-2"
-                />
-              </button>
-
+              {/* PayPal Button */}
               <div
                 className={[
                   "w-full md:w-auto flex flex-col items-center",
@@ -324,7 +312,22 @@ export default function OrderSummarySection({
                 <PaypalPayButton />
                 {paypalDisabled && (
                   <p className="mt-2 text-xs text-red-600 text-center">
-                    PayPal payment is only available when currency is USD.
+                    Only available for USD
+                  </p>
+                )}
+              </div>
+
+              {/* VNPay Button */}
+              <div
+                className={[
+                  "w-full md:w-auto flex flex-col items-center",
+                  vnpayDisabled ? "opacity-60 pointer-events-none" : "",
+                ].join(" ")}
+              >
+                <VnpayPayButton />
+                {vnpayDisabled && (
+                  <p className="mt-2 text-xs text-red-600 text-center">
+                    Only available for VND
                   </p>
                 )}
               </div>

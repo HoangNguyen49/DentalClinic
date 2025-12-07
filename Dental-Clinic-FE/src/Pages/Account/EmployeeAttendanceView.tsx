@@ -7,6 +7,7 @@ import { useTranslation } from "react-i18next";
 import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
 import { useNotification } from "../../app/providers/NotificationContext";
+import { determineShiftType } from "../../utils/workHoursConstants";
 
 const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -65,6 +66,7 @@ function formatDateDisplay(date: Date | string): string {
   return `${day}/${month}/${year}`;
 }
 
+// format giờ cho ô hiển thị
 function formatTime(value?: string | null): string {
   if (!value) return "-";
   try {
@@ -79,6 +81,7 @@ function formatTime(value?: string | null): string {
   }
 }
 
+// màu theo trạng thái chấm công
 function getStatusColor(status?: string | null): string {
   if (!status) return "bg-gray-100 text-gray-800";
   switch (status.toUpperCase()) {
@@ -95,6 +98,7 @@ function getStatusColor(status?: string | null): string {
   }
 }
 
+// màu cho trạng thái giải trình
 function getExplanationStatusColor(status?: string | null): string {
   if (!status) return "bg-gray-100 text-gray-800";
   switch (status.toUpperCase()) {
@@ -109,6 +113,7 @@ function getExplanationStatusColor(status?: string | null): string {
   }
 }
 
+// tính số giờ làm
 function calculateWorkedHours(attendance: AttendanceResponse): number {
   if (!attendance.checkInTime || !attendance.checkOutTime) return 0;
   const start = new Date(attendance.checkInTime).getTime();
@@ -118,11 +123,13 @@ function calculateWorkedHours(attendance: AttendanceResponse): number {
   return diffMs / (1000 * 60 * 60);
 }
 
+// Định dạng số giờ hiển thị
 function formatHourValue(value: number): string {
   if (!Number.isFinite(value) || value <= 0) return "-";
   return `${value.toFixed(1)}h`;
 }
 
+// Gán nhãn ca dựa vào loại ca
 function getShiftTypeLabel(shiftType?: string | null): string {
   if (!shiftType || shiftType === "FULL_DAY") return "";
   return shiftType === "MORNING" ? "Ca sáng" : "Ca chiều";
@@ -335,34 +342,31 @@ export default function EmployeeAttendanceView() {
     if (!accessToken || !userId || !isDoctor) return;
     try {
       const today = new Date().toISOString().split("T")[0];
+      // Sử dụng endpoint đúng: /api/hr/schedules/my-schedule/date/{date}
       const response = await axios.get<any[]>(
-        `${apiBase}/api/hr/schedules/date/${today}`,
+        `${apiBase}/api/hr/schedules/my-schedule/date/${today}`,
         {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      // Lọc schedule của user hiện tại và chỉ lấy ACTIVE
+      // Endpoint này đã trả về schedule của user hiện tại, chỉ cần lọc ACTIVE
       const userSchedules = (response.data || []).filter(
-        (schedule: any) => 
-          schedule.status === "ACTIVE" &&
-          schedule.doctor && 
-          (schedule.doctor.id === userId || schedule.doctor.userId === userId)
+        (schedule: any) => schedule.status === "ACTIVE"
       );
       setTodaySchedules(userSchedules);
     } catch (error: any) {
-      console.error("Failed to fetch today schedules:", error);
+      // Xử lý lỗi một cách graceful - không log error nếu là 500 (có thể do backend chưa có schedule)
+      if (error.response?.status !== 500) {
+        console.error("Failed to fetch today schedules:", error);
+      }
+      // Set empty array để không ảnh hưởng đến UI
       setTodaySchedules([]);
     }
   };
 
-  // Xác định shiftType từ startTime
+  // Sử dụng helper từ workHoursConstants để đồng bộ với Backend
   const getShiftTypeFromStartTime = (startTime: string): string => {
-    if (!startTime) return "FULL_DAY";
-    const hour = parseInt(startTime.split(":")[0]);
-    // Ca sáng: trước 12:00, Ca chiều: từ 13:00 trở đi
-    if (hour < 12) return "MORNING";
-    if (hour >= 13) return "AFTERNOON";
-    return "FULL_DAY";
+    return determineShiftType(startTime);
   };
 
   // Tạo attendance record giả từ schedule để giải trình
@@ -531,6 +535,12 @@ export default function EmployeeAttendanceView() {
       return;
     }
 
+    // Validation: Kiểm tra explanationType (bắt buộc theo backend)
+    if (!selectedExplanation.explanationType) {
+      toast.error(t("attendance.explanationsNeeded.missingExplanationType", "Explanation type is required"));
+      return;
+    }
+
     setSubmitting(true);
     try {
       const requestBody: any = {
@@ -541,9 +551,65 @@ export default function EmployeeAttendanceView() {
       
       // Nếu attendanceId = 0 (chưa có attendance record), gửi thêm shiftType, clinicId, workDate
       if (selectedExplanation.attendanceId === 0 || selectedExplanation.attendanceId === null) {
+        // Validation: Kiểm tra các trường bắt buộc
+        if (!selectedExplanation.clinicId) {
+          toast.error(t("attendance.explanationsNeeded.missingClinicId", "Clinic ID is required"));
+          setSubmitting(false);
+          return;
+        }
+        if (!selectedExplanation.workDate) {
+          toast.error(t("attendance.explanationsNeeded.missingWorkDate", "Work date is required"));
+          setSubmitting(false);
+          return;
+        }
+        if (!selectedExplanation.shiftType) {
+          toast.error(t("attendance.explanationsNeeded.missingShiftType", "Shift type is required"));
+          setSubmitting(false);
+          return;
+        }
+        
         requestBody.shiftType = selectedExplanation.shiftType;
         requestBody.clinicId = selectedExplanation.clinicId;
-        requestBody.workDate = selectedExplanation.workDate;
+        // Đảm bảo workDate ở format yyyy-MM-dd
+        const workDateValue = selectedExplanation.workDate;
+        if (typeof workDateValue === 'string') {
+          // Kiểm tra nếu đã là format yyyy-MM-dd
+          if (/^\d{4}-\d{2}-\d{2}$/.test(workDateValue)) {
+            requestBody.workDate = workDateValue;
+          } else {
+            // Parse và format lại
+            try {
+              const parsedDate = new Date(workDateValue);
+              if (!isNaN(parsedDate.getTime())) {
+                requestBody.workDate = formatDate(parsedDate);
+              } else {
+                toast.error(t("attendance.explanationsNeeded.invalidWorkDate", "Invalid work date format"));
+                setSubmitting(false);
+                return;
+              }
+            } catch (e) {
+              toast.error(t("attendance.explanationsNeeded.invalidWorkDate", "Invalid work date format"));
+              setSubmitting(false);
+              return;
+            }
+          }
+        } else {
+          // Nếu không phải string, thử parse như Date
+          try {
+            const parsedDate = new Date(workDateValue as any);
+            if (!isNaN(parsedDate.getTime())) {
+              requestBody.workDate = formatDate(parsedDate);
+            } else {
+              toast.error(t("attendance.explanationsNeeded.invalidWorkDate", "Invalid work date format"));
+              setSubmitting(false);
+              return;
+            }
+          } catch (e) {
+            toast.error(t("attendance.explanationsNeeded.invalidWorkDate", "Invalid work date format"));
+            setSubmitting(false);
+            return;
+          }
+        }
       }
       
       await axios.post(
@@ -1160,12 +1226,18 @@ export default function EmployeeAttendanceView() {
                     {t("attendance.explanationsNeeded.reasonLabel", "Explanation Reason *")}
                   </label>
                   <textarea
+                    autoFocus
                     value={explanationReason}
                     onChange={(e) => setExplanationReason(e.target.value)}
                     placeholder={t("attendance.explanationsNeeded.reasonPlaceholder", "Please explain the reason...")}
                     rows={4}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    disabled={submitting}
+                    maxLength={500}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    {explanationReason.length}/500 {t("attendance.explanationsNeeded.characters", "characters")}
+                  </p>
                 </div>
                 <div className="flex gap-2 justify-end">
                   <button

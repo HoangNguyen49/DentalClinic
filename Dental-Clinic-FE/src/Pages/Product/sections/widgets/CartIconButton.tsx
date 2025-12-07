@@ -1,15 +1,12 @@
-// src/widgets/Header/CartIconButton.tsx
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ShoppingBasket } from "lucide-react";
 import {
   getCartItemCount,
   CART_UPDATED_EVENT,
+  refreshCartFromServer,
 } from "../../../../utils/cartSession";
 
-// -----------------------------------------------------
-//  Inject CSS keyframes trực tiếp ngay trong file TSX
-// -----------------------------------------------------
 const cartPulseStyle = `
 @keyframes cartPulse {
   0% { transform: scale(1); }
@@ -24,7 +21,6 @@ function CartIconButton() {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
-    // nhúng style vào head
     const styleTag = document.createElement("style");
     styleTag.innerHTML = cartPulseStyle;
     document.head.appendChild(styleTag);
@@ -33,35 +29,26 @@ function CartIconButton() {
     };
   }, []);
 
-  // update cart badge
   useEffect(() => {
     const updateCount = () => setCount(getCartItemCount());
 
     updateCount();
-    window.addEventListener(
-      CART_UPDATED_EVENT,
-      updateCount as EventListener
-    );
+
+    refreshCartFromServer(); 
+
+    window.addEventListener(CART_UPDATED_EVENT, updateCount as EventListener);
     window.addEventListener("storage", updateCount);
 
     return () => {
-      window.removeEventListener(
-        CART_UPDATED_EVENT,
-        updateCount as EventListener
-      );
+      window.removeEventListener(CART_UPDATED_EVENT, updateCount as EventListener);
       window.removeEventListener("storage", updateCount);
     };
   }, []);
 
-  // Detect route → /products , /products/:id
   const pathname = location.pathname;
-  const isProductRoute =
-    pathname === "/products" || pathname.startsWith("/products/");
+  const isProductRoute = pathname === "/products" || pathname.startsWith("/products/");
 
-  // subtle scale animation
-  const subtlePulse = isProductRoute
-    ? "animate-[cartPulse_1.8s_ease-in-out_infinite]"
-    : "";
+  const subtlePulse = isProductRoute ? "animate-[cartPulse_1.8s_ease-in-out_infinite]" : "";
 
   const btnClass = [
     "relative",
