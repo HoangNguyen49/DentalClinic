@@ -1,0 +1,18 @@
+{
+  "pageTitle": "Trang đăng nhập",
+  "pageSubtitle": "Bắt đầu hành trình của bạn cùng chúng tôi",
+  "formTitle": "Đăng nhập tài khoản",
+  "username": "Tên đăng nhập",
+  "password": "Mật khẩu",
+  "loginNow": "Đăng nhập",
+  "loggingIn": "Đang đăng nhập...",
+  "loginSuccess": "Đăng nhập thành công! Đang chuyển trang...",
+  "loginFailed": "Đăng nhập thất bại.",
+  "fillAll": "Vui lòng nhập đầy đủ thông tin.",
+  "google": "Đăng nhập với Google",
+  "noAccount": "Chưa có tài khoản?",
+  "signUp": "Đăng ký",
+  "logoutSuccess": "Đã đăng xuất.",
+  "switchToEn": "EN",
+  "switchToVi": "VN"
+}

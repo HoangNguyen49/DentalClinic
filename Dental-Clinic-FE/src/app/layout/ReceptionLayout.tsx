@@ -5,6 +5,7 @@ import {
   FaChevronLeft, FaChevronRight // Icon mới
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
+import NotificationBell from "../../widgets/NotificationBell";
 
 const ReceptionLayout = () => {
   const navigate = useNavigate();
@@ -77,6 +78,7 @@ const ReceptionLayout = () => {
         <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center z-10 h-16">
           <h1 className="text-xl font-bold text-gray-800 truncate">Reception Workspace</h1>
           <div className="flex items-center gap-3 shrink-0">
+            <NotificationBell />
             <button
               onClick={toggleLanguage}
               className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition font-bold text-sm"

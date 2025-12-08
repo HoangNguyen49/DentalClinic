@@ -11,8 +11,12 @@ import {
   FaComments,
   FaHospital,
   FaClock,
+  FaSignOutAlt,
+  FaCogs,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
+
+import NotificationBell from "../../widgets/NotificationBell";
 
 const AdminLayout = () => {
   const navigate = useNavigate();
@@ -21,14 +25,27 @@ const AdminLayout = () => {
   const toggleLanguage = () => {
     const newLang = i18n.language === "en" ? "vi" : "en";
     i18n.changeLanguage(newLang);
+    localStorage.setItem("lang", newLang);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    localStorage.removeItem("roles");
+    localStorage.removeItem("user");
+    sessionStorage.clear();
+    navigate("/login", { replace: true });
   };
 
   return (
     <div className="flex h-screen bg-gray-100">
       {/* Sidebar */}
-      <aside className="w-64 bg-white shadow-md">
-        <div className="p-6 text-2xl font-bold text-blue-600">Dental Admin</div>
-        <nav className="flex flex-col gap-1 px-4">
+      <aside className="w-64 bg-white shadow-md flex flex-col">
+        <div className="p-6 border-b">
+          <div className="text-2xl font-bold text-blue-600 mb-2">{t("brand.name", "Dental Admin")}</div>
+          <div className="text-sm text-gray-500">{t("brand.subtitle", "Sunshine Dental Care")}</div>
+        </div>
+        <nav className="flex flex-col gap-1 px-4 py-4 flex-1 overflow-y-auto">
           <NavItem to="/admin" label={t("nav.dashboard", "Dashboard")} icon={<FaChartBar />} />
           <NavItem
             to="/admin/appointments"
@@ -63,17 +80,29 @@ const AdminLayout = () => {
             icon={<FaBoxes />}
           />
           <NavItem to="/admin/reports" label={t("nav.reports", "Reports")} icon={<FaChartBar />} />
+          <NavItem to="/admin/leave-requests" label={t("nav.leaveRequests", "Leave Requests")} icon={<FaClipboardList />} />
           <NavItem to="/admin/staff" label={t("nav.staff", "Staff")} icon={<FaUser />} />
           <NavItem to="/admin/crm" label={t("nav.crm", "CRM")} icon={<FaComments />} />
+          <NavItem to="/admin/system" label={t("nav.system", "System")} icon={<FaCogs />} />
         </nav>
+        <div className="p-4 border-t">
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-2 rounded-md text-red-600 hover:bg-red-50 transition"
+          >
+            <FaSignOutAlt />
+            <span>{t("logout", "Logout")}</span>
+          </button>
+        </div>
       </aside>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Topbar */}
         <header className="bg-white shadow px-6 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-semibold">{t("pageTitles.adminDashboard")}</h1>
+          <h1 className="text-xl font-semibold text-gray-800">{t("pageTitles.adminDashboard")}</h1>
           <div className="flex items-center gap-2">
+            <NotificationBell />
             <button
               onClick={toggleLanguage}
               className="px-3 py-2 border rounded hover:bg-gray-100"
@@ -111,8 +140,7 @@ const NavItem = ({
   <NavLink
     to={to}
     className={({ isActive }) =>
-      `flex items-center gap-3 px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 ${
-        isActive ? "bg-blue-200 font-semibold" : ""
+      `flex items-center gap-3 px-4 py-2 rounded-md text-gray-700 hover:bg-blue-100 transition ${isActive ? "bg-blue-200 font-semibold text-blue-700" : ""
       }`
     }
   >

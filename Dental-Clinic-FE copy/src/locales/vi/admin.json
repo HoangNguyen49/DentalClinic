@@ -1,4 +1,8 @@
 {
+  "brand": {
+    "name": "Quản trị Nha khoa",
+    "subtitle": "Sunshine Dental Care"
+  },
   "nav": {
     "dashboard": "Tổng quan",
     "appointments": "Lịch hẹn",
@@ -13,6 +17,51 @@
     "attendance": "Chấm công",
     "clinics": "Cơ sở",
     "backToWebsite": "Về trang web"
+  },
+  "dashboard": {
+    "subtitle": "Trung tâm điều hành",
+    "description": "Giám sát lịch hẹn, nhân sự, tồn kho và vận hành trong một nơi.",
+    "actions": {
+      "manage": "Quản lý & giám sát"
+    },
+    "sections": {
+      "appointments": {
+        "title": "Quản lý lịch hẹn",
+        "description": "Tiếp nhận và kiểm soát trạng thái lịch hẹn."
+      },
+      "treatments": {
+        "title": "Kế hoạch điều trị",
+        "description": "Tạo và theo dõi phác đồ điều trị cho từng bệnh nhân."
+      },
+      "rooms": {
+        "title": "Phòng • Ghế • Bác sĩ",
+        "description": "Điều phối phòng khám, ghế và lịch bác sĩ."
+      },
+      "invoices": {
+        "title": "Hoá đơn & thanh toán",
+        "description": "Xuất hoá đơn và theo dõi lịch sử thanh toán."
+      },
+      "medical": {
+        "title": "Hình ảnh bệnh án",
+        "description": "Lưu trữ và quản lý ảnh X-ray, ảnh điều trị."
+      },
+      "inventory": {
+        "title": "Kho vật tư",
+        "description": "Theo dõi vật tư, tiêu hao và tình trạng sử dụng."
+      },
+      "reports": {
+        "title": "Báo cáo & thống kê",
+        "description": "Xem biểu đồ doanh thu, lịch hẹn, bệnh nhân mới."
+      },
+      "staff": {
+        "title": "Quản lý nhân viên",
+        "description": "Chấm công, phân quyền và quản lý phòng ban."
+      },
+      "crm": {
+        "title": "CRM & chăm sóc khách hàng",
+        "description": "Gửi nhắc lịch, email sinh nhật, chương trình khuyến mãi."
+      }
+    }
   },
   "pageTitles": {
     "adminDashboard": "Trang quản trị",
@@ -77,6 +126,7 @@
     "noData": "Không có dữ liệu chấm công"
   },
   "attendance": {
+    "sectionLabel": "Vận hành • Chấm công",
     "pageDescription": "Xem và phê duyệt các trường hợp đi trễ hoặc xin nghỉ do nhân viên gửi lên, cập nhật trạng thái và thêm ghi chú quản trị.",
     "tabs": {
       "attendance": "Bản ghi chấm công",
@@ -88,6 +138,12 @@
       "status": "Trạng thái",
       "allClinics": "Tất cả cơ sở",
       "allStatus": "Tất cả trạng thái"
+    },
+    "summary": {
+      "total": "Tổng bản ghi",
+      "onTime": "Đúng giờ",
+      "late": "Đi trễ",
+      "absent": "Vắng mặt"
     },
     "status": {
       "ON_TIME": "Đúng giờ",
@@ -107,7 +163,8 @@
       "note": "Ghi chú",
       "actions": "Thao tác",
       "noNote": "Không có ghi chú",
-      "unknownClinic": "Không rõ cơ sở"
+      "unknownClinic": "Không rõ cơ sở",
+      "employeeId": "Mã nhân viên"
     },
     "explanation": {
       "type": "Loại",
@@ -125,6 +182,7 @@
     "actions": {
       "approveLate": "Chấp nhận đi trễ",
       "approveLeave": "Chấp nhận nghỉ",
+      "rejectExplanation": "Từ chối giải trình",
       "approve": "Duyệt",
       "reject": "Từ chối",
       "refresh": "Làm mới",
@@ -144,7 +202,9 @@
       "enterRejectionNote": "Nhập lý do từ chối (không bắt buộc)",
       "explanationApproved": "Đã duyệt giải trình thành công",
       "explanationRejected": "Đã từ chối giải trình",
+      "missingCheckOutApproved": "Đã duyệt giải trình. Hệ thống tự động cập nhật giờ ra là 18:00 và tính lại giờ công.",
       "processFailed": "Không thể xử lý giải trình",
+      "addAdminNotePlaceholder": "Nhập ghi chú HR (không bắt buộc)",
       "loading": "Đang tải danh sách chấm công...",
       "noData": "Không có dữ liệu chấm công",
       "noPendingExplanations": "Không có giải trình chờ xử lý"
