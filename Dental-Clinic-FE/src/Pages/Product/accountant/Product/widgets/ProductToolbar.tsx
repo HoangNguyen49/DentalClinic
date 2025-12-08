@@ -1,13 +1,12 @@
 import { useState } from "react";
-import { PlusCircle, Search, Filter, ChevronDown } from "lucide-react";
+import { Search, Filter, ChevronDown } from "lucide-react";
 
 type ProductToolbarProps = {
   totalElements: number;
-  onAddProduct: () => void;
 
   searchInput: string;
   onSearchInputChange: (value: string) => void;
-  onSearch: () => void;
+  onSearch: () => void; // Giữ lại cho sự kiện Enter
 
   minPrice?: number;
   maxPrice?: number;
@@ -30,7 +29,6 @@ type ProductToolbarProps = {
 
 function ProductToolbar({
   totalElements,
-  onAddProduct,
   searchInput,
   onSearchInputChange,
   onSearch,
@@ -53,6 +51,7 @@ function ProductToolbar({
 
   const handleSelectStatus = (value: "" | "true" | "false") => {
     onActiveChange(value);
+    setIsStatusOpen(false); // Đóng dropdown sau khi chọn
   };
 
   const isAllSelected = active === null;
@@ -61,8 +60,8 @@ function ProductToolbar({
 
   const getOptionClass = (selected: boolean) =>
     selected
-      ? "font-semibold underline text-gray-900"
-      : "text-gray-500 hover:text-gray-700";
+      ? "font-semibold underline text-gray-900 text-left block w-full px-2 py-1"
+      : "text-gray-500 hover:text-gray-700 text-left block w-full px-2 py-1";
 
   const buildSummary = (selected: string[], allLabel: string) => {
     if (selected.length === 0) return allLabel;
@@ -77,73 +76,60 @@ function ProductToolbar({
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      {/* 1. HEADER AREA: Title Left - Search Right */}
+      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 border-b border-gray-200">
+        {/* Left: Title & Description */}
         <div>
-          <h1 className="text-3xl font-bold text-[#0D1B3E] mb-2">
+          <h1 className="text-3xl font-extrabold text-[#0D1B3E]">
             Product Management
           </h1>
-          <p className="text-gray-600 text-base">
-            Total:{" "}
+          <p className="text-sm text-gray-500 mt-1">
+            Manage product details, pricing, and category settings. Total:{" "}
             <span className="font-extrabold text-gray-900">
               {totalElements.toLocaleString()}
             </span>{" "}
             products
           </p>
         </div>
-        <button
-          onClick={onAddProduct}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
-        >
-          <PlusCircle className="w-5 h-5" />
-          Add Product
-        </button>
+
+        {/* Right: Search Input (Inline Icon) */}
+        <div className="relative group w-full md:w-72 flex-shrink-0">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <Search className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+          </div>
+          <input
+            type="text"
+            className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-shadow shadow-sm"
+            placeholder="Search SKU or Product..."
+            value={searchInput}
+            onChange={(e) => onSearchInputChange(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && onSearch()}
+          />
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200">
+      {/* 2. FILTERS BOX (ONE ROW on Large Screens) */}
+      <div className="bg-white rounded-xl p-5 shadow-md border border-gray-200">
         <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-gray-600" />
           <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
         </div>
 
-        {/* Row 1: Search + Brands/Types dropdown */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* Search by name */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Search by name
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={searchInput}
-                onChange={(e) => onSearchInputChange(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && onSearch()}
-                placeholder="Enter product name..."
-                className="flex-1 border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <button
-                onClick={onSearch}
-                className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-                title="Search"
-                aria-label="Search"
-              >
-                <Search className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Brands & Types dropdown (combined) */}
-          <div className="md:col-span-1 lg:col-span-2">
+        {/* Flex Container: Xếp tất cả filter nằm ngang trên màn hình lớn (lg) */}
+        <div className="flex flex-col lg:flex-row gap-4 lg:items-end">
+          
+          {/* 1. Brands & Types (Chiếm phần lớn không gian còn lại - flex-1) */}
+          <div className="flex-1 min-w-[200px]">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Brands & Types
             </label>
-            <div className="relative inline-block w-full max-w-xl">
+            <div className="relative">
               <button
                 type="button"
                 onClick={() => setIsFilterOpen((prev) => !prev)}
-                className="w-full border rounded px-3 py-2 flex items-center justify-between bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 flex items-center justify-between bg-white text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
               >
-                <span className="font-semibold text-gray-800 truncate">
+                <span className="font-semibold text-gray-800 truncate block text-left">
                   {summaryLabel}
                 </span>
                 <ChevronDown
@@ -154,13 +140,13 @@ function ProductToolbar({
               </button>
 
               {isFilterOpen && (
-                <div className="mt-2 w-full bg-white border rounded-lg shadow-md px-4 py-3">
+                <div className="absolute left-0 mt-2 w-full min-w-[300px] bg-white border rounded-lg shadow-xl px-4 py-3 z-30">
                   {/* Types */}
                   <div className="mb-3">
                     <div className="text-xs font-semibold text-gray-700 mb-2">
                       Types
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-2 text-xs md:text-sm">
+                    <div className="grid grid-cols-2 gap-2 text-xs md:text-sm">
                       {typeOptions.map((t) => {
                         const selected = typeFilters.includes(t);
                         return (
@@ -175,8 +161,8 @@ function ProductToolbar({
                             }}
                             className={
                               selected
-                                ? "text-gray-900 font-semibold underline"
-                                : "text-gray-400 hover:text-gray-700"
+                                ? "text-gray-900 font-semibold underline text-left"
+                                : "text-gray-400 hover:text-gray-700 text-left"
                             }
                           >
                             {t}
@@ -185,15 +171,13 @@ function ProductToolbar({
                       })}
                     </div>
                   </div>
-
                   <div className="h-px bg-gray-200 my-2" />
-
                   {/* Brands */}
                   <div>
                     <div className="text-xs font-semibold text-gray-700 mb-2">
                       Brands
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-2 text-sm">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
                       {brandsOptions.map((b) => {
                         const selected = brandFilters.includes(b);
                         return (
@@ -208,8 +192,8 @@ function ProductToolbar({
                             }}
                             className={
                               selected
-                                ? "text-gray-900 font-semibold underline"
-                                : "text-gray-400 hover:text-gray-700"
+                                ? "text-gray-900 font-semibold underline text-left"
+                                : "text-gray-400 hover:text-gray-700 text-left"
                             }
                           >
                             {b}
@@ -222,102 +206,100 @@ function ProductToolbar({
               )}
             </div>
           </div>
-        </div>
 
-        {/* Row 2: price + status */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Min price
-              </label>
-              <input
-                type="number"
-                value={minPrice ?? ""}
-                onChange={(e) => onMinPriceChange(e.target.value)}
-                placeholder="0"
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Max price
-              </label>
-              <input
-                type="number"
-                value={maxPrice ?? ""}
-                onChange={(e) => onMaxPriceChange(e.target.value)}
-                placeholder="1000000"
-                className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+          {/* 2. Min Price (Kích thước cố định hoặc co dãn nhẹ) */}
+          <div className="w-full lg:w-32 xl:w-40">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Min price
+            </label>
+            <input
+              type="number"
+              value={minPrice ?? ""}
+              onChange={(e) => onMinPriceChange(e.target.value)}
+              placeholder="0"
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
+            />
           </div>
 
-          {/* Status dropdown */}
-          <div>
+          {/* 3. Max Price */}
+          <div className="w-full lg:w-32 xl:w-40">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Max price
+            </label>
+            <input
+              type="number"
+              value={maxPrice ?? ""}
+              onChange={(e) => onMaxPriceChange(e.target.value)}
+              placeholder="Max"
+              className="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
+            />
+          </div>
+
+          {/* 4. Status (Dropdown nhỏ hơn) */}
+          <div className="w-full lg:w-36">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Status
             </label>
-            <div className="relative inline-block">
+            <div className="relative">
               <button
                 type="button"
                 onClick={() => setIsStatusOpen((prev) => !prev)}
-                className="w-40 border rounded px-3 py-2 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full border rounded-lg px-3 py-2 flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 transition duration-150"
               >
                 <span
-                  className={
+                  className={`truncate ${
                     isAllSelected
                       ? "text-gray-400"
                       : "font-semibold underline text-gray-900"
-                  }
+                  }`}
                 >
                   {isAllSelected
-                    ? "All status"
+                    ? "All"
                     : isActiveSelected
                     ? "Active"
                     : "Inactive"}
                 </span>
-                <ChevronDown className="w-4 h-4 text-gray-600" />
+                <ChevronDown className="w-4 h-4 text-gray-600 flex-shrink-0" />
               </button>
 
               {isStatusOpen && (
-                <div className="mt-2 w-40 bg-white border rounded-lg shadow-md p-3">
-                  <div className="flex flex-col text-sm">
-                    <button
-                      type="button"
-                      className={getOptionClass(isAllSelected)}
-                      onClick={() => handleSelectStatus("")}
-                    >
-                      All
-                    </button>
-                    <button
-                      type="button"
-                      className={getOptionClass(isActiveSelected)}
-                      onClick={() => handleSelectStatus("true")}
-                    >
-                      Active
-                    </button>
-                    <button
-                      type="button"
-                      className={getOptionClass(isInactiveSelected)}
-                      onClick={() => handleSelectStatus("false")}
-                    >
-                      Inactive
-                    </button>
-                  </div>
+                <div className="absolute right-0 mt-2 w-full bg-white border rounded-lg shadow-xl p-2 z-30">
+                  <button
+                    type="button"
+                    className={getOptionClass(isAllSelected)}
+                    onClick={() => handleSelectStatus("")}
+                  >
+                    All
+                  </button>
+                  <button
+                    type="button"
+                    className={getOptionClass(isActiveSelected)}
+                    onClick={() => handleSelectStatus("true")}
+                  >
+                    Active
+                  </button>
+                  <button
+                    type="button"
+                    className={getOptionClass(isInactiveSelected)}
+                    onClick={() => handleSelectStatus("false")}
+                  >
+                    Inactive
+                  </button>
                 </div>
               )}
             </div>
           </div>
-        </div>
 
-        <div className="mt-4">
-          <button
-            onClick={onClearFilters}
-            className="px-4 py-2 text-gray-700 border rounded hover:bg-gray-100"
-          >
-            Clear Filters
-          </button>
+          {/* 5. Clear Button (Nút bấm nằm cuối hàng) */}
+          <div className="flex-shrink-0 pt-4 lg:pt-0">
+            <button
+              onClick={onClearFilters}
+              className="w-full lg:w-auto px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition duration-150 whitespace-nowrap"
+            >
+              Clear
+            </button>
+          </div>
+
         </div>
       </div>
     </div>

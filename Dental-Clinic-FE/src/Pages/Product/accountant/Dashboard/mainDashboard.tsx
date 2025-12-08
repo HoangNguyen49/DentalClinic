@@ -1,42 +1,39 @@
 // src/Pages/Accountant/MainDashboard.tsx
 import { Outlet } from "react-router-dom";
-import DashboardSidebar from "../Product/widgets/DashboardSidebar";
-import DashboardTopbar from "../Product/widgets/DashboardTopbar";
-import AppToast from "../Product/widgets/AppToast";
+import DashboardSidebar from "../widgets/DashboardSidebar";
+import DashboardTopbar from "../widgets/DashboardTopbar";
+import AppToast from "../widgets/AppToast";
 
 function MainDashboard() {
-  const sidebarItems = [
-    {
-      label: "Products",
-      href: "/accountant",
-    },
-    {
-      label: "Create product",
-      href: "/accountant/create",
-    },
-  ];
-
+  // Sidebar bây giờ tự quản lý menu, không cần truyền props từ đây nữa
+  
   return (
     <>
       <AppToast />
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex">
-        <DashboardSidebar
-          brandTitle="Sunshine Dental Care"
-          brandSubtitle="Accountant panel"
-          items={sidebarItems}
-        />
+      
+      {/* Layout Container: Full height, flex row */}
+      <div className="flex h-screen bg-gray-50 overflow-hidden font-sans">
+        
+        {/* Sidebar (Fixed width handled inside component) */}
+        <DashboardSidebar />
 
-        <main className="flex-1 flex flex-col">
+        {/* Main Content Area */}
+        <main className="flex-1 flex flex-col min-w-0">
+          
+          {/* Topbar */}
           <DashboardTopbar
-            title="Accountant – Product Management"
-            subtitle="Manage dental products, prices and status"
+            title="Accountant Workspace"
+            subtitle="Manage catalog, inventory, invoices and reports"
           />
 
-          <section className="flex-1">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          {/* Content Scrollable Area */}
+          <section className="flex-1 overflow-y-auto bg-gray-50 p-4 sm:p-6 lg:p-8">
+            <div className="mx-auto max-w-7xl">
+              {/* Outlet renders child routes (Product List, Create, Import Stock...) */}
               <Outlet />
             </div>
           </section>
+          
         </main>
       </div>
     </>

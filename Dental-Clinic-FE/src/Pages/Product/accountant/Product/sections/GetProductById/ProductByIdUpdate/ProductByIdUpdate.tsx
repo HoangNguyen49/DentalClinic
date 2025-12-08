@@ -1,5 +1,6 @@
 import React from 'react';
 import { useParams } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { getProductImageSrc } from '../../../../../../../huybro_api/productApi';
 import { useProductByIdUpdate } from './useProductByIdUpdate';
 
@@ -25,6 +26,7 @@ const ProductByIdUpdate: React.FC = () => {
         handleTypeNamesChange,
         handleImageFileChange,
         handleSubmit,
+        handleCancel,
     } = useProductByIdUpdate(id);
 
     const renderFieldErrors = (field: string) =>
@@ -58,18 +60,33 @@ const ProductByIdUpdate: React.FC = () => {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
+           {/* --- HEADER ĐÃ CẬP NHẬT CÓ NÚT BACK --- */}
             <div className="border-b border-gray-200 bg-white">
                 <div className="mx-auto flex max-w-5xl flex-col gap-2 px-6 py-5">
                     <div className="text-sm font-medium uppercase tracking-wide text-gray-400">
                         Accountant
                     </div>
-                    <h1 className="text-2xl font-semibold text-gray-900">
-                        Update product
-                    </h1>
-                    <p className="text-sm text-gray-500">
-                        Edit product information, classifications and images. Changes will be applied to existing records.
-                    </p>
+                    
+                    {/* [NEW] Flex container để chia Title và Button Back */}
+                    <div className="flex items-start justify-between gap-4">
+                        <div>
+                            <h1 className="text-2xl font-semibold text-gray-900">
+                                Update product
+                            </h1>
+                            <p className="text-sm text-gray-500 mt-1">
+                                Edit product information, classifications and images. Changes will be applied to existing records.
+                            </p>
+                        </div>
+
+                        {/* [NEW] Nút Back */}
+                        <button 
+                            onClick={handleCancel}
+                            disabled={isBusy}
+                            className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50"
+                        >
+                            <ArrowLeft className="w-4 h-4" /> Back
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -80,12 +97,12 @@ const ProductByIdUpdate: React.FC = () => {
                 >
                     {/* Section 1: Product information */}
                     <section>
-                        <h2 className="text-lg font-semibold text-gray-900">
-                            Product information
-                        </h2>
-                        <p className="mb-4 text-sm text-gray-500">
-                            Basic details used across the system and visible to customers.
-                        </p>
+                        <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
+                                1
+                            </div>
+                            <h2 className="text-lg font-semibold text-gray-900">Product information</h2>
+                        </div>
 
                         <div className="grid gap-4 md:grid-cols-2">
                             <div>
@@ -146,65 +163,60 @@ const ProductByIdUpdate: React.FC = () => {
 
                     {/* Section 2: Pricing & tax */}
                     <section>
-                        <h2 className="text-lg font-semibold text-gray-900">
-                            Pricing & tax
-                        </h2>
-                        <p className="mb-4 text-sm text-gray-500">
-                            Set base unit, price and tax configuration for accounting reports.
-                        </p>
+                        <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
+                                2
+                            </div>
+                            <h2 className="text-lg font-semibold text-gray-900"> Pricing & tax</h2>
+                        </div>
 
                         <div className="grid gap-4 md:grid-cols-3">
+                            {/* UNIT - READ ONLY */}
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">
-                                    Unit
+                                <label className="mb-1 block text-sm font-medium text-gray-500">
+                                    Current Unit
                                 </label>
                                 <input
                                     type="number"
-                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    disabled // DISABLED
+                                    className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 shadow-sm"
                                     value={form.unit}
-                                    onChange={(e) => handleChange('unit', Number(e.target.value))}
-                                    min={0}
                                 />
-                                {renderFieldErrors('unit')}
+                                <p className="mt-1 text-[10px] text-gray-400">Managed via Inventory</p>
                             </div>
 
+                            {/* PRICE - READ ONLY */}
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">
-                                    Default retail price
+                                <label className="mb-1 block text-sm font-medium text-gray-500">
+                                    Retail price
                                 </label>
                                 <input
                                     type="number"
                                     step="0.01"
-                                    className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    disabled // DISABLED
+                                    className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 shadow-sm"
                                     value={form.defaultRetailPrice}
-                                    onChange={(e) =>
-                                        handleChange(
-                                            'defaultRetailPrice',
-                                            Number(e.target.value),
-                                        )
-                                    }
-                                    min={0}
                                 />
-                                {renderFieldErrors('defaultRetailPrice')}
                             </div>
 
+                            {/* CURRENCY - READ ONLY */}
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">
+                                <label className="mb-1 block text-sm font-medium text-gray-500">
                                     Currency
                                 </label>
                                 <select
-                                    className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                    disabled // DISABLED
+                                    className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-600 shadow-sm"
                                     value={form.currency}
-                                    onChange={(e) => handleChange('currency', e.target.value)}
                                 >
                                     <option value="USD">USD</option>
                                     <option value="VND">VND</option>
                                 </select>
-                                {renderFieldErrors('currency')}
                             </div>
                         </div>
 
                         <div className="mt-4 grid gap-4 md:grid-cols-3">
+                            {/* TAXABLE - EDITABLE */}
                             <div className="flex items-center gap-2">
                                 <input
                                     id="isTaxable"
@@ -215,7 +227,7 @@ const ProductByIdUpdate: React.FC = () => {
                                         const checked = e.target.checked;
                                         handleChange('isTaxable', checked);
                                         if (!checked) {
-                                            handleChange('taxCode', null);
+                                            handleChange('taxCode', 0);
                                         }
                                     }}
                                 />
@@ -231,7 +243,7 @@ const ProductByIdUpdate: React.FC = () => {
                             {form.isTaxable && (
                                 <div>
                                     <label className="mb-1 block text-sm font-medium text-gray-700">
-                                        Tax code
+                                        Tax code (%)
                                     </label>
                                     <input
                                         type="number"
@@ -246,6 +258,7 @@ const ProductByIdUpdate: React.FC = () => {
                                 </div>
                             )}
 
+                            {/* ACTIVE - EDITABLE (Backend validates) */}
                             <div className="flex items-center gap-2">
                                 <input
                                     id="isActive"
@@ -263,19 +276,18 @@ const ProductByIdUpdate: React.FC = () => {
                                 {renderFieldErrors('isActive')}
                             </div>
                         </div>
-
                     </section>
 
                     {/* Section 3: Classification */}
                     <section>
                         <div className="grid gap-4">
                             <div>
-                                <label className="mb-1 block text-sm font-medium text-gray-700">
-                                    Type names
-                                </label>
-                                <p className="mb-2 text-xs text-gray-500">
-                                    You can select multiple types. The system may use these types for reporting and SKU conventions.
-                                </p>
+                                <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
+                                        3
+                                    </div>
+                                    <h2 className="text-lg font-semibold text-gray-900"> Type names</h2>
+                                </div>
 
                                 <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
                                     {typeOptions.map((t) => {
@@ -305,10 +317,36 @@ const ProductByIdUpdate: React.FC = () => {
                         </div>
                     </section>
 
-                    {/* Section 4: Images (không còn mô tả + nút Analyze AI) */}
+                    {/* Section 4: Images */}
                     <section>
-                        <h2 className="text-lg font-semibold text-gray-900">Images</h2>
-
+                        <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
+                            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
+                                4
+                            </div>
+                            <h2 className="text-lg font-semibold text-gray-900"> Images</h2>
+                        </div>
+                        {/* --- KHỐI CẢNH BÁO UPDATE (YELLOW) --- */}
+                        <div className="mb-6 rounded-md bg-yellow-50 p-4 border border-yellow-200">
+                            <div className="flex">
+                                <div className="flex-shrink-0">
+                                    {/* Icon Cảnh báo (Exclamation Triangle) */}
+                                    <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div className="ml-3">
+                                    <h3 className="text-sm font-medium text-yellow-800">
+                                        Update Restriction
+                                    </h3>
+                                    <div className="mt-2 text-sm text-yellow-700">
+                                        <p>
+                                            Once a product is successfully created, <strong>you cannot update it with irrelevant images</strong>.
+                                            The system will reject any non-product photos, so please ensure all uploaded images are valid to avoid wasting your time.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         <div className="mt-4 grid gap-6 md:grid-cols-3">
                             {form.image.map((img, idx) => {
                                 const slotMeta = [
@@ -389,7 +427,6 @@ const ProductByIdUpdate: React.FC = () => {
 
                         {renderFieldErrors('image')}
 
-                        {/* Global errors / AI warning / debug giữ nguyên cơ chế hook */}
                         {globalErrors.length > 0 && (
                             <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                                 <div className="mb-1 font-semibold">Errors</div>
@@ -420,6 +457,7 @@ const ProductByIdUpdate: React.FC = () => {
                             type="button"
                             disabled={isBusy}
                             className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            onClick={() => window.history.back()}
                         >
                             Cancel
                         </button>
