@@ -7,7 +7,7 @@ import { useNotification } from "../../../app/providers/NotificationContext";
 
 const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-// Định nghĩa kiểu dữ liệu đơn xin nghỉ
+// Định nghĩa kiểu LeaveRequest  
 type LeaveRequest = {
     id: number;
     userId: number;
@@ -20,7 +20,7 @@ type LeaveRequest = {
     type: string;
     status: string;
     reason: string;
-    shiftType?: string; // Loại ca: SÁNG, CHIỀU, CẢ NGÀY (dành cho bác sĩ)
+    shiftType?: string; // ca làm việc: SÁNG, CHIỀU, CẢ NGÀY 
     approvedBy?: number;
     approvedByName?: string;
     createdAt: string;
@@ -31,7 +31,7 @@ type LeaveRequest = {
     userRole?: string;
 };
 
-// Định nghĩa kiểu dữ liệu trả về dạng phân trang
+// Định nghĩa kiểu trả về phân trang 
 type PageResponse = {
     content: LeaveRequest[];
     totalElements: number;
@@ -52,14 +52,14 @@ export default function AdminLeaveApproval() {
     const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
     const [comment, setComment] = useState("");
     const [counts, setCounts] = useState<{ [key: string]: number }>({});
-    const [typeFilter, setTypeFilter] = useState<string>(""); // Filter theo loại đơn (RESIGNATION, etc.)
+    const [typeFilter, setTypeFilter] = useState<string>(""); // lọc theo loại đơn
     const accessToken = localStorage.getItem("accessToken");
 
     const { notifications } = useNotification();
     const lastNotificationIdRef = useRef<number | null>(null);
 
     useEffect(() => {
-        // Kiểm tra filter để fetch theo trạng thái phù hợp
+        // Load lại dữ liệu khi filter/tabs đổi trang
         if (statusFilter === "PENDING" || statusFilter === "PENDING_ADMIN") {
             fetchPendingRequests();
         } else {
@@ -68,8 +68,8 @@ export default function AdminLeaveApproval() {
         fetchCounts();
     }, [page, statusFilter]);
 
-    // Lắng nghe notifications để refresh danh sách khi có thông báo mới
     useEffect(() => {
+        // Lắng nghe notification để cập nhật realtime danh sách
         if (!notifications || notifications.length === 0) return;
         if (!accessToken) return;
 
@@ -78,30 +78,27 @@ export default function AdminLeaveApproval() {
             return;
         }
 
-        // Nếu có thông báo về đơn nghỉ mới thì làm mới danh sách
+        // Nếu có notification mới về đơn nghỉ thì reload data
         if (
             latestNotification.type === "LEAVE_REQUEST_CREATED" &&
             latestNotification.relatedEntityType === "LEAVE_REQUEST"
         ) {
             lastNotificationIdRef.current = latestNotification.notificationId;
-
             fetchLeaveRequests();
             fetchCounts();
-            // Nếu tab đang là chờ admin duyệt hoặc tất cả thì reload cả đơn pending
             if (statusFilter === "PENDING_ADMIN" || statusFilter === "") {
                 fetchPendingRequests();
             }
         }
     }, [notifications]);
 
-    // Lấy danh sách đơn xin nghỉ (theo filter)
+    // Lấy danh sách đơn xin nghỉ chung qua API, có hỗ trợ filter phân trang
     const fetchLeaveRequests = async () => {
         if (!accessToken) return;
         setLoading(true);
         try {
             const params: any = { page, size: 10 };
             if (statusFilter) params.status = statusFilter;
-
             const response = await axios.get<PageResponse>(
                 `${apiBase}/api/hr/leave-requests`,
                 {
@@ -121,12 +118,11 @@ export default function AdminLeaveApproval() {
         }
     };
 
-    // Lấy các đơn đang chờ duyệt (ADMIN hoặc HR)
+    // Lấy các đơn chờ duyệt (pending) theo từng loại (admin/HR)
     const fetchPendingRequests = async () => {
         if (!accessToken) return;
         setLoading(true);
         try {
-            // Endpoint riêng cho từng loại trạng thái pending
             const endpoint = statusFilter === "PENDING_ADMIN"
                 ? `${apiBase}/api/hr/leave-requests/pending-admin`
                 : `${apiBase}/api/hr/leave-requests/pending`;
@@ -149,7 +145,7 @@ export default function AdminLeaveApproval() {
         }
     };
 
-    // Lấy số lượng đơn trên từng trạng thái
+    // Lấy số lượng đơn ở từng trạng thái: chờ duyệt, duyệt rồi, từ chối để badge lên UI
     const fetchCounts = async () => {
         if (!accessToken) return;
         try {
@@ -165,7 +161,7 @@ export default function AdminLeaveApproval() {
         }
     };
 
-    // Xử lý duyệt hoặc từ chối đơn
+    // Xử lý duyệt hoặc từ chối đơn nghỉ
     const handleProcess = async (action: "APPROVE" | "REJECT") => {
         if (!selectedRequest || !accessToken) return;
 
@@ -201,8 +197,7 @@ export default function AdminLeaveApproval() {
         }
     };
 
-    // Admin chỉ xác nhận đơn nghỉ việc, HR sẽ thực hiện xóa vĩnh viễn
-    // Icon trạng thái đơn nghỉ
+    // Lấy icon tương ứng trạng thái đơn
     const getStatusIcon = (status: string) => {
         switch (status.toUpperCase()) {
             case "APPROVED":
@@ -218,9 +213,7 @@ export default function AdminLeaveApproval() {
         }
     };
 
-
-
-    // Nhãn loại ca làm việc
+    // Hiển thị nhãn phù hợp cho loại ca làm việc
     const getShiftTypeLabel = (shiftType?: string) => {
         if (!shiftType || shiftType === "FULL_DAY") {
             return t("leaveRequest.shiftTypes.fullDay", "Cả ngày");
@@ -235,7 +228,7 @@ export default function AdminLeaveApproval() {
         }
     };
 
-    // Định dạng ngày/tháng/năm
+    // Định dạng ngày tháng thành dd/mm/yyyy
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
         return date.toLocaleDateString("vi-VN", {
@@ -245,13 +238,11 @@ export default function AdminLeaveApproval() {
         });
     };
 
-    // Lọc theo từ khoá tìm kiếm và loại đơn
+    // Lọc theo keyword nhập ô tìm kiếm và theo loại đơn (loại nghỉ việc,...)
     const filteredRequests = leaveRequests.filter((req) => {
-        // Lọc theo loại đơn (nếu có)
         if (typeFilter && req.type.toUpperCase() !== typeFilter.toUpperCase()) {
             return false;
         }
-        // Lọc theo từ khoá tìm kiếm
         if (!searchTerm) return true;
         const searchLower = searchTerm.toLowerCase();
         return (
@@ -262,7 +253,7 @@ export default function AdminLeaveApproval() {
         );
     });
 
-    // Hiển thị loading nếu chưa có dữ liệu và đang tải
+    // Loading - spinner khi chưa có dữ liệu
     if (loading && leaveRequests.length === 0) {
         return (
             <div className="flex justify-center items-center min-h-[400px]">
@@ -274,7 +265,6 @@ export default function AdminLeaveApproval() {
     return (
         <div className="space-y-6">
             <ToastContainer position="top-right" autoClose={3000} />
-
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-900">{t("leaveRequest.adminTitle", "Admin Leave Approval")}</h1>
             </div>
@@ -292,7 +282,7 @@ export default function AdminLeaveApproval() {
                         />
                     </div>
                     <div className="flex gap-2">
-                        {/* Bộ lọc trạng thái */}
+                        {/* Bộ lọc trạng thái - chuyển tab filter trạng thái đơn */}
                         <button
                             onClick={() => {
                                 setStatusFilter("");
@@ -308,7 +298,6 @@ export default function AdminLeaveApproval() {
                         <button
                             onClick={() => {
                                 setStatusFilter("PENDING_ADMIN");
-
                             }}
                             className={`px-4 py-2 rounded-lg transition ${statusFilter === "PENDING_ADMIN"
                                 ? "bg-purple-600 text-white"
@@ -348,7 +337,7 @@ export default function AdminLeaveApproval() {
                         </button>
                     </div>
                 </div>
-                {/* Filter riêng cho đơn nghỉ việc đã duyệt */}
+                {/* Lọc theo loại đơn nghỉ việc ở tab đã duyệt */}
                 {statusFilter === "APPROVED" && (
                     <div className="mt-4 flex gap-2">
                         <button
@@ -379,8 +368,8 @@ export default function AdminLeaveApproval() {
                 )}
             </div>
 
+            {/* Nếu không có đơn xin nghỉ */}
             {filteredRequests.length === 0 ? (
-                // Không có đơn xin nghỉ nào
                 <div className="bg-white rounded-lg shadow-md p-6">
                     <div className="text-center py-12">
                         <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
@@ -399,7 +388,7 @@ export default function AdminLeaveApproval() {
                 </div>
             ) : (
                 <div className="space-y-4">
-                    {/* Hiển thị từng đơn nghỉ */}
+                    {/* Hiển thị danh sách đơn nghỉ */}
                     {filteredRequests.map((request) => (
                         <div
                             key={request.id}
@@ -408,7 +397,7 @@ export default function AdminLeaveApproval() {
                                 : "bg-white border-gray-200 shadow-sm hover:shadow-md"
                                 }`}
                         >
-                            {/* Banner đơn giản cho đơn nghỉ việc */}
+                            {/* Banner đỏ với đơn nghỉ việc */}
                             {request.type === "RESIGNATION" && (
                                 <div className="flex items-center gap-2 mb-4 text-red-600">
                                     <Trash2 className="w-4 h-4" />
@@ -419,9 +408,9 @@ export default function AdminLeaveApproval() {
                                 </div>
                             )}
 
-                            <div className="">
+                            <div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                                    {/* Thông tin nhân viên và loại ca */}
+                                    {/* Nhân viên và loại ca */}
                                     <div>
                                         <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">{t("leaveRequest.employee", "Nhân viên")}</p>
                                         <div className="flex items-start gap-3">
@@ -474,7 +463,7 @@ export default function AdminLeaveApproval() {
                                         </span>
                                     </div>
 
-                                    {/* Số ngày nghỉ còn lại trong tháng */}
+                                    {/* Số ngày nghỉ còn lại (nếu có) */}
                                     {request.leaveBalance !== undefined && (
                                         <div>
                                             <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">{t("leaveRequest.monthlyLeave", "Ngày nghỉ tháng này")}</p>
@@ -484,7 +473,7 @@ export default function AdminLeaveApproval() {
                                         </div>
                                     )}
 
-                                    {/* Người thay thế */}
+                                    {/* Người thay thế nếu có */}
                                     <div className="col-span-1 md:col-span-2">
                                         <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">{t("leaveRequest.replacement", "Người thay thế")}</p>
                                         {request.replacementAvailable ? (
@@ -502,9 +491,8 @@ export default function AdminLeaveApproval() {
                                         )}
                                     </div>
                                 </div>
-
                                 <div className={`pt-4 ${request.type === "RESIGNATION" ? "border-t border-red-100" : "border-t border-gray-100"}`}>
-                                    {/* Cảnh báo đặc biệt cho đơn nghỉ việc - MINIMALIST */}
+                                    {/* Cảnh báo quy trình xóa vĩnh viễn cho đơn nghỉ việc */}
                                     {request.type === "RESIGNATION" && (
                                         <div className="mb-4">
                                             <div className="flex items-start gap-3 p-3 bg-red-50 rounded border border-red-100">
@@ -540,7 +528,7 @@ export default function AdminLeaveApproval() {
                                         </span>{" "}
                                         <span className="text-gray-600">{request.reason}</span>
                                     </p>
-                                    {/* Tên người duyệt */}
+                                    {/* Người duyệt nếu có */}
                                     {request.approvedByName && (
                                         <p className="text-sm">
                                             <span className="font-medium text-gray-700">
@@ -555,7 +543,7 @@ export default function AdminLeaveApproval() {
                                             {new Date(request.createdAt).toLocaleString("vi-VN")}
                                         </p>
                                         <div className="flex gap-2">
-                                            {/* Nút duyệt/từ chối nếu trạng thái chờ duyệt */}
+                                            {/* Nút xử lý đơn: duyệt/từ chối */}
                                             {(request.status === "PENDING" || request.status === "PENDING_ADMIN") && (
                                                 <>
                                                     <button
@@ -578,7 +566,7 @@ export default function AdminLeaveApproval() {
                                                     </button>
                                                 </>
                                             )}
-                                            {/* Thông báo cho Admin: HR sẽ thực hiện xóa vĩnh viễn */}
+                                            {/* Nếu đã duyệt đơn nghỉ việc - hiện cảnh báo ở đây */}
                                             {request.status === "APPROVED" && request.type === "RESIGNATION" && (
                                                 <div className="px-4 py-2 bg-blue-100 border-2 border-blue-400 rounded-lg text-sm">
                                                     <p className="text-blue-800 font-semibold flex items-center gap-2">
@@ -619,7 +607,7 @@ export default function AdminLeaveApproval() {
                 </div>
             )}
 
-            {/* Modal xử lý duyệt/từ chối đơn nghỉ */}
+            {/* Dialog xử lý duyệt/từ chối đơn nghỉ */}
             {selectedRequest && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
@@ -643,7 +631,7 @@ export default function AdminLeaveApproval() {
                             )}
                         </p>
 
-                        {/* Thông tin phép còn lại và người thay thế */}
+                        {/* Thông tin còn lại và người thay thế */}
                         {(selectedRequest.status === "PENDING" || selectedRequest.status === "PENDING_ADMIN") && (
                             <div className="mb-4 text-sm bg-gray-50 p-3 rounded">
                                 <p className="flex justify-between">

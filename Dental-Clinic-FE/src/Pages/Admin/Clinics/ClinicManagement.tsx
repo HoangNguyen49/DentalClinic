@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
+import { Calendar, ChevronDown, ChevronUp } from "lucide-react";
 
+// Định nghĩa kiểu dữ liệu cho phòng khám
 type AdminClinic = {
   id: number;
   clinicCode?: string;
@@ -12,8 +14,24 @@ type AdminClinic = {
   email?: string;
   openingHours?: string;
   active: boolean;
+  activeDoctorsCount?: number;
+  activeEmployeesCount?: number;
   createdAt?: string;
   updatedAt?: string;
+};
+
+// Định nghĩa kiểu dữ liệu cho nhân viên/bác sĩ
+type StaffDetail = {
+  userId: number;
+  fullName: string;
+  email: string;
+  phone: string;
+  roleName: string;
+  roleAtClinic: string;
+  startDate: string;
+  endDate?: string;
+  isActive: boolean;
+  isDoctor: boolean;
 };
 
 const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
@@ -23,9 +41,17 @@ function ClinicManagement() {
   const [clinics, setClinics] = useState<AdminClinic[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [selectedClinicId, setSelectedClinicId] = useState<number | null>(null);
+  const [selectedDate, setSelectedDate] = useState<string>(
+    new Date().toISOString().split("T")[0]
+  );
+  const [staffDetails, setStaffDetails] = useState<StaffDetail[]>([]);
+  const [loadingStaff, setLoadingStaff] = useState<boolean>(false);
+  const [expandedClinic, setExpandedClinic] = useState<number | null>(null);
 
   const accessToken = localStorage.getItem("accessToken");
 
+  // Lấy danh sách phòng khám
   const fetchClinics = async () => {
     if (!accessToken) {
       toast.error(t("messages.noAccessToken", { defaultValue: "Missing access token" }));
@@ -52,9 +78,56 @@ function ClinicManagement() {
 
   useEffect(() => {
     fetchClinics();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Lấy danh sách nhân viên theo phòng khám và ngày
+  const fetchStaffDetails = async (clinicId: number, date?: string) => {
+    if (!accessToken) {
+      toast.error(t("messages.noAccessToken", { defaultValue: "Missing access token" }));
+      return;
+    }
+    try {
+      setLoadingStaff(true);
+      const url = `${apiBase}/api/admin/clinics/${clinicId}/staff${date ? `?date=${date}` : ""}`;
+      const response = await axios.get<StaffDetail[]>(url, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      setStaffDetails(response.data || []);
+    } catch (error: any) {
+      const message =
+        error?.response?.data?.message ||
+        error?.message ||
+        t("messages.loadStaffFailed", { defaultValue: "Unable to load staff details" });
+      toast.error(message);
+      setStaffDetails([]);
+    } finally {
+      setLoadingStaff(false);
+    }
+  };
+
+  // Xem chi tiết nhân viên của phòng khám
+  const handleViewDetails = (clinicId: number) => {
+    if (expandedClinic === clinicId) {
+      setExpandedClinic(null);
+      setStaffDetails([]);
+    } else {
+      setExpandedClinic(clinicId);
+      setSelectedClinicId(clinicId);
+      fetchStaffDetails(clinicId, selectedDate);
+    }
+  };
+
+  // Khi thay đổi ngày xem nhân sự
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+    if (selectedClinicId) {
+      fetchStaffDetails(selectedClinicId, date);
+    }
+  };
+
+  // Bật/tắt trạng thái hoạt động của phòng khám
   const toggleClinic = async (clinic: AdminClinic) => {
     if (!accessToken) {
       toast.error(t("messages.noAccessToken", { defaultValue: "Missing access token" }));
@@ -215,9 +288,172 @@ function ClinicManagement() {
           </table>
         </div>
       </div>
+
+      {/* Phần thống kê nhân sự các phòng khám */}
+      <div className="bg-white rounded-lg shadow border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-800">
+            {t("tableHeaders.staffStatistics", { defaultValue: "Thống kê nhân sự theo cơ sở" })}
+          </h2>
+          <div className="flex items-center gap-2">
+            <Calendar className="w-4 h-4 text-gray-500" />
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => handleDateChange(e.target.value)}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Select date to view staff statistics"
+              title="Select date to view staff statistics"
+            />
+          </div>
+        </div>
+        <div className="p-6">
+          {loading ? (
+            <div className="text-center text-gray-500 py-8">
+              {t("messages.loading", { defaultValue: "Loading..." })}
+            </div>
+          ) : clinics.length === 0 ? (
+            <div className="text-center text-gray-500 py-8">
+              {t("messages.noClinics", { defaultValue: "No clinics found" })}
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {clinics.map((clinic) => (
+                <div
+                  key={clinic.id}
+                  className="border border-gray-200 rounded-lg overflow-hidden"
+                >
+                  <div
+                    className="p-4 hover:bg-gray-50 transition cursor-pointer"
+                    onClick={() => handleViewDetails(clinic.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <h3 className="text-base font-semibold text-gray-900 mb-3">
+                          {clinic.clinicName}
+                        </h3>
+                        <div className="flex gap-6">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">
+                              {t("tableHeaders.activeDoctors", { defaultValue: "Bác sĩ" })}:
+                            </span>
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-700">
+                              {clinic.activeDoctorsCount ?? 0}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm text-gray-600">
+                              {t("tableHeaders.activeEmployees", { defaultValue: "Nhân viên" })}:
+                            </span>
+                            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-700">
+                              {clinic.activeEmployeesCount ?? 0}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        {expandedClinic === clinic.id ? (
+                          <ChevronUp className="w-5 h-5 text-gray-500" />
+                        ) : (
+                          <ChevronDown className="w-5 h-5 text-gray-500" />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {expandedClinic === clinic.id && (
+                    <div className="border-t border-gray-200 bg-gray-50 p-4">
+                      {loadingStaff ? (
+                        <div className="text-center text-gray-500 py-4">
+                          {t("messages.loading", { defaultValue: "Loading details..." })}
+                        </div>
+                      ) : staffDetails.length === 0 ? (
+                        <div className="text-center text-gray-500 py-4">
+                          {t("messages.noStaff", { defaultValue: "No staff found for this date" })}
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          <div className="mb-4">
+                            {/* Danh sách bác sĩ */}
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                              {t("tableHeaders.doctors", { defaultValue: "Bác sĩ" })}
+                            </h4>
+                            <div className="space-y-2">
+                              {staffDetails
+                                .filter((staff) => staff.isDoctor)
+                                .map((staff) => (
+                                  <div
+                                    key={staff.userId}
+                                    className="bg-white p-3 rounded border border-gray-200"
+                                  >
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <p className="font-medium text-gray-900">{staff.fullName}</p>
+                                        <p className="text-sm text-gray-600">{staff.email}</p>
+                                        <p className="text-sm text-gray-600">{staff.phone}</p>
+                                        <div className="mt-1 flex gap-2">
+                                          <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                                            {staff.roleName}
+                                          </span>
+                                          {staff.roleAtClinic && (
+                                            <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded">
+                                              {staff.roleAtClinic}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+
+                          <div>
+                            {/* Danh sách nhân viên */}
+                            <h4 className="text-sm font-semibold text-gray-700 mb-2">
+                              {t("tableHeaders.employees", { defaultValue: "Nhân viên" })}
+                            </h4>
+                            <div className="space-y-2">
+                              {staffDetails
+                                .filter((staff) => !staff.isDoctor)
+                                .map((staff) => (
+                                  <div
+                                    key={staff.userId}
+                                    className="bg-white p-3 rounded border border-gray-200"
+                                  >
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1">
+                                        <p className="font-medium text-gray-900">{staff.fullName}</p>
+                                        <p className="text-sm text-gray-600">{staff.email}</p>
+                                        <p className="text-sm text-gray-600">{staff.phone}</p>
+                                        <div className="mt-1 flex gap-2">
+                                          <span className="text-xs px-2 py-0.5 bg-green-100 text-green-700 rounded">
+                                            {staff.roleName}
+                                          </span>
+                                          {staff.roleAtClinic && (
+                                            <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded">
+                                              {staff.roleAtClinic}
+                                            </span>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
 export default ClinicManagement;
-

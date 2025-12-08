@@ -13,7 +13,6 @@ import HRLayout from "../app/layout/HrLayout";
 import AdminDashboardPage from "../Pages/Admin/Dashboard/AdminDashboardPage";
 import ProtectedRouteAdmin from "./routes/ProtectedRouteAdmin";
 import ProtectedRouteHR from "../app/routes/ProtectedRouteHR";
-import AppointmentList from "../Pages/Admin/Appointments/AppointmentList";
 import HrDashboardPage from "../Pages/HR/Dashboard/HrDashboardPage";
 import ScheduleList from "../Pages/HR/Schedules/ScheduleList";
 import CreateScheduleForm from "../Pages/HR/Schedules/CreateScheduleForm";
@@ -37,6 +36,10 @@ import HrAttendanceManagement from "../Pages/HR/Attendance/HrAttendanceManagemen
 import AdminStaffManagement from "../Pages/Admin/Staff/AdminStaffManagement";
 import AdminSystemPage from "../Pages/Admin/System/AdminSystemPage";
 import AdminLeaveApproval from "../Pages/Admin/LeaveRequests/AdminLeaveApproval";
+import AdminReportsPage from "../Pages/Admin/Reports/AdminReportsPage";
+import AppointmentList from "../Pages/Admin/Appointments/AppointmentList";
+import AdminCustomerManagement from "../Pages/Admin/Customers/AdminCustomerManagement";
+import AdminInventoryManagement from "../Pages/Admin/Inventory/AdminInventoryManagement";
 import ReceptionLayout from "../app/layout/ReceptionLayout";
 import ProtectedRouteReception from "../app/routes/ProtectedRouteReception";
 import ReceptionDashboard from "../Pages/Reception/Dashboard/ReceptionDashboard";
@@ -69,9 +72,8 @@ function App() {
           <Route element={<AuthGuard />}>
             <Route path="/admin" element={<ProtectedRouteAdmin />}>
               <Route element={<AdminLayout />}>
-                <Route index element={<AdminDashboardPage />} />{" "}
+                <Route index element={<AdminDashboardPage />} />
                 <Route path="dashboard" element={<AdminDashboardPage />} />
-                <Route path="appointments" element={<AppointmentList />} />
                 <Route
                   path="attendance"
                   element={<AdminAttendanceManagement />}
@@ -80,6 +82,9 @@ function App() {
                 <Route path="staff" element={<AdminStaffManagement />} />
                 <Route path="system" element={<AdminSystemPage />} />
                 <Route path="leave-requests" element={<AdminLeaveApproval />} />
+                <Route path="reports" element={<AdminReportsPage />} />
+                <Route path="customers" element={<AdminCustomerManagement />} />
+                <Route path="inventory" element={<AdminInventoryManagement />} />
               </Route>
             </Route>
 

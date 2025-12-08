@@ -8,7 +8,7 @@ export default function HolidaysTab() {
     const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // State quản lý form nhập ngày lễ
+    // State phục vụ form nhập ngày lễ mới
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [newName, setNewName] = useState("");
@@ -34,17 +34,17 @@ export default function HolidaysTab() {
         }
     };
 
-    // Lấy danh sách cơ sở
+    // Lấy danh sách tất cả các cơ sở trên hệ thống
     const loadClinics = async () => {
         try {
             const data = await systemService.getAllClinics();
             setClinics(data);
         } catch (error) {
-            console.error("Failed to load clinics", error);
+            console.error("Không thể tải danh sách cơ sở", error);
         }
     };
 
-    // Xử lý thêm ngày lễ mới
+    // Thêm ngày lễ mới
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!startDate || !newName || !endDate) return;
@@ -57,6 +57,7 @@ export default function HolidaysTab() {
             return;
         }
 
+        // Tính số ngày diễn ra kỳ nghỉ lễ
         const diffTime = Math.abs(end.getTime() - start.getTime());
         const duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
@@ -77,7 +78,7 @@ export default function HolidaysTab() {
         }
     };
 
-    // Xử lý xóa ngày lễ
+    // Xóa ngày lễ khỏi danh sách
     const handleDelete = async (id: number) => {
         if (!window.confirm("Bạn có chắc muốn xóa ngày lễ này?")) return;
         try {
@@ -89,7 +90,7 @@ export default function HolidaysTab() {
         }
     };
 
-    // Chọn cơ sở áp dụng ngày lễ
+    // Chọn cơ sở áp dụng cho ngày lễ, bỏ chọn nếu bấm lại
     const selectClinic = (clinicId: number) => {
         setSelectedClinicId(prev => prev === clinicId ? null : clinicId);
     };
@@ -98,7 +99,7 @@ export default function HolidaysTab() {
 
     return (
         <div className="space-y-8">
-            {/* Form thêm ngày lễ mới */}
+            {/* Form nhập ngày nghỉ lễ mới */}
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                 <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
                     <Plus className="w-4 h-4" /> Thêm ngày nghỉ lễ mới
@@ -166,8 +167,7 @@ export default function HolidaysTab() {
                             <label htmlFor="recurring" className="text-sm text-slate-700">Lặp lại hàng năm</label>
                         </div>
                     </div>
-
-                    {/* Chọn cơ sở áp dụng */}
+                    {/* Chọn cơ sở áp dụng cho ngày lễ */}
                     <div>
                         <label className="block text-xs font-medium text-slate-700 mb-2">Áp dụng cho cơ sở (Để trống nếu áp dụng tất cả)</label>
                         <div className="flex flex-wrap gap-2">
@@ -199,7 +199,7 @@ export default function HolidaysTab() {
                 </form>
             </div>
 
-            {/* Danh sách ngày lễ */}
+            {/* Bảng danh sách ngày nghỉ lễ */}
             <div className="border rounded-lg overflow-hidden">
                 <table className="min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
@@ -213,7 +213,7 @@ export default function HolidaysTab() {
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
                         {holidays.map((holiday) => {
-                            // Tính toán ngày kết thúc kỳ nghỉ lễ
+                            // Tính ngày kết thúc kỳ nghỉ lễ
                             const start = new Date(holiday.date);
                             const end = new Date(start);
                             end.setDate(start.getDate() + (holiday.duration - 1));

@@ -7,10 +7,10 @@ import AuditLogsTab from "./Tabs/AuditLogsTab";
 
 export default function AdminSystemPage() {
     const { t } = useTranslation("admin");
-    // State: tab hiện tại
+    // State cho tab đang chọn
     const [activeTab, setActiveTab] = useState<"config" | "holidays" | "logs">("config");
 
-    // Danh sách các tab
+    // Danh sách tabs của hệ thống
     const tabs = [
         {
             id: "config",
@@ -43,14 +43,15 @@ export default function AdminSystemPage() {
                         {t("system.subtitle", "Quản lý tham số, ngày nghỉ và nhật ký hoạt động")}
                     </p>
                 </div>
-                {/* Layout chính chứa tabs và nội dung tab */}
+                {/* Khung giao diện có tabs và nội dung tab */}
                 <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                     <div className="border-b border-slate-200">
-                        {/* Thanh menu chọn tab */}
+                        {/* Thanh tab menu */}
                         <nav className="flex gap-1 p-1" aria-label="Tabs">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.id}
+                                    // Bấm để chuyển tab
                                     onClick={() => setActiveTab(tab.id)}
                                     className={`
                                         flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors
@@ -66,7 +67,7 @@ export default function AdminSystemPage() {
                             ))}
                         </nav>
                     </div>
-                    {/* Nội dung tab được chọn */}
+                    {/* Hiển thị nội dung của tab đang được chọn */}
                     <div className="p-6">
                         {tabs.find((t) => t.id === activeTab)?.component}
                     </div>

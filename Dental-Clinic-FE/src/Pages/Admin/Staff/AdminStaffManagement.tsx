@@ -4,7 +4,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
 
-// Kiểu dữ liệu nhân viên quản trị
+// Định nghĩa kiểu dữ liệu nhân viên cho quản trị viên
 type AdminStaff = {
   id: number;
   code?: string;
@@ -19,12 +19,12 @@ type AdminStaff = {
   createdAt?: string;
   lastLoginAt?: string;
   avatarUrl?: string | null;
-  hasApprovedResignation?: boolean; // Đã duyệt nghỉ việc chưa
+  hasApprovedResignation?: boolean; // Đã duyệt nghỉ việc hay chưa
 };
 
 const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-// Định dạng ngày/tháng/năm
+// Hàm định dạng ngày/tháng/năm
 function formatDate(value?: string) {
   if (!value) return "-";
   try {
@@ -34,7 +34,6 @@ function formatDate(value?: string) {
   }
 }
 
-// Quản lý nhân viên cho admin
 export default function AdminStaffManagement() {
   const { t } = useTranslation("admin");
   const [staff, setStaff] = useState<AdminStaff[]>([]);
@@ -43,7 +42,7 @@ export default function AdminStaffManagement() {
 
   const accessToken = localStorage.getItem("accessToken");
 
-  // Lấy danh sách nhân viên từ API
+  // Lấy danh sách nhân viên từ API (tìm kiếm nếu có, không thì lấy toàn bộ)
   const fetchStaff = async (keyword?: string) => {
     if (!accessToken) {
       toast.error(t("attendance.messages.noAccessToken", "Missing access token"));
@@ -71,7 +70,7 @@ export default function AdminStaffManagement() {
     fetchStaff();
   }, []);
 
-  // Xử lý tìm kiếm
+  // Xử lý khi nhấn tìm kiếm
   const handleSearch = () => {
     fetchStaff(search.trim());
   };
@@ -90,7 +89,7 @@ export default function AdminStaffManagement() {
         </p>
       </div>
 
-      {/* Thanh tìm kiếm và nút clear */}
+      {/* Thanh tìm kiếm (nhập từ khoá và nút tìm kiếm/clear) */}
       <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col gap-4 md:flex-row md:items-end">
         <div className="flex-1">
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -126,7 +125,7 @@ export default function AdminStaffManagement() {
         </div>
       </div>
 
-      {/* Bảng danh sách nhân viên */}
+      {/* Bảng hiển thị danh sách nhân viên */}
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-x-auto">
         <table className="min-w-full border-collapse">
           <thead className="bg-gray-50">
@@ -161,20 +160,22 @@ export default function AdminStaffManagement() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {/* Hiển thị loading hoặc không có dữ liệu */}
             {loading ? (
+              // Hiển thị loading khi đang lấy dữ liệu
               <tr>
                 <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
                   {t("staff.messages.loading", "Loading staff...")}
                 </td>
               </tr>
             ) : staff.length === 0 ? (
+              // Không có dữ liệu
               <tr>
                 <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
                   {t("staff.messages.noData", "No staff found")}
                 </td>
               </tr>
             ) : (
+              // Duyệt qua từng nhân viên để hiển thị dòng tương ứng
               staff.map((person) => (
                 <tr key={person.id} className="hover:bg-gray-50 transition">
                   <td className="px-4 py-3">
@@ -251,4 +252,3 @@ export default function AdminStaffManagement() {
     </div>
   );
 }
-
