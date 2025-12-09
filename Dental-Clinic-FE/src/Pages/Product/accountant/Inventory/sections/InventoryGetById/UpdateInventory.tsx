@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, PackagePlus, Calculator, Save, Warehouse, AlertTriangle, CheckCircle2, Shield, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, PackagePlus, Plus, Minus, Warehouse, AlertTriangle, CheckCircle2, Shield, ShieldCheck } from 'lucide-react';
 import { useUpdateInventory } from './useUpdateInventory';
 import { getProductImageSrc } from '../../../../../../huybro_api/productApi';
 
@@ -8,7 +8,9 @@ const UpdateInventory: React.FC = () => {
     const navigate = useNavigate();
     const {
         data, loading, loadError, submitting,
-        quantity, setQuantity,
+        finalQuantity,
+        adjustMode, setAdjustMode,
+        adjustValue, setAdjustValue,
         importPrice, setImportPrice,
         profitMargin, setProfitMargin,
         currency, setCurrency,
@@ -34,7 +36,7 @@ const UpdateInventory: React.FC = () => {
             </div>
         </div>
     );
-    
+
     // Error State
     if (loadError || !data) return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 gap-4">
@@ -63,7 +65,7 @@ const UpdateInventory: React.FC = () => {
                                 Adjust stock quantity and update pricing logic for this warehouse.
                             </p>
                         </div>
-                        <button 
+                        <button
                             onClick={handleCancel}
                             disabled={isBusy}
                             className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50"
@@ -77,11 +79,11 @@ const UpdateInventory: React.FC = () => {
             {/* MAIN CONTENT */}
             <div className="mx-auto max-w-6xl px-6 py-8 space-y-6">
                 <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    
+
                     {/* LEFT COLUMN: Info & Quantity (2/3 width) */}
                     <div className="lg:col-span-2">
                         <div className="rounded-xl bg-white p-6 shadow-sm ring-1 ring-gray-100 space-y-8">
-                            
+
                             {/* 1. TARGET INFORMATION (Read-only) */}
                             <div>
                                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
@@ -94,16 +96,16 @@ const UpdateInventory: React.FC = () => {
                                         {/* Image */}
                                         <div className="h-20 w-20 bg-white rounded-lg border border-blue-200 flex-shrink-0 shadow-sm overflow-hidden">
                                             {data.image ? (
-                                                <img 
-                                                    src={getProductImageSrc(data.image)} 
-                                                    className="w-full h-full object-cover rounded" 
-                                                    alt={data.productName} 
+                                                <img
+                                                    src={getProductImageSrc(data.image)}
+                                                    className="w-full h-full object-cover rounded"
+                                                    alt={data.productName}
                                                 />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-xs text-gray-400 font-bold bg-gray-50">NO IMG</div>
                                             )}
                                         </div>
-                                        
+
                                         {/* Text Info */}
                                         <div className="flex-1">
                                             <h2 className="text-lg font-bold text-gray-900 mb-2">{data.productName}</h2>
@@ -118,7 +120,7 @@ const UpdateInventory: React.FC = () => {
                                                 </div>
                                             </div>
                                         </div>
-                                        
+
                                         {/* Current Stock Badge */}
                                         <div className="text-right">
                                             <span className="text-xs uppercase text-gray-400 font-bold block mb-1">Current</span>
@@ -128,31 +130,73 @@ const UpdateInventory: React.FC = () => {
                                 </div>
                             </div>
 
-                            {/* 2. UPDATE QUANTITY */}
+                            {/* 2. UPDATE STOCK - ICON TOGGLE STYLE */}
                             <div className="pt-8 border-t border-gray-100">
                                 <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
                                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">2</div>
                                     <h2 className="text-lg font-semibold text-gray-900">Update Stock</h2>
                                 </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">New Quantity <span className="text-red-500">*</span></label>
-                                    <div className="relative">
-                                        <input 
-                                            type="number" min="0" 
-                                            className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-sm shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none transition-all font-bold text-gray-900"
-                                            value={quantity} onChange={(e) => setQuantity(Number(e.target.value))} 
+                                <div className="space-y-4">
+                                    <label className="block text-sm font-medium text-gray-700">Adjustment</label>
+
+                                    {/* ROW: [ (+) | (-) ] [ Input Number ] [ UNIT ] */}
+                                    <div className="flex rounded-lg shadow-sm ring-1 ring-gray-300 overflow-hidden focus-within:ring-2 focus-within:ring-blue-500 transition-all bg-white h-[50px]">
+
+                                        {/* Cụm nút chọn Mode bằng Icon */}
+                                        <div className="flex border-r border-gray-300">
+                                            {/* Nút Import (+) */}
+                                            <button
+                                                type="button"
+                                                onClick={() => { setAdjustMode('ADD'); setAdjustValue(''); }}
+                                                className={`px-4 flex items-center justify-center transition-colors w-[50px]
+                        ${adjustMode === 'ADD'
+                                                        ? 'bg-green-100 text-green-700' // Active: Xanh
+                                                        : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`} // Inactive: Xám
+                                                title="Import Stock"
+                                            >
+                                                <Plus className="w-6 h-6" />
+                                            </button>
+
+                                            {/* Nút Export (-) */}
+                                            <button
+                                                type="button"
+                                                onClick={() => { setAdjustMode('SUBTRACT'); setAdjustValue(''); }}
+                                                className={`px-4 flex items-center justify-center border-l border-gray-200 transition-colors w-[50px]
+                        ${adjustMode === 'SUBTRACT'
+                                                        ? 'bg-red-100 text-red-700' // Active: Đỏ
+                                                        : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`} // Inactive: Xám
+                                                title="Export Stock"
+                                            >
+                                                <Minus className="w-6 h-6" />
+                                            </button>
+                                        </div>
+
+                                        {/* Input nhập số */}
+                                        <input
+                                            type="number" min="0"
+                                            placeholder={adjustMode === 'ADD' ? "Quantity to Add..." : "Quantity to Remove..."}
+                                            className={`flex-1 border-none py-3 px-4 outline-none bg-transparent
+                    ${adjustMode === 'ADD' ? 'text-green-700 placeholder:text-gray-300' : 'text-red-700 placeholder:text-gray-300'}`}
+                                            value={adjustValue}
+                                            onChange={(e) => setAdjustValue(e.target.value ? Number(e.target.value) : '')}
                                         />
-                                        <span className="absolute right-3 top-2.5 text-xs font-bold text-gray-400 uppercase">UNITS</span>
+
+                                        {/* Đuôi: Đơn vị tính */}
+                                        <div className="bg-gray-50 px-5 flex items-center border-l border-gray-200">
+                                            <span className="text-xs font-bold text-gray-400 tracking-wider">UNITS</span>
+                                        </div>
                                     </div>
+
+                                    {/* Chỉ hiện lỗi nếu có (Đã bỏ phần tính toán thừa) */}
                                     {renderFieldErrors('newQuantity')}
                                 </div>
                             </div>
 
-                             {/* 3. NOTES */}
-                             <div className="pt-8 border-t border-gray-100">
+                            {/* 3. NOTES */}
+                            <div className="pt-8 border-t border-gray-100">
                                 <label className="block text-sm font-medium text-gray-700 mb-2">Note / Reason</label>
-                                <textarea 
+                                <textarea
                                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 outline-none min-h-[80px]"
                                     placeholder="Why are you updating this? (e.g. Stock Correction, Re-pricing)..."
                                     value={note} onChange={(e) => setNote(e.target.value)}
@@ -164,7 +208,7 @@ const UpdateInventory: React.FC = () => {
                     {/* RIGHT COLUMN: PRICING CONFIGURATION (1/3 width) */}
                     <div className="lg:col-span-1 space-y-6">
                         <div className="rounded-xl border shadow-sm h-fit bg-white border-blue-100 ring-1 ring-blue-50">
-                            
+
                             {/* Header Pricing */}
                             <div className="px-5 py-4 border-b flex items-center justify-between border-blue-100 bg-blue-50/50">
                                 <h3 className="font-bold text-sm uppercase tracking-wide flex items-center gap-2 text-blue-700">
@@ -178,7 +222,7 @@ const UpdateInventory: React.FC = () => {
                                 <div className="bg-blue-50 text-blue-700 px-3 py-2 rounded text-xs flex items-start gap-2 border border-blue-100">
                                     <CheckCircle2 className="w-4 h-4 flex-shrink-0 mt-0.5" />
                                     <span>
-                                        <b>Update Global Price.</b> <br/>
+                                        <b>Update Global Price.</b> <br />
                                         Enter new Cost & Margin to recalculate the Retail Price for ALL warehouses.
                                     </span>
                                 </div>
@@ -189,10 +233,10 @@ const UpdateInventory: React.FC = () => {
                                         Base Import Cost
                                     </label>
                                     <div className="relative">
-                                        <input 
+                                        <input
                                             type="number" step="0.01" min="0"
                                             className="w-full rounded-lg border px-3 py-2 text-sm font-medium outline-none transition-colors bg-white border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                            value={importPrice} 
+                                            value={importPrice}
                                             onChange={(e) => setImportPrice(e.target.value ? Number(e.target.value) : '')}
                                             placeholder="Enter cost..."
                                         />
@@ -205,10 +249,10 @@ const UpdateInventory: React.FC = () => {
                                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
                                             Margin (%)
                                         </label>
-                                        <input 
+                                        <input
                                             type="number" step="0.1" min="0"
                                             className="w-full rounded-lg border px-3 py-2 text-sm font-medium outline-none bg-white border-gray-300 focus:border-blue-500"
-                                            value={profitMargin} 
+                                            value={profitMargin}
                                             onChange={(e) => setProfitMargin(e.target.value ? Number(e.target.value) : '')}
                                             placeholder="e.g. 20"
                                         />
@@ -219,9 +263,9 @@ const UpdateInventory: React.FC = () => {
                                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">
                                             Currency
                                         </label>
-                                        <select 
+                                        <select
                                             className="w-full rounded-lg border px-2 py-2 text-sm font-medium outline-none bg-white border-gray-300 focus:border-blue-500"
-                                            value={currency} 
+                                            value={currency}
                                             onChange={(e) => setCurrency(e.target.value)}
                                         >
                                             <option value="USD">USD</option>
@@ -240,7 +284,7 @@ const UpdateInventory: React.FC = () => {
                                         </span>
                                     </div>
                                     {renderFieldErrors('newRetailPrice')}
-                                    
+
                                     <div className="flex gap-1.5 text-[10px] text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-100 items-center justify-center">
                                         <AlertTriangle className="w-3 h-3" />
                                         Warning: Affects all warehouses.
@@ -253,7 +297,7 @@ const UpdateInventory: React.FC = () => {
                         <div className="space-y-4">
                             <div className="flex items-center gap-3">
                                 {/* CANCEL BUTTON */}
-                                <button 
+                                <button
                                     type="button"
                                     onClick={handleCancel}
                                     disabled={isBusy}
@@ -263,9 +307,9 @@ const UpdateInventory: React.FC = () => {
                                 </button>
 
                                 {/* SAVE BUTTON */}
-                                <button 
-                                    type="submit" 
-                                    disabled={submitting} 
+                                <button
+                                    type="submit"
+                                    disabled={submitting}
                                     className="flex-[2] py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-lg shadow-blue-200 transition-all disabled:opacity-50 disabled:shadow-none flex justify-center items-center gap-2"
                                 >
                                     {submitting ? (
