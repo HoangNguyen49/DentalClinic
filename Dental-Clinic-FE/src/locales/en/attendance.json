@@ -36,6 +36,7 @@
     "monthlyAttendanceList": "Monthly Attendance List",
     "id": "ID",
     "employeeName": "Employee Name",
+    "jobTitle": "Job Title",
     "status": "Status",
     "checkIn": "Check In",
     "checkOut": "Check Out",
@@ -49,7 +50,29 @@
     "leaveDays": "Leave Days",
     "offDays": "Off Days",
     "totalWorked": "Total Worked",
-    "noAttendanceRecordsFound": "No attendance records found"
+    "workedHours": "Worked Hours (H)",
+    "monthlyTotal": "Monthly Total",
+    "daysSuffix": "days",
+    "workingDaysExSunday": "Total working days: {{count}} (excluding Sundays only, Saturday is a working day)",
+    "exportRange": "Period",
+    "totalWorkedMinutes": "Total Worked (Minutes)",
+    "employmentType": "Employment Type",
+    "employmentTypeHourly": "Hourly (Wage)",
+    "employmentTypeMonthly": "Monthly (Salary)",
+    "standardHours": "Standard Hours (H)",
+    "payableDays": "Payable Days",
+    "unpaidLeaveDays": "Unpaid Leave Days",
+    "otHours": "OT Hours Approved (H)",
+    "finalPayableHours": "Final Payable Hours (H)",
+    "export": "Export Excel",
+    "exporting": "Exporting...",
+    "totals": "Payroll Totals",
+    "avgWorkedPerDay": "Average Worked / Day",
+    "unknownRole": "Unknown role",
+    "noAttendanceRecordsFound": "No attendance records found",
+    "actualWorkedDays": "Actual Worked Days",
+    "totalLateMinutes": "Total Late Minutes",
+    "totalEarlyMinutes": "Total Early Minutes"
   },
   "pagination": {
     "rowsPerPage": "Rows per page",
@@ -66,7 +89,25 @@
     "failedToLoadDailySummary": "Failed to load daily summary",
     "failedToLoadDailyAttendanceList": "Failed to load daily attendance list",
     "failedToLoadMonthlySummary": "Failed to load monthly summary",
-    "failedToLoadMonthlyAttendanceList": "Failed to load monthly attendance list"
+    "failedToLoadMonthlyAttendanceList": "Failed to load monthly attendance list",
+    "exportSuccess": "Monthly attendance exported successfully",
+    "exportFailed": "Unable to export monthly attendance",
+    "exportNoData": "No monthly attendance to export"
+  },
+  "detail": {
+    "title": "Attendance Details",
+    "loading": "Loading...",
+    "notFound": "Attendance record not found",
+    "fetchFailed": "Failed to load attendance details",
+    "close": "Close",
+    "workDate": "Work Date",
+    "status": "Status",
+    "checkIn": "Check In",
+    "checkOut": "Check Out",
+    "actualHours": "Actual Work Hours",
+    "shiftType": "Shift Type",
+    "note": "Note",
+    "hours": "hours"
   }
 }
 

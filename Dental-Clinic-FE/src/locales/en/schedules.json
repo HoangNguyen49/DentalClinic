@@ -71,6 +71,10 @@
       "selectMonday": "Please select a Monday. Automatically adjusted...",
       "onlyNextWeek": "Only allowed to schedule for next week and later. Defaulted to next week."
     },
+    "unavailable": {
+      "title": "Doctors on Leave (Unavailable)",
+      "description": "Please do not schedule these doctors during their approved leave."
+    },
     "assignClinics": {
       "title": "Assign clinics",
       "description": "Specify clinic and shift for each doctor per day. Each doctor can have multiple shifts per day, with different clinics for each shift."
@@ -102,6 +106,7 @@
       "noAssignments": "No doctors have been assigned. Please assign at least one doctor at one clinic for one day in the week.",
       "dayNoDoctors": "{{day}} ({{date}}): No doctors have been assigned for this day.",
       "clinicNoDoctors": "{{day}} ({{date}}): Clinic \"{{clinic}}\" has no doctors assigned.",
+      "missingClinicAssignment": "On {{day}} ({{date}}) no doctor has been assigned to {{clinic}}.",
       "scheduleValid": "Schedule is valid!",
       "foundErrors": "Found {{count}} errors:",
       "andMore": "... and {{count}} more errors.",
@@ -128,16 +133,21 @@
     },
     "shifts": {
       "morning": "Morning",
-      "afternoon": "Afternoon"
+      "afternoon": "Afternoon",
+      "fullDay": "Full Day"
     },
     "aiGeneration": {
       "title": "AI Schedule Generation",
       "description": "Enter your requirements in English or Vietnamese, AI will automatically analyze and create schedule for you.",
-      "placeholder": "Enter schedule requirements (English or Vietnamese)...\nVietnamese example: Phân công bác sĩ Oral Surgery ở cả 2 clinic vào thứ 2, 3, 4 cả sáng và chiều\nEnglish example: Assign Oral Surgery doctors to both clinics on Monday, Tuesday, Wednesday for both morning and afternoon shifts",
+      "placeholder": "Example: Assign Oral Surgery doctors to both clinics on Monday, Tuesday, Wednesday for both morning and afternoon shifts...",
       "button": "Generate Schedule",
       "generating": "Generating...",
-      "success": "Schedule generated successfully!",
-      "error": "Error generating schedule"
+      "success": "AI successfully created {{count}} assignments. Please review and edit if needed.",
+      "resultMessage": "Created {{count}} assignments for {{days}} day(s).",
+      "error": "Error generating schedule",
+      "messages": {
+        "pleaseInput": "Please input a description for schedule AI generation."
+      }
     }
   },
   "common": {
@@ -145,4 +155,3 @@
     "clinic": "Clinic"
   }
 }
-

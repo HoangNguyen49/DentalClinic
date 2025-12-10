@@ -7,6 +7,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
 import DailyScheduleView from "./DailyScheduleView";
 import WeeklyScheduleView from "./WeeklyScheduleView";
+import { getMondayOfWeek, formatDateToLocal } from "../../../utils/dateUtils";
 
 type HrDocDto = {
   id: number;
@@ -73,14 +74,6 @@ function ScheduleList() {
     };
 
 
-    // Lấy ngày thứ hai của tuần từ một ngày bất kỳ (dùng để xác định tuần hiện tại)
-    const getMondayOfWeek = (date: Date): string => {
-      const d = new Date(date);
-      const day = d.getDay();
-      const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-      const monday = new Date(d.setDate(diff));
-      return monday.toISOString().split("T")[0];
-    };
 
     const today = new Date();
     const todayStr = today.toISOString().split("T")[0];
@@ -88,7 +81,7 @@ function ScheduleList() {
     setCurrentWeekStart(monday);
     setSelectedDate(todayStr);
     fetchClinics();
-    // Ưu tiên hiển thị lịch theo ngày
+    // Always display the daily schedule first
     fetchSchedule(todayStr, "daily");
   }, []);
 
@@ -140,6 +133,7 @@ function ScheduleList() {
   }, [location.state]);
 
   // Lấy dữ liệu lịch làm việc
+  // Get schedules for a given date and mode (daily or weekly)
   const fetchSchedule = async (date: string, mode: "daily" | "weekly") => {
     setLoading(true);
     try {
@@ -170,26 +164,78 @@ function ScheduleList() {
   };
 
   // Chuyển sang tuần trước/tuần sau
-  const navigateWeek = (direction: "prev" | "next") => {
-    const current = new Date(currentWeekStart);
-    const newDate = new Date(current);
-    newDate.setDate(current.getDate() + (direction === "next" ? 7 : -7));
-    const newWeekStart = newDate.toISOString().split("T")[0];
-    setCurrentWeekStart(newWeekStart);
-    fetchSchedule(newWeekStart, "weekly");
+  // Navigate to the previous or next week
+  const navigateWeek = async (direction: "prev" | "next") => {
+    if (direction === "next") {
+      // Sử dụng endpoint /next-week nếu đang ở tuần hiện tại
+      const today = new Date();
+      const day = today.getDay();
+      const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(today.setDate(diff));
+      const currentWeekStartStr = monday.toISOString().split("T")[0];
+
+      if (currentWeekStart === currentWeekStartStr) {
+        // Đang ở tuần hiện tại, dùng endpoint /next-week
+        setLoading(true);
+        try {
+          const response = await axios.get<ScheduleItem[]>(
+            `${apiBase}/api/hr/schedules/next-week`,
+            {
+              headers: {
+                Authorization: `Bearer ${accessToken}`,
+              },
+            }
+          );
+          setSchedules(response.data || []);
+          // Cập nhật currentWeekStart để hiển thị đúng
+          const nextWeekDate = new Date(monday);
+          nextWeekDate.setDate(monday.getDate() + 7);
+          setCurrentWeekStart(nextWeekDate.toISOString().split("T")[0]);
+        } catch (err: any) {
+          console.error("Error fetching next week:", err);
+          // Fallback: tự tính
+          const current = new Date(currentWeekStart + 'T00:00:00');
+          const newDate = new Date(current);
+          newDate.setDate(current.getDate() + 7);
+          const newWeekStart = formatDateToLocal(newDate);
+          setCurrentWeekStart(newWeekStart);
+          fetchSchedule(newWeekStart, "weekly");
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // Không phải tuần hiện tại, tự tính
+        const current = new Date(currentWeekStart + 'T00:00:00');
+        const newDate = new Date(current);
+        newDate.setDate(current.getDate() + 7);
+        const newWeekStart = formatDateToLocal(newDate);
+        setCurrentWeekStart(newWeekStart);
+        fetchSchedule(newWeekStart, "weekly");
+      }
+    } else {
+      // Tuần trước: tự tính
+      const current = new Date(currentWeekStart + 'T00:00:00');
+      const newDate = new Date(current);
+      newDate.setDate(current.getDate() - 7);
+      const newWeekStart = formatDateToLocal(newDate);
+      setCurrentWeekStart(newWeekStart);
+      fetchSchedule(newWeekStart, "weekly");
+    }
   };
 
   // Chuyển sang ngày trước/ngày sau
+  // Navigate to the previous or next day
   const navigateDay = (direction: "prev" | "next") => {
-    const current = new Date(selectedDate);
+    const current = new Date(selectedDate + 'T00:00:00');
     const newDate = new Date(current);
     newDate.setDate(current.getDate() + (direction === "next" ? 1 : -1));
-    const newDateStr = newDate.toISOString().split("T")[0];
+    const newDateStr = formatDateToLocal(newDate);
     setSelectedDate(newDateStr);
     fetchSchedule(newDateStr, "daily");
   };
 
   // Đổi kiểu xem giữa daily/weekly
+  // Switch between daily and weekly view modes
   const handleViewModeChange = (mode: "daily" | "weekly") => {
     setViewMode(mode);
     if (mode === "daily") {
@@ -200,17 +246,27 @@ function ScheduleList() {
   };
 
   // Chọn ngày trong daily view
+
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
     fetchSchedule(date, "daily");
   };
 
   // Trả về danh sách các ngày trong một tuần (bắt đầu từ thứ Hai)
+
   const getDaysOfWeek = (
     weekStart: string
   ): Array<{ date: string; dayName: string; dayNum: number; isToday: boolean }> => {
     const [year, month, day] = weekStart.split("-").map(Number);
     const start = new Date(year, month - 1, day);
+
+    // Ensure start is a Monday
+    const dayOfWeek = start.getDay();
+    if (dayOfWeek !== 1) {
+      const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      start.setDate(start.getDate() + diff);
+    }
+
     const days: Array<{ date: string; dayName: string; dayNum: number; isToday: boolean }> = [];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -222,10 +278,9 @@ function ScheduleList() {
       t("list.days.thu"),
       t("list.days.fri"),
       t("list.days.sat"),
-      t("list.days.sun"),
     ];
 
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 6; i++) {
       const date = new Date(start);
       date.setDate(start.getDate() + i);
 
@@ -235,6 +290,7 @@ function ScheduleList() {
       const dateStr = `${year}-${month}-${day}`;
 
       const dayOfWeek = date.getDay();
+      // Map Monday(1) to index 0, Tuesday(2) to 1, ..., Saturday(6) to 5
       const dayName = dayNames[dayOfWeek === 0 ? 6 : dayOfWeek - 1];
 
       const dateOnly = new Date(date);
@@ -254,9 +310,10 @@ function ScheduleList() {
   const weekDays = currentWeekStart ? getDaysOfWeek(currentWeekStart) : [];
 
   // Trả về thông tin ngày đang chọn cho daily view
+  // Get the selected day info for daily view
   const getSelectedDayInfo = () => {
     if (!selectedDate) return null;
-    const date = new Date(selectedDate);
+    const date = new Date(selectedDate + 'T00:00:00');
     const dayNames = [
       t("list.days.mon"),
       t("list.days.tue"),
@@ -264,10 +321,11 @@ function ScheduleList() {
       t("list.days.thu"),
       t("list.days.fri"),
       t("list.days.sat"),
-      t("list.days.sun"),
     ];
     const dayOfWeek = date.getDay();
-    const dayName = dayNames[dayOfWeek === 0 ? 6 : dayOfWeek - 1];
+    // Map Monday(1) to index 0, ..., Saturday(6) to 5
+    // Sunday(0) maps to index 6, but we only have 6 names, so it will be undefined
+    const dayName = dayOfWeek === 0 ? "Sunday" : dayNames[dayOfWeek - 1];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const dateOnly = new Date(date);
@@ -285,6 +343,7 @@ function ScheduleList() {
   const selectedDayInfo = getSelectedDayInfo();
 
   // Gom lịch theo ngày và bác sĩ
+  // Group schedules by date and doctor
   type DoctorDaySchedule = {
     doctor: HrDocDto | null;
     morning?: ScheduleItem;
@@ -308,6 +367,7 @@ function ScheduleList() {
       }
 
       // Phân loại ca sáng hoặc chiều dựa theo giờ bắt đầu
+      // Categorize as morning or afternoon based on startTime
       const startTime = schedule.startTime || "00:00";
       if (startTime < "12:00") {
         acc[date][doctorId].morning = schedule;
@@ -321,16 +381,18 @@ function ScheduleList() {
   );
 
   // Tạo danh sách lịch theo ngày (không nhóm theo specialty)
+  // Create daily schedules (not grouped by specialty)
   const schedulesByDate = Object.keys(schedulesByDateAndDoctor).reduce((acc, date) => {
     acc[date] = Object.values(schedulesByDateAndDoctor[date]);
     return acc;
   }, {} as Record<string, DoctorDaySchedule[]>);
 
   // Lấy thông tin tên tháng, ngày đầy đủ để hiển thị ở header
+  // Get month and formatted date for header display
   const getMonthAndDate = (
     weekStart: string
   ): { month: string; shortMonth: string; date: string } => {
-    const date = new Date(weekStart);
+    const date = new Date(weekStart + 'T00:00:00');
     const months = [
       t("list.months.january"),
       t("list.months.february"),
@@ -375,6 +437,7 @@ function ScheduleList() {
     : { month: "", date: "" };
 
   // Định dạng giờ hợp lệ cho giao diện
+  // Format a time string for display
   const formatTime = (time: string): string => {
     if (!time) return "";
     const [hours, minutes] = time.split(":");
@@ -407,14 +470,14 @@ function ScheduleList() {
                   {viewMode === "weekly"
                     ? month
                     : selectedDayInfo
-                    ? `${selectedDayInfo.dayName}, ${selectedDayInfo.dayNum}`
-                    : ""}
+                      ? `${selectedDayInfo.dayName}, ${selectedDayInfo.dayNum}`
+                      : ""}
                 </div>
                 <div className="text-sm text-gray-600">
                   {viewMode === "weekly"
                     ? headerDate
                     : selectedDayInfo
-                    ? new Date(selectedDate).toLocaleDateString(
+                      ? new Date(selectedDate).toLocaleDateString(
                         i18n.language === "vi" ? "vi-VN" : "en-US",
                         {
                           day: "numeric",
@@ -422,7 +485,7 @@ function ScheduleList() {
                           year: "numeric",
                         }
                       )
-                    : ""}
+                      : ""}
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -468,25 +531,22 @@ function ScheduleList() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              {/* Chuyển đổi giữa daily/weekly view */}
               <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
                 <button
                   onClick={() => handleViewModeChange("daily")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === "daily"
-                      ? "bg-white text-purple-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === "daily"
+                    ? "bg-white text-purple-600 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                    }`}
                 >
                   {t("list.viewMode.daily")}
                 </button>
                 <button
                   onClick={() => handleViewModeChange("weekly")}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                    viewMode === "weekly"
-                      ? "bg-white text-purple-600 shadow-sm"
-                      : "text-gray-600 hover:text-gray-900"
-                  }`}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${viewMode === "weekly"
+                    ? "bg-white text-purple-600 shadow-sm"
+                    : "text-gray-600 hover:text-gray-900"
+                    }`}
                 >
                   {t("list.viewMode.weekly")}
                 </button>

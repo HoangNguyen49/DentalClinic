@@ -31,6 +31,21 @@ type MonthlyChartProps = {
 
 export default function MonthlyChart({ monthlySummary, loading, loadingSummary }: MonthlyChartProps) {
   const { t } = useTranslation("attendance");
+  // loại bỏ các phòng ban không nên hiển thị trong biểu đồ
+  const forbiddenDepartments = [
+    "ADMIN",
+    "ADMINISTRATION",
+    "HUMAN RESOURCE",
+    "HUMAN RESOURCES",
+    "HUMAN RESOURCE DEPARTMENT",
+    "HUMAN RESOURCES DEPARTMENT",
+  ];
+
+  const sanitizedSummary = monthlySummary.filter((item) => {
+    const name = (item.departmentName || "").toUpperCase();
+    if (!name) return false;
+    return !forbiddenDepartments.some((blocked) => name.includes(blocked));
+  });
   
   return (
     <div className={`bg-white rounded-lg shadow-md p-6 transition-opacity duration-300 ${loadingSummary ? 'opacity-50' : 'opacity-100'}`}>
@@ -39,15 +54,15 @@ export default function MonthlyChart({ monthlySummary, loading, loadingSummary }
           {t("chart.monthlyAttendanceStatistics")}
         </h2>
       </div>
-
+      {/* Hiển thị trạng thái loading hoặc không có dữ liệu */}
       {loading ? (
         <div className="text-center py-8">{t("messages.loading")}</div>
-      ) : monthlySummary.length === 0 ? (
+      ) : sanitizedSummary.length === 0 ? (
         <div className="text-center py-8 text-gray-500">{t("chart.noDataAvailable")}</div>
       ) : (
         <ResponsiveContainer width="100%" height={400}>
           <BarChart
-            data={monthlySummary.map((item) => ({
+            data={sanitizedSummary.map((item) => ({
               name: item.departmentName,
               Present: item.present,
               Late: item.late,
@@ -63,6 +78,7 @@ export default function MonthlyChart({ monthlySummary, loading, loadingSummary }
               bottom: 60,
             }}
           >
+            {/* Định nghĩa gradient màu cho các cột biểu đồ */}
             <defs>
               <linearGradient id="absentGradient" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="0%" stopColor="#8b5cf6" stopOpacity={1} />
@@ -117,6 +133,7 @@ export default function MonthlyChart({ monthlySummary, loading, loadingSummary }
               wrapperStyle={{ paddingTop: '20px', color: '#374151' }}
               iconType="square"
             />
+            {/* Các cột dữ liệu chấm công sẽ được gom (stack) vào cùng một cột trên biểu đồ */}
             <Bar 
               dataKey="Absent" 
               stackId="a" 
@@ -158,4 +175,3 @@ export default function MonthlyChart({ monthlySummary, loading, loadingSummary }
     </div>
   );
 }
-
