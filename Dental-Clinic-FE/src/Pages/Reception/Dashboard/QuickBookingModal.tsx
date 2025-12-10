@@ -11,8 +11,6 @@ interface Props {
 }
 
 export default function QuickBookingModal({ onClose, onSuccess }: Props) {
-    // State không dùng đến (step) có thể bỏ hoặc giữ nếu mở rộng sau này
-    // const [step, setStep] = useState(1); 
     
     const [keyword, setKeyword] = useState('');
     const [patients, setPatients] = useState<any[]>([]);
