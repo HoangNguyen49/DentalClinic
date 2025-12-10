@@ -170,63 +170,79 @@ function AIChatWidget() {
 
           {/* Chat Body */}
           <div className="flex-1 overflow-y-auto p-4 bg-[#F6FAFF] space-y-4">
-            {messages.map((msg, idx) => (
-              <div key={idx} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
-                {/* Text Bubble */}
-                <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${msg.sender === 'user'
-                    ? 'bg-[#3366FF] text-white rounded-tr-none'
-                    : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
-                  }`}>
-                  {msg.text}
+            {messages.map((msg, idx) => {
+              
+              // --- [AI FIX] LOGIC TỰ ĐỘNG TÌM SERVICE ID TỪ LỊCH SỬ CHAT ---
+              // Nếu tin nhắn hiện tại có bác sĩ nhưng không có dịch vụ, ta tìm ngược về quá khứ
+              let contextServiceId = msg.services && msg.services.length > 0 ? msg.services[0].id : undefined;
+              
+              if (!contextServiceId) {
+                  // Lấy các tin nhắn trước đó (từ mới nhất trở về cũ)
+                  const prevMsgWithService = messages.slice(0, idx).reverse().find(m => m.services && m.services.length > 0);
+                  if (prevMsgWithService && prevMsgWithService.services) {
+                      contextServiceId = prevMsgWithService.services[0].id;
+                  }
+              }
+              // -------------------------------------------------------------
+
+              return (
+                <div key={idx} className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}>
+                  {/* Text Bubble */}
+                  <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${msg.sender === 'user'
+                      ? 'bg-[#3366FF] text-white rounded-tr-none'
+                      : 'bg-white text-gray-800 border border-gray-100 rounded-tl-none'
+                    }`}>
+                    {msg.text}
+                  </div>
+
+                  {/* Service Cards */}
+                  {msg.services && msg.services.length > 0 && (
+                    <div className="mt-2 space-y-2 w-full max-w-[90%]">
+                      <p className="text-xs text-gray-500 ml-2">Dịch vụ phù hợp:</p>
+                      {msg.services.map((svc) => (
+                        <div 
+                          key={svc.id} 
+                          onClick={() => handleBookingService(svc.id)}
+                          className="bg-white p-3 rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition cursor-pointer flex justify-between items-center group"
+                        >
+                          <div>
+                            <p className="font-bold text-[#0D1B3E] text-sm group-hover:text-[#3366FF] transition">{svc.name}</p>
+                            <p className="text-xs text-gray-500">{svc.duration} • {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(svc.price)}</p>
+                          </div>
+                          <button className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-semibold group-hover:bg-blue-600 group-hover:text-white transition">
+                              Đặt ngay
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Doctor Cards */}
+                  {msg.doctors && msg.doctors.length > 0 && (
+                    <div className="mt-2 space-y-2 w-full max-w-[90%]">
+                      <p className="text-xs text-gray-500 ml-2">Bác sĩ chuyên khoa (VIP):</p>
+                      {msg.doctors.map((doc) => (
+                        <div 
+                          key={doc.id} 
+                          // Cập nhật: Sử dụng contextServiceId đã tìm được ở trên
+                          onClick={() => handleBookingDoctor(doc.id, contextServiceId)}
+                          className="bg-white p-2 rounded-xl border border-blue-100 shadow-sm flex items-center gap-3 hover:shadow-md transition cursor-pointer group"
+                        >
+                          <img src={doc.avatarUrl || "https://res.cloudinary.com/dchzko3lj/image/upload/v1762616672/default-avatar_brvdfn.png"} alt="Dr" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
+                          <div className="flex-1">
+                            <p className="font-bold text-[#0D1B3E] text-xs group-hover:text-[#3366FF] transition">{doc.fullName}</p>
+                            <p className="text-[10px] text-gray-500">{doc.specialty}</p>
+                          </div>
+                          <button className="text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded-md font-semibold group-hover:bg-amber-500 group-hover:text-white transition">
+                              Chọn (VIP)
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
-
-                {/* Service Cards */}
-                {msg.services && msg.services.length > 0 && (
-                  <div className="mt-2 space-y-2 w-full max-w-[90%]">
-                    <p className="text-xs text-gray-500 ml-2">Dịch vụ phù hợp:</p>
-                    {msg.services.map((svc) => (
-                      <div 
-                        key={svc.id} 
-                        onClick={() => handleBookingService(svc.id)}
-                        className="bg-white p-3 rounded-xl border border-blue-100 shadow-sm hover:shadow-md transition cursor-pointer flex justify-between items-center group"
-                      >
-                        <div>
-                          <p className="font-bold text-[#0D1B3E] text-sm group-hover:text-[#3366FF] transition">{svc.name}</p>
-                          <p className="text-xs text-gray-500">{svc.duration} • {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(svc.price)}</p>
-                        </div>
-                        <button className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-semibold group-hover:bg-blue-600 group-hover:text-white transition">
-                            Đặt ngay
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Doctor Cards */}
-                {msg.doctors && msg.doctors.length > 0 && (
-                  <div className="mt-2 space-y-2 w-full max-w-[90%]">
-                    <p className="text-xs text-gray-500 ml-2">Bác sĩ chuyên khoa (VIP):</p>
-                    {msg.doctors.map((doc) => (
-                      <div 
-                        key={doc.id} 
-                        // Cập nhật: Truyền ID bác sĩ VÀ ID dịch vụ (nếu có trong tin nhắn này)
-                        onClick={() => handleBookingDoctor(doc.id, msg.services && msg.services.length > 0 ? msg.services[0].id : undefined)}
-                        className="bg-white p-2 rounded-xl border border-blue-100 shadow-sm flex items-center gap-3 hover:shadow-md transition cursor-pointer group"
-                      >
-                        <img src={doc.avatarUrl || "https://res.cloudinary.com/dchzko3lj/image/upload/v1762616672/default-avatar_brvdfn.png"} alt="Dr" className="w-10 h-10 rounded-full object-cover border border-gray-200" />
-                        <div className="flex-1">
-                          <p className="font-bold text-[#0D1B3E] text-xs group-hover:text-[#3366FF] transition">{doc.fullName}</p>
-                          <p className="text-[10px] text-gray-500">{doc.specialty}</p>
-                        </div>
-                        <button className="text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded-md font-semibold group-hover:bg-amber-500 group-hover:text-white transition">
-                            Chọn (VIP)
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
 
             {isLoading && (
               <div className="flex items-start">

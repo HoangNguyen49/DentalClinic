@@ -64,8 +64,11 @@ import BookingPage from "../Pages/Booking/BookingPage";
 import { NotificationProvider } from "./providers/NotificationContext"; // [QUAN TRỌNG]
 import AuthGuard from "../app/routes/AuthGuard";
 
-// --- Patitent Appointment List [CỦA TUẤN] ---
+// --- Patient Pages [CỦA TUẤN + MỚI] ---
 import AppointmentSchedule from "../Pages/Patient/AppointmentSchedule";
+import PatientDashboardPage from "../Pages/Patient/Dashboard/PatientDashboardPage"; // [MỚI - Dashboard]
+import PatientProfilePage from "../Pages/Patient/Profile/PatientProfilePage";
+
 
 function App() {
   return (
@@ -108,7 +111,11 @@ function App() {
             <Route path="/my-leave-requests" element={<LeaveRequestList />} />
             <Route path="/booking" element={<BookingPage />} />
 
+            {/* --- PATIENT ROUTES --- */}
             <Route path="/my-appointments" element={<AppointmentSchedule />} />
+            {/* [MỚI] Dashboard cho Patient */}
+            <Route path="/patient-dashboard" element={<PatientDashboardPage />} />
+            <Route path="/patient-profile" element={<PatientProfilePage />} />
 
             {/* --- ADMIN ROLE --- */}
             <Route path="/admin" element={<ProtectedRouteAdmin />}>

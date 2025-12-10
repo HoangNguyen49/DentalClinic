@@ -50,35 +50,46 @@ export default function BookingPage() {
     const doctorIdParam = searchParams.get('prefillDoctor');
     const serviceIdParam = searchParams.get('prefillService');
 
-    let shouldSkipStep0 = false; // Cờ để kiểm tra xem có nên nhảy bước không
+    let shouldSkipStep0 = false; 
 
-    // 1. Nếu có type=VIP hoặc đã chọn bác sĩ -> Set type là VIP
+    // 1. Xử lý VIP (Do AI gửi type VIP hoặc có chọn bác sĩ)
     if (typeParam === 'VIP' || doctorIdParam) {
-      setBookingData(prev => ({ ...prev, appointmentType: 'VIP' }));
+      setBookingData(prev => ({ 
+          ...prev, 
+          appointmentType: 'VIP',
+          bookingFee: 1000000 // [FIX] Set cứng phí VIP để không bị 0đ
+      }));
       shouldSkipStep0 = true;
+    } 
+    // 2. Xử lý Standard (Nếu AI gửi service mà không phải VIP)
+    else if (serviceIdParam) {
+        setBookingData(prev => ({ 
+            ...prev, 
+            appointmentType: 'STANDARD',
+            bookingFee: 500000 // [FIX] Set cứng phí Standard
+        }));
+        shouldSkipStep0 = true;
     }
 
-    // 2. Nếu AI gửi ID bác sĩ -> Lưu vào state
+    // 3. Nếu AI gửi ID bác sĩ -> Lưu vào state
     if (doctorIdParam) {
       setBookingData(prev => ({ 
         ...prev, 
         appointmentType: 'VIP', 
+        bookingFee: 1000000, 
         doctorId: Number(doctorIdParam) 
       }));
     }
 
-    // 3. Nếu AI gửi ID dịch vụ -> Lưu tạm để StepServiceClinic tự động chọn
+    // 4. Nếu AI gửi ID dịch vụ -> Lưu tạm
     if (serviceIdParam) {
       setBookingData(prev => ({
         ...prev,
         prefilledServiceId: Number(serviceIdParam)
       }));
-      shouldSkipStep0 = true; // Đã có dịch vụ thì cũng nên nhảy qua bước chọn loại
     }
 
-    // 4. LOGIC NHẢY BƯỚC:
-    // Nếu AI đã gửi thông tin (VIP hoặc Dịch vụ), ta nhảy thẳng vào Step 1 (Chọn Cơ sở & Dịch vụ)
-    // Người dùng không cần chọn lại Loại khám nữa.
+    // 5. Logic nhảy bước: Bỏ qua bước 0 (Chọn loại) nếu AI đã định hướng
     if (shouldSkipStep0) {
         setCurrentStep(1);
     }
@@ -112,7 +123,7 @@ export default function BookingPage() {
     navigate("/");
   };
 
-  // --- 2. XỬ LÝ CONFIRM (CODE GỐC) ---
+  // --- 2. XỬ LÝ CONFIRM (CODE GỐC + SỬA LOGIC GỬI DỮ LIỆU) ---
   const handleConfirmBooking = async () => {
     const storedUser = localStorage.getItem("user");
     const token = localStorage.getItem("accessToken");
@@ -124,62 +135,68 @@ export default function BookingPage() {
         return;
     }
 
+    const currentUser = JSON.parse(storedUser);
+    const patientId = currentUser.patientId || 0; 
+    
     setIsSubmitting(true);
 
     try {
-        // 1. Chuẩn bị dữ liệu DateTime chuẩn ISO (2025-12-09T09:00:00Z)
-        const timeString = bookingData.time.length === 5 ? `${bookingData.time}:00` : bookingData.time;
-        const startDateTime = new Date(`${bookingData.date}T${timeString}`);
+      const timeString = bookingData.time.length === 5 ? `${bookingData.time}:00` : bookingData.time;
+      const startDateTime = new Date(`${bookingData.date}T${timeString}`);
 
-        // 2. Chuẩn bị Payload khớp với DTO BookingRequest mới
-        const payload = {
-            clinicId: bookingData.clinicId,
-            doctorId: bookingData.appointmentType === 'VIP' ? bookingData.doctorId : 22, // Nếu Standard thì có thể cần logic chọn bác sĩ ngẫu nhiên hoặc mặc định (Backend sẽ xử lý nếu null, nhưng DTO yêu cầu NotNull nên tạm để ID bác sĩ mặc định hoặc lấy từ clinic)
-            // LƯU Ý: Nếu là Standard, backend cần cơ chế auto-assign doctor. 
-            // Tạm thời để test, bạn cứ chọn đại 1 bác sĩ nếu user không chọn.
-            
-            startDateTime: startDateTime.toISOString(),
-            serviceIds: bookingData.selectedServices.map((s: any) => s.id),
-            note: `Booking Online (${bookingData.appointmentType})`
-        };
+      // Payload gửi lên Backend
+      const payload = {
+        clinicId: bookingData.clinicId,
+        patientId: patientId,
+        
+        // [AI FIXED] Gửi thêm 2 trường này để Backend lưu đúng
+        appointmentType: bookingData.appointmentType,
+        bookingFee: bookingData.bookingFee,
 
-        // Nếu là Standard mà không có doctorId, hãy nhắc user hoặc set mặc định
-        if (!payload.doctorId) {
-             // Logic tạm: Nếu chưa chọn bác sĩ, hệ thống có thể báo lỗi hoặc tự gán.
-             // Ở đây mình giả định bạn đã chọn bác sĩ ở các bước trước.
-             // Nếu Standard bỏ qua bước chọn bác sĩ, bạn cần sửa lại DTO Backend để doctorId không bắt buộc @NotNull.
-             console.warn("Chưa chọn bác sĩ, API có thể lỗi 400 nếu doctorId là null");
-        }
+        // Logic Doctor: VIP thì lấy doctorId, Standard thì null (hoặc xử lý tùy backend)
+        doctorId: bookingData.appointmentType === 'VIP' ? bookingData.doctorId : null,
+        
+        roomId: null, // Frontend chưa chọn phòng
+        startDateTime: startDateTime.toISOString(),
+        status: "PENDING",
+        channel: "WEB_BOOKING",
+        note: `Booking Online (${bookingData.appointmentType})`,
+        
+        // Map services đúng cấu trúc DTO Backend
+        services: bookingData.selectedServices.map((s: any) => ({
+            serviceId: s.id, // Lưu ý: Backend dùng ServiceVariantId hay ServiceId? Kiểm tra lại DTO
+            quantity: 1,
+        }))
+      };
 
-        console.log("Sending Payload to NEW API:", payload);
+      console.log("Sending Payload:", payload);
 
-        // 3. GỌI API MỚI (QUAN TRỌNG NHẤT)
-        // Đổi đường dẫn từ /api/booking/appointments thành /api/patient/appointments
-        await axios.post(`${API_BASE_URL}/api/patient/appointments`, payload, {
-            headers: { 
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-            }
-        });
+      // Gọi API tạo lịch hẹn (Đường dẫn tùy thuộc vào Controller của bạn)
+      // Giả sử API là: /api/booking/appointments hoặc /api/patient/appointments
+      await axios.post(`${API_BASE_URL}/api/booking/appointments`, payload, {
+          headers: { 
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+      });
 
-        // 4. Thành công -> Hiện Modal
-        setShowSuccessModal(true);
+      setShowSuccessModal(true);
 
     } catch (error: any) {
-        console.error("Booking Error:", error);
-        const msg = error.response?.data || "Đặt lịch thất bại. Vui lòng thử lại."; // Backend trả String lỗi trực tiếp
-        toast.error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+      console.error("Booking Error:", error);
+      const msg = error.response?.data?.message || "Đặt lịch thất bại. Vui lòng thử lại.";
+      toast.error(msg);
     } finally {
-        setIsSubmitting(false);
+      setIsSubmitting(false);
     }
-};
+  };
 
-  // --- 3. RENDER STEP CONTENT ---
+  // --- 3. RENDER STEP CONTENT (CODE GỐC) ---
   const renderStepContent = () => {
     switch (currentStep) {
       case 0: // Chọn Loại
         return <StepSelectType 
-                  currentType={bookingData.appointmentType} // Truyền xuống để highlight (nếu người dùng quay lại)
+                  currentType={bookingData.appointmentType} // Truyền xuống để highlight
                   updateData={(d: any) => setBookingData({...bookingData, ...d})} 
                   onNext={nextStep} 
                />;
@@ -222,7 +239,7 @@ export default function BookingPage() {
             <h2 className="text-3xl font-bold text-white mb-2">Đặt Lịch Khám</h2>
             <p className="text-blue-100">Hoàn tất các bước để chăm sóc nụ cười của bạn</p>
   
-            {/* STEPPER CLEAN & DYNAMIC */}
+            {/* STEPPER */}
              <div className="flex justify-center items-center mt-8 gap-2 sm:gap-4">
                 {stepsArray.map((stepIdx) => (
                     <div key={stepIdx} className="flex items-center">

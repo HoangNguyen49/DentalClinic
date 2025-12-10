@@ -59,7 +59,7 @@ function Header() {
     document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      window.addEventListener("avatarUpdated", handleAvatarUpdate);
+      window.removeEventListener("avatarUpdated", handleAvatarUpdate); // Sửa lại: removeEventListener thay vì addEventListener
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("storage", onStorage);
       document.removeEventListener("mousedown", handleClickOutside);
@@ -181,6 +181,16 @@ function Header() {
                   >
                     {t("account.myAccount")}
                   </Link>
+
+                  {/* --- MỚI: Link tới Patient Dashboard --- */}
+                  <Link
+                    to="/patient-dashboard"
+                    className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                  >
+                    📊 Tổng quan sức khỏe
+                  </Link>
+                  {/* -------------------------------------- */}
+
                   <Link
                     to="/my-appointments"
                     className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition border-b border-gray-100"
