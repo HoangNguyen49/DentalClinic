@@ -103,12 +103,47 @@ export default function AppointmentList() {
     fetchAppointments();
   }, [fetchAppointments]);
 
+  const changeStatus = async (appointmentId: number, newStatus: string) => {
+    try {
+      if (!accessToken) {
+        toast.error("Not authenticated");
+        return;
+      }
 
+      await axios.post(
+        `${apiBase}/api/doctor/appointments/${appointmentId}/status?status=${newStatus}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+
+      toast.success(`Appointment status changed to ${newStatus}`);
+      fetchAppointments(); // Refresh list
+    } catch (err) {
+      console.error("Error changing status:", err);
+      if (err instanceof Error) {
+        toast.error(err.message);
+      } else {
+        toast.error("Failed to change appointment status");
+      }
+    }
+  };
+
+  const checkAndAutoComplete = (appointment: DoctorAppointmentDTO) => {
+    const now = new Date();
+    const endTime = new Date(appointment.endDateTime);
+    // Auto-complete if past end time and not already completed
+    if (now > endTime && appointment.status !== "COMPLETED") {
+      changeStatus(appointment.appointmentId, "COMPLETED");
+    }
+  };
 
   const getStatusBadgeClass = (status: string) => {
     const s = status?.toLowerCase() || "";
     if (s === "pending") return "bg-yellow-100 text-yellow-800";
     if (s === "scheduled") return "bg-blue-100 text-blue-800";
+    if (s === "processing") return "bg-purple-100 text-purple-800";
     if (s === "completed") return "bg-green-100 text-green-800";
     if (s === "canceled") return "bg-red-100 text-red-800";
     return "bg-gray-100 text-gray-800";
@@ -169,8 +204,9 @@ export default function AppointmentList() {
                   className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Status</option>
-                  <option value="SCHEDULED">Scheduled</option>
                   <option value="PENDING">Pending</option>
+                  <option value="SCHEDULED">Scheduled</option>
+                  <option value="PROCESSING">Processing</option>
                   <option value="COMPLETED">Completed</option>
                   <option value="CANCELED">Canceled</option>
                 </select>
@@ -320,16 +356,80 @@ export default function AppointmentList() {
                           </span>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex items-center gap-2">
-                           {/* FIND BY STATUS */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {/* View button */}
                             <button
                               onClick={() => navigate(`/doctor/appointments/${appointment.appointmentId}`)}
-                              className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
+                              className="text-blue-600 hover:text-blue-900 flex items-center gap-1 text-xs"
                             >
                               <Eye className="w-4 h-4" />
                               View
                             </button>
-                        
+
+                            {/* Status transition buttons */}
+                            {appointment.status === "PENDING" && (
+                              <button
+                                onClick={() => changeStatus(appointment.appointmentId, "SCHEDULED")}
+                                className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded hover:bg-blue-200 transition"
+                                title="Mark as Scheduled"
+                              >
+                                Schedule
+                              </button>
+                            )}
+
+                            {appointment.status === "SCHEDULED" && (
+                              <>
+                                <button
+                                  onClick={() => changeStatus(appointment.appointmentId, "PROCESSING")}
+                                  className="text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded hover:bg-purple-200 transition"
+                                  title="Start processing - meeting in progress"
+                                >
+                                  Start
+                                </button>
+                              </>
+                            )}
+
+                            {appointment.status === "PROCESSING" && (
+                              <>
+                                {/* Check if appointment duration exceeded 20 minutes */}
+                                {(() => {
+                                  const now = new Date();
+                                  const startTime = new Date(appointment.startDateTime);
+                                  const durationMs = now.getTime() - startTime.getTime();
+                                  const durationMinutes = durationMs / (1000 * 60);
+                                  const exceeds20Min = durationMinutes > 20;
+
+                                  return (
+                                    <>
+                                      <button
+                                        onClick={() => changeStatus(appointment.appointmentId, "COMPLETED")}
+                                        className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded hover:bg-green-200 transition"
+                                        title="Mark as Completed"
+                                      >
+                                        Complete
+                                      </button>
+                                      {exceeds20Min && (
+                                        <button
+                                          onClick={() => changeStatus(appointment.appointmentId, "CANCELED")}
+                                          className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded hover:bg-red-200 transition animate-pulse"
+                                          title="Meeting exceeded 20 minutes - recommend canceling"
+                                        >
+                                          ⚠️ Cancel
+                                        </button>
+                                      )}
+                                    </>
+                                  );
+                                })()}
+                              </>
+                            )}
+
+                            {appointment.status === "COMPLETED" && (
+                              <span className="text-xs text-green-700 font-medium">✓ Completed</span>
+                            )}
+
+                            {appointment.status === "CANCELED" && (
+                              <span className="text-xs text-red-700 font-medium">✗ Canceled</span>
+                            )}
                           </div>
                         </td>
                       </tr>

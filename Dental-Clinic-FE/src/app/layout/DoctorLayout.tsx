@@ -5,7 +5,6 @@ import {
   FaCalendarAlt,
   FaSignOutAlt,
   FaCalendarCheck
-
 } from "react-icons/fa";
 
 const DoctorLayout = () => {
@@ -30,7 +29,7 @@ const DoctorLayout = () => {
         <nav className="flex flex-col gap-1 px-4 py-4 flex-1 overflow-y-auto">
           <NavItem to="/doctor/dashboard" label="Dashboard" icon={<FaChartBar />} />
           <NavItem to="/doctor/appointments" label="Appointments" icon={<FaCalendarAlt />} />
-             <NavItem to="/doctor/schedule" label="My Schedule" icon={<FaCalendarCheck />} />
+          <NavItem to="/doctor/schedule" label="My Schedule" icon={<FaCalendarCheck />} />
         </nav>
         <div className="p-4 border-t">
           <button

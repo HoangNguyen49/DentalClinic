@@ -64,7 +64,7 @@ export default function MySchedule() {
     try {
       const weekStartStr = formatDateString(weekStartDate);
       const response = await axios.get<DoctorScheduleDto[]>(
-        `${apiBase}/api/hr/my-schedule/${weekStartStr}`,
+        `${apiBase}/api/doctor/my-schedule/${weekStartStr}`,
         {
           headers: {
             Authorization: `Bearer ${accessToken}`,
