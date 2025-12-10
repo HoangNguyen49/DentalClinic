@@ -6,9 +6,9 @@ import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
 import ScheduleTable from "./ScheduleTable";
 import { getNextMonday, getDaysOfWeek } from "../../../utils/dateUtils";
-import { type TableSchedule } from "./utils/scheduleUtils";
-import { useScheduleData } from "./hooks/useScheduleData";
-import { useScheduleActions } from "./hooks/useScheduleActions";
+import { type TableSchedule, isClinicHoliday } from "../../../utils/hr/scheduleUtils";
+import { useScheduleData } from "../../../hooks/hr/useScheduleData";
+import { useScheduleActions } from "../../../hooks/hr/useScheduleActions";
 
 function CreateScheduleForm() {
   const { t, i18n } = useTranslation("schedules");
@@ -40,7 +40,8 @@ function CreateScheduleForm() {
     weekStart,
     note,
     navigate,
-    t
+    t,
+    holidays
   );
 
   // Ensure weekStart is always a Monday
@@ -61,6 +62,56 @@ function CreateScheduleForm() {
       }
     }
   }, [weekStart]);
+
+  // Clear clinic assignments if clinic is on holiday
+  useEffect(() => {
+    if (holidays.length === 0 || clinics.length === 0) return;
+
+    const daysOfWeekData = getDaysOfWeek(weekStart, i18n.language === "vi" ? "vi-VN" : "en-GB");
+    
+    setTableSchedules((prev) => {
+      const newSchedule = { ...prev };
+      let hasChanges = false;
+
+      Object.entries(newSchedule).forEach(([doctorIdStr, daySchedule]) => {
+        const doctorId = Number(doctorIdStr);
+        Object.entries(daySchedule).forEach(([dayKey, scheduleData]: [string, any]) => {
+          const dayInfo = daysOfWeekData.find((d) => d.key === dayKey);
+          if (!dayInfo) return;
+
+          const dayDate = dayInfo.dateStringISO || dayInfo.dateString;
+          
+          // Check available clinics for this day (not on holiday)
+          const availableClinicIds = clinics
+            .filter(clinic => !isClinicHoliday(clinic.id, dayDate, holidays))
+            .map(clinic => clinic.id);
+
+          // Clear morning shift if clinic is on holiday
+          if (scheduleData.morning?.clinicId && !availableClinicIds.includes(scheduleData.morning.clinicId)) {
+            const { morning, ...rest } = scheduleData;
+            newSchedule[doctorId][dayKey] = rest;
+            hasChanges = true;
+          }
+
+          // Clear afternoon shift if clinic is on holiday
+          if (scheduleData.afternoon?.clinicId && !availableClinicIds.includes(scheduleData.afternoon.clinicId)) {
+            const { afternoon, ...rest } = scheduleData;
+            newSchedule[doctorId][dayKey] = rest;
+            hasChanges = true;
+          }
+
+          // Remove day if no shifts left
+          if (Object.keys(newSchedule[doctorId][dayKey] || {}).length === 0) {
+            const { [dayKey]: removed, ...rest } = newSchedule[doctorId];
+            newSchedule[doctorId] = rest;
+            hasChanges = true;
+          }
+        });
+      });
+
+      return hasChanges ? newSchedule : prev;
+    });
+  }, [holidays, weekStart, clinics, i18n.language]);
 
   // Cập nhật cơ sở cho từng ca sáng/chiều
   const updateShiftClinic = (

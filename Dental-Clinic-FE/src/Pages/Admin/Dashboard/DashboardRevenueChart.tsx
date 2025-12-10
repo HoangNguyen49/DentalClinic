@@ -2,18 +2,17 @@ import { useEffect, useState } from "react";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { Loader2, TrendingUp } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import axios from "axios";
+import { adminApi } from "../../../services/admin/adminApi";
+import { useAdminApi } from "../../../hooks/useAdminApi";
 
-const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// Kiểu dữ liệu cho từng ngày doanh thu
+// Định nghĩa cấu trúc dữ liệu cho 1 ngày doanh thu
 interface DailyRevenueData {
     date: string;
     revenue: number;
     orderCount: number;
 }
 
-// Thống kê tổng hợp dashboard
+// Định nghĩa cấu trúc dữ liệu thống kê tổng hợp
 interface DashboardStats {
     weekRevenue: number;
     monthRevenue: number;
@@ -31,55 +30,54 @@ export default function DashboardRevenueChart() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const { execute } = useAdminApi<any>();
+
     useEffect(() => {
-        // Lấy dữ liệu biểu đồ doanh thu (7 ngày)
+        // Hàm lấy dữ liệu doanh thu từ backend
         const fetchRevenueData = async () => {
-            const accessToken = localStorage.getItem("accessToken");
-            if (!accessToken) {
-                setLoading(false);
-                return;
-            }
+            setError(null);
+            setLoading(true);
 
-            try {
-                setError(null);
-                const response = await axios.get(`${apiBase}/api/admin/dashboard/stats`, {
-                    headers: { Authorization: `Bearer ${accessToken}` },
-                });
+            const data = await execute(
+                () => adminApi.dashboard.getStats(),
+                {
+                    showErrorToast: false,
+                    onSuccess: (stats: any) => {
+                        // Ép kiểu dữ liệu cho số, kiểm tra null/undefined
+                        const toNumber = (value: any) =>
+                            value === null || value === undefined || Number.isNaN(Number(value))
+                                ? 0
+                                : parseFloat(value.toString());
+                        // Lấy dữ liệu doanh thu 7 ngày gần nhất
+                        const last7Days = stats.last7DaysRevenue || [];
+                        const formattedData = last7Days.map((item: any) => ({
+                            date: item.date,
+                            revenue: toNumber(item.revenue),
+                            orderCount: item.orderCount ?? 0,
+                        }));
+                        setChartData(formattedData);
+                        setStats({
+                            weekRevenue: toNumber(stats.weekRevenue),
+                            monthRevenue: toNumber(stats.monthRevenue),
+                            previousMonthRevenue: toNumber(stats.previousMonthRevenue),
+                            totalExpenses: toNumber(stats.totalExpenses),
+                            expensesSupported: stats.expensesSupported ?? false,
+                            netProfit: toNumber(stats.netProfit),
+                            monthOverMonthGrowth: stats.monthOverMonthGrowth ?? 0,
+                        });
+                        setLoading(false);
+                    },
+                    onError: () => {
+                        setError("Không tải được dữ liệu doanh thu");
+                        setChartData([]);
+                        setLoading(false);
+                    },
+                }
+            );
 
-                if (response?.status === 200 && response.data) {
-                    const stats: any = response.data || {};
-                    const toNumber = (value: any) =>
-                        value === null || value === undefined || Number.isNaN(Number(value))
-                            ? 0
-                            : parseFloat(value.toString());
-                    // Lấy dữ liệu 7 ngày qua
-                    const last7Days = stats.last7DaysRevenue || [];
-                    const formattedData = last7Days.map((item: any) => ({
-                        date: item.date,
-                        revenue: toNumber(item.revenue),
-                        orderCount: item.orderCount ?? 0,
-                    }));
-                    setChartData(formattedData);
-                    setStats({
-                        weekRevenue: toNumber(stats.weekRevenue),
-                        monthRevenue: toNumber(stats.monthRevenue),
-                        previousMonthRevenue: toNumber(stats.previousMonthRevenue),
-                        totalExpenses: toNumber(stats.totalExpenses),
-                        expensesSupported: stats.expensesSupported ?? false,
-                        netProfit: toNumber(stats.netProfit),
-                        monthOverMonthGrowth: stats.monthOverMonthGrowth ?? 0,
-                    });
-                } else {
-                    setError("Không tải được dữ liệu doanh thu");
-                }
-            } catch (error: any) {
-                // Nếu lỗi mạng hoặc không kết nối API
-                if (error?.code !== "ERR_NETWORK" && error?.code !== "ERR_CONNECTION_REFUSED") {
-                    console.warn("Error fetching revenue chart:", error?.response?.status || error?.message);
-                }
+            if (!data) {
                 setError("Không tải được dữ liệu doanh thu");
                 setChartData([]);
-            } finally {
                 setLoading(false);
             }
         };
@@ -88,7 +86,7 @@ export default function DashboardRevenueChart() {
     }, []);
 
     if (loading) {
-        // Hiển thị khi đang tải
+        // Hiển thị trạng thái loading khi đang lấy dữ liệu từ backend
         return (
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[350px] flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -97,7 +95,7 @@ export default function DashboardRevenueChart() {
     }
 
     if (error) {
-        // Hiển thị khi lỗi dữ liệu
+        // Hiển thị khi xảy ra lỗi dữ liệu từ backend
         return (
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[350px] flex flex-col items-center justify-center">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-2">
@@ -110,7 +108,7 @@ export default function DashboardRevenueChart() {
     }
 
     if (!chartData || chartData.length === 0) {
-        // Không có dữ liệu doanh thu
+        // Hiển thị khi hoàn toàn không có dữ liệu doanh thu
         return (
             <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm h-[350px] flex flex-col items-center justify-center">
                 <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-2">
@@ -136,7 +134,7 @@ export default function DashboardRevenueChart() {
                 {stats && (
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-right sm:text-left">
                         <div>
-                            {/* Lợi nhuận ròng và chi phí */}
+                            {/* Hiển thị lợi nhuận ròng và chi phí (nếu có) */}
                             <p className="text-sm text-slate-500">{t("dashboard.metrics.netProfit", "Lợi nhuận ròng (tháng)")}</p>
                             <p className="text-xl font-bold text-emerald-700">
                                 {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(stats.netProfit)}
@@ -154,7 +152,7 @@ export default function DashboardRevenueChart() {
                             )}
                         </div>
                         <div className="sm:text-right">
-                            {/* Thống kê tăng trưởng tháng */}
+                            {/* Hiển thị tăng trưởng doanh thu tháng so với tháng trước */}
                             <p className="text-sm text-slate-500">{t("dashboard.metrics.momGrowth", "So với tháng trước")}</p>
                             <p className={`text-xl font-bold ${stats.monthOverMonthGrowth >= 0 ? "text-emerald-700" : "text-red-600"}`}>
                                 {stats.monthOverMonthGrowth >= 0 ? "+" : ""}
@@ -173,13 +171,13 @@ export default function DashboardRevenueChart() {
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                         <defs>
-                            {/* Gradient nền area chart cho doanh thu */}
+                            {/* Gradient màu nền dưới biểu đồ */}
                             <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2} />
                                 <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                             </linearGradient>
                         </defs>
-                        {/* Lưới ngang, không có đường dọc */}
+                        {/* Hiển thị lưới ngang, không có lưới dọc */}
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                         <XAxis
                             dataKey="date"
@@ -187,9 +185,9 @@ export default function DashboardRevenueChart() {
                             tickLine={false}
                             tick={{ fontSize: 12, fill: "#64748B" }}
                             tickFormatter={(value) => {
-                                // Định dạng nhãn trục X: trả về dạng d/m
+                                // Định dạng nhãn trục X dạng d/m
                                 if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-                                    const [y, m, d] = value.split("-").map(Number);
+                                    const [, m, d] = value.split("-").map(Number);
                                     return `${d}/${m}`;
                                 }
                                 const date = typeof value === "string" ? new Date(value) : value;
@@ -201,6 +199,7 @@ export default function DashboardRevenueChart() {
                             axisLine={false}
                             tickLine={false}
                             tick={{ fontSize: 12, fill: "#64748B" }}
+                            // Dùng notation compact cho tiền tệ (1K, 1M,...)
                             tickFormatter={(value) =>
                                 new Intl.NumberFormat("vi-VN", { notation: "compact", compactDisplay: "short" }).format(value)
                             }

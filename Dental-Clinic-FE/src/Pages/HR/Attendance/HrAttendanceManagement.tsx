@@ -1,8 +1,8 @@
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useExplanations } from "./hrservice/useExplanations";
-import { Filters } from "./Filters";
-import { Table } from "./Table";
+import { useExplanations } from "../../../hooks/hr/useExplanations";
+import { Filters } from "../../../components/hr/AttendanceClinicFilters";
+import { Table } from "../../../components/hr/AttendanceExplanationTable";
 import { useTranslation } from "react-i18next";
 
 export default function HrAttendanceManagement() {

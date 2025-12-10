@@ -5,7 +5,7 @@ import notificationApi, { type NotificationResponse } from '../../services/notif
 import { getToken, getUser } from '../routes/shared/auth';
 import { toast } from 'react-toastify';
 
-// Định nghĩa kiểu context thông báo
+// Interface context thông báo (quản lý trạng thái và các hàm xử lý thông báo)
 interface NotificationContextType {
     notifications: NotificationResponse[];
     unreadCount: number;
@@ -25,54 +25,55 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const stompClientRef = useRef<Client | null>(null);
     const user = getUser();
 
-    // Listener mẫu event emitter để các component khác có thể lắng nghe event notification
+    // Danh sách listener được đăng ký để phát event notification realtime giữa các component
     const notificationListenersRef = useRef<Set<(notification: NotificationResponse) => void>>(new Set());
 
-    // Lưu userId phục vụ việc nhận thông báo push và định danh realtime
+    // Lấy userId cho việc lắng nghe notification riêng của user
     const userId = useMemo(() => {
         if (!user) return null;
         return user.userId || user.id || null;
     }, [user?.userId, user?.id]);
 
-    // Hàm lấy số lượng notification chưa đọc
+    // Hàm lấy số lượng thông báo chưa đọc
     const fetchUnreadCount = useCallback(async () => {
         const token = getToken();
         if (!token) {
-            return; // Không gọi API nếu không có token
+            return;
         }
         try {
             const response = await notificationApi.countUnread();
             setUnreadCount(response.data);
         } catch (error: any) {
-            // Chỉ log lỗi nếu không phải 401 (unauthorized)
             if (error.response?.status !== 401) {
                 console.error('[Notification] Failed to fetch unread count:', error);
             }
         }
     }, []);
 
-    // Hàm lấy danh sách notification
+    // Hàm lấy danh sách thông báo (lọc bỏ audit logs)
     const fetchNotifications = useCallback(async (page = 0, size = 50) => {
         const token = getToken();
         if (!token) {
-            return; // Không gọi API nếu không có token
+            return;
         }
         try {
             const response = await notificationApi.getNotifications(page, size);
-            setNotifications(response.data.content);
+            const filteredNotifications = response.data.content.filter(
+                (n: NotificationResponse) => n.type?.toUpperCase() !== 'AUDIT'
+            );
+            setNotifications(filteredNotifications);
         } catch (error: any) {
-            // Chỉ log lỗi nếu không phải 401 (unauthorized)
             if (error.response?.status !== 401) {
                 console.error('[Notification] Failed to fetch notifications:', error);
             }
         }
     }, []);
 
-    // Đánh dấu 1 notification đã đọc
+    // Đánh dấu một thông báo đã đọc
     const markAsRead = async (id: number) => {
         const token = getToken();
         if (!token) {
-            return; // Không gọi API nếu không có token
+            return;
         }
         try {
             await notificationApi.markAsRead(id);
@@ -81,32 +82,30 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             );
             setUnreadCount((prev) => Math.max(0, prev - 1));
         } catch (error: any) {
-            // Chỉ log lỗi nếu không phải 401 (unauthorized)
             if (error.response?.status !== 401) {
                 console.error('[Notification] Failed to mark as read:', error);
             }
         }
     };
 
-    // Đánh dấu tất cả notification đã đọc
+    // Đánh dấu tất cả thông báo đã đọc
     const markAllAsRead = async () => {
         const token = getToken();
         if (!token) {
-            return; // Không gọi API nếu không có token
+            return;
         }
         try {
             await notificationApi.markAllAsRead();
             setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
             setUnreadCount(0);
         } catch (error: any) {
-            // Chỉ log lỗi nếu không phải 401 (unauthorized)
             if (error.response?.status !== 401) {
                 console.error('[Notification] Failed to mark all as read:', error);
             }
         }
     };
 
-    // Cho phép các component khác đăng ký nhận event notification push
+    // Đăng ký callback để lắng nghe sự kiện notification mới realtime (quản lý hủy bằng function trả về)
     const onNotificationReceived = useCallback((callback: (notification: NotificationResponse) => void) => {
         notificationListenersRef.current.add(callback);
         return () => {
@@ -114,7 +113,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         };
     }, []);
 
-    // Kết nối WebSocket để nhận push notification
+    // Kết nối WebSocket để nhận push notification realtime từ server
     useEffect(() => {
         const token = getToken();
         if (!token || !userId) {
@@ -134,25 +133,23 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 console.log('[WebSocket Debug]:', str);
             },
             onConnect: () => {
-                console.log('[WebSocket] Connected successfully');
                 setIsConnected(true);
-
-                // Fetch dữ liệu khi connect thành công để đảm bảo sync
+                // Khi connect thành công, đồng bộ lại các dữ liệu notification để tránh sót
                 fetchUnreadCount();
                 fetchNotifications();
 
-                // Subscribe to the user-specific queue.
-                // Spring's convertAndSendToUser sends to /user/queue/notifications (mapped to session)
-                // Do NOT include userId in the path here.
+                // Subcribe tới kênh notification dành riêng cho user hiện tại
                 const destination = `/user/queue/notifications`;
-                console.log('[WebSocket] Subscribing to:', destination);
-
                 client.subscribe(destination, (message: IMessage) => {
-                    console.log('[WebSocket] Received message:', message.body);
                     try {
                         const notification: NotificationResponse = JSON.parse(message.body);
 
-                        // Cập nhật state ngay lập tức khi nhận WebSocket
+                        // Bỏ qua notification dạng AUDIT
+                        if (notification.type?.toUpperCase() === 'AUDIT') {
+                            return;
+                        }
+
+                        // Thêm notification mới vào đầu danh sách nếu chưa tồn tại (tránh trùng)
                         setNotifications((prev) => {
                             const exists = prev.some(n => n.notificationId === notification.notificationId);
                             if (exists) return prev;
@@ -160,14 +157,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                         });
                         setUnreadCount((prev) => prev + 1);
 
-                        // Phát event notification tới tất cả listener đã đăng ký
+                        // Phát tới các listener đã đăng ký
                         notificationListenersRef.current.forEach((listener) => {
                             try {
                                 listener(notification);
-                            } catch (error) { }
+                            } catch (error) {}
                         });
 
-                        // Hiện popup thông báo
+                        // Thông báo popup nhỏ khi có notification mới
                         try {
                             toast.success(`New Notification: ${notification.title}`, {
                                 position: "top-right",
@@ -177,22 +174,19 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                 pauseOnHover: true,
                                 draggable: true,
                             });
-                        } catch (toastError) { }
+                        } catch (toastError) {}
                     } catch (error) {
                         console.error('[WebSocket] Error parsing message:', error);
                     }
                 });
             },
             onDisconnect: () => {
-                console.log('[WebSocket] Disconnected');
                 setIsConnected(false);
             },
-            onStompError: (frame) => {
-                console.error('[WebSocket] Stomp Error:', frame);
+            onStompError: () => {
                 setIsConnected(false);
             },
-            onWebSocketError: (event) => {
-                console.error('[WebSocket] WebSocket Error:', event);
+            onWebSocketError: () => {
                 setIsConnected(false);
             },
             reconnectDelay: 5000,
@@ -203,6 +197,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         client.activate();
         stompClientRef.current = client;
 
+        // Dọn dẹp khi unmount/kết thúc
         return () => {
             if (stompClientRef.current) {
                 stompClientRef.current.deactivate();
@@ -211,7 +206,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         };
     }, [userId]);
 
-    // Đồng bộ định kỳ notification mỗi 30s để đảm bảo không bị miss
+    // Đồng bộ lại notifications và số chưa đọc định kỳ mỗi 30s (chống miss sót!) 
     useEffect(() => {
         if (!userId) return;
         const syncInterval = setInterval(() => {
@@ -223,6 +218,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         };
     }, [userId, fetchUnreadCount, fetchNotifications]);
 
+    // Memoize context để tránh re-render không cần thiết
     const contextValue = useMemo(() => ({
         notifications,
         unreadCount,
@@ -240,7 +236,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     );
 };
 
-// Hook lấy context notification cho component
+// Hook sử dụng context notification (bắt buộc phải dùng trong NotificationProvider)
 export const useNotification = () => {
     const context = useContext(NotificationContext);
     if (!context) {

@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import type { HrClinic } from "./hrservice/useExplanations";
+import type { HrClinic } from "../../hooks/hr/useExplanations";
 
 type FiltersProps = {
     clinics: HrClinic[];
@@ -49,3 +49,4 @@ export const Filters: React.FC<FiltersProps> = ({
         </section>
     );
 };
+

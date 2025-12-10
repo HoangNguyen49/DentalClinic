@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
-import { useNotification } from "../../../../app/providers/NotificationContext";
+import { useNotification } from "../../app/providers/NotificationContext";
 
 // Kiểu dữ liệu phòng khám HR
 export type HrClinic = {
@@ -282,3 +282,4 @@ export const useExplanations = () => {
         handleCustomTimeChange,
     };
 };
+

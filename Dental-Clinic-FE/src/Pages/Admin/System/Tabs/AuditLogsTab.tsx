@@ -30,8 +30,8 @@ export default function AuditLogsTab() {
                 tableName: tableFilter,
                 userId: userIdFilter,
             });
-            setLogs(data.content);
-            setTotalPages(data.totalPages);
+            setLogs(data?.content || []);
+            setTotalPages(data?.totalPages || 0);
         } catch (error) {
             toast.error("Không thể tải nhật ký hệ thống");
         } finally {
@@ -106,7 +106,7 @@ export default function AuditLogsTab() {
                                         <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
                                     </td>
                                 </tr>
-                            ) : logs.length === 0 ? (
+                            ) : !logs || logs.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-8 text-center text-slate-500 text-sm">
                                         Không tìm thấy nhật ký nào.

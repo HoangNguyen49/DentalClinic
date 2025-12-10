@@ -1,5 +1,5 @@
-import type { CreateScheduleRequest } from "../../../../services/hr/scheduleService";
-import { WORK_HOURS_CONSTANTS } from "../../../../utils/workHoursConstants";
+import type { CreateScheduleRequest } from "../../services/hr/hrApi";
+import { WORK_HOURS_CONSTANTS } from "../workHoursConstants";
 
 export const SHIFTS = [
     {
@@ -144,11 +144,90 @@ export const convertTableToAPIFormat = (
     };
 };
 
+// Helper function to check if a clinic has holiday on a specific date
+export const isClinicHoliday = (clinicId: number, date: string, holidays: any[]): boolean => {
+    if (!date || holidays.length === 0) return false;
+
+    // Parse date string (expecting YYYY-MM-DD format)
+    let checkDate: Date;
+    try {
+        if (date.includes('-') && date.length >= 10) {
+            checkDate = new Date(date + 'T00:00:00');
+        } else {
+            checkDate = new Date(date);
+        }
+
+        if (isNaN(checkDate.getTime())) {
+            return false;
+        }
+    } catch (e) {
+        return false;
+    }
+
+    const checkYear = checkDate.getFullYear();
+    const checkMonth = checkDate.getMonth();
+    const checkDay = checkDate.getDate();
+    const checkDateNum = checkYear * 10000 + checkMonth * 100 + checkDay;
+
+    for (const holiday of holidays) {
+        if (!holiday.date) continue;
+
+        try {
+            const holidayDateStr = holiday.date.split('T')[0];
+            const holidayDate = new Date(holidayDateStr + 'T00:00:00');
+
+            if (isNaN(holidayDate.getTime())) {
+                continue;
+            }
+
+            let holidayStart = new Date(holidayDate);
+
+            // Handle recurring holidays
+            if (holiday.isRecurring) {
+                holidayStart.setFullYear(checkYear);
+                if (holidayStart.getMonth() !== holidayDate.getMonth() ||
+                    holidayStart.getDate() !== holidayDate.getDate()) {
+                    continue;
+                }
+            }
+
+            const holidayStartYear = holidayStart.getFullYear();
+            const holidayStartMonth = holidayStart.getMonth();
+            const holidayStartDay = holidayStart.getDate();
+
+            const holidayEnd = new Date(holidayStart);
+            holidayEnd.setDate(holidayEnd.getDate() + (holiday.duration || 1) - 1);
+            const holidayEndYear = holidayEnd.getFullYear();
+            const holidayEndMonth = holidayEnd.getMonth();
+            const holidayEndDay = holidayEnd.getDate();
+
+            const holidayStartNum = holidayStartYear * 10000 + holidayStartMonth * 100 + holidayStartDay;
+            const holidayEndNum = holidayEndYear * 10000 + holidayEndMonth * 100 + holidayEndDay;
+
+            // Check if date falls within holiday range
+            if (checkDateNum >= holidayStartNum && checkDateNum <= holidayEndNum) {
+                // Global holiday (clinicId is null/undefined) applies to all clinics
+                if (holiday.clinicId == null || holiday.clinicId === undefined) {
+                    return true;
+                }
+                // Specific clinic holiday
+                if (holiday.clinicId === clinicId) {
+                    return true;
+                }
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+    return false;
+};
+
 export const validateScheduleFrontend = (
     tableSchedules: TableSchedule,
     daysOfWeek: any[],
     clinics: any[],
-    doctors: any[]
+    doctors: any[],
+    holidays: any[] = []
 ): { isValid: boolean; errors: string[] } => {
     const errors: string[] = [];
     const clinicIds = clinics.map((c) => c.id).sort();
@@ -156,9 +235,23 @@ export const validateScheduleFrontend = (
         errors.push(`There must be exactly 2 clinics but got ${clinics.length}.`);
         return { isValid: false, errors };
     }
-    const [clinic1Id, clinic2Id] = clinicIds;
 
     daysOfWeek.forEach((day) => {
+        // Check for holidays first - if a clinic is on holiday, it should not be assigned
+        const dayDate = day.dateStringISO || day.dateString;
+        
+        // Get available clinics for this day (not on holiday)
+        const availableClinicIds = clinics
+            .filter(clinic => !isClinicHoliday(clinic.id, dayDate, holidays))
+            .map(clinic => clinic.id);
+        
+        if (availableClinicIds.length === 0) {
+            errors.push(
+                `Cannot create schedule on ${day.label} (${day.dateString}) - all clinics are on holiday.`
+            );
+            return;
+        }
+
         // Thu thập thông tin phân công cho mỗi ngày
         const clinicShifts: { [clinicId: number]: { morning: boolean; afternoon: boolean } } = {};
         const specialtyClinicDoctors: { [specialtyName: string]: { [clinicId: number]: Set<number> } } = {};
@@ -180,6 +273,24 @@ export const validateScheduleFrontend = (
 
             if (dayScheduleData.morning?.clinicId) {
                 const clinicId = dayScheduleData.morning.clinicId;
+                // Check if clinic is on holiday
+                if (isClinicHoliday(clinicId, dayDate, holidays)) {
+                    const clinicName = clinics.find((c) => c.id === clinicId)?.name || `Clinic ${clinicId}`;
+                    const holidayName = holidays.find((h: any) => {
+                        if (!h.date) return false;
+                        const hDate = new Date(h.date.split('T')[0] + 'T00:00:00');
+                        const dayDateObj = new Date(dayDate + 'T00:00:00');
+                        if (h.isRecurring) {
+                            hDate.setFullYear(dayDateObj.getFullYear());
+                        }
+                        return hDate.toDateString() === dayDateObj.toDateString() && 
+                               (h.clinicId == null || h.clinicId === clinicId);
+                    })?.name || "Holiday";
+                    errors.push(
+                        `Cannot assign doctors to ${clinicName} on ${day.label} (${day.dateString}) - it is a holiday (${holidayName}).`
+                    );
+                    return;
+                }
                 if (!clinicShifts[clinicId]) {
                     clinicShifts[clinicId] = { morning: false, afternoon: false };
                 }
@@ -197,6 +308,24 @@ export const validateScheduleFrontend = (
 
             if (dayScheduleData.afternoon?.clinicId) {
                 const clinicId = dayScheduleData.afternoon.clinicId;
+                // Check if clinic is on holiday
+                if (isClinicHoliday(clinicId, dayDate, holidays)) {
+                    const clinicName = clinics.find((c) => c.id === clinicId)?.name || `Clinic ${clinicId}`;
+                    const holidayName = holidays.find((h: any) => {
+                        if (!h.date) return false;
+                        const hDate = new Date(h.date.split('T')[0] + 'T00:00:00');
+                        const dayDateObj = new Date(dayDate + 'T00:00:00');
+                        if (h.isRecurring) {
+                            hDate.setFullYear(dayDateObj.getFullYear());
+                        }
+                        return hDate.toDateString() === dayDateObj.toDateString() && 
+                               (h.clinicId == null || h.clinicId === clinicId);
+                    })?.name || "Holiday";
+                    errors.push(
+                        `Cannot assign doctors to ${clinicName} on ${day.label} (${day.dateString}) - it is a holiday (${holidayName}).`
+                    );
+                    return;
+                }
                 if (!clinicShifts[clinicId]) {
                     clinicShifts[clinicId] = { morning: false, afternoon: false };
                 }
@@ -213,27 +342,38 @@ export const validateScheduleFrontend = (
             }
         });
 
-        // validate: phải có đúng 2 clinic hoạt động mỗi ngày
-        const workingClinicIds = Object.keys(clinicShifts).map(Number);
+        // validate: phải có đúng 2 clinic hoạt động mỗi ngày (chỉ tính các clinic không nghỉ)
+        const workingClinicIds = Object.keys(clinicShifts)
+            .map(Number)
+            .filter(clinicId => availableClinicIds.includes(clinicId));
+        
         if (workingClinicIds.length === 0) {
-            return;
+            return; // No assignments, skip validation for this day
         }
-        if (workingClinicIds.length !== 2) {
+        
+        // Check if we have exactly 2 available clinics (not on holiday)
+        // If less than 2 clinics are available, validation will be adjusted accordingly
+        
+        if (workingClinicIds.length !== 2 && availableClinicIds.length >= 2) {
             if (workingClinicIds.length === 1) {
                 const clinicName = clinics.find((c) => c.id === workingClinicIds[0])?.name || `Clinic ${workingClinicIds[0]}`;
+                const missingClinicId = availableClinicIds.find(id => !workingClinicIds.includes(id));
+                const missingClinicName = missingClinicId ? 
+                    (clinics.find((c) => c.id === missingClinicId)?.name || `Clinic ${missingClinicId}`) : 
+                    "another clinic";
                 errors.push(
-                    `Only 1 clinic (${clinicName}) is active on ${day.label} (${day.dateString}). Both clinics must be active.`
+                    `Only 1 clinic (${clinicName}) has assignments on ${day.label} (${day.dateString}). Both available clinics (${clinicName} and ${missingClinicName}) must have assignments.`
                 );
             } else {
                 errors.push(
-                    `Too many clinics (${workingClinicIds.length}) are active on ${day.label} (${day.dateString}). Exactly 2 clinics must be active.`
+                    `Too many clinics (${workingClinicIds.length}) have assignments on ${day.label} (${day.dateString}). Exactly 2 clinics must have assignments.`
                 );
             }
             return;
         }
 
-        // validate: mỗi clinic phải có bác sĩ cả sáng và chiều
-        [clinic1Id, clinic2Id].forEach((clinicId) => {
+        // validate: mỗi clinic available (không nghỉ) phải có bác sĩ cả sáng và chiều
+        availableClinicIds.forEach((clinicId) => {
             const shifts = clinicShifts[clinicId];
             const clinicName = clinics.find((c) => c.id === clinicId)?.name || `Clinic ${clinicId}`;
             if (!shifts) {
@@ -254,15 +394,18 @@ export const validateScheduleFrontend = (
             }
         });
 
-        // validate: mỗi specialty phải có bác sĩ ở mỗi clinic mỗi ngày
+        // validate: mỗi specialty phải có bác sĩ ở mỗi clinic available mỗi ngày
         Object.entries(specialtyClinicDoctors).forEach(([specialtyName, clinicDoctorsMap]) => {
-            const clinicIdsForSpecialty = Object.keys(clinicDoctorsMap).map(Number);
-            if (clinicIdsForSpecialty.length !== 2) {
+            const clinicIdsForSpecialty = Object.keys(clinicDoctorsMap)
+                .map(Number)
+                .filter(clinicId => availableClinicIds.includes(clinicId));
+            
+            if (clinicIdsForSpecialty.length !== availableClinicIds.length) {
                 errors.push(
-                    `Specialty "${specialtyName}" must have doctors assigned to both clinics on ${day.label} (${day.dateString}). Found in ${clinicIdsForSpecialty.length} clinic(s).`
+                    `Specialty "${specialtyName}" must have doctors assigned to all available clinics (${availableClinicIds.length}) on ${day.label} (${day.dateString}). Found in ${clinicIdsForSpecialty.length} clinic(s).`
                 );
             } else {
-                [clinic1Id, clinic2Id].forEach((clinicId) => {
+                availableClinicIds.forEach((clinicId) => {
                     if (!clinicDoctorsMap[clinicId] || clinicDoctorsMap[clinicId].size === 0) {
                         const clinicName = clinics.find((c) => c.id === clinicId)?.name || `Clinic ${clinicId}`;
                         errors.push(
@@ -322,3 +465,4 @@ export const transformScheduleData = (
 
     return allDoctors;
 };
+

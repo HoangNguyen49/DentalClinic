@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import employeeService from "../../../services/hr/employeeService";
-import type { Employee } from "../../../services/hr/employeeService";
+import { hrApi } from "../../../services/hr/hrApi";
+import type { HrEmployee } from "../../../services/hr/hrApi";
+import { useHrApi } from "../../../hooks/useHrApi";
 import {
   ArrowLeft,
   User,
@@ -17,10 +18,9 @@ function EmployeeDetail() {
   const { id } = useParams<{ id: string }>();
   const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [employee, setEmployee] = useState<HrEmployee | null>(null);
   const [avatarError, setAvatarError] = useState(false);
-  const [toggling, setToggling] = useState(false);
+  const { execute: executeApi, loading } = useHrApi<any>();
 
   useEffect(() => {
     if (id) {
@@ -30,34 +30,20 @@ function EmployeeDetail() {
 
   // Lấy dữ liệu chi tiết nhân viên
   const fetchEmployeeDetail = async () => {
-    if (!id) {
-      setLoading(false);
-      return;
-    }
+    if (!id) return;
 
-    setLoading(true);
-    try {
-      const response = await employeeService.getEmployee(id);
-      setEmployee(response.data);
-      setAvatarError(false);
-    } catch (err: any) {
-      console.error("Error fetching employee:", err);
-      let errorMsg = t("detail.cannotLoad");
-
-      if (err?.response?.data) {
-        const errorData = err.response.data;
-        errorMsg = errorData.message || errorData.error || errorMsg;
-      } else if (err?.message) {
-        errorMsg = err.message;
-      }
-
-      toast.error(errorMsg);
-      setTimeout(() => {
-        navigate("/hr/employees");
-      }, 2000);
-    } finally {
-      setLoading(false);
-    }
+    await executeApi(() => hrApi.employees.getById(id), {
+      onSuccess: (data: any) => {
+        setEmployee(data as HrEmployee);
+        setAvatarError(false);
+      },
+      onError: () => {
+        setTimeout(() => {
+          navigate("/hr/employees");
+        }, 2000);
+      },
+      errorMessage: t("detail.cannotLoad"),
+    });
   };
 
   // Định dạng ngày theo ngôn ngữ
@@ -94,25 +80,17 @@ function EmployeeDetail() {
       return;
     }
 
-    setToggling(true);
-    try {
-      const response = await employeeService.toggleEmployeeStatus(id, newStatus, reason.trim());
-      setEmployee(response.data);
-      toast.success(
-        newStatus
-          ? t("detail.actions.activated")
-          : t("detail.actions.deactivated")
-      );
-    } catch (err: any) {
-      console.error("Error toggling status:", err);
-      let errorMsg = t("detail.actions.toggleFailed");
-      if (err?.response?.data?.message) {
-        errorMsg = err.response.data.message;
-      }
-      toast.error(errorMsg);
-    } finally {
-      setToggling(false);
-    }
+    await executeApi(() => hrApi.employees.toggleStatus(id, newStatus, reason.trim()), {
+      onSuccess: (data: any) => {
+        setEmployee(data as HrEmployee);
+        toast.success(
+          newStatus
+            ? t("detail.actions.activated")
+            : t("detail.actions.deactivated")
+        );
+      },
+      errorMessage: t("detail.actions.toggleFailed"),
+    });
   };
 
   if (loading) {
@@ -376,13 +354,13 @@ function EmployeeDetail() {
                         <div className="flex gap-3">
                           <button
                             onClick={handleToggleStatus}
-                            disabled={loading || toggling}
+                            disabled={loading}
                             className={`px-4 py-2 rounded-lg font-medium transition-colors ${employee.isActive
                               ? "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
                               : "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
                               } disabled:opacity-50 disabled:cursor-not-allowed`}
                           >
-                            {toggling
+                            {loading
                               ? t("detail.actions.processing")
                               : employee.isActive
                                 ? t("detail.actions.deactivateAccount")

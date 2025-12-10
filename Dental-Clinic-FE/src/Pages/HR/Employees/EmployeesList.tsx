@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import employeeService from "../../../services/hr/employeeService";
-import type { Employee, Department } from "../../../services/hr/employeeService";
+import { hrApi } from "../../../services/hr/hrApi";
+import type { HrEmployee, Department } from "../../../services/hr/hrApi";
+import { useHrApi } from "../../../hooks/useHrApi";
 import {
   Search,
   Filter,
@@ -129,8 +130,9 @@ function EmployeesList() {
   const { t, i18n } = useTranslation(["employees", "web"]);
   const navigate = useNavigate();
   const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
+  const { execute: executeApi } = useHrApi<any>();
 
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employees, setEmployees] = useState<HrEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
@@ -161,23 +163,19 @@ function EmployeesList() {
 
   // Lấy phòng ban và role để lọc danh sách
   const fetchMasterData = async () => {
-    try {
-      const departmentsRes = await employeeService.getDepartments();
-      setDepartments(departmentsRes.data || []);
+    await executeApi(hrApi.management.getDepartments, {
+      onSuccess: (data: any) => {
+        setDepartments((data as Department[]) || []);
+      },
+      errorMessage: t("messages.cannotLoadMasterData"),
+    });
 
-      const rolesRes = await employeeService.getRoles();
-      setRoles(rolesRes.data || []);
-    } catch (err: any) {
-      console.error("Error fetching master data:", err);
-      let errorMsg = t("messages.cannotLoadMasterData");
-      if (err?.response?.data) {
-        const errorData = err.response.data;
-        errorMsg = errorData.message || errorData.error || errorMsg;
-      } else if (err?.message) {
-        errorMsg = err.message;
-      }
-      toast.error(errorMsg);
-    }
+    await executeApi(hrApi.management.getRoles, {
+      onSuccess: (data: any) => {
+        setRoles((data as { id: number; roleName: string }[]) || []);
+      },
+      errorMessage: t("messages.cannotLoadMasterData"),
+    });
   };
 
   // Lấy danh sách nhân viên theo phân trang, bộ lọc
@@ -196,45 +194,52 @@ function EmployeesList() {
         params.isActive = statusFilter === "active";
       }
 
-      const response = await employeeService.getEmployees(params);
-      let employeesList = response.data.content || [];
+      const response = await executeApi(
+        () => hrApi.employees.getAll(params),
+        {
+          errorMessage: t("messages.cannotLoadList"),
+          showErrorToast: false,
+        }
+      ) as { content: HrEmployee[]; totalPages: number; totalElements: number } | null;
+
+      if (!response || !response.content) {
+        setEmployees([]);
+        setTotalPages(0);
+        setTotalElements(0);
+        setLoading(false);
+        return;
+      }
+
+      let employeesList = response.content || [];
 
       // Nếu chọn nghỉ việc thì chỉ giữ lại những ai đã duyệt đơn nghỉ
       if (statusFilter === "resignation") {
-        employeesList = employeesList.filter((emp: Employee) => emp.hasApprovedResignation === true);
+        employeesList = employeesList.filter((emp: HrEmployee) => emp.hasApprovedResignation === true);
       }
-      let totalElementsValue = response.data.totalElements;
+      let totalElementsValue = response.totalElements;
 
       // Nếu BE trả về 0 nhưng vẫn có data thì lấy số lượng bằng API thống kê
       if ((!totalElementsValue || totalElementsValue === 0) && employeesList.length > 0) {
-        try {
-          const statsParams: any = {};
-          if (departmentId !== null && departmentId !== undefined) {
-            statsParams.departmentId = departmentId;
+        const statsParams: any = {};
+        if (departmentId !== null && departmentId !== undefined) {
+          statsParams.departmentId = departmentId;
+        }
+        // Không truyền roleId, isActive khi thống kê
+        const statsRes = (await executeApi(
+          () => hrApi.employees.getStatistics(statsParams),
+          {
+            showErrorToast: false,
           }
-          // Không truyền roleId, isActive khi thống kê
-          const statsRes = await employeeService.getEmployeeStatistics(statsParams);
-          if (statsRes.data?.totalEmployees !== undefined && statsRes.data.totalEmployees > 0) {
-            totalElementsValue = statsRes.data.totalEmployees;
-          }
-        } catch (statsErr) {
-          // Nếu lỗi thì giữ số cũ
+        )) as { totalEmployees?: number } | null;
+        if (statsRes?.totalEmployees !== undefined && statsRes.totalEmployees > 0) {
+          totalElementsValue = statsRes.totalEmployees;
         }
       }
 
       setEmployees(employeesList);
-      setTotalPages(response.data.totalPages || 0);
+      setTotalPages(response.totalPages || 0);
       setTotalElements(totalElementsValue ?? 0);
     } catch (err: any) {
-      // Lỗi khi lấy danh sách nhân viên
-      let errorMsg = t("messages.cannotLoadList");
-      if (err?.response?.data) {
-        const errorData = err.response.data;
-        errorMsg = errorData.message || errorData.error || errorMsg;
-      } else if (err?.message) {
-        errorMsg = err.message;
-      }
-      toast.error(errorMsg);
       setEmployees([]);
       setTotalPages(0);
       setTotalElements(0);
@@ -289,38 +294,17 @@ function EmployeesList() {
 
     if (!finalConfirm) return;
 
-    try {
-      await employeeService.hardDeleteEmployee(employeeId, reason.trim());
-      toast.success(t("web:leaveRequest.resignation.hardDelete.success"));
-      fetchEmployees();
-    } catch (err: any) {
-      let errorMsg = t("web:leaveRequest.resignation.hardDelete.failed");
-      if (err?.response?.data) {
-        const errorData = err.response.data;
-        if (typeof errorData === "string") {
-          errorMsg = errorData;
-        } else if (errorData.message) {
-          errorMsg = errorData.message;
-        } else if (errorData.error) {
-          errorMsg = errorData.error;
-        }
-      } else if (err?.response?.status === 401) {
-        errorMsg = t("web:auth.sessionExpired");
-      } else if (err?.response?.status === 403) {
-        errorMsg = t("web:leaveRequest.resignation.hardDelete.noPermission");
-      } else if (err?.response?.status === 404) {
-        errorMsg = t("messages.employeeNotFound");
-      } else if (err?.message) {
-        errorMsg = err.message;
-      }
-      // Hiển thị thông báo lỗi với thời gian dài hơn để HR đọc kỹ
-      toast.error(errorMsg, {
-        autoClose: 8000,
-        style: {
-          whiteSpace: 'pre-line',
-          maxWidth: '500px'
-        }
-      });
+    const result = await executeApi(() => hrApi.employees.hardDelete(employeeId, reason.trim()), {
+      onSuccess: () => {
+        toast.success(t("web:leaveRequest.resignation.hardDelete.success"));
+        fetchEmployees();
+      },
+      errorMessage: t("web:leaveRequest.resignation.hardDelete.failed"),
+    });
+
+    if (!result) {
+      // Error đã được xử lý bởi useHrApi
+      return;
     }
   };
 
@@ -554,7 +538,7 @@ function EmployeesList() {
                               {employee.department?.departmentName || "-"}
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                              {(employee.role as any)?.roleName || "-"}
+                              {employee.role?.roleName || "-"}
                             </td>
                             <td className="px-4 py-4 whitespace-nowrap">
                               <span

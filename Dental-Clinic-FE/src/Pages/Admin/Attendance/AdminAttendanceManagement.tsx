@@ -1,38 +1,19 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState, useRef, useCallback } from "react";
 import type { ReactNode } from "react";
-import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
 import { Calendar, Building2, SlidersHorizontal, CheckCircle2, Clock3, XCircle, FileText } from "lucide-react";
 import { useNotification } from "../../../app/providers/NotificationContext";
+import { adminApi, type AdminClinic, type AttendanceResponse } from "../../../services/admin/adminApi";
+import { formatTime, formatDateInput } from "../../../utils/adminUtils";
+import { useAdminApi } from "../../../hooks/useAdminApi";
 
-type AdminClinic = {
-  id: number;
-  clinicName: string;
-};
-
-type AttendanceResponse = {
-  id: number;
-  userId: number;
-  userName: string;
-  userAvatarUrl?: string;
-  clinicId: number;
-  clinicName?: string;
-  workDate: string;
-  checkInTime?: string | null;
-  checkOutTime?: string | null;
-  attendanceStatus?: string | null;
-  note?: string | null;
-};
-
-
+// Định nghĩa option trạng thái chấm công
 type StatusOption = {
   value: string;
   label: string;
 };
-
-const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 const STATUS_OPTIONS: StatusOption[] = [
   { value: "LATE", label: "Late" },
@@ -42,25 +23,7 @@ const STATUS_OPTIONS: StatusOption[] = [
   { value: "ON_TIME", label: "On Time" },
 ];
 
-// Format date for input[type="date"]
-function formatDateInput(date: Date) {
-  return date.toISOString().split("T")[0];
-}
-
-// Format time for table display
-function formatDateTime(value?: string | null) {
-  if (!value) return "-";
-  try {
-    return new Date(value).toLocaleTimeString(undefined, {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  } catch {
-    return value;
-  }
-}
-
-// Chuẩn hoá trạng thái
+// Chuẩn hoá nhãn trạng thái chấm công (có hỗ trợ dịch)
 function normalizeStatus(
   status?: string | null,
   translate?: (key: string, defaultValue?: string) => string
@@ -94,11 +57,12 @@ function normalizeStatus(
 
 export default function AdminAttendanceManagement() {
   const { t } = useTranslation("admin");
-  const accessToken = localStorage.getItem("accessToken");
 
+  // State lưu danh sách phòng khám
   const [clinics, setClinics] = useState<AdminClinic[]>([]);
+  // State lưu danh sách chấm công
   const [attendances, setAttendances] = useState<AttendanceResponse[]>([]);
-  const [loading, setLoading] = useState(false);
+  // State cho các filter hiện tại
   const [filters, setFilters] = useState({
     date: formatDateInput(new Date()),
     clinicId: "all",
@@ -108,7 +72,7 @@ export default function AdminAttendanceManagement() {
   const translateStatusLabel = (key: string, defaultValue?: string) =>
     t(key, defaultValue ?? key);
 
-  // Filter status options with i18n support
+  // Danh sách trạng thái filter có dịch i18n
   const filteredStatusOptions = useMemo(() => {
     return STATUS_OPTIONS.map((opt) => ({
       ...opt,
@@ -116,95 +80,78 @@ export default function AdminAttendanceManagement() {
     }));
   }, [t]);
 
-  // Lấy danh sách phòng khám
+  const { execute: executeClinics } = useAdminApi<AdminClinic[]>();
+  const { loading, execute } = useAdminApi<AttendanceResponse[]>();
+
+  // Hàm lấy danh sách phòng khám
   const fetchClinics = async () => {
-    if (!accessToken) return;
-    try {
-      const response = await axios.get<AdminClinic[]>(`${apiBase}/api/admin/clinics`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      setClinics(response.data || []);
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        t("attendance.messages.loadClinicsFailed", "Unable to load clinics");
-      toast.error(message);
-    }
+    await executeClinics(
+      () => adminApi.clinics.getAll(),
+      {
+        showErrorToast: true,
+        errorMessage: t("attendance.messages.loadClinicsFailed", "Unable to load clinics"),
+        onSuccess: (data) => {
+          setClinics(data || []);
+        },
+      }
+    );
   };
 
-  // Lấy danh sách chấm công theo filter
+  // Hàm lấy danh sách chấm công theo filter
   const fetchAttendance = async () => {
-    if (!accessToken) return;
-    setLoading(true);
-    try {
-      const params: Record<string, string> = {};
-      if (filters.date) params.date = filters.date;
-      if (filters.status && filters.status !== "all") params.status = filters.status;
-      if (filters.clinicId && filters.clinicId !== "all") params.clinicId = filters.clinicId;
+    const params: {
+      date?: string;
+      clinicId?: number;
+      status?: string;
+    } = {};
+    if (filters.date) params.date = filters.date;
+    if (filters.status && filters.status !== "all") params.status = filters.status;
+    if (filters.clinicId && filters.clinicId !== "all") params.clinicId = parseInt(filters.clinicId, 10);
 
-      const response = await axios.get<AttendanceResponse[]>(`${apiBase}/api/admin/attendance`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        params,
-      });
-      setAttendances(response.data || []);
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        t("attendance.messages.loadFailed", "Unable to load attendance records");
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
+    await execute(
+      () => adminApi.attendance.getAll(params),
+      {
+        showErrorToast: true,
+        errorMessage: t("attendance.messages.loadFailed", "Unable to load attendance records"),
+        onSuccess: (data) => {
+          setAttendances(data || []);
+        },
+      }
+    );
   };
 
-  // effect lấy clinics
+  // Lấy danh sách phòng khám khi component mount
   useEffect(() => {
-    if (!accessToken) {
-      toast.error(t("attendance.messages.noAccessToken", "Missing access token"));
-      return;
-    }
     fetchClinics();
-  }, [accessToken]);
+  }, []);
 
-  // effect lấy attendance khi filter thay đổi
+  // Lấy danh sách chấm công khi các filter thay đổi
   useEffect(() => {
-    if (!accessToken) return;
     fetchAttendance();
   }, [filters]);
 
   const { notifications } = useNotification();
   const lastNotificationIdRef = useRef<number | null>(null);
 
-  // Effect lắng nghe notifications để tự động refresh danh sách chấm công
+  // Theo dõi thông báo để tự động làm mới danh sách chấm công khi có thay đổi/chấm công mới
   useEffect(() => {
     if (!notifications || notifications.length === 0) return;
-    if (!accessToken) return;
 
     const latestNotification = notifications[0];
     if (!latestNotification || latestNotification.notificationId === lastNotificationIdRef.current) {
       return;
     }
 
-    // Nếu có thông báo về chấm công (check-in/out, giải trình...)
+    // Nếu thông báo liên quan đến chấm công
     if (latestNotification.relatedEntityType === "ATTENDANCE") {
       lastNotificationIdRef.current = latestNotification.notificationId;
-
-      // Refresh dữ liệu ngay lập tức
+      // Làm mới lại dữ liệu ngay lập tức
       fetchAttendance();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications]);
 
-  // Xử lý thay đổi filter
-  const handleFilterChange = (field: "date" | "clinicId" | "status", value: string) => {
-    setFilters((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-  };
-
+  // Bảng màu (chủ đề UI)
   const palette = {
     background: "bg-slate-50",
     surface: "bg-white",
@@ -213,7 +160,7 @@ export default function AdminAttendanceManagement() {
     heading: "text-slate-900",
   };
 
-
+  // Đổi class hiển thị badge trạng thái theo loại trạng thái chấm công
   const statusBadgeClass = (status?: string | null) => {
     switch (status) {
       case "ON_TIME":
@@ -230,6 +177,7 @@ export default function AdminAttendanceManagement() {
     }
   };
 
+  // Tính toán tổng kết (summary) số lượng record từng loại
   const attendanceSummary = useMemo(() => {
     const summary = {
       total: attendances.length,
@@ -259,6 +207,15 @@ export default function AdminAttendanceManagement() {
     return summary;
   }, [attendances]);
 
+  // Xử lý thay đổi giá trị filter (ngày, phòng khám, trạng thái)
+  const handleFilterChange = useCallback((field: "date" | "clinicId" | "status", value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  }, []);
+
+  // Component chung cho mỗi filter (có nhãn, icon, và nội dung control)
   const FilterField = ({
     label,
     icon,
@@ -277,6 +234,7 @@ export default function AdminAttendanceManagement() {
     </label>
   );
 
+  // Component thẻ tổng kết (SummaryCard) cho từng loại số liệu trạng thái chấm công
   const SummaryCard = ({
     icon,
     label,
@@ -442,6 +400,7 @@ export default function AdminAttendanceManagement() {
           </div>
         </section>
 
+        {/* Bảng danh sách chấm công */}
         <section className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
@@ -485,6 +444,7 @@ export default function AdminAttendanceManagement() {
                     </td>
                   </tr>
                 ) : (
+                  // Render từng dòng dữ liệu chấm công
                   attendances.map((attendance) => (
                     <tr key={attendance.id} className="transition hover:bg-slate-50">
                       <td className="px-6 py-5 text-base text-slate-900">
@@ -507,10 +467,10 @@ export default function AdminAttendanceManagement() {
                       </td>
                       <td className="px-6 py-5 text-base text-slate-700">{attendance.workDate}</td>
                       <td className="px-6 py-5 text-base text-slate-700">
-                        {formatDateTime(attendance.checkInTime)}
+                        {formatTime(attendance.checkInTime)}
                       </td>
                       <td className="px-6 py-5 text-base text-slate-700">
-                        {formatDateTime(attendance.checkOutTime)}
+                        {formatTime(attendance.checkOutTime)}
                       </td>
                       <td className="px-6 py-5 text-base font-medium">
                         <span

@@ -1,9 +1,9 @@
 import { Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { transformScheduleData } from "./utils/scheduleUtils";
-import type { DoctorDaySchedule, WeekDay } from "./utils/scheduleUtils";
-import ScheduleShiftCard from "./components/ScheduleShiftCard";
+import { transformScheduleData } from "../../../utils/hr/scheduleUtils";
+import type { DoctorDaySchedule, WeekDay } from "../../../utils/hr/scheduleUtils";
+import ScheduleShiftCard from "../../../components/hr/ScheduleShiftCard";
 
 type WeeklyScheduleViewProps = {
   weekDays: WeekDay[];

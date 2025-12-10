@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { toast, ToastContainer } from "react-toastify";
+import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
+import { adminApi } from "../../../services/admin/adminApi";
+import { formatMoney } from "../../../utils/adminUtils";
+import { useAdminApi } from "../../../hooks/useAdminApi";
 import {
   Package,
   TrendingUp,
@@ -26,9 +28,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// Định nghĩa interface thống kê kho
+// Interface thống kê kho
 interface ProductStatistics {
   totalProducts: number;
   activeProducts: number;
@@ -68,52 +68,31 @@ interface LowStockProduct {
   defaultRetailPrice: number;
 }
 
-// Hàm định dạng số thành tiền VNĐ
-const formatMoney = (amount: number) => {
-  return new Intl.NumberFormat("vi-VN", {
-    style: "currency",
-    currency: "VND",
-  }).format(amount);
-};
-
 export default function AdminInventoryManagement() {
   const { t } = useTranslation("admin");
   const [statistics, setStatistics] = useState<ProductStatistics | null>(null);
-  const [loading, setLoading] = useState(false);
 
-  const accessToken = localStorage.getItem("accessToken");
+  const { loading, execute } = useAdminApi<ProductStatistics>();
 
-  // Lấy dữ liệu thống kê
+  // Hàm lấy dữ liệu thống kê kho
   const fetchStatistics = async () => {
-    if (!accessToken) {
-      toast.error(t("inventory.messages.noAccessToken", "Missing access token"));
-      return;
-    }
-    setLoading(true);
-    try {
-      const response = await axios.get<ProductStatistics>(
-        `${apiBase}/api/admin/inventory/statistics`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
-      setStatistics(response.data);
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        t("inventory.messages.loadFailed", "Unable to load inventory statistics");
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
+    await execute(
+      () => adminApi.inventory.getStatistics(),
+      {
+        showErrorToast: true,
+        errorMessage: t("inventory.messages.loadFailed", "Unable to load inventory statistics"),
+        onSuccess: (data) => {
+          setStatistics(data);
+        },
+      }
+    );
   };
 
   useEffect(() => {
     fetchStatistics();
   }, []);
 
-  // Hiển thị loading
+  // Hiển thị khi đang loading
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -122,7 +101,7 @@ export default function AdminInventoryManagement() {
     );
   }
 
-  // Không có dữ liệu
+  // Hiển thị khi không có dữ liệu
   if (!statistics) {
     return (
       <div className="text-center text-gray-500 py-8">
@@ -147,7 +126,7 @@ export default function AdminInventoryManagement() {
         </p>
       </div>
 
-      {/* Thẻ thống kê chính */}
+      {/* Thẻ thống kê nhanh */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between">
@@ -210,7 +189,7 @@ export default function AdminInventoryManagement() {
         </div>
       </div>
 
-      {/* Doanh số theo cơ sở */}
+      {/* Biểu đồ doanh số & doanh thu theo cơ sở */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Biểu đồ số lượng bán theo cơ sở */}
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
@@ -255,7 +234,7 @@ export default function AdminInventoryManagement() {
           </div>
         </div>
 
-        {/* Biểu đồ doanh thu theo cơ sở */}
+        {/* Biểu đồ doanh thu theo từng cơ sở */}
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -322,7 +301,7 @@ export default function AdminInventoryManagement() {
         </div>
       </div>
 
-      {/* Bảng chi tiết doanh số theo cơ sở */}
+      {/* Bảng chi tiết doanh số theo từng cơ sở */}
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -378,9 +357,9 @@ export default function AdminInventoryManagement() {
         </div>
       </div>
 
-      {/* Top sản phẩm bán chạy */}
+      {/* Top sản phẩm bán chạy (biểu đồ & bảng) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Biểu đồ top sản phẩm bán chạy theo số lượng */}
+        {/* Biểu đồ top sản phẩm theo số lượng bán */}
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -433,7 +412,7 @@ export default function AdminInventoryManagement() {
           </div>
         </div>
 
-        {/* Biểu đồ top sản phẩm bán chạy theo doanh thu */}
+        {/* Biểu đồ top sản phẩm theo doanh thu */}
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
             <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
@@ -552,7 +531,7 @@ export default function AdminInventoryManagement() {
         </div>
       </div>
 
-      {/* Sản phẩm sắp hết kho */}
+      {/* Hiển thị sản phẩm sắp hết kho */}
       {statistics.lowStockProducts.length > 0 && (
         <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">

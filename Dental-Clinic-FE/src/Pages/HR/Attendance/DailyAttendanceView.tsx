@@ -3,13 +3,13 @@ import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
-import AttendanceFilters, { AttendanceListFilter } from "./AttendanceFilters";
-import SummaryCards from "./SummaryCards";
+import AttendanceFilters, { AttendanceListFilter } from "../../../components/hr/AttendanceFilters";
+import SummaryCards from "../../../components/hr/AttendanceSummaryCards";
 import MonthlyChart from "./MonthlyChart";
 import DailyAttendanceTable from "./DailyAttendanceTable";
 import MonthlyAttendanceTable from "./MonthlyAttendanceTable";
 import type { MonthlyAttendanceItem } from "./MonthlyAttendanceTable";
-import Pagination from "./Pagination";
+import Pagination from "../../../components/hr/AttendancePagination";
 import * as XLSX from "xlsx";
 import { FiDownload } from "react-icons/fi";
 

@@ -138,3 +138,4 @@ export default function SummaryCards({ stats, loadingSummary }: SummaryCardsProp
     </div>
   );
 }
+

@@ -51,15 +51,27 @@ export default function HolidaysTab() {
 
         const start = new Date(startDate);
         const end = new Date(endDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to compare dates only
+        start.setHours(0, 0, 0, 0);
+
+        // Kiểm tra ngày bắt đầu không được là quá khứ hoặc hiện tại
+        if (start <= today) {
+            toast.error("Ngày bắt đầu phải là ngày tương lai (sau ngày hôm nay)");
+            return;
+        }
 
         if (end < start) {
-            toast.error("Ngày kết thúc phải sau ngày bắt đầu");
+            toast.error("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu");
             return;
         }
 
         // Tính số ngày diễn ra kỳ nghỉ lễ
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        const duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        // Nếu cùng một ngày thì duration = 1
+        // Nếu khác ngày thì tính số ngày chênh lệch + 1
+        const diffTime = end.getTime() - start.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const duration = diffDays + 1; // +1 để bao gồm cả ngày bắt đầu
 
         setAdding(true);
         try {
@@ -71,8 +83,13 @@ export default function HolidaysTab() {
             setIsRecurring(false);
             setSelectedClinicId(null);
             toast.success("Đã thêm ngày lễ");
-        } catch (error) {
-            toast.error("Thêm thất bại");
+        } catch (error: any) {
+            // Hiển thị message từ backend nếu có
+            const errorMessage = error?.response?.data?.message || 
+                                error?.response?.data?.error || 
+                                error?.message || 
+                                "Thêm thất bại";
+            toast.error(errorMessage);
         } finally {
             setAdding(false);
         }
@@ -134,7 +151,18 @@ export default function HolidaysTab() {
                                 id="holiday-start-date"
                                 type="date"
                                 value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
+                                onChange={(e) => {
+                                    setStartDate(e.target.value);
+                                    // Nếu endDate chưa được set hoặc nhỏ hơn startDate, tự động set endDate = startDate
+                                    if (!endDate || e.target.value > endDate) {
+                                        setEndDate(e.target.value);
+                                    }
+                                }}
+                                min={(() => {
+                                    const tomorrow = new Date();
+                                    tomorrow.setDate(tomorrow.getDate() + 1);
+                                    return tomorrow.toISOString().split('T')[0];
+                                })()}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
                             />

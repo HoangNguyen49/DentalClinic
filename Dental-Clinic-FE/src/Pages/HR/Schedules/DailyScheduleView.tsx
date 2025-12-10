@@ -151,44 +151,64 @@ export default function DailyScheduleView({
                 {/* Hiển thị ca sáng */}
                 <td className="border border-gray-300 px-4 py-3">
                   {docSchedule.morning ? (
-                    <div className="p-2.5 bg-blue-100 rounded-lg shadow-sm border-l-4 border-blue-500">
-                      <div className="text-xs font-semibold text-blue-900 mb-1">
-                        {formatTime(
-                          docSchedule.morning.startTime
-                        )}{" "}
-                        -{" "}
-                        {formatTime(
-                          docSchedule.morning.endTime
-                        )}
-                      </div>
-                      {docSchedule.morning.clinic && (
-                        <div className="text-xs text-blue-900 font-medium truncate mb-0.5">
-                          {docSchedule.morning.clinic.clinicName}
+                    (() => {
+                      const isCancelled = docSchedule.morning.status?.toLowerCase() === 'cancelled';
+                      const bgColor = isCancelled ? 'bg-red-50' : 'bg-blue-100';
+                      const borderColor = isCancelled ? 'border-red-400' : 'border-blue-500';
+                      const textColor = isCancelled ? 'text-red-900' : 'text-blue-900';
+                      const clinicColor = isCancelled ? 'text-red-800' : 'text-blue-900';
+                      const roomColor = isCancelled ? 'text-red-700' : 'text-blue-800';
+                      const statusColor = isCancelled ? 'text-red-700' : 'text-blue-600';
+                      const noteColor = isCancelled ? 'text-red-700' : 'text-blue-700';
+                      return (
+                        <div 
+                          className={`p-2.5 ${bgColor} rounded-lg shadow-sm border-l-4 ${borderColor} ${isCancelled ? 'opacity-75' : ''}`}
+                          title={isCancelled ? t("list.scheduleCancelledDueToHoliday", "Lịch đã bị hủy do ngày nghỉ lễ") : undefined}
+                        >
+                          <div className={`text-xs font-semibold ${textColor} mb-1 flex items-center gap-1`}>
+                            {formatTime(
+                              docSchedule.morning.startTime
+                            )}{" "}
+                            -{" "}
+                            {formatTime(
+                              docSchedule.morning.endTime
+                            )}
+                            {isCancelled && (
+                              <span className="text-[10px]" title={t("list.scheduleCancelledDueToHoliday", "Lịch đã bị hủy do ngày nghỉ lễ")}>
+                                🚫
+                              </span>
+                            )}
+                          </div>
+                          {docSchedule.morning.clinic && (
+                            <div className={`text-xs ${clinicColor} font-medium truncate mb-0.5`}>
+                              🏥 {docSchedule.morning.clinic.clinicName}
+                            </div>
+                          )}
+                          {docSchedule.morning.room && (
+                            <div className={`text-xs ${roomColor} truncate mb-0.5`}>
+                              {docSchedule.morning.room.roomName}
+                            </div>
+                          )}
+                          {docSchedule.morning.status && (
+                            <div className={`text-xs ${statusColor} mt-1`}>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${docSchedule.morning.status.toLowerCase() === 'active'
+                                ? 'bg-green-200 text-green-800'
+                                : docSchedule.morning.status.toLowerCase() === 'cancelled'
+                                  ? 'bg-red-300 text-red-900 border border-red-400'
+                                  : 'bg-gray-200 text-gray-800'
+                                }`}>
+                                {docSchedule.morning.status}
+                              </span>
+                            </div>
+                          )}
+                          {docSchedule.morning.note && (
+                            <div className={`text-xs ${noteColor} mt-1 italic truncate`} title={docSchedule.morning.note}>
+                              {docSchedule.morning.note}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {docSchedule.morning.room && (
-                        <div className="text-xs text-blue-800 truncate mb-0.5">
-                          {docSchedule.morning.room.roomName}
-                        </div>
-                      )}
-                      {docSchedule.morning.status && (
-                        <div className="text-xs text-blue-600 mt-1">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${docSchedule.morning.status.toLowerCase() === 'active'
-                            ? 'bg-green-200 text-green-800'
-                            : docSchedule.morning.status.toLowerCase() === 'cancelled'
-                              ? 'bg-red-200 text-red-800'
-                              : 'bg-gray-200 text-gray-800'
-                            }`}>
-                            {docSchedule.morning.status}
-                          </span>
-                        </div>
-                      )}
-                      {docSchedule.morning.note && (
-                        <div className="text-xs text-blue-700 mt-1 italic truncate" title={docSchedule.morning.note}>
-                          {docSchedule.morning.note}
-                        </div>
-                      )}
-                    </div>
+                      );
+                    })()
                   ) : (
                     <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
                       <div className="text-xs text-gray-400">
@@ -200,44 +220,64 @@ export default function DailyScheduleView({
                 {/* Hiển thị ca chiều */}
                 <td className="border border-gray-300 px-4 py-3">
                   {docSchedule.afternoon ? (
-                    <div className="p-2.5 bg-orange-100 rounded-lg shadow-sm border-l-4 border-orange-500">
-                      <div className="text-xs font-semibold text-orange-900 mb-1">
-                        {formatTime(
-                          docSchedule.afternoon.startTime
-                        )}{" "}
-                        -{" "}
-                        {formatTime(
-                          docSchedule.afternoon.endTime
-                        )}
-                      </div>
-                      {docSchedule.afternoon.clinic && (
-                        <div className="text-xs text-orange-900 font-medium truncate mb-0.5">
-                          {docSchedule.afternoon.clinic.clinicName}
+                    (() => {
+                      const isCancelled = docSchedule.afternoon.status?.toLowerCase() === 'cancelled';
+                      const bgColor = isCancelled ? 'bg-red-50' : 'bg-orange-100';
+                      const borderColor = isCancelled ? 'border-red-400' : 'border-orange-500';
+                      const textColor = isCancelled ? 'text-red-900' : 'text-orange-900';
+                      const clinicColor = isCancelled ? 'text-red-800' : 'text-orange-900';
+                      const roomColor = isCancelled ? 'text-red-700' : 'text-orange-800';
+                      const statusColor = isCancelled ? 'text-red-700' : 'text-orange-600';
+                      const noteColor = isCancelled ? 'text-red-700' : 'text-orange-700';
+                      return (
+                        <div 
+                          className={`p-2.5 ${bgColor} rounded-lg shadow-sm border-l-4 ${borderColor} ${isCancelled ? 'opacity-75' : ''}`}
+                          title={isCancelled ? t("list.scheduleCancelledDueToHoliday", "Lịch đã bị hủy do ngày nghỉ lễ") : undefined}
+                        >
+                          <div className={`text-xs font-semibold ${textColor} mb-1 flex items-center gap-1`}>
+                            {formatTime(
+                              docSchedule.afternoon.startTime
+                            )}{" "}
+                            -{" "}
+                            {formatTime(
+                              docSchedule.afternoon.endTime
+                            )}
+                            {isCancelled && (
+                              <span className="text-[10px]" title={t("list.scheduleCancelledDueToHoliday", "Lịch đã bị hủy do ngày nghỉ lễ")}>
+                                🚫
+                              </span>
+                            )}
+                          </div>
+                          {docSchedule.afternoon.clinic && (
+                            <div className={`text-xs ${clinicColor} font-medium truncate mb-0.5`}>
+                              🏥 {docSchedule.afternoon.clinic.clinicName}
+                            </div>
+                          )}
+                          {docSchedule.afternoon.room && (
+                            <div className={`text-xs ${roomColor} truncate mb-0.5`}>
+                              {docSchedule.afternoon.room.roomName}
+                            </div>
+                          )}
+                          {docSchedule.afternoon.status && (
+                            <div className={`text-xs ${statusColor} mt-1`}>
+                              <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${docSchedule.afternoon.status.toLowerCase() === 'active'
+                                ? 'bg-green-200 text-green-800'
+                                : docSchedule.afternoon.status.toLowerCase() === 'cancelled'
+                                  ? 'bg-red-300 text-red-900 border border-red-400'
+                                  : 'bg-gray-200 text-gray-800'
+                                }`}>
+                                {docSchedule.afternoon.status}
+                              </span>
+                            </div>
+                          )}
+                          {docSchedule.afternoon.note && (
+                            <div className={`text-xs ${noteColor} mt-1 italic truncate`} title={docSchedule.afternoon.note}>
+                              {docSchedule.afternoon.note}
+                            </div>
+                          )}
                         </div>
-                      )}
-                      {docSchedule.afternoon.room && (
-                        <div className="text-xs text-orange-800 truncate mb-0.5">
-                          {docSchedule.afternoon.room.roomName}
-                        </div>
-                      )}
-                      {docSchedule.afternoon.status && (
-                        <div className="text-xs text-orange-600 mt-1">
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${docSchedule.afternoon.status.toLowerCase() === 'active'
-                            ? 'bg-green-200 text-green-800'
-                            : docSchedule.afternoon.status.toLowerCase() === 'cancelled'
-                              ? 'bg-red-200 text-red-800'
-                              : 'bg-gray-200 text-gray-800'
-                            }`}>
-                            {docSchedule.afternoon.status}
-                          </span>
-                        </div>
-                      )}
-                      {docSchedule.afternoon.note && (
-                        <div className="text-xs text-orange-700 mt-1 italic truncate" title={docSchedule.afternoon.note}>
-                          {docSchedule.afternoon.note}
-                        </div>
-                      )}
-                    </div>
+                      );
+                    })()
                   ) : (
                     <div className="p-2.5 bg-gray-50 rounded-lg border border-gray-200 opacity-50">
                       <div className="text-xs text-gray-400">

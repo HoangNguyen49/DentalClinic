@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import employeeService from "../../../services/hr/employeeService";
-import type { Department, Role, Clinic } from "../../../services/hr/employeeService";
+import { hrApi } from "../../../services/hr/hrApi";
+import type { Department, Role, HrClinic } from "../../../services/hr/hrApi";
+import { useHrApi } from "../../../hooks/useHrApi";
 import { X, Save, ArrowLeft } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -24,9 +25,9 @@ function CreateEmployeeForm() {
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [clinics, setClinics] = useState<HrClinic[]>([]);
 
-  const [loading, setLoading] = useState(false);
+  const { execute: executeApi, loading } = useHrApi<any>();
   const [loadingOptions, setLoadingOptions] = useState(true);
 
   useEffect(() => {
@@ -36,56 +37,53 @@ function CreateEmployeeForm() {
   // Lấy dữ liệu các lựa chọn phòng ban, vai trò, phòng khám từ API và lọc dữ liệu không hợp lệ
   const fetchOptions = async () => {
     setLoadingOptions(true);
-    try {
-      const departmentsRes = await employeeService.getDepartments();
-      const forbiddenDepartmentNames = ["ADMIN", "ADMINISTRATION", "HUMAN RESOURCES", "HUMAN RESOURCE"];
-      const departmentsData = (departmentsRes.data || []).filter((dept) => {
-        if (!dept.departmentName) return false;
-        const name = dept.departmentName.toUpperCase();
-        return !forbiddenDepartmentNames.some(forbidden =>
-          name === forbidden || name.includes(forbidden)
-        );
-      });
-      setDepartments(departmentsData);
+    
+    await executeApi(hrApi.management.getDepartments, {
+      onSuccess: (data: any) => {
+        const forbiddenDepartmentNames = ["ADMIN", "ADMINISTRATION", "HUMAN RESOURCES", "HUMAN RESOURCE"];
+        const departmentsData = ((data as Department[]) || []).filter((dept) => {
+          if (!dept.departmentName) return false;
+          const name = dept.departmentName.toUpperCase();
+          return !forbiddenDepartmentNames.some(forbidden =>
+            name === forbidden || name.includes(forbidden)
+          );
+        });
+        setDepartments(departmentsData);
+      },
+      errorMessage: t("create.messages.failedToLoad"),
+      showErrorToast: false,
+    });
 
-      const rolesRes = await employeeService.getRoles();
-      const filteredRoles = (rolesRes.data || []).filter((role) => {
-        if (!role.roleName) return false;
-        const normalized = role.roleName.toUpperCase();
-        return normalized !== "ADMIN" &&
-          normalized !== "USER" &&
-          normalized !== "HR" &&
-          !normalized.includes("HR");
-      });
-      setRoles(filteredRoles);
+    await executeApi(hrApi.management.getRoles, {
+      onSuccess: (data: any) => {
+        const filteredRoles = ((data as Role[]) || []).filter((role) => {
+          if (!role.roleName) return false;
+          const normalized = role.roleName.toUpperCase();
+          return normalized !== "ADMIN" &&
+            normalized !== "USER" &&
+            normalized !== "HR" &&
+            !normalized.includes("HR");
+        });
+        setRoles(filteredRoles);
+      },
+      errorMessage: t("create.messages.failedToLoad"),
+      showErrorToast: false,
+    });
 
-      const clinicsRes = await employeeService.getClinics();
-      const clinicsData = (clinicsRes.data || []).map((c: any) => ({
-        id: c.id,
-        clinicName: c.clinicName || c.name,
-        isActive: c.isActive !== undefined ? c.isActive : true,
-      }));
-      setClinics(clinicsData);
-    } catch (err: any) {
-      console.error("Error fetching options:", err);
+    await executeApi(hrApi.management.getClinics, {
+      onSuccess: (data: any) => {
+        const clinicsData = ((data as HrClinic[]) || []).map((c: any) => ({
+          id: c.id,
+          clinicName: c.clinicName || c.name,
+          isActive: c.isActive !== undefined ? c.isActive : true,
+        }));
+        setClinics(clinicsData);
+      },
+      errorMessage: t("create.messages.failedToLoad"),
+      showErrorToast: false,
+    });
 
-      let errorMsg = t("create.messages.failedToLoad");
-
-      if (err?.response?.data) {
-        const errorData = err.response.data;
-        if (errorData.message) {
-          errorMsg = errorData.message;
-        } else if (errorData.error) {
-          errorMsg = errorData.error + (errorData.message ? `: ${errorData.message}` : "");
-        }
-      } else if (err?.message) {
-        errorMsg = `${t("create.messages.connectionError")} ${err.message}`;
-      }
-
-      toast.error(errorMsg);
-    } finally {
-      setLoadingOptions(false);
-    }
+    setLoadingOptions(false);
   };
 
   // Xử lý submit form tạo nhân viên mới
@@ -116,73 +114,26 @@ function CreateEmployeeForm() {
       return;
     }
 
-    setLoading(true);
-    try {
-      // Dữ liệu gửi lên backend
-      const employeeRequest: any = {
-        code,
-        fullName,
-        email,
-        phone,
-        password,
-        departmentId,
-        roleId,
-        ...(isDoctor ? {} : { clinicId }),
-        ...(isDoctor && specialties.length > 0 ? { specialties } : {}),
-      };
+    // Dữ liệu gửi lên backend
+    const employeeRequest: any = {
+      code,
+      fullName,
+      email,
+      phone,
+      password,
+      departmentId,
+      roleId,
+      ...(isDoctor ? {} : { clinicId }),
+      ...(isDoctor && specialties.length > 0 ? { specialties } : {}),
+    };
 
-      const createRes = await employeeService.createEmployee(employeeRequest);
-
-      const employeeId = createRes.data.id;
-
-      toast.success(t("create.messages.createdSuccess"));
-      navigate("/hr/employees");
-    } catch (err: any) {
-      console.error("Error creating employee:", err);
-
-      // Hiển thị lỗi trả về từ backend nếu có
-      let errorMsg = t("create.messages.failedToCreate");
-
-      if (err?.response?.data) {
-        const errorData = err.response.data;
-        if (errorData.errors && typeof errorData.errors === 'object' && !Array.isArray(errorData.errors)) {
-          const errorMessages = Object.entries(errorData.errors)
-            .map(([field, message]) => {
-              const fieldMap: { [key: string]: string } = {
-                fullName: t("create.fieldMap.fullName"),
-                email: t("create.fieldMap.email"),
-                phone: t("create.fieldMap.phone"),
-                password: t("create.fieldMap.password"),
-                roleId: t("create.fieldMap.roleId"),
-                departmentId: t("create.fieldMap.departmentId"),
-                clinicId: t("create.fieldMap.clinicId"),
-              };
-              const fieldName = fieldMap[field] || field;
-              return `${fieldName}: ${message}`;
-            })
-            .join("\n");
-          errorMsg = errorMessages || errorData.message || errorMsg;
-        }
-        else if (Array.isArray(errorData.errors)) {
-          errorMsg = errorData.errors.join("\n");
-        }
-        else if (errorData.validationErrors && Array.isArray(errorData.validationErrors)) {
-          errorMsg = errorData.validationErrors.join("\n");
-        }
-        else if (errorData.message) {
-          errorMsg = errorData.message;
-        }
-        else if (errorData.error) {
-          errorMsg = errorData.error + (errorData.message ? `: ${errorData.message}` : "");
-        }
-      } else if (err?.message) {
-        errorMsg = `${t("create.messages.connectionError")} ${err.message}`;
-      }
-
-      toast.error(errorMsg, { autoClose: 7000 });
-    } finally {
-      setLoading(false);
-    }
+    await executeApi(() => hrApi.employees.create(employeeRequest), {
+      onSuccess: () => {
+        toast.success(t("create.messages.createdSuccess"));
+        navigate("/hr/employees");
+      },
+      errorMessage: t("create.messages.failedToCreate"),
+    });
   };
 
   if (loadingOptions) {

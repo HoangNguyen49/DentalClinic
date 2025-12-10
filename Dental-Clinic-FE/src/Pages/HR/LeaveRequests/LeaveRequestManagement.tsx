@@ -4,18 +4,19 @@ import { toast, ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { CheckCircle, XCircle, Clock, Search, Trash2 } from "lucide-react";
 import { useNotification } from "../../../app/providers/NotificationContext";
-import leaveRequestService from "../../../services/hr/leaveRequestService";
-import type { LeaveRequest } from "../../../services/hr/leaveRequestService";
+import { hrApi } from "../../../services/hr/hrApi";
+import type { HrLeaveRequest } from "../../../services/hr/hrApi";
+import { useHrApi } from "../../../hooks/useHrApi";
 
 export default function LeaveRequestManagement() {
   const { t } = useTranslation("web");
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { execute: executeApi, loading } = useHrApi<any>();
+  const [leaveRequests, setLeaveRequests] = useState<HrLeaveRequest[]>([]);
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [statusFilter, setStatusFilter] = useState<string>("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<HrLeaveRequest | null>(null);
   const [comment, setComment] = useState("");
   const [counts, setCounts] = useState<{ [key: string]: number }>({});
 
@@ -56,72 +57,68 @@ export default function LeaveRequestManagement() {
 
   // Lấy tất cả đơn nghỉ (có phân trang và filter trạng thái)
   const fetchLeaveRequests = async () => {
-    setLoading(true);
-    try {
-      const response = await leaveRequestService.getLeaveRequests(page, 10, statusFilter);
-      setLeaveRequests(response.data.content || []);
-      setTotalPages(response.data.totalPages || 0);
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message ||
-        t("leaveRequest.messages.loadFailed")
-      );
-    } finally {
-      setLoading(false);
+    const response = await executeApi(
+      () => hrApi.leaveRequests.getAll({ page, size: 10, status: statusFilter }),
+      {
+        errorMessage: t("leaveRequest.messages.loadFailed"),
+        showErrorToast: false,
+      }
+    ) as { content: HrLeaveRequest[]; totalPages: number } | null;
+
+    if (response) {
+      setLeaveRequests(response.content || []);
+      setTotalPages(response.totalPages || 0);
     }
   };
 
   // Lấy đơn chờ duyệt (HR hoặc Admin) tuỳ filter
   const fetchPendingRequests = async () => {
-    setLoading(true);
-    try {
-      const response = statusFilter === "PENDING_ADMIN"
-        ? await leaveRequestService.getPendingAdminRequests()
-        : await leaveRequestService.getPendingRequests();
+    const apiCall = statusFilter === "PENDING_ADMIN"
+      ? hrApi.leaveRequests.getPendingAdmin
+      : hrApi.leaveRequests.getPending;
 
-      setLeaveRequests(response.data || []);
+    const response = await executeApi(apiCall, {
+      errorMessage: t("leaveRequest.messages.loadFailed"),
+      showErrorToast: false,
+    }) as HrLeaveRequest[] | null;
+
+    if (response) {
+      setLeaveRequests(response || []);
       setTotalPages(0);
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message ||
-        t("leaveRequest.messages.loadFailed")
-      );
-    } finally {
-      setLoading(false);
     }
   };
 
   // Đếm số lượng đơn theo từng trạng thái (để làm badge trên nút lọc)
   const fetchCounts = async () => {
-    try {
-      const response = await leaveRequestService.getCounts();
-      setCounts(response.data);
-    } catch (error) {
-      console.error("Không thể lấy số lượng đơn", error);
-    }
+    await executeApi(hrApi.leaveRequests.getCounts, {
+      onSuccess: (data: any) => {
+        setCounts((data as { [key: string]: number }) || {});
+      },
+      showErrorToast: false,
+    });
   };
 
   // Xử lý duyệt hoặc từ chối đơn (APPROVE hoặc REJECT)
   const handleProcess = async (action: "APPROVE" | "REJECT") => {
     if (!selectedRequest) return;
 
-    try {
-      await leaveRequestService.processLeaveRequest(selectedRequest.id, action, comment || undefined);
-      toast.success(
-        action === "APPROVE"
-          ? t("leaveRequest.messages.approveSuccess")
-          : t("leaveRequest.messages.rejectSuccess")
-      );
-      setSelectedRequest(null);
-      setComment("");
-      fetchLeaveRequests();
-      fetchCounts();
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message ||
-        t("leaveRequest.messages.processFailed")
-      );
-    }
+    await executeApi(
+      () => hrApi.leaveRequests.process(selectedRequest.id, action, comment || undefined),
+      {
+        onSuccess: () => {
+          toast.success(
+            action === "APPROVE"
+              ? t("leaveRequest.messages.approveSuccess")
+              : t("leaveRequest.messages.rejectSuccess")
+          );
+          setSelectedRequest(null);
+          setComment("");
+          fetchLeaveRequests();
+          fetchCounts();
+        },
+        errorMessage: t("leaveRequest.messages.processFailed"),
+      }
+    );
   };
 
 

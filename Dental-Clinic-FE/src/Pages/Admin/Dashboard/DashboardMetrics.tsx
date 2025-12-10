@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useTranslation } from "react-i18next";
+import { adminApi } from "../../../services/admin/adminApi";
+import { useAdminApi } from "../../../hooks/useAdminApi";
 import {
   Users,
   UserCircle,
@@ -13,8 +14,6 @@ import {
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as ReTooltip, Legend } from "recharts";
 
-const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
-
 interface DashboardMetrics {
   totalStaff: number;
   totalPatients: number;
@@ -23,7 +22,8 @@ interface DashboardMetrics {
   todayAppointments: number;
   todayAttendance: number;
   pendingLeaveRequests: number;
-  todayRevenue: number;
+  todayTotalSales: number; // Doanh số (tổng giá trị hóa đơn)
+  todayRevenue: number; // Tiền thực thu (chỉ đã thanh toán)
   lowStockItems: number;
   retentionRate: number;
   todayCancelledAppointments: number;
@@ -85,9 +85,8 @@ const MetricCard = ({ title, value, icon, color, trend }: MetricCardProps) => {
 
 export default function DashboardMetrics() {
   const { t } = useTranslation("admin");
-  const accessToken = localStorage.getItem("accessToken");
 
-  // State lưu trữ các số liệu dashboard
+  // State dùng để lưu các số liệu dashboard
   const [metrics, setMetrics] = useState<DashboardMetrics>({
     totalStaff: 0,
     totalPatients: 0,
@@ -96,6 +95,7 @@ export default function DashboardMetrics() {
     todayAppointments: 0,
     todayAttendance: 0,
     pendingLeaveRequests: 0,
+    todayTotalSales: 0,
     todayRevenue: 0,
     lowStockItems: 0,
     retentionRate: 0,
@@ -104,86 +104,55 @@ export default function DashboardMetrics() {
     topDoctors: [],
     loading: true,
   });
-  // State lưu lỗi nếu có
+  // State dùng để lưu lỗi (nếu có)
   const [error, setError] = useState<string | null>(null);
 
-  // Hàm lấy dữ liệu từ API dashboard + inventory
+  const { execute: executeStats } = useAdminApi<any>();
+  const { execute: executeInventory } = useAdminApi<any>();
+
+  // Hàm gọi API để lấy dữ liệu thống kê dashboard + tồn kho
   const fetchMetrics = async () => {
-    if (!accessToken) return;
+    setError(null);
 
-    try {
-      setError(null);
-      // Gọi đồng thời hai API dashboard stats & inventory stats
-      const [statsRes, inventoryRes]: [
-        PromiseSettledResult<any>,
-        PromiseSettledResult<any>
-      ] = await Promise.allSettled([
-        axios
-          .get(`${apiBase}/api/admin/dashboard/stats`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          })
-          .catch((err: any) => {
-            if (err.code === "ERR_NETWORK" || err.code === "ERR_CONNECTION_REFUSED") {
-              return Promise.reject(err);
-            }
-            return Promise.reject(err);
-          }),
-        axios
-          .get(`${apiBase}/api/admin/inventory/statistics`, {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          })
-          .catch((err: any) => {
-            if (err.code === "ERR_NETWORK" || err.code === "ERR_CONNECTION_REFUSED") {
-              return Promise.reject(err);
-            }
-            return Promise.reject(err);
-          }),
-      ]);
+    // Gọi đồng thời 2 API dashboard và inventory
+    const [statsData, inventoryData] = await Promise.all([
+      executeStats(() => adminApi.dashboard.getStats(), { showErrorToast: false }),
+      executeInventory(() => adminApi.inventory.getStatistics(), { showErrorToast: false }),
+    ]);
 
-      const statsData = statsRes.status === "fulfilled" ? statsRes.value : null;
-      const inventoryData = inventoryRes.status === "fulfilled" ? inventoryRes.value : null;
-
-      if (statsData?.status === 200 && statsData.data) {
-        const stats = statsData.data || {};
-        const inventoryStats = inventoryData?.status === 200 ? inventoryData.data : null;
-
-        // Chuyển số liệu về dạng số nếu invalid thì 0
-        const toNumber = (value: any) =>
-          value === null || value === undefined || Number.isNaN(Number(value))
-            ? 0
-            : parseFloat(value.toString());
-        setMetrics({
-          totalStaff: stats.totalStaff || 0,
-          totalPatients: stats.totalPatients || 0,
-          totalClinics: stats.totalClinics || 0,
-          activeClinics: stats.activeClinics || 0,
-          todayAppointments: stats.todayAppointments || 0,
-          todayAttendance: stats.todayAttendance || 0,
-          pendingLeaveRequests: stats.pendingLeaveRequests || 0,
-          todayRevenue: toNumber(stats.todayRevenue),
-          lowStockItems: inventoryStats?.lowStockProductsCount ?? 0,
-          retentionRate: toNumber(stats.retentionRate),
-          todayCancelledAppointments: stats.todayCancelledAppointments || 0,
-          sourceBreakdown: stats.sourceBreakdown || {},
-          topDoctors: stats.topDoctors
-            ? stats.topDoctors.map((d: any) => ({
-                doctorId: d.doctorId,
-                doctorName: d.doctorName,
-                completedAppointments: d.completedAppointments ?? 0,
-                revenue: toNumber(d.revenue),
-              }))
-            : [],
-          loading: false,
-        });
-      } else {
-        setError(t("dashboard.errors.fetchFailed", "Không tải được số liệu dashboard"));
-        setMetrics((prev) => ({ ...prev, loading: false }));
-      }
-    } catch (error: any) {
-      // Log lỗi nếu là lỗi ngoài lỗi mạng
-      if (error?.code !== "ERR_NETWORK" && error?.code !== "ERR_CONNECTION_REFUSED") {
-        console.error("Error fetching dashboard stats:", error);
-      }
+    if (statsData) {
+      const stats = statsData || {};
+      const inventoryStats = inventoryData || {};
+      // Hàm ép kiểu dữ liệu về số, nếu null/undefined/NaN trả về 0
+      const toNumber = (value: any) =>
+        value === null || value === undefined || Number.isNaN(Number(value))
+          ? 0
+          : parseFloat(value.toString());
+      setMetrics({
+        totalStaff: stats.totalStaff || 0,
+        totalPatients: stats.totalPatients || 0,
+        totalClinics: stats.totalClinics || 0,
+        activeClinics: stats.activeClinics || 0,
+        todayAppointments: stats.todayAppointments || 0,
+        todayAttendance: stats.todayAttendance || 0,
+        pendingLeaveRequests: stats.pendingLeaveRequests || 0,
+        todayTotalSales: toNumber(stats.todayTotalSales),
+        todayRevenue: toNumber(stats.todayRevenue),
+        lowStockItems: inventoryStats?.lowStockProductsCount ?? 0,
+        retentionRate: toNumber(stats.retentionRate),
+        todayCancelledAppointments: stats.todayCancelledAppointments || 0,
+        sourceBreakdown: stats.sourceBreakdown || {},
+        topDoctors: stats.topDoctors
+          ? stats.topDoctors.map((d: any) => ({
+              doctorId: d.doctorId,
+              doctorName: d.doctorName,
+              completedAppointments: d.completedAppointments ?? 0,
+              revenue: toNumber(d.revenue),
+            }))
+          : [],
+        loading: false,
+      });
+    } else {
       setError(t("dashboard.errors.fetchFailed", "Không tải được số liệu dashboard"));
       setMetrics((prev) => ({ ...prev, loading: false }));
     }
@@ -191,12 +160,12 @@ export default function DashboardMetrics() {
 
   useEffect(() => {
     fetchMetrics();
-    // Tự động refresh số liệu mỗi 5 phút
+    // Setup interval tự động refresh số liệu sau mỗi 5 phút
     const interval = setInterval(fetchMetrics, 5 * 60 * 1000);
     return () => clearInterval(interval);
-  }, [accessToken]);
+  }, []);
 
-  // Hiển thị hiệu ứng loading khi đang tải dữ liệu
+  // Hiển thị hiệu ứng loading khi đang fetch data
   if (metrics.loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -213,7 +182,7 @@ export default function DashboardMetrics() {
     );
   }
 
-  // Format số thành tiền VNĐ
+  // Format số sang tiền VNĐ
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("vi-VN", {
       style: "currency",
@@ -221,7 +190,7 @@ export default function DashboardMetrics() {
     }).format(amount);
   };
 
-  // Chuẩn hoá dữ liệu Pie chart nguồn khách
+  // Chuẩn hóa dữ liệu cho Pie chart thể hiện nguồn khách
   const sourceData = Object.entries(metrics.sourceBreakdown || {}).map(([channel, total]) => ({
     name: channel || "UNKNOWN",
     value: total,
@@ -230,27 +199,28 @@ export default function DashboardMetrics() {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      {/* Hiển thị thông báo lỗi khi không lấy được số liệu */}
+      {/* Hiển thị lỗi nếu fetch số liệu thất bại */}
       {error && (
         <div className="md:col-span-2 lg:col-span-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
           {error}
         </div>
       )}
-      {/* Tổng số bệnh nhân */}
+
+      {/* Thông tin tổng bệnh nhân */}
       <MetricCard
         title={t("dashboard.metrics.totalPatients", "Tổng bệnh nhân")}
         value={metrics.totalPatients}
         icon={<UserCircle className="w-6 h-6" />}
         color="indigo"
       />
-      {/* Tổng số nhân viên */}
+      {/* Thông tin tổng nhân viên */}
       <MetricCard
         title={t("dashboard.metrics.totalStaff", "Tổng nhân viên")}
         value={metrics.totalStaff}
         icon={<Users className="w-6 h-6" />}
         color="blue"
       />
-      {/* Số phòng khám đang hoạt động/ tổng số phòng khám */}
+      {/* Phòng khám đang hoạt động / tổng phòng khám */}
       <MetricCard
         title={t("dashboard.metrics.activeClinics", "Phòng khám đang hoạt động")}
         value={`${metrics.activeClinics}/${metrics.totalClinics}`}
@@ -288,13 +258,54 @@ export default function DashboardMetrics() {
         icon={<AlertCircle className="w-6 h-6" />}
         color="red"
       />
-      {/* Doanh thu hôm nay */}
-      <MetricCard
-        title={t("dashboard.metrics.todayRevenue", "Doanh thu hôm nay")}
-        value={formatCurrency(metrics.todayRevenue)}
-        icon={<DollarSign className="w-6 h-6" />}
-        color="green"
-      />
+      {/* Doanh số và Tiền thực thu hôm nay - Card đặc biệt */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow md:col-span-2">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-lg bg-gradient-to-br from-green-50 to-emerald-50 text-green-600 border border-green-200">
+              <DollarSign className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-medium text-slate-600">
+              {t("dashboard.metrics.todayFinancial", "Tài chính hôm nay")}
+            </h3>
+          </div>
+        </div>
+        <div className="space-y-3">
+          {/* Doanh số */}
+          <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+              <span className="text-sm font-medium text-blue-700">
+                {t("dashboard.metrics.totalSales", "Doanh số")}
+              </span>
+            </div>
+            <span className="text-lg font-bold text-blue-900">
+              {formatCurrency(metrics.todayTotalSales)}
+            </span>
+          </div>
+          {/* Tiền thực thu */}
+          <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span className="text-sm font-medium text-green-700">
+                {t("dashboard.metrics.actualRevenue", "Tiền thực thu")}
+              </span>
+            </div>
+            <span className="text-lg font-bold text-green-900">
+              {formatCurrency(metrics.todayRevenue)}
+            </span>
+          </div>
+          {/* Chênh lệch (nếu có) */}
+          {metrics.todayTotalSales > metrics.todayRevenue && (
+            <div className="flex items-center justify-between text-xs text-slate-500 pt-1">
+              <span>{t("dashboard.metrics.pendingAmount", "Còn lại chưa thu")}</span>
+              <span className="font-medium text-orange-600">
+                {formatCurrency(metrics.todayTotalSales - metrics.todayRevenue)}
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
       {/* Sản phẩm sắp hết hàng */}
       <MetricCard
         title={t("dashboard.metrics.lowStockItems", "Sản phẩm sắp hết hàng")}
@@ -326,7 +337,7 @@ export default function DashboardMetrics() {
           }}
         />
       )}
-      {/* Danh sách top n bác sĩ doanh thu cao nhất */}
+      {/* Top N bác sĩ theo doanh thu */}
       {metrics.topDoctors.length > 1 && (
         <div className="md:col-span-2 lg:col-span-4 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
@@ -347,7 +358,7 @@ export default function DashboardMetrics() {
           </div>
         </div>
       )}
-      {/* Biểu đồ tròn thể hiện nguồn khách hàng */}
+      {/* Biểu đồ tròn thống kê nguồn khách */}
       <div className="md:col-span-2 lg:col-span-4 bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-bold text-slate-800">

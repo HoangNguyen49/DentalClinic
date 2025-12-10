@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import type { AttendanceExplanationResponse } from "./hrservice/useExplanations";
+import type { AttendanceExplanationResponse } from "../../hooks/hr/useExplanations";
 
 type TableProps = {
     explanations: AttendanceExplanationResponse[];
@@ -189,3 +189,4 @@ export const Table: React.FC<TableProps> = ({
         </section>
     );
 };
+

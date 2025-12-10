@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { toast } from "react-toastify";
 import { useTranslation } from "react-i18next";
-import { Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Calendar, ChevronDown, ChevronUp, Edit2, X } from "lucide-react";
+import { adminApi } from "../../../services/admin/adminApi";
+import type { AdminClinic } from "../../../services/admin/adminApi";
+import { useAdminApi } from "../../../hooks/useAdminApi";
+import { formatDateInput } from "../../../utils/adminUtils";
 
-// Định nghĩa kiểu dữ liệu cho phòng khám
-type AdminClinic = {
+// Kiểu dữ liệu mở rộng cho phòng khám
+type AdminClinicExtended = {
   id: number;
   clinicCode?: string;
   clinicName: string;
@@ -20,7 +22,7 @@ type AdminClinic = {
   updatedAt?: string;
 };
 
-// Định nghĩa kiểu dữ liệu cho nhân viên/bác sĩ
+// Kiểu dữ liệu cho nhân sự (bác sĩ, nhân viên)
 type StaffDetail = {
   userId: number;
   fullName: string;
@@ -34,80 +36,67 @@ type StaffDetail = {
   isDoctor: boolean;
 };
 
-const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
-
 function ClinicManagement() {
   const { t } = useTranslation("admin");
-  const [clinics, setClinics] = useState<AdminClinic[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [clinics, setClinics] = useState<AdminClinicExtended[]>([]);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [selectedClinicId, setSelectedClinicId] = useState<number | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
+    formatDateInput(new Date())
   );
   const [staffDetails, setStaffDetails] = useState<StaffDetail[]>([]);
-  const [loadingStaff, setLoadingStaff] = useState<boolean>(false);
   const [expandedClinic, setExpandedClinic] = useState<number | null>(null);
+  const [editingClinic, setEditingClinic] = useState<AdminClinicExtended | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    clinicCode: "",
+    clinicName: "",
+    address: "",
+    phone: "",
+    email: "",
+    openingHours: "",
+  });
 
-  const accessToken = localStorage.getItem("accessToken");
+  const { loading, execute } = useAdminApi<any[]>();
+  const { loading: loadingStaff, execute: executeStaff } = useAdminApi<StaffDetail[]>();
+  const { execute: executeToggle } = useAdminApi<any>();
+  const { loading: updatingClinic, execute: executeUpdate } = useAdminApi<AdminClinic>();
 
-  // Lấy danh sách phòng khám
+  // Lấy danh sách phòng khám từ server
   const fetchClinics = async () => {
-    if (!accessToken) {
-      toast.error(t("messages.noAccessToken", { defaultValue: "Missing access token" }));
-      return;
-    }
-    try {
-      setLoading(true);
-      const response = await axios.get<AdminClinic[]>(`${apiBase}/api/admin/clinics`, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
+    await execute(
+      () => adminApi.clinics.getAll(),
+      {
+        showErrorToast: true,
+        errorMessage: t("messages.loadClinicsFailed", { defaultValue: "Unable to load clinics" }),
+        onSuccess: (data) => {
+          setClinics(data || []);
         },
-      });
-      setClinics(response.data || []);
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        t("messages.loadClinicsFailed", { defaultValue: "Unable to load clinics" });
-      toast.error(message);
-    } finally {
-      setLoading(false);
-    }
+      }
+    );
   };
 
   useEffect(() => {
     fetchClinics();
   }, []);
 
-  // Lấy danh sách nhân viên theo phòng khám và ngày
+  // Lấy danh sách nhân sự của phòng khám theo ngày
   const fetchStaffDetails = async (clinicId: number, date?: string) => {
-    if (!accessToken) {
-      toast.error(t("messages.noAccessToken", { defaultValue: "Missing access token" }));
-      return;
-    }
-    try {
-      setLoadingStaff(true);
-      const url = `${apiBase}/api/admin/clinics/${clinicId}/staff${date ? `?date=${date}` : ""}`;
-      const response = await axios.get<StaffDetail[]>(url, {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
+    await executeStaff(
+      () => adminApi.clinics.getStaffDetails(clinicId, date),
+      {
+        showErrorToast: true,
+        errorMessage: t("messages.loadStaffFailed", { defaultValue: "Unable to load staff details" }),
+        onSuccess: (data) => {
+          setStaffDetails(data || []);
         },
-      });
-      setStaffDetails(response.data || []);
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        t("messages.loadStaffFailed", { defaultValue: "Unable to load staff details" });
-      toast.error(message);
-      setStaffDetails([]);
-    } finally {
-      setLoadingStaff(false);
-    }
+        onError: () => {
+          setStaffDetails([]);
+        },
+      }
+    );
   };
 
-  // Xem chi tiết nhân viên của phòng khám
+  // Xem chi tiết nhân sự của từng phòng khám
   const handleViewDetails = (clinicId: number) => {
     if (expandedClinic === clinicId) {
       setExpandedClinic(null);
@@ -119,7 +108,7 @@ function ClinicManagement() {
     }
   };
 
-  // Khi thay đổi ngày xem nhân sự
+  // Xử lý thay đổi ngày để lọc danh sách nhân sự
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
     if (selectedClinicId) {
@@ -128,47 +117,76 @@ function ClinicManagement() {
   };
 
   // Bật/tắt trạng thái hoạt động của phòng khám
-  const toggleClinic = async (clinic: AdminClinic) => {
-    if (!accessToken) {
-      toast.error(t("messages.noAccessToken", { defaultValue: "Missing access token" }));
-      return;
-    }
-    try {
-      setUpdatingId(clinic.id);
-      await axios.patch(
-        `${apiBase}/api/admin/clinics/${clinic.id}/activation`,
-        { active: !clinic.active },
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      setClinics((prev) =>
-        prev.map((item) =>
-          item.id === clinic.id
-            ? {
-                ...item,
-                active: !clinic.active,
-              }
-            : item
-        )
-      );
-      toast.success(
-        !clinic.active
-          ? t("messages.clinicActivated", { defaultValue: "Clinic activated" })
-          : t("messages.clinicDeactivated", { defaultValue: "Clinic deactivated" })
-      );
-    } catch (error: any) {
-      const message =
-        error?.response?.data?.message ||
-        error?.message ||
-        t("messages.updateClinicFailed", { defaultValue: "Unable to update clinic" });
-      toast.error(message);
-    } finally {
-      setUpdatingId(null);
-    }
+  const toggleClinic = async (clinic: AdminClinicExtended) => {
+    setUpdatingId(clinic.id);
+    await executeToggle(
+      () => adminApi.clinics.updateActivation(clinic.id, !clinic.active),
+      {
+        showErrorToast: true,
+        errorMessage: t("messages.updateClinicFailed", { defaultValue: "Unable to update clinic" }),
+        onSuccess: () => {
+          setClinics((prev) =>
+            prev.map((item) =>
+              item.id === clinic.id
+                ? {
+                    ...item,
+                    active: !clinic.active,
+                  }
+                : item
+            )
+          );
+          // Hiển thị thông báo thành công đã thực hiện ở useAdminApi nếu có
+        },
+      }
+    );
+    setUpdatingId(null);
+  };
+
+  // Mở form chỉnh sửa phòng khám
+  const handleEditClick = (clinic: AdminClinicExtended) => {
+    setEditingClinic(clinic);
+    setEditFormData({
+      clinicCode: clinic.clinicCode || "",
+      clinicName: clinic.clinicName || "",
+      address: clinic.address || "",
+      phone: clinic.phone || "",
+      email: clinic.email || "",
+      openingHours: clinic.openingHours || "",
+    });
+  };
+
+  // Đóng form chỉnh sửa
+  const handleCloseEdit = () => {
+    setEditingClinic(null);
+    setEditFormData({
+      clinicCode: "",
+      clinicName: "",
+      address: "",
+      phone: "",
+      email: "",
+      openingHours: "",
+    });
+  };
+
+  // Cập nhật thông tin phòng khám
+  const handleUpdateClinic = async () => {
+    if (!editingClinic) return;
+
+    await executeUpdate(
+      () => adminApi.clinics.update(editingClinic.id, editFormData),
+      {
+        showErrorToast: true,
+        errorMessage: t("messages.updateClinicFailed", { defaultValue: "Unable to update clinic" }),
+        onSuccess: (data) => {
+          setClinics((prev) =>
+            prev.map((item) =>
+              item.id === editingClinic.id ? { ...item, ...data } : item
+            )
+          );
+          handleCloseEdit();
+        },
+      }
+    );
   };
 
   return (
@@ -183,6 +201,7 @@ function ClinicManagement() {
         </p>
       </div>
 
+      {/* Bảng danh sách phòng khám */}
       <div className="bg-white rounded-lg shadow border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-800">
@@ -265,21 +284,30 @@ function ClinicManagement() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-sm text-right">
-                      <button
-                        onClick={() => toggleClinic(clinic)}
-                        disabled={updatingId === clinic.id}
-                        className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded border transition ${
-                          clinic.active
-                            ? "text-red-600 border-red-200 hover:bg-red-50 disabled:bg-red-50 disabled:text-red-300"
-                            : "text-green-600 border-green-200 hover:bg-green-50 disabled:bg-green-50 disabled:text-green-300"
-                        }`}
-                      >
-                        {updatingId === clinic.id
-                          ? t("actions.updating", { defaultValue: "Updating..." })
-                          : clinic.active
-                          ? t("actions.setInactive", { defaultValue: "Set inactive" })
-                          : t("actions.setActive", { defaultValue: "Set active" })}
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEditClick(clinic)}
+                          className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 border border-blue-200 rounded hover:bg-blue-50 transition"
+                          title={t("actions.edit", { defaultValue: "Edit" })}
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => toggleClinic(clinic)}
+                          disabled={updatingId === clinic.id}
+                          className={`inline-flex items-center px-3 py-1.5 text-sm font-medium rounded border transition ${
+                            clinic.active
+                              ? "text-red-600 border-red-200 hover:bg-red-50 disabled:bg-red-50 disabled:text-red-300"
+                              : "text-green-600 border-green-200 hover:bg-green-50 disabled:bg-green-50 disabled:text-green-300"
+                          }`}
+                        >
+                          {updatingId === clinic.id
+                            ? t("actions.updating", { defaultValue: "Updating..." })
+                            : clinic.active
+                            ? t("actions.setInactive", { defaultValue: "Set inactive" })
+                            : t("actions.setActive", { defaultValue: "Set active" })}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -289,7 +317,7 @@ function ClinicManagement() {
         </div>
       </div>
 
-      {/* Phần thống kê nhân sự các phòng khám */}
+      {/* Thống kê nhân sự từng phòng khám */}
       <div className="bg-white rounded-lg shadow border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-800">
@@ -361,6 +389,7 @@ function ClinicManagement() {
                     </div>
                   </div>
 
+                  {/* Hiển thị danh sách chi tiết nhân sự của từng phòng khám */}
                   {expandedClinic === clinic.id && (
                     <div className="border-t border-gray-200 bg-gray-50 p-4">
                       {loadingStaff ? (
@@ -452,6 +481,142 @@ function ClinicManagement() {
           )}
         </div>
       </div>
+
+      {/* Modal chỉnh sửa phòng khám */}
+      {editingClinic && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+              <h2 className="text-xl font-semibold text-gray-900">
+                {t("actions.editClinic", { defaultValue: "Edit Clinic" })}
+              </h2>
+              <button
+                onClick={handleCloseEdit}
+                className="text-gray-400 hover:text-gray-600 transition"
+                aria-label={t("actions.close", { defaultValue: "Close" })}
+                title={t("actions.close", { defaultValue: "Close" })}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="px-6 py-4 space-y-4">
+              <div>
+                <label htmlFor="clinicCode" className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("tableHeaders.clinicCode", { defaultValue: "Clinic Code" })} *
+                </label>
+                <input
+                  id="clinicCode"
+                  type="text"
+                  value={editFormData.clinicCode}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, clinicCode: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="clinicName" className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("tableHeaders.clinicName", { defaultValue: "Clinic Name" })} *
+                </label>
+                <input
+                  id="clinicName"
+                  type="text"
+                  value={editFormData.clinicName}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, clinicName: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="address" className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("tableHeaders.address", { defaultValue: "Address" })}
+                </label>
+                <textarea
+                  id="address"
+                  value={editFormData.address}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, address: e.target.value })
+                  }
+                  rows={2}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("tableHeaders.contact", { defaultValue: "Phone" })}
+                  </label>
+                  <input
+                    id="phone"
+                    type="text"
+                    value={editFormData.phone}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, phone: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    {t("tableHeaders.email", { defaultValue: "Email" })}
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    value={editFormData.email}
+                    onChange={(e) =>
+                      setEditFormData({ ...editFormData, email: e.target.value })
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="openingHours" className="block text-sm font-medium text-gray-700 mb-1">
+                  {t("tableHeaders.openingHours", { defaultValue: "Opening Hours" })}
+                </label>
+                <input
+                  id="openingHours"
+                  type="text"
+                  value={editFormData.openingHours}
+                  onChange={(e) =>
+                    setEditFormData({ ...editFormData, openingHours: e.target.value })
+                  }
+                  placeholder="e.g., 7:00 - 18:00"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-end gap-3">
+              <button
+                onClick={handleCloseEdit}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition"
+              >
+                {t("actions.cancel", { defaultValue: "Cancel" })}
+              </button>
+              <button
+                onClick={handleUpdateClinic}
+                disabled={updatingClinic || !editFormData.clinicCode || !editFormData.clinicName}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
+              >
+                {updatingClinic
+                  ? t("actions.updating", { defaultValue: "Updating..." })
+                  : t("actions.save", { defaultValue: "Save" })}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
