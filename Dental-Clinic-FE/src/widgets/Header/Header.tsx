@@ -22,7 +22,7 @@ function Header() {
       ? user.avatarUrl
       : DEFAULT_AVATAR;
 
-  // đọc user từ localStorage
+  // --- LOGIC LOAD USER ---
   const loadUserFromStorage = () => {
     const storedUser = localStorage.getItem("user");
     if (storedUser) setUser(JSON.parse(storedUser));
@@ -32,26 +32,22 @@ function Header() {
   useEffect(() => {
     loadUserFromStorage();
 
-    // Cập nhật khi chuyển tab quay lại hoặc khi app lấy lại focus
     const onFocus = () => loadUserFromStorage();
     window.addEventListener("focus", onFocus);
 
-    // Cập nhật lại trang khi User upload avatar
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
-
-    const handleAvatarUpdate = () => {
-      const updatedUser = localStorage.getItem("user");
-      if (updatedUser) setUser(JSON.parse(updatedUser));
-    };
-
-    // Đồng bộ khi localStorage thay đổi (khác tab)
     const onStorage = (e: StorageEvent) => {
       if (e.key === "user") loadUserFromStorage();
     };
     window.addEventListener("storage", onStorage);
 
-    // Đóng dropdown khi click ra ngoài
+    // --- LẮNG NGHE CÁC SỰ KIỆN CẬP NHẬT ---
+    const handleUserUpdate = () => loadUserFromStorage();
+    
+    // Lắng nghe cả 2 sự kiện: Avatar và Thông tin chung
+    window.addEventListener("avatarUpdated", handleUserUpdate);
+    window.addEventListener("userUpdated", handleUserUpdate); // <--- Sự kiện mới từ MyAccount
+    // --------------------------------------
+
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
       if (!target.closest("#user-dropdown")) setIsDropdownOpen(false);
@@ -59,7 +55,8 @@ function Header() {
     document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      window.removeEventListener("avatarUpdated", handleAvatarUpdate); // Sửa lại: removeEventListener thay vì addEventListener
+      window.removeEventListener("avatarUpdated", handleUserUpdate);
+      window.removeEventListener("userUpdated", handleUserUpdate); // <--- Nhớ remove
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("storage", onStorage);
       document.removeEventListener("mousedown", handleClickOutside);
@@ -69,42 +66,43 @@ function Header() {
   const handleLogout = () => {
     localStorage.removeItem("user");
     localStorage.removeItem("accessToken");
+    localStorage.removeItem("roles");
     setUser(null);
     navigate("/login");
   };
 
   const handleGetInTouch = () => {
     navigate("/booking");
-  }
+  };
 
-  // check role ADMIN
-  const isAdmin = Array.isArray(user?.roles)
-    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_ADMIN" || r.toUpperCase() === "ADMIN")
-    : user?.role?.toUpperCase() === "ADMIN";
+  // --- LOGIC CHECK ROLES ---
+  const roles = Array.isArray(user?.roles) 
+    ? user.roles 
+    : (user?.role ? [user.role] : []);
 
-  // check role RECEPTION
-  const isReception = Array.isArray(user?.roles)
-    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_RECEPTION" || r.toUpperCase() === "RECEPTION")
-    : user?.role?.toUpperCase() === "RECEPTION";
+  const checkRole = (role: string) => {
+    return roles.some((r: string) => r.toString().toUpperCase().replace("ROLE_", "") === role);
+  };
 
-  // check role HR
-  const isHR = Array.isArray(user?.roles)
-    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_HR" || r.toUpperCase() === "HR")
-    : user?.role?.toUpperCase() === "HR";
+  const isAdmin = checkRole("ADMIN");
+  const isHR = checkRole("HR");
+  const isReception = checkRole("RECEPTION");
+  const isUser = checkRole("USER"); // Patient
 
-  // check role USER
-  const isUser = Array.isArray(user?.roles)
-    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_USER" || r.toUpperCase() === "USER")
-    : user?.role?.toUpperCase() === "USER";
+  // Logic: Chỉ hiện link Patient nếu là User VÀ không phải là nhân viên (Admin/HR/Reception)
+  const showPatientLinks = isUser && !isAdmin && !isHR && !isReception;
 
-  // Ẩn "My Attendance" nếu là USER hoặc ADMIN
+  // Logic cũ: Ẩn My Attendance với User & Admin
   const shouldHideMyAttendance = isUser || isAdmin;
 
   const changeLang = async () => {
     const newLang = i18n.language === "en" ? "vi" : "en";
-    await axios.get(`${import.meta.env.VITE_API_URL}/locale?lang=${newLang}`, {
-      withCredentials: true,
-    });
+    try {
+        await axios.get(`${import.meta.env.VITE_API_URL}/locale?lang=${newLang}`, {
+            withCredentials: true,
+        });
+    } catch (e) { console.error(e); }
+    
     await i18n.changeLanguage(newLang);
     localStorage.setItem("lang", newLang);
   };
@@ -146,7 +144,7 @@ function Header() {
             {i18n.language === "en" ? <span>VN</span> : <span>EN</span>}
           </button>
 
-          {/* Notification Bell - chỉ hiển thị khi user đã login */}
+          {/* Notification Bell */}
           {user && <NotificationBell />}
 
           <CartIconButton />
@@ -174,7 +172,8 @@ function Header() {
               </button>
 
               {isDropdownOpen && (
-                <div className="absolute right-0 mt-3 w-56 rounded-xl border border-gray-200 bg-white shadow-lg ring-1 ring-black ring-opacity-5 transition-all duration-200 z-50">
+                <div className="absolute right-0 mt-3 w-64 rounded-xl border border-gray-200 bg-white shadow-lg ring-1 ring-black ring-opacity-5 transition-all duration-200 z-50 overflow-hidden">
+                  
                   <Link
                     to="/my-account"
                     className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
@@ -182,21 +181,31 @@ function Header() {
                     {t("account.myAccount")}
                   </Link>
 
-                  {/* --- MỚI: Link tới Patient Dashboard --- */}
-                  <Link
-                    to="/patient-dashboard"
-                    className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
-                  >
-                    📊 Tổng quan sức khỏe
-                  </Link>
-                  {/* -------------------------------------- */}
+                  {/* --- MENU CHO BỆNH NHÂN (Hiển thị ngay khi nhận được sự kiện userUpdated) --- */}
+                  {showPatientLinks && (
+                    <>
+                        <Link
+                            to="/patient-dashboard"
+                            className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                        >
+                            📊 Tổng quan sức khỏe
+                        </Link>
+                        <Link
+                            to="/my-appointments"
+                            className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                        >
+                            📅 Lịch hẹn của tôi
+                        </Link>
+                        <Link
+                            to="/patient-profile"
+                            className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition border-b border-gray-100"
+                        >
+                            📋 Hồ sơ bệnh án
+                        </Link>
+                    </>
+                  )}
 
-                  <Link
-                    to="/my-appointments"
-                    className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition border-b border-gray-100"
-                  >
-                    📅 Lịch hẹn của tôi
-                  </Link>
+                  {/* --- MENU NHÂN VIÊN --- */}
                   {!shouldHideMyAttendance && (
                     <Link
                       to="/my-attendance"
@@ -213,10 +222,11 @@ function Header() {
                       {t("account.myLeaveRequests")}
                     </Link>
                   )}
+                  
                   {isHR && (
                     <Link
                       to="/hr/dashboard"
-                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition font-semibold"
                     >
                       {t("attendance.hrDashboard", "HR Dashboard")}
                     </Link>
@@ -224,7 +234,7 @@ function Header() {
                   {isAdmin && (
                     <Link
                       to="/admin/dashboard"
-                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition font-semibold"
                     >
                       {t("account.adminDashboard")}
                     </Link>
@@ -232,26 +242,29 @@ function Header() {
                   {isReception && (
                     <Link
                       to="/reception/dashboard"
-                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition font-semibold"
                     >
                       {t("account.receptionDashboard", "Reception Dashboard")}
                     </Link>
                   )}
-                  <button
-                    onClick={handleLogout}
-                    className="block w-full text-left px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#EF4444] transition"
-                  >
-                    {t("auth.logout")}
-                  </button>
+
+                  <div className="border-t border-gray-100 mt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-5 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition font-bold"
+                      >
+                        {t("auth.logout")}
+                      </button>
+                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {/* Get In Touch Button */}
           <button
             onClick={handleGetInTouch}
-            className="group relative inline-flex h-[56px] items-center justify-center rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] px-6 font-bold text-white transition-all duration-300 ease-in-out overflow-hidden">
+            className="hidden md:inline-flex group relative h-[56px] items-center justify-center rounded-full bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] px-6 font-bold text-white transition-all duration-300 ease-in-out overflow-hidden"
+          >
             <div className="absolute right-0 top-0 h-full w-0 bg-[#6699FF] opacity-0 transition-all duration-500 ease-in-out group-hover:w-full group-hover:opacity-80" />
             <span className="relative z-10 flex items-center gap-2">
               {t("cta.getInTouch")}
