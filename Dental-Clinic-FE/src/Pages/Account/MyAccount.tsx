@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate, useLocation } from "react-router-dom"; 
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
 import { toast, ToastContainer } from "react-toastify";
@@ -14,6 +14,7 @@ type UserInfo = {
   username?: string;
   avatarUrl?: string;
   hasPassword?: boolean;
+  roles?: string[]; // Thêm field này để TypeScript không báo lỗi khi merge
 };
 
 function MyAccount() {
@@ -27,7 +28,6 @@ function MyAccount() {
   const API = import.meta.env.VITE_API_URL;
   const DEFAULT_AVATAR = import.meta.env.VITE_DEFAULT_AVATAR_URL || "https://res.cloudinary.com/dchzko3lj/image/upload/v1762616672/default-avatar_brvdfn.png";
 
-  // Logic xác định chế độ "Bắt buộc cập nhật"
   const isForceUpdate = location.state?.forceUpdate || (user && (!user.phone || user.phone.trim() === ""));
 
   useEffect(() => {
@@ -37,10 +37,13 @@ function MyAccount() {
         navigate("/login");
         return;
       }
+
       try {
         const res = await axios.get<UserInfo>(`${API}/api/users/me`, {
           headers: { Authorization: `Bearer ${token}` },
         });
+        
+        // Lưu dữ liệu đầy đủ từ API /me (bao gồm roles, hasPassword...)
         setUser(res.data);
         localStorage.setItem("user", JSON.stringify(res.data));
       } catch (err) {
@@ -50,6 +53,7 @@ function MyAccount() {
         setLoading(false);
       }
     };
+
     fetchUser();
   }, [API, navigate]);
 
@@ -67,7 +71,7 @@ function MyAccount() {
     if (!newAvatar || !user) return;
     const token = localStorage.getItem("accessToken");
     if (!token) {
-      toast.error("Unauthorized");
+      toast.error("Unauthorized: No access token found.");
       return;
     }
     try {
@@ -78,9 +82,14 @@ function MyAccount() {
         formData,
         { headers: { Authorization: `Bearer ${token}`, "Content-Type": "multipart/form-data" } }
       );
+      
+      // --- SỬA LOGIC MERGE ---
+      // Giữ lại toàn bộ thông tin cũ, chỉ cập nhật avatarUrl
       const updatedUser = { ...user, avatarUrl: res.data.avatarUrl };
+      
       setUser(updatedUser);
       localStorage.setItem("user", JSON.stringify(updatedUser));
+      
       window.dispatchEvent(new Event("avatarUpdated"));
       setNewAvatar(null);
       setPreviewUrl(null);
@@ -106,14 +115,30 @@ function MyAccount() {
 
     try {
       const { fullName, email, phone } = user;
+      
+      // API này chỉ trả về thông tin cơ bản, KHÔNG trả về roles
       const { data } = await axios.patch<UserInfo>(
         `${API}/api/users/${user.userId}`,
         { fullName, email, phone },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      setUser(data);
-      localStorage.setItem("user", JSON.stringify(data));
+      // --- SỬA LỖI TẠI ĐÂY ---
+      // 1. Lấy dữ liệu cũ từ localStorage (đang chứa roles, hasPassword, provider...)
+      const oldUserData = JSON.parse(localStorage.getItem("user") || "{}");
+
+      // 2. Gộp (Merge) dữ liệu mới vào dữ liệu cũ
+      // Dữ liệu mới (data) sẽ ghi đè các trường trùng tên (fullName, phone...)
+      // Các trường cũ (roles, hasPassword...) sẽ được giữ nguyên
+      const mergedUser = { ...oldUserData, ...data };
+
+      // 3. Lưu object đã gộp vào state và localStorage
+      setUser(mergedUser);
+      localStorage.setItem("user", JSON.stringify(mergedUser));
+      
+      // 4. Bắn sự kiện để Header cập nhật
+      window.dispatchEvent(new Event("userUpdated")); 
+
       toast.success("Cập nhật hồ sơ thành công!");
 
       if (isForceUpdate) {
@@ -151,41 +176,57 @@ function MyAccount() {
 
             <div>
               <label className="block font-semibold mb-1">Full Name</label>
-              <input type="text" value={user?.fullName || ""} onChange={(e) => setUser((prev) => (prev ? { ...prev, fullName: e.target.value } : prev))} className="w-full p-2 border rounded" />
+              <input
+                type="text"
+                value={user?.fullName || ""}
+                onChange={(e) => setUser((prev) => (prev ? { ...prev, fullName: e.target.value } : prev))}
+                className="w-full p-2 border rounded"
+              />
             </div>
 
             <div>
               <label className="block font-semibold mb-1">Email</label>
-              <input type="email" value={user?.email || ""} disabled className="w-full p-2 border rounded bg-gray-100 text-gray-500 cursor-not-allowed" />
+              <input
+                type="email"
+                value={user?.email || ""}
+                disabled 
+                className="w-full p-2 border rounded bg-gray-100 text-gray-500 cursor-not-allowed"
+              />
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">Phone <span className="text-red-500">*</span></label>
+              <label className="block font-semibold mb-1">
+                Phone <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 value={user?.phone || ""}
                 onChange={(e) => setUser((prev) => (prev ? { ...prev, phone: e.target.value } : prev))}
-                className={`w-full p-2 border rounded ${!user?.phone && isForceUpdate ? "border-red-500 ring-2 ring-red-200" : ""}`}
+                className={`w-full p-2 border rounded ${
+                    !user?.phone && isForceUpdate ? "border-red-500 ring-2 ring-red-200" : ""
+                }`}
                 placeholder="Nhập số điện thoại của bạn"
               />
-              {!user?.phone && isForceUpdate && <p className="text-red-500 text-sm mt-1">Bắt buộc nhập số điện thoại.</p>}
+              {!user?.phone && isForceUpdate && (
+                  <p className="text-red-500 text-sm mt-1">Bắt buộc nhập số điện thoại.</p>
+              )}
             </div>
 
             <p><strong>Username:</strong> {user?.username || "-"}</p>
 
             <div className="flex flex-wrap gap-4 items-center pt-2">
-              <button onClick={handleSaveChanges} className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition font-semibold shadow-md">
+              <button
+                onClick={handleSaveChanges}
+                className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition font-semibold shadow-md"
+              >
                 {isForceUpdate ? "Hoàn tất & Về trang chủ" : "Lưu thay đổi"}
               </button>
               
-              {/* --- SỬA ĐỔI TẠI ĐÂY --- */}
-              {/* Luôn hiện nút, chỉ ẩn khi đang bắt buộc update SĐT */}
               {!isForceUpdate && (
-                <button 
-                    onClick={() => navigate("/change-password")} 
-                    className="px-4 py-2 bg-[#3366FF] text-white rounded hover:bg-[#254EDB] transition"
+                <button
+                  onClick={() => navigate("/change-password")}
+                  className="px-4 py-2 bg-[#3366FF] text-white rounded hover:bg-[#254EDB] transition"
                 >
-                  {/* Hiển thị text linh hoạt */}
                   {user?.hasPassword ? "Đổi mật khẩu" : "Tạo mật khẩu"}
                 </button>
               )}
