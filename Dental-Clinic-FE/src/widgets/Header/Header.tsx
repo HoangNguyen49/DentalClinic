@@ -87,6 +87,11 @@ function Header() {
     ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_RECEPTION" || r.toUpperCase() === "RECEPTION")
     : user?.role?.toUpperCase() === "RECEPTION";
 
+      //check role DOCTOR
+  const isDoctor = Array.isArray(user?.roles)
+    ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_DOCTOR" || r.toUpperCase() === "DOCTOR")
+    : user?.role?.toUpperCase() === "DOCTOR";
+
   // check role HR
   const isHR = Array.isArray(user?.roles)
     ? user.roles.some((r: string) => r.toUpperCase() === "ROLE_HR" || r.toUpperCase() === "HR")
@@ -224,6 +229,14 @@ function Header() {
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
                     >
                       {t("account.receptionDashboard", "Reception Dashboard")}
+                    </Link>
+                  )}
+                  {isDoctor && (
+                    <Link
+                      to="/doctor/dashboard"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
+                    >
+                      {t("account.doctorDashboard", "Doctor Dashboard")}
                     </Link>
                   )}
                   {isAccountant && (

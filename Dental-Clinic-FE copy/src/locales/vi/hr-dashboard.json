@@ -1,0 +1,115 @@
+{
+  "header": {
+    "title": "Bảng Điều Khiển HR",
+    "subtitle": "Quản lý nhân sự, lịch làm việc và báo cáo"
+  },
+  "stats": {
+    "totalEmployees": "Tổng nhân viên",
+    "active": "Đang hoạt động",
+    "inactive": "Không hoạt động",
+    "schedulesThisWeek": "Lịch tuần này",
+    "attendancePresent": "Có Mặt (30 ngày)",
+    "attendanceTotalHours": "Tổng Giờ (30 ngày)"
+  },
+  "quickActions": {
+    "title": "Thao Tác Nhanh",
+    "employeeList": {
+      "title": "Danh sách nhân viên",
+      "description": "Xem và quản lý tất cả nhân viên"
+    },
+    "addNewEmployee": {
+      "title": "Thêm nhân viên mới",
+      "description": "Tạo tài khoản nhân viên mới"
+    },
+    "workScheduleManagement": {
+      "title": "Quản lý lịch làm việc",
+      "description": "Xem và tạo lịch làm việc của bác sĩ"
+    },
+    "createNewSchedule": {
+      "title": "Tạo lịch mới",
+      "description": "Thiết lập lịch làm việc cho tuần mới"
+    },
+    "statisticsReports": {
+      "title": "Thống Kê & Báo Cáo",
+      "description": "Xem báo cáo HR chi tiết"
+    }
+  },
+  "recentEmployees": {
+    "title": "Nhân viên gần đây",
+    "viewAll": "Xem tất cả →",
+    "noEmployees": "Chưa có nhân viên"
+  },
+  "schedules": {
+    "title": "Lịch làm việc tuần này",
+    "viewDetails": "Xem chi tiết →",
+    "noSchedule": "Không có lịch cho tuần này",
+    "createSchedule": "Tạo lịch"
+  },
+  "allocation": {
+    "title": "Phân bổ nhân sự",
+    "byDepartment": "Theo Phòng Ban",
+    "byRole": "Theo Vai Trò",
+    "byClinic": "Theo Cơ Sở"
+  },
+  "status": {
+    "active": "Đang hoạt động",
+    "inactive": "Không hoạt động"
+  },
+  "messages": {
+    "loading": "Đang tải dữ liệu...",
+    "missingApiUrl": "API URL chưa được cấu hình. Vui lòng kiểm tra file .env",
+    "notLoggedIn": "Bạn chưa đăng nhập. Vui lòng đăng nhập lại.",
+    "unableToLoad": "Không thể tải dữ liệu dashboard",
+    "missingApiUrlOrToken": "Thiếu API URL hoặc token",
+    "reloadPage": "Tải lại trang"
+  },
+  "common": {
+    "na": "N/A"
+  },
+  "faceProfileApproval": {
+    "title": "Duyệt yêu cầu cập nhật khuôn mặt chấm công",
+    "subtitle": "Xem và duyệt các yêu cầu cập nhật khuôn mặt từ nhân viên",
+    "searchPlaceholder": "Tìm kiếm theo tên, email, mã nhân viên...",
+    "employee": "Nhân viên",
+    "employeeCode": "Mã",
+    "newImage": "Ảnh mới",
+    "requestDate": "Ngày yêu cầu",
+    "status": "Trạng thái",
+    "actions": "Thao tác",
+    "viewImage": "Xem ảnh",
+    "noImage": "Không có ảnh",
+    "approve": "Duyệt",
+    "reject": "Từ chối",
+    "close": "Đóng",
+    "approveRequest": "Duyệt yêu cầu",
+    "rejectRequest": "Từ chối",
+    "rejectModal": {
+      "title": "Từ chối yêu cầu cập nhật khuôn mặt",
+      "employee": "Nhân viên",
+      "reasonLabel": "Lý do từ chối (tùy chọn)",
+      "reasonPlaceholder": "Nhập lý do từ chối...",
+      "cancel": "Hủy",
+      "confirmReject": "Xác nhận từ chối"
+    },
+    "imageModal": {
+      "title": "Ảnh khuôn mặt mới"
+    },
+    "status": {
+      "pending": "Chờ duyệt",
+      "approved": "Đã duyệt",
+      "rejected": "Đã từ chối"
+    },
+    "messages": {
+      "loading": "Đang tải...",
+      "noRequests": "Không có yêu cầu nào đang chờ duyệt",
+      "noSearchResults": "Không tìm thấy yêu cầu nào",
+      "loadFailed": "Không thể tải danh sách yêu cầu cập nhật khuôn mặt",
+      "approveSuccess": "Đã duyệt yêu cầu cập nhật khuôn mặt thành công",
+      "approveFailed": "Không thể duyệt yêu cầu",
+      "rejectSuccess": "Đã từ chối yêu cầu cập nhật khuôn mặt",
+      "rejectFailed": "Không thể từ chối yêu cầu"
+    },
+    "menuLabel": "Duyệt khuôn mặt"
+  }
+}
+
