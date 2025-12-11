@@ -135,7 +135,11 @@ export const hrApi = {
       return { data: response.data }
     },
     create: async (data: CreateEmployeeRequest) => {
-      const response = await axiosClient.post<{ id: number }>("/api/hr/employees", data)
+      const response = await axiosClient.post<HrEmployee>("/api/hr/employees", data)
+      return { data: response.data }
+    },
+    previewCode: async () => {
+      const response = await axiosClient.get<{ code: string }>("/api/hr/employees/preview-code")
       return { data: response.data }
     },
     restore: async (id: number | string, formData: FormData) => {

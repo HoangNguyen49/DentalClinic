@@ -32,7 +32,21 @@ function CreateEmployeeForm() {
 
   useEffect(() => {
     fetchOptions();
+    fetchPreviewCode();
   }, []);
+
+  // Lấy mã nhân viên preview để hiển thị trong form
+  const fetchPreviewCode = async () => {
+    await executeApi(() => hrApi.employees.previewCode(), {
+      onSuccess: (data: any) => {
+        if (data?.code) {
+          setCode(data.code);
+        }
+      },
+      errorMessage: "Không thể tải mã nhân viên",
+      showErrorToast: false, // Không hiển thị lỗi nếu không load được preview
+    });
+  };
 
   // Lấy dữ liệu các lựa chọn phòng ban, vai trò, phòng khám từ API và lọc dữ liệu không hợp lệ
   const fetchOptions = async () => {
@@ -90,8 +104,8 @@ function CreateEmployeeForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate dữ liệu bắt buộc nhập
-    if (!fullName || !email || !phone || !code || !roleId || !departmentId) {
+    // Validate dữ liệu bắt buộc nhập (code không bắt buộc vì sẽ tự động sinh)
+    if (!fullName || !email || !phone || !roleId || !departmentId) {
       toast.error(t("create.validation.fillRequired"));
       return;
     }
@@ -114,9 +128,9 @@ function CreateEmployeeForm() {
       return;
     }
 
-    // Dữ liệu gửi lên backend
+    // Dữ liệu gửi lên backend (code là optional, backend sẽ tự động sinh nếu không có)
     const employeeRequest: any = {
-      code,
+      ...(code && code.trim() ? { code: code.trim() } : {}), // Chỉ gửi code nếu có
       fullName,
       email,
       phone,
@@ -128,9 +142,22 @@ function CreateEmployeeForm() {
     };
 
     await executeApi(() => hrApi.employees.create(employeeRequest), {
-      onSuccess: () => {
-        toast.success(t("create.messages.createdSuccess"));
-        navigate("/hr/employees");
+      onSuccess: (data: any) => {
+        const employeeCode = data?.code || "N/A";
+        toast.success(
+          <div>
+            <div>{t("create.messages.createdSuccess")}</div>
+            {!code && (
+              <div className="mt-1 text-sm font-semibold">
+                {t("create.messages.employeeCode", "Mã nhân viên")}: <span className="text-blue-600">{employeeCode}</span>
+              </div>
+            )}
+          </div>,
+          { autoClose: 5000 }
+        );
+        setTimeout(() => {
+          navigate("/hr/employees");
+        }, 2000);
       },
       errorMessage: t("create.messages.failedToCreate"),
     });
@@ -184,17 +211,21 @@ function CreateEmployeeForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t("create.form.employeeCode.label")} <span className="text-red-500">*</span>
+                  {t("create.form.employeeCode.label")} <span className="text-gray-500 text-xs">({t("create.form.employeeCode.optional", "Tùy chọn - sẽ tự động sinh nếu để trống")})</span>
                 </label>
                 <input
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  required
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={t("create.form.employeeCode.placeholder")}
+                  placeholder={t("create.form.employeeCode.placeholder", "Để trống để tự động sinh mã SDC_NV...")}
                   aria-label={t("create.form.employeeCode.label")}
                 />
+                {!code && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    {t("create.form.employeeCode.autoGenerate", "Mã nhân viên sẽ được tự động sinh với format SDC_NV{number}")}
+                  </p>
+                )}
               </div>
 
               <div>

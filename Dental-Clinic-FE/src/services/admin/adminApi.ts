@@ -42,8 +42,6 @@ export interface AdminClinic {
   email?: string
   openingHours?: string
   active: boolean
-  activeDoctorsCount?: number
-  activeEmployeesCount?: number
   createdAt?: string
   updatedAt?: string
 }
@@ -111,13 +109,6 @@ export const adminApi = {
   clinics: {
     getAll: async () => {
       const response = await axiosClient.get<AdminClinic[]>("/api/admin/clinics")
-      return { data: response.data }
-    },
-    // Lấy danh sách nhân sự trong phòng khám
-    getStaffDetails: async (clinicId: number, date?: string) => {
-      const response = await axiosClient.get<any[]>(`/api/admin/clinics/${clinicId}/staff`, {
-        params: date ? { date } : undefined,
-      })
       return { data: response.data }
     },
     // Bật/tắt trạng thái phòng khám

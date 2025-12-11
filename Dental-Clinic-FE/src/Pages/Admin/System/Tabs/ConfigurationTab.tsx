@@ -15,11 +15,17 @@ export default function ConfigurationTab() {
         loadConfigs();
     }, []);
 
-    // Lấy toàn bộ cấu hình từ server
+    // Lấy toàn bộ cấu hình từ server (loại bỏ WORKING_HOURS_START và WORKING_HOURS_END vì backend không sử dụng)
     const loadConfigs = async () => {
         try {
             const data = await systemService.getAllConfigs();
-            setConfigs(data);
+            // Filter out WORKING_HOURS_START và WORKING_HOURS_END vì backend không sử dụng
+            const filteredData = data.filter(
+                (config) => 
+                    config.configKey !== "WORKING_HOURS_START" && 
+                    config.configKey !== "WORKING_HOURS_END"
+            );
+            setConfigs(filteredData);
         } catch (error) {
             toast.error("Không thể tải cấu hình");
         } finally {

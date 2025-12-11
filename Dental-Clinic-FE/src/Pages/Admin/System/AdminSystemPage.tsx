@@ -1,23 +1,16 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Settings, Calendar, FileText } from "lucide-react";
-import ConfigurationTab from "./Tabs/ConfigurationTab";
+import { Calendar, FileText } from "lucide-react";
 import HolidaysTab from "./Tabs/HolidaysTab";
 import AuditLogsTab from "./Tabs/AuditLogsTab";
 
 export default function AdminSystemPage() {
     const { t } = useTranslation("admin");
     // State cho tab đang chọn
-    const [activeTab, setActiveTab] = useState<"config" | "holidays" | "logs">("config");
+    const [activeTab, setActiveTab] = useState<"holidays" | "logs">("holidays");
 
     // Danh sách tabs của hệ thống
     const tabs = [
-        {
-            id: "config",
-            label: "Cấu hình chung",
-            icon: Settings,
-            component: <ConfigurationTab />,
-        },
         {
             id: "holidays",
             label: "Ngày nghỉ lễ",

@@ -136,19 +136,19 @@ export const useEmployeeAttendance = (userId: number | undefined, isDoctor: bool
                 if (workDate === today && exp.explanationType === "MISSING_CHECK_OUT") {
                     // Nếu đang trong giờ làm việc (8:00 - 18:00) thì filter out
                     if (currentHour >= 8 && currentHour < 18) {
-                        console.log('[DEBUG] ❌ Filtered out MISSING_CHECK_OUT for today (still working hours: 8:00-18:00)');
+                        console.log('[DEBUG]  Filtered out MISSING_CHECK_OUT for today (still working hours: 8:00-18:00)');
                         return false;
                     } else {
-                        console.log('[DEBUG] ✅ Keeping MISSING_CHECK_OUT for today (outside working hours)');
+                        console.log('[DEBUG]  Keeping MISSING_CHECK_OUT for today (outside working hours)');
                     }
                 }
                 
                 if (exp.userId !== userId) {
-                    console.log('[DEBUG] ❌ Wrong userId');
+                    console.log('[DEBUG]  Wrong userId');
                     return false;
                 }
                 
-                console.log('[DEBUG] ✅ Passed filter');
+                console.log('[DEBUG]  Passed filter');
                 return true;
             });
             console.log('[DEBUG] Filtered explanations count:', filtered.length);
