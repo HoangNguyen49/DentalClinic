@@ -5,7 +5,7 @@ import i18n from "../../app/providers/i18n";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "../NotificationBell";
-import CartIconButton from "../../pages/Product/sections/widgets/CartIconButton.tsx";
+import CartIconButton from "../../Pages/Product/sections/widgets/CartIconButton.tsx";
 
 function Header() {
   const navigate = useNavigate();

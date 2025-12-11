@@ -1,4 +1,4 @@
-import useGetAllProducts from "../GetAllProducts/useGetAllProducts";
+import useGetAllProducts from "./useGetAllProducts";
 import CardProduct from "../widgets/cardProduct";
 import ToolbarProduct from "../widgets/toolbarProduct";
 import PaginationProduct from "../widgets/paginationProduct";

@@ -1,6 +1,6 @@
 import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
-import ContactPage from "../Contact/Contact";
+import ContactPage from "./Contact";
 function Contact(){
 return(
     <>
