@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Eye, MoreVertical, Pencil } from "lucide-react";
+import { PackagePlus, MoreVertical, Edit3, CheckCircle2, XCircle } from "lucide-react";
 
 import { useGetAllProducts } from "./useGetAllProducts";
 import { getProductImageSrc } from "../../../../../../huybro_api/productApi";
-import { formatVNDateTime } from "../../../../../../utils/format";
+import { formatVNDateTime, formatMoney } from "../../../../../../utils/format";
 
 import ProductToolbar from "../../widgets/ProductToolbar";
 import ProductPagination from "../../widgets/ProductPagination";
 
 function GetAllProduct() {
   const navigate = useNavigate();
+
+  // 1. Lấy data và các hàm setter từ Custom Hook
   const {
     products,
     loading,
@@ -22,7 +24,7 @@ function GetAllProduct() {
     setPage,
     setSize,
     keyword,
-    setKeyword,
+    setKeyword, // Hàm này thay đổi sẽ kích hoạt gọi API
     brandFilters,
     setBrandFilters,
     typeFilters,
@@ -37,12 +39,15 @@ function GetAllProduct() {
     typeOptions,
   } = useGetAllProducts();
 
-
+  // 2. State quản lý ô input tìm kiếm (Local State)
   const [searchInput, setSearchInput] = useState(keyword ?? "");
   const [searchParams, setSearchParams] = useSearchParams();
   const [initializedFromUrl, setInitializedFromUrl] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
 
+  // -------------------------------------------------------------------------
+  // LOGIC 1: ĐỒNG BỘ URL -> STATE (Chạy 1 lần khi load trang)
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (initializedFromUrl) return;
 
@@ -77,7 +82,7 @@ function GetAllProduct() {
     if (!Number.isNaN(urlSize)) setSize(urlSize);
 
     setKeyword(urlKeyword);
-    setSearchInput(urlKeyword);
+    setSearchInput(urlKeyword); // Đồng bộ input hiển thị
 
     if (urlBrands.length) setBrandFilters(urlBrands);
     if (urlTypes.length) setTypeFilters(urlTypes);
@@ -108,6 +113,31 @@ function GetAllProduct() {
     setTypeFilters,
   ]);
 
+  // -------------------------------------------------------------------------
+  // LOGIC 2: DEBOUNCE SEARCH (Tự động tìm kiếm sau khi ngừng gõ)
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    // Không chạy khi chưa khởi tạo xong từ URL để tránh overwrite
+    if (!initializedFromUrl) return;
+
+    // Đặt timer 300ms
+    const handler = setTimeout(() => {
+      // Chỉ cập nhật keyword (gọi API) nếu giá trị input khác với keyword hiện tại
+      if (keyword !== searchInput.trim()) {
+        setKeyword(searchInput.trim());
+        setPage(0); // Reset về trang đầu khi tìm kiếm
+      }
+    }, 300);
+
+    // Cleanup: Hủy timer cũ nếu người dùng gõ tiếp trước khi hết 300ms
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchInput, keyword, initializedFromUrl, setKeyword, setPage]);
+
+  // -------------------------------------------------------------------------
+  // LOGIC 3: ĐỒNG BỘ STATE -> URL (Để share link)
+  // -------------------------------------------------------------------------
   useEffect(() => {
     if (!initializedFromUrl) return;
 
@@ -154,9 +184,12 @@ function GetAllProduct() {
     setSearchParams,
   ]);
 
+  // Hàm xử lý khi ấn Enter (Vẫn giữ lại để UX mượt mà nếu người dùng muốn tìm ngay)
   const handleSearch = () => {
-    setKeyword(searchInput.trim());
-    setPage(0);
+    if (keyword !== searchInput.trim()) {
+      setKeyword(searchInput.trim());
+      setPage(0);
+    }
   };
 
   const handleResetFilters = () => {
@@ -173,7 +206,6 @@ function GetAllProduct() {
   const handleFilterChange = () => {
     setPage(0);
   };
-
 
   const handleMinPriceChange = (value: string) => {
     const num = value === "" ? undefined : Number(value);
@@ -198,10 +230,9 @@ function GetAllProduct() {
       <div className="max-w-7xl mx-auto space-y-6">
         <ProductToolbar
           totalElements={totalElements || 0}
-          onAddProduct={() => navigate("create")}
           searchInput={searchInput}
-          onSearchInputChange={setSearchInput}
-          onSearch={handleSearch}
+          onSearchInputChange={setSearchInput} // Cập nhật state input, trigger debounce useEffect
+          onSearch={handleSearch} // Vẫn truyền để hỗ trợ phím Enter
           minPrice={minPrice}
           maxPrice={maxPrice}
           onMinPriceChange={handleMinPriceChange}
@@ -310,19 +341,19 @@ function GetAllProduct() {
                           </td>
 
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
-                            {product.defaultRetailPrice.toLocaleString("en-US")}{" "}
-                            {product.currency}
+                            {formatMoney(product.defaultRetailPrice, product.currency)}
                           </td>
 
-                          <td className="px-4 py-4 whitespace-nowrap">
-                            <span
-                              className={`inline-flex px-2.5 py-0.5 text-xs font-medium rounded-full ${product.isActive
-                                ? "bg-green-100 text-green-700"
-                                : "bg-red-100 text-red-700"
-                                }`}
-                            >
-                              {product.isActive ? "Active" : "Inactive"}
-                            </span>
+                          <td className="px-4 py-4 whitespace-nowrap text-center">
+                            {product.isActive ? (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                <CheckCircle2 className="w-3 h-3 mr-1" /> Active
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+                                <XCircle className="w-3 h-3 mr-1" /> Inactive
+                              </span>
+                            )}
                           </td>
 
                           <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
@@ -339,7 +370,7 @@ function GetAllProduct() {
                               : "-"}
                           </td>
 
-                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
+                          <td className="px-4 py-4 whitespace-nowrap text-sm ">
                             <div className="relative">
                               <button
                                 onClick={() =>
@@ -361,29 +392,27 @@ function GetAllProduct() {
                                     className="fixed inset-0 z-10"
                                     onClick={() => setOpenDropdown(null)}
                                   />
-                                  <div className="absolute right-0 mt-1 w-30 bg-white rounded-lg shadow-lg border border-gray-200 z-20 py-1">
+                                   <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-200 z-20 py-1 origin-top-right animate-in fade-in zoom-in-95 duration-100">
                                     <button
                                       onClick={() => {
-                                        navigate(
-                                          `/accountant/products/${product.productId}`
-                                        );
+                                        navigate(`/accountant/inventory/import?productId=${product.productId}`);
                                         setOpenDropdown(null);
                                       }}
-                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                                    >
-                                      <Eye className="w-4 h-4" />
-                                      View
+                                      className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 transition-colors border-b border-gray-50"
+                                                                >
+                                      <PackagePlus className="w-4 h-4" />
+                                      Import Stock
                                     </button>
                                     <button
                                       onClick={() => {
                                         navigate(
-                                          `update/${product.productId}`
+                                          `product/update/${product.productId}`
                                         );
                                         setOpenDropdown(null);
                                       }}
-                                      className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                                    >
-                                      <Pencil className="w-4 h-4" />
+                                       className="w-full px-4 py-2.5 text-left text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 flex items-center gap-3 transition-colors"
+                                                                >
+                                      <Edit3 className="w-4 h-4" />
                                       Update
                                     </button>
                                   </div>

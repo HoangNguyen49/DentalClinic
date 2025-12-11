@@ -4,10 +4,8 @@ import SockJS from 'sockjs-client';
 import notificationApi, { type NotificationResponse } from '../../services/notificationApi';
 import { getToken, getUser } from '../routes/shared/auth';
 import { toast } from 'react-toastify';
-import { initializeFirebase } from '../../config/firebase';
-import { firestoreNotificationService } from '../../services/firestoreNotificationService';
 
-// Định nghĩa kiểu context thông báo
+// Interface context thông báo (quản lý trạng thái và các hàm xử lý thông báo)
 interface NotificationContextType {
     notifications: NotificationResponse[];
     unreadCount: number;
@@ -24,68 +22,90 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
     const [unreadCount, setUnreadCount] = useState(0);
     const [isConnected, setIsConnected] = useState(false);
-    const [isFirestoreConnected, setIsFirestoreConnected] = useState(false);
     const stompClientRef = useRef<Client | null>(null);
-    const firestoreUnsubscribeRef = useRef<(() => void) | null>(null);
     const user = getUser();
 
-    // Listener mẫu event emitter để các component khác có thể lắng nghe event notification
+    // Danh sách listener được đăng ký để phát event notification realtime giữa các component
     const notificationListenersRef = useRef<Set<(notification: NotificationResponse) => void>>(new Set());
 
-    // Debounce việc sync unreadCount để tránh cập nhật nhiều lần liên tiếp
-    const syncUnreadCountTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-    // Lưu userId phục vụ việc nhận thông báo push và định danh realtime
+    // Lấy userId cho việc lắng nghe notification riêng của user
     const userId = useMemo(() => {
         if (!user) return null;
         return user.userId || user.id || null;
     }, [user?.userId, user?.id]);
 
-    // Hàm lấy số lượng notification chưa đọc (ưu tiên Firestore, fallback SQL)
+    // Hàm lấy số lượng thông báo chưa đọc
     const fetchUnreadCount = useCallback(async () => {
-        try {
-            if (isFirestoreConnected && userId) {
-                const count = await firestoreNotificationService.countUnread(userId);
-                setUnreadCount(count);
-                return;
-            }
-        } catch (error) { }
+        const token = getToken();
+        if (!token) {
+            return;
+        }
         try {
             const response = await notificationApi.countUnread();
             setUnreadCount(response.data);
-        } catch (error) { }
-    }, [isFirestoreConnected, userId]);
+        } catch (error: any) {
+            if (error.response?.status !== 401) {
+                console.error('[Notification] Failed to fetch unread count:', error);
+            }
+        }
+    }, []);
 
-    // Hàm lấy danh sách notification (chỉ dùng khi Firestore không active)
+    // Hàm lấy danh sách thông báo (lọc bỏ audit logs)
     const fetchNotifications = useCallback(async (page = 0, size = 50) => {
-        if (isFirestoreConnected) return;
+        const token = getToken();
+        if (!token) {
+            return;
+        }
         try {
             const response = await notificationApi.getNotifications(page, size);
-            setNotifications(response.data.content);
-        } catch (error) { }
-    }, [isFirestoreConnected]);
+            const filteredNotifications = response.data.content.filter(
+                (n: NotificationResponse) => n.type?.toUpperCase() !== 'AUDIT'
+            );
+            setNotifications(filteredNotifications);
+        } catch (error: any) {
+            if (error.response?.status !== 401) {
+                console.error('[Notification] Failed to fetch notifications:', error);
+            }
+        }
+    }, []);
 
-    // Đánh dấu 1 notification đã đọc
+    // Đánh dấu một thông báo đã đọc
     const markAsRead = async (id: number) => {
+        const token = getToken();
+        if (!token) {
+            return;
+        }
         try {
             await notificationApi.markAsRead(id);
             setNotifications((prev) =>
                 prev.map((n) => (n.notificationId === id ? { ...n, isRead: true } : n))
             );
             setUnreadCount((prev) => Math.max(0, prev - 1));
-        } catch (error) { }
+        } catch (error: any) {
+            if (error.response?.status !== 401) {
+                console.error('[Notification] Failed to mark as read:', error);
+            }
+        }
     };
 
-    // Đánh dấu tất cả notification đã đọc
+    // Đánh dấu tất cả thông báo đã đọc
     const markAllAsRead = async () => {
+        const token = getToken();
+        if (!token) {
+            return;
+        }
         try {
             await notificationApi.markAllAsRead();
             setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
             setUnreadCount(0);
-        } catch (error) { }
+        } catch (error: any) {
+            if (error.response?.status !== 401) {
+                console.error('[Notification] Failed to mark all as read:', error);
+            }
+        }
     };
 
-    // Cho phép các component khác đăng ký nhận event notification push
+    // Đăng ký callback để lắng nghe sự kiện notification mới realtime (quản lý hủy bằng function trả về)
     const onNotificationReceived = useCallback((callback: (notification: NotificationResponse) => void) => {
         notificationListenersRef.current.add(callback);
         return () => {
@@ -93,98 +113,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         };
     }, []);
 
-    // Hàm sync unreadCount dùng debounce để tránh trùng lặp
-    const syncUnreadCountFromServer = useCallback(() => {
-        if (syncUnreadCountTimerRef.current) {
-            clearTimeout(syncUnreadCountTimerRef.current);
-        }
-        syncUnreadCountTimerRef.current = setTimeout(() => {
-            fetchUnreadCount();
-        }, 1000);
-    }, [fetchUnreadCount]);
-
-    // Kết nối realtime đến Firestore, tự động cập nhật notification nếu thành công
-    useEffect(() => {
-        if (!userId) {
-            return;
-        }
-
-        let updateTimer: ReturnType<typeof setTimeout> | null = null;
-        let lastNotificationIds: Set<number> = new Set();
-
-        try {
-            initializeFirebase();
-
-            const unsubscribe = firestoreNotificationService.subscribeToNotifications(
-                userId,
-                (firestoreNotifications) => {
-                    if (firestoreNotifications.length === 0 && lastNotificationIds.size === 0) {
-                        return;
-                    }
-                    const currentIds = new Set(firestoreNotifications.map(n => n.notificationId));
-                    const hasChanged =
-                        currentIds.size !== lastNotificationIds.size ||
-                        [...currentIds].some(id => !lastNotificationIds.has(id));
-                    if (!hasChanged && lastNotificationIds.size > 0) {
-                        return;
-                    }
-                    if (updateTimer) {
-                        clearTimeout(updateTimer);
-                    }
-                    updateTimer = setTimeout(() => {
-                        setIsFirestoreConnected(true);
-                        setNotifications(firestoreNotifications);
-                        const unread = firestoreNotifications.filter(n => !n.isRead).length;
-                        setUnreadCount(unread);
-                        lastNotificationIds = currentIds;
-                    }, 300);
-                },
-                {
-                    limitCount: 50,
-                    onlyUnread: false,
-                }
-            );
-
-            firestoreUnsubscribeRef.current = unsubscribe;
-
-            const fallbackTimer = setTimeout(() => {
-                if (!isFirestoreConnected) {
-                    setIsFirestoreConnected(false);
-                    fetchUnreadCount();
-                    fetchNotifications();
-                }
-            }, 3000);
-
-            return () => {
-                if (updateTimer) {
-                    clearTimeout(updateTimer);
-                }
-                if (fallbackTimer) {
-                    clearTimeout(fallbackTimer);
-                }
-                if (firestoreUnsubscribeRef.current) {
-                    firestoreUnsubscribeRef.current();
-                    firestoreUnsubscribeRef.current = null;
-                }
-                firestoreNotificationService.unsubscribe(userId);
-                setIsFirestoreConnected(false);
-            };
-        } catch (error: any) {
-            setIsFirestoreConnected(false);
-            fetchUnreadCount();
-            fetchNotifications();
-        }
-    }, [userId]);
-
-    // Kết nối WebSocket để nhận push notification (fallback nếu không dùng Firestore)
+    // Kết nối WebSocket để nhận push notification realtime từ server
     useEffect(() => {
         const token = getToken();
         if (!token || !userId) {
             return;
         }
-
-        fetchUnreadCount();
-        fetchNotifications();
 
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
         const baseUrl = apiUrl.replace(/\/+$/, '');
@@ -195,24 +129,27 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             connectHeaders: {
                 Authorization: `Bearer ${token}`,
             },
-            // Tắt hoàn toàn debug logs - không hiển thị STOMP messages trong console
-            // Phải là function, không thể là undefined
-            debug: () => {
-                // Không làm gì cả - tắt hoàn toàn debug logs
+            debug: (str) => {
+                console.log('[WebSocket Debug]:', str);
             },
             onConnect: () => {
                 setIsConnected(true);
-                if (!isFirestoreConnected) {
-                    fetchUnreadCount();
-                    fetchNotifications();
-                }
-                const destination = `/user/${userId}/queue/notifications`;
+                // Khi connect thành công, đồng bộ lại các dữ liệu notification để tránh sót
+                fetchUnreadCount();
+                fetchNotifications();
 
+                // Subcribe tới kênh notification dành riêng cho user hiện tại
+                const destination = `/user/queue/notifications`;
                 client.subscribe(destination, (message: IMessage) => {
                     try {
                         const notification: NotificationResponse = JSON.parse(message.body);
 
-                        // Cập nhật state ngay lập tức khi nhận WebSocket (kể cả khi có Firestore)
+                        // Bỏ qua notification dạng AUDIT
+                        if (notification.type?.toUpperCase() === 'AUDIT') {
+                            return;
+                        }
+
+                        // Thêm notification mới vào đầu danh sách nếu chưa tồn tại (tránh trùng)
                         setNotifications((prev) => {
                             const exists = prev.some(n => n.notificationId === notification.notificationId);
                             if (exists) return prev;
@@ -220,16 +157,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                         });
                         setUnreadCount((prev) => prev + 1);
 
-                        syncUnreadCountFromServer();
-
-                        // Phát event notification tới tất cả listener đã đăng ký
+                        // Phát tới các listener đã đăng ký
                         notificationListenersRef.current.forEach((listener) => {
                             try {
                                 listener(notification);
-                            } catch (error) { }
+                            } catch (error) {}
                         });
 
-                        // Hiện popup thông báo ngay khi nhận
+                        // Thông báo popup nhỏ khi có notification mới
                         try {
                             toast.success(`New Notification: ${notification.title}`, {
                                 position: "top-right",
@@ -239,8 +174,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                                 pauseOnHover: true,
                                 draggable: true,
                             });
-                        } catch (toastError) { }
-                    } catch (error) { }
+                        } catch (toastError) {}
+                    } catch (error) {
+                        console.error('[WebSocket] Error parsing message:', error);
+                    }
                 });
             },
             onDisconnect: () => {
@@ -260,20 +197,18 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         client.activate();
         stompClientRef.current = client;
 
+        // Dọn dẹp khi unmount/kết thúc
         return () => {
             if (stompClientRef.current) {
                 stompClientRef.current.deactivate();
                 stompClientRef.current = null;
             }
-            if (syncUnreadCountTimerRef.current) {
-                clearTimeout(syncUnreadCountTimerRef.current);
-            }
         };
-    }, [userId, isFirestoreConnected, syncUnreadCountFromServer]);
+    }, [userId]);
 
-    // Đồng bộ định kỳ notification mỗi 30s nếu không có realtime Firestore
+    // Đồng bộ lại notifications và số chưa đọc định kỳ mỗi 30s (chống miss sót!) 
     useEffect(() => {
-        if (isFirestoreConnected || !userId) return;
+        if (!userId) return;
         const syncInterval = setInterval(() => {
             fetchUnreadCount();
             fetchNotifications();
@@ -281,8 +216,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return () => {
             clearInterval(syncInterval);
         };
-    }, [isFirestoreConnected, userId, fetchUnreadCount, fetchNotifications]);
+    }, [userId, fetchUnreadCount, fetchNotifications]);
 
+    // Memoize context để tránh re-render không cần thiết
     const contextValue = useMemo(() => ({
         notifications,
         unreadCount,
@@ -300,7 +236,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     );
 };
 
-// Hook lấy context notification cho component
+// Hook sử dụng context notification (bắt buộc phải dùng trong NotificationProvider)
 export const useNotification = () => {
     const context = useContext(NotificationContext);
     if (!context) {

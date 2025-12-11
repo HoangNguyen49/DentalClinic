@@ -3,13 +3,13 @@ import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
-import AttendanceFilters, { AttendanceListFilter } from "./AttendanceFilters";
-import SummaryCards from "./SummaryCards";
+import AttendanceFilters, { AttendanceListFilter } from "../../../components/hr/AttendanceFilters";
+import SummaryCards from "../../../components/hr/AttendanceSummaryCards";
 import MonthlyChart from "./MonthlyChart";
 import DailyAttendanceTable from "./DailyAttendanceTable";
 import MonthlyAttendanceTable from "./MonthlyAttendanceTable";
 import type { MonthlyAttendanceItem } from "./MonthlyAttendanceTable";
-import Pagination from "./Pagination";
+import Pagination from "../../../components/hr/AttendancePagination";
 import * as XLSX from "xlsx";
 import { FiDownload } from "react-icons/fi";
 
@@ -19,10 +19,6 @@ const formatHourValue = (value: number) => {
   return Number.isInteger(rounded) ? rounded.toFixed(0) : rounded.toFixed(1);
 };
 
-const isDoctorRole = (jobTitle?: string) => {
-  const normalized = (jobTitle || "").toLowerCase();
-  return normalized.includes("doctor") || normalized.includes("dentist");
-};
 const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 type DailySummary = {
@@ -75,18 +71,10 @@ type Department = {
 function DailyAttendanceView() {
   const { t } = useTranslation("attendance");
   const [viewMode, setViewMode] = useState<"daily" | "monthly">("daily");
-  const [workDate, setWorkDate] = useState<string>(
-    new Date().toISOString().split("T")[0]
-  );
-  const [selectedYear, setSelectedYear] = useState<number>(
-    new Date().getFullYear()
-  );
-  const [selectedMonth, setSelectedMonth] = useState<number>(
-    new Date().getMonth() + 1
-  );
-  const [selectedDepartment, setSelectedDepartment] = useState<number | null>(
-    null
-  );
+  const [workDate, setWorkDate] = useState<string>(new Date().toISOString().split("T")[0]);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number>(new Date().getMonth() + 1);
+  const [selectedDepartment, setSelectedDepartment] = useState<number | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
   const [dailySummary, setDailySummary] = useState<DailySummary[]>([]);
@@ -96,20 +84,20 @@ function DailyAttendanceView() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadingSummary, setLoadingSummary] = useState(false);
-  
-  // Pagination states
+
+  // phân trang
   const [dailyPage, setDailyPage] = useState(0);
   const [dailySize, setDailySize] = useState(10);
   const [dailyTotalPages, setDailyTotalPages] = useState(0);
   const [dailyTotalElements, setDailyTotalElements] = useState(0);
-  
+
   const [monthlyPage, setMonthlyPage] = useState(0);
   const [monthlySize, setMonthlySize] = useState(10);
   const [monthlyTotalPages, setMonthlyTotalPages] = useState(0);
   const [monthlyTotalElements, setMonthlyTotalElements] = useState(0);
   const [exporting, setExporting] = useState(false);
-  
-  // Previous day data for comparison
+
+  // lưu dữ liệu tổng kết ngày trước để so sánh dashboard
   const [previousDailySummary, setPreviousDailySummary] = useState<DailySummary[]>([]);
 
   const accessToken = localStorage.getItem("accessToken");
@@ -119,16 +107,15 @@ function DailyAttendanceView() {
   }, []);
 
   useEffect(() => {
+    // Tải dữ liệu theo viewMode, workDate, bộ lọc
     const loadData = async () => {
       setLoadingSummary(true);
       try {
-        // Always fetch monthly summary for the chart
         await fetchMonthlySummary();
-        
         if (viewMode === "daily") {
           await fetchDailySummary();
           await fetchDailyList();
-          // Fetch previous day for comparison
+          // so sánh với dữ liệu ngày trước đó
           const prevDate = new Date(workDate);
           prevDate.setDate(prevDate.getDate() - 1);
           await fetchPreviousDailySummary(prevDate.toISOString().split("T")[0]);
@@ -139,11 +126,20 @@ function DailyAttendanceView() {
         setLoadingSummary(false);
       }
     };
-    
-    loadData();
-  }, [viewMode, workDate, selectedYear, selectedMonth, selectedDepartment, dailyPage, dailySize, monthlyPage, monthlySize]);
 
-  // Reset page when filters change
+    loadData();
+  }, [
+    viewMode,
+    workDate,
+    selectedYear,
+    selectedMonth,
+    selectedDepartment,
+    dailyPage,
+    dailySize,
+    monthlyPage,
+    monthlySize,
+  ]);
+
   useEffect(() => {
     setDailyPage(0);
   }, [workDate, selectedDepartment]);
@@ -162,14 +158,13 @@ function DailyAttendanceView() {
       );
       setDepartments(response.data || []);
     } catch (err: any) {
-      console.error("Failed to fetch departments:", err);
-      // Set empty array to prevent crashes, but don't show error toast
-      // as this is not critical for the attendance view
-      setDepartments([]);
-      // Only show error if it's not a 403 (forbidden) or 401 (unauthorized)
-      if (err.response?.status !== 403 && err.response?.status !== 401) {
-        // Silently handle - departments filter is optional
+      // Chỉ log lỗi nếu không phải connection refused (backend chưa chạy)
+      if (err.code !== "ERR_NETWORK" && err.code !== "ECONNREFUSED") {
+        console.error("Failed to fetch departments:", err);
+        toast.error(t("messages.failedToLoadDepartments", "Failed to load departments"));
       }
+      // Nếu lỗi thì để bộ lọc department rỗng (không block UI)
+      setDepartments([]);
     }
   };
 
@@ -186,7 +181,6 @@ function DailyAttendanceView() {
     } catch (err: any) {
       toast.error(t("messages.failedToLoadDailySummary"));
       console.error(err);
-      // Don't clear data on error to prevent flickering
     }
   };
 
@@ -238,14 +232,18 @@ function DailyAttendanceView() {
     } catch (err: any) {
       toast.error(t("messages.failedToLoadMonthlySummary"));
       console.error(err);
-      // Don't clear data on error to prevent flickering
     }
   };
 
   const fetchMonthlyList = async () => {
     setLoading(true);
     try {
-      const params: any = { year: selectedYear, month: selectedMonth, page: monthlyPage, size: monthlySize };
+      const params: any = {
+        year: selectedYear,
+        month: selectedMonth,
+        page: monthlyPage,
+        size: monthlySize,
+      };
       if (selectedDepartment) {
         params.departmentId = selectedDepartment;
       }
@@ -288,13 +286,12 @@ function DailyAttendanceView() {
       );
       setPreviousDailySummary(response.data);
     } catch (err: any) {
-      // Silently fail for comparison data
+      // lỗi lấy dữ liệu ngày trước, bỏ qua
       setPreviousDailySummary([]);
     }
   };
 
-
-  // Calculate totals for daily summary
+  // Tính tổng thống kê daily để phục vụ hiển thị dashboard
   const dailyTotals = dailySummary.reduce(
     (acc, item) => ({
       totalEmployees: acc.totalEmployees + item.totalEmployees,
@@ -314,8 +311,7 @@ function DailyAttendanceView() {
     }
   );
 
-
-  // Filter lists by search term
+  // lọc tìm kiếm tên nhân viên cho table
   const filteredDailyList = dailyList.filter((item) =>
     item.employeeName.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -323,6 +319,7 @@ function DailyAttendanceView() {
     item.employeeName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // export file thống kê tháng
   const handleExportMonthly = useCallback(() => {
     if (!filteredMonthlyList.length) {
       toast.warn(t("messages.exportNoData", "No monthly attendance to export"));
@@ -331,12 +328,20 @@ function DailyAttendanceView() {
 
     try {
       setExporting(true);
-      const startLabel = new Date(selectedYear, selectedMonth - 1, 1).toLocaleDateString(undefined, {
+      const startLabel = new Date(
+        selectedYear,
+        selectedMonth - 1,
+        1
+      ).toLocaleDateString(undefined, {
         day: "2-digit",
         month: "short",
         year: "numeric",
       });
-      const endLabel = new Date(selectedYear, selectedMonth, 0).toLocaleDateString(undefined, {
+      const endLabel = new Date(
+        selectedYear,
+        selectedMonth,
+        0
+      ).toLocaleDateString(undefined, {
         day: "2-digit",
         month: "short",
         year: "numeric",
@@ -367,15 +372,14 @@ function DailyAttendanceView() {
       };
 
       const sheetData = filteredMonthlyList.map((item, index) => {
-        // Sử dụng cùng logic format như trong bảng - luôn hiển thị theo giờ
+        // lấy giá trị giờ công cho export
         let display: string;
         if (item.totalWorkedDisplay) {
-          // Ưu tiên sử dụng totalWorkedDisplay từ backend
           display = item.totalWorkedDisplay;
         } else {
-          // Fallback: tính từ totalWorkedHours và totalWorkedMinutes
           const totalMinutes =
-            (item.totalWorkedHours || 0) * 60 + (item.totalWorkedMinutes || 0);
+            (item.totalWorkedHours || 0) * 60 +
+            (item.totalWorkedMinutes || 0);
           const workedHours = totalMinutes / 60;
           display = `${formatHourValue(workedHours)} h`;
         }
@@ -384,12 +388,15 @@ function DailyAttendanceView() {
           "#": index + 1,
           [employeeLabel]: item.employeeName,
           [jobLabel]: item.jobTitle || "",
-          [t("table.actualWorkedDays", "Số ngày đi làm")]: (item.actualWorkedDays ?? item.workingDays) ?? 0,
+          [t("table.actualWorkedDays", "Số ngày đi làm")]:
+            (item.actualWorkedDays ?? item.workingDays) ?? 0,
           [leaveLabel]: item.leaveDays || 0,
           [absentLabel]: item.absentDays || 0,
           [lateLabel]: item.lateDays || 0,
-          [t("table.totalLateMinutes", "Tổng phút trễ")]: formatMinutes(item.totalLateMinutes || 0),
-          [t("table.totalEarlyMinutes", "Tổng phút sớm")]: formatMinutes(item.totalEarlyMinutes || 0),
+          [t("table.totalLateMinutes", "Tổng phút trễ")]:
+            formatMinutes(item.totalLateMinutes || 0),
+          [t("table.totalEarlyMinutes", "Tổng phút sớm")]:
+            formatMinutes(item.totalEarlyMinutes || 0),
           [monthlyLabel]: display,
         };
       });
@@ -398,8 +405,14 @@ function DailyAttendanceView() {
       XLSX.utils.sheet_add_aoa(
         worksheet,
         [
-          [t("table.exportRange", "Period"), `${startLabel} - ${endLabel}`],
-          [t("table.workingDaysExSunday", "Working days (no Sundays)"), workingDaysExSunday],
+          [
+            t("table.exportRange", "Period"),
+            `${startLabel} - ${endLabel}`,
+          ],
+          [
+            t("table.workingDaysExSunday", "Working days (no Sundays)"),
+            workingDaysExSunday,
+          ],
           [""],
         ],
         { origin: "A1" }
@@ -411,7 +424,9 @@ function DailyAttendanceView() {
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `monthly-attendance-${selectedYear}-${String(selectedMonth).padStart(2, "0")}.csv`;
+      link.download = `monthly-attendance-${selectedYear}-${String(
+        selectedMonth
+      ).padStart(2, "0")}.csv`;
       link.click();
       URL.revokeObjectURL(url);
       toast.success(
@@ -425,14 +440,9 @@ function DailyAttendanceView() {
     } finally {
       setExporting(false);
     }
-  }, [
-    filteredMonthlyList,
-    selectedMonth,
-    selectedYear,
-    t,
-  ]);
+  }, [filteredMonthlyList, selectedMonth, selectedYear, t]);
 
-  // Check which columns have real data (not empty/null/default values) - only for daily view
+  // xác định table có column nào không trống ở chế độ daily không
   const hasShift = viewMode === "daily" && filteredDailyList.some(
     (item) => item.shiftDisplay && item.shiftDisplay.trim() !== ""
   );
@@ -445,8 +455,7 @@ function DailyAttendanceView() {
     (item) => item.remarks && item.remarks.trim() !== "" && item.remarks !== "Fixed Attendance"
   );
 
-
-  // Calculate summary statistics for cards with useMemo to prevent unnecessary recalculations
+  // thống kê cho dashboard (tính biến động so với ngày trước)
   const stats = useMemo(() => {
     const totalEmployees = dailyTotals.totalEmployees;
     const todayPresents = dailyTotals.totalPresent;
@@ -455,7 +464,6 @@ function DailyAttendanceView() {
     const todayLeaves = dailyTotals.totalLeave;
     const todayOffdays = dailyTotals.totalOffday;
 
-    // Calculate comparison with previous day
     const prevTotalPresent = previousDailySummary.reduce((sum, item) => sum + item.present, 0);
     const prevTotalLate = previousDailySummary.reduce((sum, item) => sum + item.late, 0);
     const prevTotalAbsent = previousDailySummary.reduce((sum, item) => sum + item.absent, 0);
@@ -497,7 +505,7 @@ function DailyAttendanceView() {
     <div className="p-6 space-y-6">
       <ToastContainer position="top-right" autoClose={3000} />
       
-      {/* Header Filter */}
+      {/* lọc đầu trang */}
       <AttendanceFilters
         viewMode={viewMode}
         workDate={workDate}
@@ -508,17 +516,17 @@ function DailyAttendanceView() {
         onMonthChange={setSelectedMonth}
       />
 
-      {/* Summary Cards Section */}
+      {/* thống kê thẻ */}
       <SummaryCards stats={stats} loadingSummary={loadingSummary} />
 
-      {/* Monthly Statistics Chart Section */}
+      {/* biểu đồ thống kê tháng */}
       <MonthlyChart 
         monthlySummary={monthlySummary} 
         loading={loading} 
         loadingSummary={loadingSummary} 
       />
 
-      {/* Attendance List Section */}
+      {/* danh sách chấm công */}
       <div className={`bg-white rounded-lg shadow-md p-6 transition-opacity duration-300 ${loading ? 'opacity-50' : 'opacity-100'}`}>
         <AttendanceListFilter
           viewMode={viewMode}
@@ -588,4 +596,3 @@ function DailyAttendanceView() {
 }
 
 export default DailyAttendanceView;
-

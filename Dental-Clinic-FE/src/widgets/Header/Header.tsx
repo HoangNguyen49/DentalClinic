@@ -5,7 +5,7 @@ import i18n from "../../app/providers/i18n";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "../NotificationBell";
-import CartIconButton from "../../Pages/Product/sections/widgets/CartIconButton.tsx";
+import CartIconButton from "../../Pages/Product/sections/widgets/CartIconButton"; // Fix import path (xóa .tsx)
 
 function Header() {
   const navigate = useNavigate();
@@ -45,8 +45,7 @@ function Header() {
     
     // Lắng nghe cả 2 sự kiện: Avatar và Thông tin chung
     window.addEventListener("avatarUpdated", handleUserUpdate);
-    window.addEventListener("userUpdated", handleUserUpdate); // <--- Sự kiện mới từ MyAccount
-    // --------------------------------------
+    window.addEventListener("userUpdated", handleUserUpdate);
 
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement;
@@ -56,7 +55,7 @@ function Header() {
 
     return () => {
       window.removeEventListener("avatarUpdated", handleUserUpdate);
-      window.removeEventListener("userUpdated", handleUserUpdate); // <--- Nhớ remove
+      window.removeEventListener("userUpdated", handleUserUpdate);
       window.removeEventListener("focus", onFocus);
       window.removeEventListener("storage", onStorage);
       document.removeEventListener("mousedown", handleClickOutside);
@@ -87,13 +86,15 @@ function Header() {
   const isAdmin = checkRole("ADMIN");
   const isHR = checkRole("HR");
   const isReception = checkRole("RECEPTION");
+  const isDoctor = checkRole("DOCTOR"); // [CỦA LONG]
+  const isAccountant = checkRole("ACCOUNTANT"); // [CỦA LONG]
   const isUser = checkRole("USER"); // Patient
 
-  // Logic: Chỉ hiện link Patient nếu là User VÀ không phải là nhân viên (Admin/HR/Reception)
-  const showPatientLinks = isUser && !isAdmin && !isHR && !isReception;
+  // Logic: Chỉ hiện link Patient nếu là User VÀ không phải là nhân viên
+  const showPatientLinks = isUser && !isAdmin && !isHR && !isReception && !isDoctor && !isAccountant;
 
-  // Logic cũ: Ẩn My Attendance với User & Admin
-  const shouldHideMyAttendance = isUser || isAdmin;
+  // Logic: Ẩn My Attendance với User & Admin (Nhưng hiện cho HR, Doctor, Reception, Accountant)
+  const shouldHideMyAttendance = showPatientLinks || isAdmin;
 
   const changeLang = async () => {
     const newLang = i18n.language === "en" ? "vi" : "en";
@@ -181,7 +182,7 @@ function Header() {
                     {t("account.myAccount")}
                   </Link>
 
-                  {/* --- MENU CHO BỆNH NHÂN (Hiển thị ngay khi nhận được sự kiện userUpdated) --- */}
+                  {/* --- MENU CHO BỆNH NHÂN (User thường) --- */}
                   {showPatientLinks && (
                     <>
                         <Link
@@ -245,6 +246,22 @@ function Header() {
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition font-semibold"
                     >
                       {t("account.receptionDashboard", "Reception Dashboard")}
+                    </Link>
+                  )}
+                  {isDoctor && (
+                    <Link
+                      to="/doctor/dashboard"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition font-semibold"
+                    >
+                      {t("account.doctorDashboard", "Doctor Dashboard")}
+                    </Link>
+                  )}
+                  {isAccountant && (
+                    <Link
+                      to="/accountant"
+                      className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition font-semibold"
+                    >
+                      {t("account.accountantDashboard", "Accountant Dashboard")}
                     </Link>
                   )}
 

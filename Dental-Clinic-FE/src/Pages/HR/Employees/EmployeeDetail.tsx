@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import axios from "axios";
+import { hrApi } from "../../../services/hr/hrApi";
+import type { HrEmployee } from "../../../services/hr/hrApi";
+import { useHrApi } from "../../../hooks/useHrApi";
 import {
   ArrowLeft,
   User,
@@ -9,39 +11,16 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
 
-type Employee = {
-  id: number;
-  code: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  username: string;
-  avatarUrl?: string;
-  isActive: boolean;
-  department?: { id: number; departmentName: string };
-  role?: { id: number; roleName: string };
-  clinic?: { id: number; clinicName: string };
-  roleAtClinic?: string;
-  specialty?: string; 
-  specialties?: string[]; 
-  doctorSpecialties?: Array<{ id: number; specialtyName: string; isActive: boolean }>; // From DoctorSpecialties table
-  room?: { id: number; roomName: string; clinicId?: number; clinicName?: string };
-  createdAt?: string;
-  updatedAt?: string;
-  lastLoginAt?: string;
-};
-
+// Hiển thị thông tin chi tiết nhân viên
 function EmployeeDetail() {
   const { t, i18n } = useTranslation("employees");
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
-  const accessToken = localStorage.getItem("accessToken");
 
-  const [employee, setEmployee] = useState<Employee | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [employee, setEmployee] = useState<HrEmployee | null>(null);
   const [avatarError, setAvatarError] = useState(false);
-  const [toggling, setToggling] = useState(false);
+  const { execute: executeApi, loading } = useHrApi<any>();
 
   useEffect(() => {
     if (id) {
@@ -49,43 +28,25 @@ function EmployeeDetail() {
     }
   }, [id]);
 
+  // Lấy dữ liệu chi tiết nhân viên
   const fetchEmployeeDetail = async () => {
-    if (!accessToken || !apiBase || !id) {
-      toast.error(t("detail.pleaseLogin"));
-      setLoading(false);
-      return;
-    }
+    if (!id) return;
 
-    setLoading(true);
-    try {
-      const response = await axios.get<Employee>(
-        `${apiBase}/api/hr/employees/${id}`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
-      setEmployee(response.data);
-      setAvatarError(false);
-    } catch (err: any) {
-      console.error("Error fetching employee:", err);
-      let errorMsg = t("detail.cannotLoad");
-
-      if (err?.response?.data) {
-        const errorData = err.response.data;
-        errorMsg = errorData.message || errorData.error || errorMsg;
-      } else if (err?.message) {
-        errorMsg = err.message;
-      }
-
-      toast.error(errorMsg);
-      setTimeout(() => {
-        navigate("/hr/employees");
-      }, 2000);
-    } finally {
-      setLoading(false);
-    }
+    await executeApi(() => hrApi.employees.getById(id), {
+      onSuccess: (data: any) => {
+        setEmployee(data as HrEmployee);
+        setAvatarError(false);
+      },
+      onError: () => {
+        setTimeout(() => {
+          navigate("/hr/employees");
+        }, 2000);
+      },
+      errorMessage: t("detail.cannotLoad"),
+    });
   };
 
+  // Định dạng ngày theo ngôn ngữ
   const formatDate = (dateString?: string) => {
     if (!dateString) return t("common.na");
     try {
@@ -100,55 +61,36 @@ function EmployeeDetail() {
     }
   };
 
+  // Xử lý bật/tắt trạng thái tài khoản nhân viên
   const handleToggleStatus = async () => {
-    if (!accessToken || !apiBase || !id || !employee) return;
+    if (!id || !employee) return;
 
     const newStatus = !employee.isActive;
-    const action = newStatus ? t("detail.actions.activate", "activate") : t("detail.actions.deactivate", "deactivate");
-    const confirmMessage = t("detail.actions.confirmToggle", "Are you sure you want to {{action}} {{name}}'s account?", {
+    const action = newStatus ? t("detail.actions.activate") : t("detail.actions.deactivate");
+    const confirmMessage = t("detail.actions.confirmToggle", {
       action,
       name: employee.fullName
     });
-    
+
     if (!window.confirm(confirmMessage)) return;
 
-    const reason = prompt(t("detail.actions.reason", "Please enter a reason:"));
+    const reason = prompt(t("detail.actions.reason"));
     if (!reason || reason.trim() === "") {
-      toast.warning(t("detail.actions.reasonRequired", "Reason is required"));
+      toast.warning(t("detail.actions.reasonRequired"));
       return;
     }
 
-    setToggling(true);
-    try {
-      const response = await axios.put<Employee>(
-        `${apiBase}/api/hr/employees/${id}/toggle-status`,
-        null,
-        {
-          params: {
-            isActive: newStatus,
-            reason: reason.trim(),
-          },
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-      setEmployee(response.data);
-      toast.success(
-        newStatus
-          ? t("detail.actions.activated", "Account activated successfully")
-          : t("detail.actions.deactivated", "Account deactivated successfully")
-      );
-    } catch (err: any) {
-      console.error("Error toggling status:", err);
-      let errorMsg = t("detail.actions.toggleFailed", "Failed to toggle account status");
-      if (err?.response?.data?.message) {
-        errorMsg = err.response.data.message;
-      }
-      toast.error(errorMsg);
-    } finally {
-      setToggling(false);
-    }
+    await executeApi(() => hrApi.employees.toggleStatus(id, newStatus, reason.trim()), {
+      onSuccess: (data: any) => {
+        setEmployee(data as HrEmployee);
+        toast.success(
+          newStatus
+            ? t("detail.actions.activated")
+            : t("detail.actions.deactivated")
+        );
+      },
+      errorMessage: t("detail.actions.toggleFailed"),
+    });
   };
 
   if (loading) {
@@ -171,7 +113,7 @@ function EmployeeDetail() {
     <>
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="min-h-screen bg-gray-50">
-        {/* Header with Back Button and Title */}
+        {/* Header: Quay lại danh sách và tiêu đề */}
         <div className="bg-white border-b border-gray-200 px-6 py-4">
           <button
             onClick={() => navigate("/hr/employees")}
@@ -186,10 +128,10 @@ function EmployeeDetail() {
           </h1>
         </div>
 
-        {/* Main Content */}
+        {/* Nội dung chính */}
         <div className="max-w-7xl mx-auto px-6 py-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Left Column - Profile Card */}
+            {/* Thông tin bên trái (thẻ profile) */}
             <div className="lg:col-span-1">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 {/* Avatar */}
@@ -208,19 +150,19 @@ function EmployeeDetail() {
                   </div>
                 </div>
 
-                {/* Name */}
+                {/* Họ tên nhân viên */}
                 <h2 className="text-2xl font-bold text-gray-900 text-center mb-3">
                   {employee.fullName}
                 </h2>
 
-                {/* Role Badge */}
+                {/* Badge chức vụ */}
                 <div className="flex justify-center mb-6">
                   <span className="inline-flex px-4 py-1 rounded-full text-sm font-medium bg-blue-500 text-white">
                     {(employee.role as any)?.roleName || t("detail.employee")}
                   </span>
                 </div>
 
-                {/* Key Info Boxes */}
+                {/* Các box thông tin quan trọng */}
                 <div className="space-y-3">
                   {employee.roleAtClinic && (
                     <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
@@ -264,17 +206,18 @@ function EmployeeDetail() {
                   )}
                   {(() => {
                     const roleName = (employee.role as any)?.roleName || "";
+                    // Kiểm tra là bác sĩ
                     const isDoctor = roleName && (
                       roleName.toUpperCase().includes("DOCTOR") ||
                       roleName.toUpperCase().includes("BÁC SĨ")
                     );
-                    
-                    // Bác sĩ: hiển thị TOÀN BỘ specialties và room
+
+                    // Nếu là bác sĩ => hiển thị toàn bộ chuyên khoa và phòng
                     if (isDoctor) {
-                      // Thu thập TẤT CẢ chuyên khoa từ nhiều nguồn
+                      // Tổng hợp tất cả chuyên khoa từ các nguồn
                       const allSpecialties = new Set<string>();
-                      
-                      // 1. Từ array specialties
+
+                      // Từ mảng specialties
                       if (employee.specialties && Array.isArray(employee.specialties)) {
                         employee.specialties.forEach((spec: string) => {
                           if (spec && spec.trim()) {
@@ -282,13 +225,13 @@ function EmployeeDetail() {
                           }
                         });
                       }
-                      
-                      // 2. Từ field specialty (single value - legacy)
+
+                      // Từ trường specialty (kiểu legacy, đơn lẻ)
                       if (employee.specialty && employee.specialty.trim()) {
                         allSpecialties.add(employee.specialty.trim());
                       }
-                      
-                      // 3. Từ doctorSpecialties array (từ bảng DoctorSpecialties)
+
+                      // Từ mảng doctorSpecialties (danh mục bác sĩ - chuyên khoa)
                       if (employee.doctorSpecialties && Array.isArray(employee.doctorSpecialties)) {
                         employee.doctorSpecialties.forEach((ds: any) => {
                           const specName = ds.specialtyName || ds.specialty || ds.name;
@@ -297,9 +240,9 @@ function EmployeeDetail() {
                           }
                         });
                       }
-                      
+
                       const specialtiesList = Array.from(allSpecialties);
-                      
+
                       return (
                         <>
                           {specialtiesList.length > 0 && (
@@ -329,8 +272,8 @@ function EmployeeDetail() {
                         </>
                       );
                     }
-                    
-                    // Nhân viên khác: hiển thị clinic
+
+                    // Nếu không phải bác sĩ, hiển thị phòng khám
                     if (employee.clinic) {
                       const clinic = employee.clinic as any;
                       return (
@@ -342,122 +285,120 @@ function EmployeeDetail() {
                         </div>
                       );
                     }
-                    
+
                     return null;
                   })()}
                 </div>
               </div>
             </div>
 
-            {/* Right Column - Content */}
+            {/* Nội dung bên phải */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                {/* Content */}
+                {/* Nội dung chi tiết */}
                 <div className="p-6">
                   <div className="space-y-6">
-                      {/* Personal Data Section */}
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xl font-bold text-gray-900">
-                            {t("detail.sections.personalData")}
-                          </h3>
-                        </div>
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Thông tin cá nhân */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-gray-900">
+                          {t("detail.sections.personalData")}
+                        </h3>
+                      </div>
+                      <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              {t("detail.fields.fullName")}
+                            </label>
+                            <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                              <span className="text-sm font-medium text-gray-900">
+                                {employee.fullName || t("common.na")}
+                              </span>
+                            </div>
+                          </div>
+                          {employee.username && (
                             <div>
                               <label className="text-xs text-gray-500 mb-1 block">
-                                {t("detail.fields.fullName")}
+                                {t("detail.fields.username")}
                               </label>
                               <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                 <span className="text-sm font-medium text-gray-900">
-                                  {employee.fullName || t("common.na")}
+                                  {employee.username}
                                 </span>
                               </div>
                             </div>
-                            {employee.username && (
-                              <div>
-                                <label className="text-xs text-gray-500 mb-1 block">
-                                  {t("detail.fields.username")}
-                                </label>
-                                <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-                                  <span className="text-sm font-medium text-gray-900">
-                                    {employee.username}
-                                  </span>
-                                </div>
+                          )}
+                          {employee.code && (
+                            <div>
+                              <label className="text-xs text-gray-500 mb-1 block">
+                                {t("detail.fields.employeeCode")}
+                              </label>
+                              <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                                <span className="text-sm font-medium text-gray-900">
+                                  {employee.code}
+                                </span>
                               </div>
-                            )}
-                            {employee.code && (
-                              <div>
-                                <label className="text-xs text-gray-500 mb-1 block">
-                                  {t("detail.fields.employeeCode")}
-                                </label>
-                                <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-                                  <span className="text-sm font-medium text-gray-900">
-                                    {employee.code}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                            </div>
+                          )}
                         </div>
                       </div>
+                    </div>
 
-                      {/* Actions Section */}
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xl font-bold text-gray-900">{t("detail.sections.actions", "Actions")}</h3>
-                        </div>
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                          <div className="flex gap-3">
-                            <button
-                              onClick={handleToggleStatus}
-                              disabled={loading || toggling}
-                              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                                employee.isActive
-                                  ? "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
-                                  : "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
+                    {/* Thao tác (bật/tắt tài khoản) */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-gray-900">{t("detail.sections.actions")}</h3>
+                      </div>
+                      <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="flex gap-3">
+                          <button
+                            onClick={handleToggleStatus}
+                            disabled={loading}
+                            className={`px-4 py-2 rounded-lg font-medium transition-colors ${employee.isActive
+                              ? "bg-red-50 text-red-700 hover:bg-red-100 border border-red-200"
+                              : "bg-green-50 text-green-700 hover:bg-green-100 border border-green-200"
                               } disabled:opacity-50 disabled:cursor-not-allowed`}
-                            >
-                              {toggling
-                                ? t("detail.actions.processing", "Processing...")
-                                : employee.isActive
-                                ? t("detail.actions.deactivate", "Deactivate Account")
-                                : t("detail.actions.activate", "Activate Account")}
-                            </button>
-                          </div>
+                          >
+                            {loading
+                              ? t("detail.actions.processing")
+                              : employee.isActive
+                                ? t("detail.actions.deactivateAccount")
+                                : t("detail.actions.activateAccount")}
+                          </button>
                         </div>
                       </div>
+                    </div>
 
-                      {/* Contact Section */}
-                      <div>
-                        <div className="flex items-center justify-between mb-4">
-                          <h3 className="text-xl font-bold text-gray-900">{t("detail.sections.contact")}</h3>
-                        </div>
-                        <div className="bg-white rounded-lg border border-gray-200 p-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Thông tin liên hệ */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-gray-900">{t("detail.sections.contact")}</h3>
+                      </div>
+                      <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-xs text-gray-500 mb-1 block">
+                              {t("detail.fields.email")}
+                            </label>
+                            <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
+                              <span className="text-sm font-medium text-gray-900">
+                                {employee.email || t("common.na")}
+                              </span>
+                            </div>
+                          </div>
+                          {employee.phone && (
                             <div>
                               <label className="text-xs text-gray-500 mb-1 block">
-                                {t("detail.fields.email")}
+                                {t("detail.fields.phone")}
                               </label>
                               <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
                                 <span className="text-sm font-medium text-gray-900">
-                                  {employee.email || t("common.na")}
+                                  {employee.phone}
                                 </span>
                               </div>
                             </div>
-                            {employee.phone && (
-                              <div>
-                                <label className="text-xs text-gray-500 mb-1 block">
-                                  {t("detail.fields.phone")}
-                                </label>
-                                <div className="bg-gray-50 rounded-lg px-3 py-2 border border-gray-200">
-                                  <span className="text-sm font-medium text-gray-900">
-                                    {employee.phone}
-                                  </span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -467,6 +408,7 @@ function EmployeeDetail() {
             </div>
           </div>
         </div>
+      </div>
     </>
   );
 }

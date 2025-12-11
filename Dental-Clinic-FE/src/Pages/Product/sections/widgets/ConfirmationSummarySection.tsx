@@ -1,6 +1,7 @@
 // src/Pages/Product/widgets/ConfirmationSummarySection.tsx
 import { Lock } from "lucide-react";
 import type { CheckoutContactInfoDto } from "../../../../huybro_api/checkoutApi";
+import AddressAutocompleteInput from "./AddressAutocompleteInput";
 
 type CheckoutFormView = {
   fullName: string;
@@ -52,7 +53,6 @@ export default function ConfirmationSummarySection({
 
   editableForm,
   isLoggedIn = false,
-  paymentMethod,
   fieldErrors,
   globalError,
   onChangeField,
@@ -149,7 +149,6 @@ export default function ConfirmationSummarySection({
     );
   }
 
-  // ========== MODE MỚI: FORM + SUMMARY (Checkout page) ==========
   return (
     <>
       <div className="mt-8 bg-white rounded-lg shadow-lg border border-gray-200 p-6 md:p-8">
@@ -235,21 +234,14 @@ export default function ConfirmationSummarySection({
             />
             {renderFieldError("customerPhone")}
           </div>
-
+          
           {/* Address */}
-          <div className="py-2 ">
-            <div className="flex justify-between items-center mb-1">
-              <span className="text-gray-500">Address</span>
-              <span className="text-xs text-red-500 ml-2">*</span>
-            </div>
-            <input
-              type="text"
-              value={editableForm.address}
-              onChange={(e) => onChangeField("address", e.target.value)}
-              placeholder="Enter your shipping address"
-              className="w-full border-b border-gray-300 rounded-none px-0 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-0 bg-transparent placeholder:text-gray-400 transition-colors"
+          <div className="py-2">
+            <AddressAutocompleteInput 
+              value={editableForm?.address || ""} 
+              onChange={(val) => onChangeField?.("address", val)} 
+              error={renderFieldError("shippingAddress")}
             />
-            {renderFieldError("shippingAddress")}
           </div>
 
           {/* Note */}

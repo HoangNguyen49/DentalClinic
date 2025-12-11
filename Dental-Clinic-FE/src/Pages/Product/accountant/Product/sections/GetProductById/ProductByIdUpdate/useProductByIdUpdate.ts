@@ -11,17 +11,15 @@ import {
     uploadProductImage,
     extractValidationErrors,
     validateProductImagesAi,
-    fetchAllProducts,
+    fetchAllProductsForAccountant, 
 } from '../../../../../../../huybro_api/productApi';
-
 
 type FieldErrors = Record<string, string[]>;
 
 interface ProductUpdateFormImage extends ProductImageUpdateDto {
     file?: File | null;
-    originalImageUrl?: string | null; // ✅ THÊM
+    originalImageUrl?: string | null;
 }
-
 
 interface ProductUpdateForm extends ProductUpdateDto {
     image: ProductUpdateFormImage[];
@@ -42,6 +40,7 @@ function fileToBase64(file: File): Promise<string> {
         reader.readAsDataURL(file);
     });
 }
+
 function buildBase64ImagesFromForm(
     form: ProductUpdateForm,
 ): Promise<ProductImageBase64WithOrder[]> {
@@ -81,7 +80,6 @@ function mapProductToForm(product: Product): ProductUpdateForm {
     };
 }
 
-
 export function useProductByIdUpdate(productId: number | string) {
     const [loading, setLoading] = useState(true);
     const [loadingError, setLoadingError] = useState<string | null>(null);
@@ -98,10 +96,9 @@ export function useProductByIdUpdate(productId: number | string) {
     >(undefined);
 
     const [typeOptions, setTypeOptions] = useState<string[]>([]);
-
     const [aiWarning, setAiWarning] = useState<string | null>(null);
 
-
+    // 1. Load Product Detail
     useEffect(() => {
         let mounted = true;
 
@@ -136,18 +133,30 @@ export function useProductByIdUpdate(productId: number | string) {
         };
     }, [productId]);
 
+    // 2. Load Type Options
     useEffect(() => {
         let ignore = false;
         (async () => {
             try {
-                const all = await fetchAllProducts();
+                // [CHANGED] Use accountant API to get ALL products (active & inactive)
+                // This ensures we get types even if they are only on inactive products
+                const all = await fetchAllProductsForAccountant();
+                
                 if (ignore) return;
 
                 const typeSet = new Set<string>();
+                
+                // Add types from all existing products
                 for (const p of all ?? []) {
                     for (const t of p.typeNames ?? []) {
                         if (t) typeSet.add(t);
                     }
+                }
+
+                // [ADDED] Ensure current product's types are also in the list
+                // This handles cases where the fetchAll might be paginated or have delay issues
+                if (form && form.typeNames) {
+                    form.typeNames.forEach(t => typeSet.add(t));
                 }
 
                 const sorted = Array.from(typeSet).sort((a, b) =>
@@ -164,7 +173,7 @@ export function useProductByIdUpdate(productId: number | string) {
         return () => {
             ignore = true;
         };
-    }, []);
+    }, [form]); // [ADDED] Depend on 'form' so we re-calculate if product loads later
 
     const resetErrors = useCallback(() => {
         setFieldErrors({});
@@ -176,6 +185,7 @@ export function useProductByIdUpdate(productId: number | string) {
         (field: keyof ProductUpdateForm, value: unknown) => {
             setForm((prev) => {
                 if (!prev) return prev;
+                // 'image' is handled by handleImageFileChange
                 if (field === 'image') return prev;
 
                 return {
@@ -218,6 +228,7 @@ export function useProductByIdUpdate(productId: number | string) {
             setUploadingImage(true);
             resetErrors();
             try {
+                // Upload image immediately when selected
                 const res = await uploadProductImage(
                     file,
                     form.sku,
@@ -245,7 +256,6 @@ export function useProductByIdUpdate(productId: number | string) {
         [form, resetErrors],
     );
 
-
     const handleSubmit = useCallback(
         async (e: React.FormEvent) => {
             e.preventDefault();
@@ -256,7 +266,7 @@ export function useProductByIdUpdate(productId: number | string) {
             setSubmitting(true);
 
             try {
-                // 1. Giai đoạn 1: AI validate images (chỉ khi có ảnh mới)
+                // 1. AI validation for new images
                 const base64Images = await buildBase64ImagesFromForm(form);
 
                 if (base64Images.length > 0) {
@@ -290,7 +300,7 @@ export function useProductByIdUpdate(productId: number | string) {
                     }
                 }
 
-                // 2. Giai đoạn 2: DTO validate & update product
+                // 2. Prepare payload
                 const payload: ProductUpdateDto = {
                     sku: form.sku,
                     productName: form.productName,
@@ -311,6 +321,7 @@ export function useProductByIdUpdate(productId: number | string) {
                 };
 
                 await updateProductForAccountant(productId, payload);
+                // Can add success notification here
             } catch (err) {
                 const parsed = extractValidationErrors(err);
                 setFieldErrors(parsed.fieldErrors);
@@ -323,6 +334,9 @@ export function useProductByIdUpdate(productId: number | string) {
         [form, productId, resetErrors],
     );
 
+    const handleCancel = useCallback(() => {
+        window.history.back();
+    }, []);
 
     return {
         form,
@@ -339,5 +353,6 @@ export function useProductByIdUpdate(productId: number | string) {
         handleTypeNamesChange,
         handleImageFileChange,
         handleSubmit,
+        handleCancel,
     };
 }

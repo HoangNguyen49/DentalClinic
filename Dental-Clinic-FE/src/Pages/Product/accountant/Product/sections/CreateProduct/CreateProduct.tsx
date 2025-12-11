@@ -63,13 +63,12 @@ const CreateProduct: React.FC = () => {
         >
           {/* Section 1: Basic info */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900">
-              Product information
-            </h2>
-            <p className="mb-4 text-sm text-gray-500">
-              Basic details used across the system and visible to customers.
-            </p>
-
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
+                1
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900">Product information</h2>
+            </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-1 block text-sm font-medium text-gray-700">
@@ -129,65 +128,80 @@ const CreateProduct: React.FC = () => {
 
           {/* Section 2: Pricing & tax */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900">
-              Pricing & tax
-            </h2>
-            <p className="mb-4 text-sm text-gray-500">
-              Set base unit, price and tax configuration for accounting reports.
-            </p>
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
+                2
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900"> Pricing & tax</h2>
+            </div>
+            {/* --- KHỐI THÔNG BÁO HƯỚNG DẪN --- */}
+            <div className="mb-6 rounded-md bg-blue-50 p-4 border border-blue-200">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-blue-800">
+                    Auto-managed Fields
+                  </h3>
+                  <div className="mt-2 text-sm text-blue-700">
+                    <p>
+                      <strong>Unit</strong>, <strong>Retail Price</strong>, and <strong>Active Status</strong> are initially disabled.
+                      They will be automatically updated and activated when you import stock via the <strong>Inventory</strong> module.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div className="grid gap-4 md:grid-cols-3">
+              {/* UNIT - DISABLED */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Unit
+                <label className="mb-1 block text-sm font-medium text-gray-500">
+                  Unit (Auto)
                 </label>
                 <input
                   type="number"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  disabled // <--- KHÓA
+                  className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-500 shadow-sm" // Style xám
                   value={form.unit}
-                  onChange={(e) => handleChange('unit', Number(e.target.value))}
-                  min={0}
+                // onChange không cần thiết vì disabled
                 />
-                {renderFieldErrors('unit')}
               </div>
 
+              {/* PRICE - DISABLED */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Default retail price
+                <label className="mb-1 block text-sm font-medium text-gray-500">
+                  Default retail price (Auto)
                 </label>
                 <input
                   type="number"
-                  step="0.01"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  disabled // <--- KHÓA
+                  className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-500 shadow-sm"
                   value={form.defaultRetailPrice}
-                  onChange={(e) =>
-                    handleChange(
-                      'defaultRetailPrice',
-                      Number(e.target.value),
-                    )
-                  }
-                  min={0}
                 />
-                {renderFieldErrors('defaultRetailPrice')}
               </div>
 
+              {/* CURRENCY - DISABLED */}
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Currency
+                <label className="mb-1 block text-sm font-medium text-gray-500">
+                  Currency (Auto)
                 </label>
                 <select
-                  className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  disabled // <--- KHÓA
+                  className="w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 px-3 py-2 text-sm text-gray-500 shadow-sm"
                   value={form.currency}
-                  onChange={(e) => handleChange('currency', e.target.value)}
                 >
                   <option value="USD">USD</option>
                   <option value="VND">VND</option>
                 </select>
-                {renderFieldErrors('currency')}
               </div>
             </div>
 
             <div className="mt-4 grid gap-4 md:grid-cols-3">
+              {/* TAXABLE - GIỮ NGUYÊN CHO NHẬP */}
               <div className="flex items-center gap-2">
                 <input
                   id="isTaxable"
@@ -198,14 +212,11 @@ const CreateProduct: React.FC = () => {
                     const checked = e.target.checked;
                     handleChange('isTaxable', checked);
                     if (!checked) {
-                      handleChange('taxCode', null);
+                      handleChange('taxCode', 0); // Về 0 thay vì null để tránh lỗi controlled input
                     }
                   }}
                 />
-                <label
-                  htmlFor="isTaxable"
-                  className="text-sm font-medium text-gray-700"
-                >
+                <label htmlFor="isTaxable" className="text-sm font-medium text-gray-700">
                   Taxable
                 </label>
               </div>
@@ -214,52 +225,46 @@ const CreateProduct: React.FC = () => {
               {form.isTaxable && (
                 <div>
                   <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Tax code
+                    Tax code (%)
                   </label>
                   <input
                     type="number"
                     step="0.1"
                     className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     value={form.taxCode}
-                    onChange={(e) =>
-                      handleChange('taxCode', Number(e.target.value))
-                    }
+                    onChange={(e) => handleChange('taxCode', Number(e.target.value))}
                   />
                   {renderFieldErrors('taxCode')}
                 </div>
               )}
 
+              {/* ACTIVE - DISABLED */}
               <div className="flex items-center gap-2">
                 <input
                   id="isActive"
                   type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  disabled // <--- KHÓA
+                  className="h-4 w-4 cursor-not-allowed rounded border-gray-200 bg-gray-100 text-gray-400"
                   checked={form.isActive}
-                  onChange={(e) => handleChange('isActive', e.target.checked)}
+                // Không onChange
                 />
-                <label
-                  htmlFor="isActive"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Active
+                <label htmlFor="isActive" className="text-sm font-medium text-gray-400">
+                  Active (Waiting for stock)
                 </label>
-                {renderFieldErrors('isActive')}
               </div>
             </div>
-
           </section>
 
           {/* Section 3: Classification */}
           <section>
             <div className="grid gap-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Type names
-                </label>
-                <p className="mb-2 text-xs text-gray-500">
-                  You can select multiple types. If the SKU has not been manually entered,
-                  the system will automatically suggest an appropriate SKU based on the selected types.
-                </p>
+                <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
+                    3
+                  </div>
+                  <h2 className="text-lg font-semibold text-gray-900"> Type names</h2>
+                </div>
 
                 <div className="grid grid-cols-2 gap-2 md:grid-cols-3">
                   {typeOptions.map((t) => {
@@ -291,11 +296,35 @@ const CreateProduct: React.FC = () => {
 
           {/* Section 4: Images with clear order */}
           <section>
-            <h2 className="text-lg font-semibold text-gray-900">Images</h2>
-            <p className="mb-4 text-sm text-gray-500">
-              You must upload exactly three product images (all relevant).
-              To use the “Analyze & auto-fill with AI” feature, the images must clearly show the slogan, product name, and brand, and must not be blurry.
-            </p>
+            <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">
+                4
+              </div>
+              <h2 className="text-lg font-semibold text-gray-900"> Images</h2>
+            </div>
+
+            {/* --- KHỐI THÔNG BÁO HƯỚNG DẪN IMAGE --- */}
+            <div className="mb-6 rounded-md bg-blue-50 p-4 border border-blue-200">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-blue-800">
+                    AI Analysis Tips
+                  </h3>
+                  <div className="mt-2 text-sm text-blue-700">
+                    <p>
+                      You can use this feature with just one relevant product image.
+                      However, to accurately generate the <strong>Product Name, Brand, Description, and Types</strong>,
+                      we recommend uploading three images that clearly display all product information.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <div className="grid gap-6 md:grid-cols-3">
               {form.image.map((img, idx) => {
@@ -406,7 +435,7 @@ const CreateProduct: React.FC = () => {
             <button
               type="button"
               disabled={isBusy}
-              onClick={() => window.location.reload()} 
+              onClick={() => window.location.reload()}
               className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
             >
               Cancel

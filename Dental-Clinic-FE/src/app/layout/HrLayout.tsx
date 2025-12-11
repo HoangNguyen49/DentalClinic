@@ -51,6 +51,7 @@ const HRLayout = () => {
           <NavItem to="/hr/attendance" label="Attendance" icon={<FaUser />} />
           <NavItem to="/hr/attendance/explanations" label="Attendance Explanations" icon={<FaClipboardCheck />} />
           <NavItem to="/hr/leave-requests" label="Leave Requests" icon={<FaFileAlt />} />
+          <NavItem to="/hr/face-profile-approvals" label={t("faceProfileApproval.menuLabel", "Face Profile Approvals")} icon={<FaUser />} />
         </nav>
         <div className="p-4 border-t">
           <button

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { type SortKey } from "../GetAllProducts/useGetAllProducts";
+import { ArrowRight, ArrowLeft, ArrowDown, ArrowUp, ChevronDown, Search } from "lucide-react";
 
 type Props = {
   q: string;
@@ -30,6 +31,7 @@ export default function ToolbarProduct({
   setTypeFilters,
   typeOptions,
 }: Props) {
+  
   const [openSearch, setOpenSearch] = useState(false);
   const isBrandActive = brandFilters.length > 0;
   const isTypeActive = typeFilters.length > 0;
@@ -80,37 +82,19 @@ export default function ToolbarProduct({
                 {sort === "name-asc" ? (
                   <>
                     <span>A</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3.0"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                    <ArrowRight
                       className="w-[1em] h-[1em]"
-                    >
-                      <path d="M5 12h14" />
-                      <path d="M13 6l6 6-6 6" />
-                    </svg>
+                      strokeWidth={3.0}
+                    />
                     <span>Z</span>
                   </>
                 ) : (
                   <>
                     <span>Z</span>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3.0"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="w-[1em] h-[1em] rotate-180"
-                    >
-                      <path d="M5 12h14" />
-                      <path d="M13 6l6 6-6 6" />
-                    </svg>
+                    <ArrowLeft
+                      className="w-[1em] h-[1em]"
+                      strokeWidth={3.0}
+                    />
                     <span>A</span>
                   </>
                 )}
@@ -137,20 +121,10 @@ export default function ToolbarProduct({
                   } group-hover:opacity-90`}
               />
               <span className="relative z-10 truncate">Price</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className={`absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-transform duration-500 ${sort === "price-desc" ? "rotate-180" : "rotate-0"
-                  }`}
-              >
-                <path d="M12 5v14" />
-                <path d="M6 13l6 6 6-6" />
-              </svg>
+              <ArrowDown
+                className={`absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-transform duration-500 ${sort === "price-desc" ? "rotate-180" : "rotate-0"}`}
+                strokeWidth={3}
+              />
             </button>
           </div>
         </div>
@@ -176,14 +150,10 @@ export default function ToolbarProduct({
               <span className="relative z-10 truncate">{filterLabel}</span>
 
               {/* Chevron giữ nguyên style Brand */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
+              <ChevronDown
                 className={`absolute right-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 transition-transform duration-300 ${openFilter ? "rotate-180" : "rotate-0"}`}
-                viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"
-              >
-                <path d="m6 9 6 6 6-6" />
-              </svg>
+                strokeWidth={3.5}
+              />
             </button>
           </div>
 
@@ -271,25 +241,16 @@ export default function ToolbarProduct({
           {/* Nút search */}
           <button
             onClick={() => {
-              if (openSearch) handleSearch(); 
-              setOpenSearch((o) => !o);      
+              if (openSearch) handleSearch();
+              setOpenSearch((o) => !o);
             }}
             className="flex items-center justify-center w-[26px] h-[26px]"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
+            <Search
+              size={18}
               stroke="white"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </svg>
+              strokeWidth={2.5}
+            />
           </button>
 
           {/* Input */}

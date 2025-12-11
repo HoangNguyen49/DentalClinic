@@ -1,18 +1,16 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
-type DaySchedule = {
-    morning?: {
-        clinicId: number;
-    };
-    afternoon?: {
-        clinicId: number;
-    };
-};
+import type { TableSchedule, DaySchedule } from "../../../utils/hr/scheduleUtils";
+import { isClinicHoliday } from "../../../utils/hr/scheduleUtils";
 
-type TableSchedule = {
-    [doctorId: number]: {
-        [dayKey: string]: DaySchedule;
-    };
+type Holiday = {
+    id: number;
+    date: string;
+    name: string;
+    isRecurring: boolean;
+    duration: number;
+    clinicId?: number; // NULL = All clinics
 };
 
 type ScheduleTableProps = {
@@ -26,6 +24,7 @@ type ScheduleTableProps = {
         shiftType: "morning" | "afternoon",
         clinicId: number | null
     ) => void;
+    holidays?: Holiday[];
 };
 
 const ScheduleTable: React.FC<ScheduleTableProps> = ({
@@ -34,7 +33,9 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
     clinics,
     tableSchedules,
     onUpdateShiftClinic,
+    holidays = [],
 }) => {
+    const { t } = useTranslation("schedules");
     // Sort doctors by name
     const sortedDoctors = [...doctors].sort((a, b) => {
         const nameA = a.fullName || a.name || `Dr. ${a.id}`;
@@ -46,16 +47,21 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
         return tableSchedules[doctorId]?.[dayKey] || {};
     };
 
+    // Get available clinics for a specific date (filter out clinics on holiday)
+    const getAvailableClinics = (date: string) => {
+        return clinics.filter(clinic => !isClinicHoliday(clinic.id, date, holidays));
+    };
+
     return (
         <div className="overflow-x-auto">
             <table className="w-full border-collapse border border-gray-300">
                 <thead>
                     <tr className="bg-blue-50">
                         <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700 sticky left-0 bg-blue-50 z-10">
-                            No.
+                            {t("create.table.no")}
                         </th>
                         <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700 sticky left-12 bg-blue-50 z-10 min-w-[200px]">
-                            Doctor
+                            {t("create.table.doctor")}
                         </th>
                         {daysOfWeek.map((day) => (
                             <th
@@ -79,7 +85,7 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                 colSpan={daysOfWeek.length + 2}
                                 className="border border-gray-300 px-4 py-8 text-center text-gray-500"
                             >
-                                Loading list of doctors...
+                                {t("create.table.loadingDoctors")}
                             </td>
                         </tr>
                     ) : (
@@ -125,6 +131,16 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                     </td>
                                     {daysOfWeek.map((day) => {
                                         const daySchedule = getDaySchedule(doctor.id, day.key);
+                                        const dayDate = day.dateStringISO || day.dateString;
+                                        const availableClinics = getAvailableClinics(dayDate);
+                                        const availableClinicIds = availableClinics.map(c => c.id);
+                                        
+                                        // Only show selected clinic if it's available (not on holiday)
+                                        const morningClinicId = daySchedule.morning?.clinicId;
+                                        const afternoonClinicId = daySchedule.afternoon?.clinicId;
+                                        const validMorningClinicId = morningClinicId && availableClinicIds.includes(morningClinicId) ? morningClinicId : "";
+                                        const validAfternoonClinicId = afternoonClinicId && availableClinicIds.includes(afternoonClinicId) ? afternoonClinicId : "";
+                                        
                                         return (
                                             <td
                                                 key={day.key}
@@ -133,10 +149,10 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                                 <div className="space-y-2">
                                                     <div className="p-2 bg-blue-50 rounded border border-blue-200">
                                                         <div className="text-xs font-semibold text-blue-700 mb-1">
-                                                            Morning (08:00 - 11:00)
+                                                            {t("create.shifts.morning")} (08:00 - 11:00)
                                                         </div>
                                                         <select
-                                                            value={daySchedule.morning?.clinicId || ""}
+                                                            value={validMorningClinicId}
                                                             onChange={(e) =>
                                                                 onUpdateShiftClinic(
                                                                     doctor.id,
@@ -148,9 +164,14 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                                             className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                             aria-label={`${doctor.fullName || doctor.name
                                                                 } - ${day.label} - Morning Shift - Clinic`}
+                                                            disabled={availableClinics.length === 0}
                                                         >
-                                                            <option value="">Select clinic...</option>
-                                                            {clinics.map((clinic) => (
+                                                            <option value="">
+                                                                {availableClinics.length === 0
+                                                                    ? t("list.off")
+                                                                    : t("create.table.selectClinic")}
+                                                            </option>
+                                                            {availableClinics.map((clinic) => (
                                                                 <option key={clinic.id} value={clinic.id}>
                                                                     {clinic.name || `Clinic ${clinic.id}`}
                                                                 </option>
@@ -159,10 +180,10 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                                     </div>
                                                     <div className="p-2 bg-orange-50 rounded border border-orange-200">
                                                         <div className="text-xs font-semibold text-orange-700 mb-1">
-                                                            Afternoon (13:00 - 18:00)
+                                                            {t("create.shifts.afternoon")} (13:00 - 18:00)
                                                         </div>
                                                         <select
-                                                            value={daySchedule.afternoon?.clinicId || ""}
+                                                            value={validAfternoonClinicId}
                                                             onChange={(e) =>
                                                                 onUpdateShiftClinic(
                                                                     doctor.id,
@@ -174,9 +195,14 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                                             className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                             aria-label={`${doctor.fullName || doctor.name
                                                                 } - ${day.label} - Afternoon Shift - Clinic`}
+                                                            disabled={availableClinics.length === 0}
                                                         >
-                                                            <option value="">Select clinic...</option>
-                                                            {clinics.map((clinic) => (
+                                                            <option value="">
+                                                                {availableClinics.length === 0
+                                                                    ? t("list.off")
+                                                                    : t("create.table.selectClinic")}
+                                                            </option>
+                                                            {availableClinics.map((clinic) => (
                                                                 <option key={clinic.id} value={clinic.id}>
                                                                     {clinic.name || `Clinic ${clinic.id}`}
                                                                 </option>
