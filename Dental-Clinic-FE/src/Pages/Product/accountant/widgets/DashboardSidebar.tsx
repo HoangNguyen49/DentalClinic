@@ -55,7 +55,7 @@ function DashboardSidebar() {
       items: [
         {
           label: "List Products",
-          href: "/accountant",
+          href: "/accountant/product",
           icon: <Package className="w-4 h-4" />,
         },
         {

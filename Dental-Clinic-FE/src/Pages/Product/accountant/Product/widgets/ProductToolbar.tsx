@@ -80,12 +80,12 @@ function ProductToolbar({
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 pb-4 border-b border-gray-200">
         {/* Left: Title & Description */}
         <div>
-          <h1 className="text-3xl font-extrabold text-[#0D1B3E]">
+          <h1 className="text-3xl font-bold text-[#0D1B3E]">
             Product Management
           </h1>
           <p className="text-sm text-gray-500 mt-1">
             Manage product details, pricing, and category settings. Total:{" "}
-            <span className="font-extrabold text-gray-900">
+            <span className="font-bold text-gray-900">
               {totalElements.toLocaleString()}
             </span>{" "}
             products

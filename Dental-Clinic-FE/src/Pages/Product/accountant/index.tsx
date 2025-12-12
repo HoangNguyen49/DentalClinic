@@ -23,7 +23,7 @@ function AccountantRoutes() {
         
         {/* === HOME / DASHBOARD === */}
         {/* Mặc định vào là danh sách sản phẩm (hoặc Dashboard nếu bạn có) */}
-        <Route index element={<GetAllProduct />} /> 
+        <Route path="product" element={<GetAllProduct />} />
 
         {/* === PRODUCT ROUTES === */}
         <Route path="product/create" element={<CreateProduct />} />

@@ -123,7 +123,7 @@ export default function AddressAutocompleteInput({ value, onChange, error, disab
             onChange(e.target.value);
             setShowDropdown(true);
           }}
-          placeholder="e.g. 115 Cây Trôm..."
+          placeholder="e.g. Số nhà, Tên đường, Tỉnh/Thành phố"
           className={`w-full border-b border-gray-300 rounded-none px-0 py-2 text-sm focus:outline-none focus:border-blue-600 focus:ring-0 bg-transparent placeholder:text-gray-400 transition-colors ${loadingLocation ? 'opacity-50' : ''}`}
           autoComplete="off"
         />
