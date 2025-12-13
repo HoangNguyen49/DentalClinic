@@ -98,10 +98,14 @@
     ]
   },
   {
-    "category": "Others",
+    "category": "Emergency Medications",
     "items": [
-      { "id": "saline_nasal_spray", "name": "Saline Nasal Spray" },
-      { "id": "artificial_tears", "name": "Artificial Tears" }
+      { "id": "epinephrine_auto", "name": "Epinephrine Auto-Injector" },
+      { "id": "nitroglycerin_sublingual", "name": "Nitroglycerin Sublingual" },
+      { "id": "aspirin_300", "name": "Aspirin 300mg" },
+      { "id": "albuterol_inhaler", "name": "Albuterol Inhaler" },
+      { "id": "glucose_gel", "name": "Glucose Gel" },
+      { "id": "oxygen", "name": "Oxygen" }
     ]
   }
 ]

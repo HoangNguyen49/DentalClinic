@@ -33,7 +33,6 @@ type DoctorAppointment = {
   clinic?: { id: number; clinicName: string };
   patient?: { id: number; patientCode: string; fullName: string; phone?: string; email?: string };
   service?: ServiceDTO;
-  serviceDetails?: string[];
   appointmentType?: string; // "VIP" hoặc "STANDARD"
   bookingFee?: number; // Phí đặt lịch hẹn
 };
@@ -46,7 +45,6 @@ type MedicalRecordDTO = {
   serviceId?: number;
   serviceName?: string;
   service?: ServiceDTO;
-                                                           serviceDetails?: string[];
   diagnosis: string;
   treatmentPlan?: string;
   prescriptionNote?: string;
@@ -65,15 +63,15 @@ type Props = {
   onSuccess?: () => void;
 };
 
-// `medications` is grouped by category in the JSON; flatten into a simple options list
-const medicationOptions: MedicationOption[] = (medications as any[])
-  .flatMap((group) => group.items || [])
-  .map((it: any) => ({ id: String(it.id), name: it.name, defaultDosage: it.defaultDosage, description: it.description }));
-// Keep original grouping for rendering with <optgroup>
-const medicationGroups: { category: string; items: { id: string; name: string }[] }[] = (medications as any[]).map((g) => ({
-  category: g.category || "",
-  items: (g.items || []).map((it: any) => ({ id: String(it.id), name: it.name })),
-}));
+const medicationOptions = medications as MedicationOption[];
+
+const buildPrescriptionText = (meds: SelectedMedication[], manualNote: string) => {
+  const auto = meds
+    .map((med, idx) => `${idx + 1}. ${med.name} • SL: ${med.quantity} • HDSD: ${med.instructions}`)
+    .join("\n");
+  if (auto && manualNote.trim()) return `${auto}\n\n${manualNote.trim()}`;
+  return auto || manualNote.trim();
+};
 
 export default function CreateMedicalRecordModal({
   isOpen,
@@ -94,7 +92,6 @@ export default function CreateMedicalRecordModal({
   const appointmentId = appointment?.appointmentId ?? record?.appointmentId;
 
   const [diagnosis, setDiagnosis] = useState(record?.diagnosis || "");
-  
   const [treatmentPlan, setTreatmentPlan] = useState(record?.treatmentPlan || "");
   const [manualPrescriptionNote, setManualPrescriptionNote] = useState(record?.prescriptionNote || "");
   const [generalNote, setGeneralNote] = useState(record?.note || "");
@@ -111,75 +108,11 @@ export default function CreateMedicalRecordModal({
   const [loading, setLoading] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
   const [showVariantsModal, setShowVariantsModal] = useState(false);
-  const [services, setServices] = useState<ServiceDTO[]>([]);
-
-  
 
   const resetState = () => {
     setDiagnosis(record?.diagnosis || "");
     setTreatmentPlan(record?.treatmentPlan || "");
-    // Parse prescription note: support stored JSON or human-readable format
-    const parsePrescription = (note?: string) => {
-      if (!note) return { meds: [] as SelectedMedication[], manual: "" };
-      // Try JSON
-      try {
-        const parsed = JSON.parse(note);
-        if (Array.isArray(parsed)) {
-          const meds = parsed
-            .map((m: any) => ({
-              id: String(m.id ?? m.medId ?? m.name ?? Math.random()),
-              name: m.name ?? m.medName ?? "",
-              quantity: String(m.quantity ?? m.qty ?? ""),
-              instructions: m.instructions ?? m.how ?? "",
-            }))
-            .filter((m: SelectedMedication) => !!m.name);
-          return { meds, manual: "" };
-        }
-        if (parsed && typeof parsed === "object") {
-          const medsRaw = parsed.meds || parsed.medications || parsed.items;
-          const manual = parsed.manual || parsed.note || parsed.additional || "";
-          if (Array.isArray(medsRaw)) {
-            const meds = medsRaw
-              .map((m: any) => ({
-                id: String(m.id ?? m.medId ?? m.name ?? Math.random()),
-                name: m.name ?? m.medName ?? "",
-                quantity: String(m.quantity ?? m.qty ?? ""),
-                instructions: m.instructions ?? m.how ?? "",
-              }))
-              .filter((m: SelectedMedication) => !!m.name);
-            return { meds, manual };
-          }
-        }
-      } catch (e) {
-        console.error("Failed to parse prescription note as JSON:", e);
-      }
-
-      // Human readable parsing: lines like "1. Name • SL: 2 • HDSD: take twice daily"
-      const parts = note.split(/\n\s*\n/);
-      const medLines = parts[0].split(/\n/).map((l) => l.trim()).filter(Boolean);
-      const meds: SelectedMedication[] = [];
-      for (const line of medLines) {
-        const cleaned = line.replace(/^\s*\d+\.\s*/, "");
-        const segments = cleaned.split("•").map((s) => s.trim());
-        if (segments.length === 0) continue;
-        const name = segments[0] || "";
-        let quantity = "";
-        let instructions = "";
-        for (const seg of segments.slice(1)) {
-          const qMatch = seg.match(/SL:\s*(.+)/i);
-          const iMatch = seg.match(/HDSD:\s*(.+)/i);
-          if (qMatch) quantity = qMatch[1].trim();
-          if (iMatch) instructions = iMatch[1].trim();
-        }
-        if (name) meds.push({ id: name + Math.random(), name, quantity: quantity || "", instructions: instructions || "" });
-      }
-      const manual = parts.slice(1).join("\n\n").trim();
-      return { meds, manual };
-    };
-
-    const parsed = parsePrescription(record?.prescriptionNote);
-    setSelectedMedications(parsed.meds || []);
-    setManualPrescriptionNote(parsed.manual || "");
+    setManualPrescriptionNote(record?.prescriptionNote || "");
     setGeneralNote(record?.note || "");
     setRecordDate(
       record?.recordDate
@@ -188,8 +121,7 @@ export default function CreateMedicalRecordModal({
         ? format(new Date(appointment.startDateTime), "yyyy-MM-dd")
         : format(new Date(), "yyyy-MM-dd")
     );
-    // keep parsed medications when editing; clear when creating
-    if (mode === "create") setSelectedMedications([]);
+    setSelectedMedications([]);
     setMedicationInput({ medId: "", quantity: "", instructions: "" });
     setAttachments([]);
   };
@@ -201,74 +133,7 @@ export default function CreateMedicalRecordModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, record, appointment]);
 
-  // Fetch all services when modal opens in create mode
-  useEffect(() => {
-    if (!isOpen || mode !== "create") return;
-
-    const fetchServices = async () => {
-      try {
-        const res = await axios.get<ServiceDTO[]>(`${apiBase}/api/services`, {
-          headers: { Authorization: `Bearer ${accessToken}` },
-          withCredentials: true,
-        });
-        const list = res.data || [];
-        setServices(list);
-
-        console.log("Fetched services:", list.length);
-        console.log("Appointment object:", appointment);
-
-        // Case 1: appointment has full service object with variants
-        if (appointment?.service && appointment.service.id) {
-          console.log("Using appointment.service:", appointment.service.serviceName);
-          setSelectedService(appointment.service);
-          return;
-        }
-
-        // Case 2: appointment has only serviceDetails (variant names as strings)
-        // Try to infer parent service by matching variant names
-        if (appointment && appointment.serviceDetails && appointment.serviceDetails.length > 0) {
-          const details = appointment.serviceDetails;
-          console.log("ServiceDetails (variant names):", details);
-
-          let bestMatch: { service: ServiceDTO; matchCount: number } | null = null;
-
-          for (const service of list) {
-            const variants = service.variants || [];
-            if (variants.length === 0) continue;
-
-            // Count how many variant names from serviceDetails match this service's variants
-            const matchCount = variants.filter((v) => details.includes(v.variantName)).length;
-
-            if (matchCount > 0) {
-              console.log(`Service "${service.serviceName}" matches ${matchCount} variants`);
-              if (!bestMatch || matchCount > bestMatch.matchCount) {
-                bestMatch = { service, matchCount };
-              }
-            }
-          }
-
-          if (bestMatch) {
-            const filtered = (bestMatch.service.variants || []).filter((v) => details.includes(v.variantName));
-            const inferred = { ...bestMatch.service, variants: filtered } as ServiceDTO;
-            setSelectedService(inferred);
-            console.log("✓ Inferred service:", inferred.serviceName, "with", filtered.length, "matched variants");
-            return;
-          } else {
-            console.warn("⚠ Could not infer service from serviceDetails:", details);
-          }
-        }
-
-        console.log("No service or serviceDetails available in appointment");
-      } catch (err) {
-        console.error("Failed to fetch services:", err);
-        toast.error("Failed to load services");
-      }
-    };
-
-    fetchServices();
-  }, [isOpen, mode, appointment, apiBase, accessToken]);
-
-  const serviceReadOnly = selectedService?.serviceName || serviceInfo?.serviceName || "N/A";
+  const serviceReadOnly = serviceInfo?.serviceName || "N/A";
   const clinicReadOnly = clinicInfo?.clinicName || "N/A";
   const doctorReadOnly = doctorId ? `Doctor #${doctorId}` : "N/A";
   const appointmentTime = appointment
@@ -279,22 +144,24 @@ export default function CreateMedicalRecordModal({
     : "N/A";
 
   const handleServiceClick = async () => {
-    const target = selectedService || serviceInfo;
-    if (!target) return;
+    if (!serviceInfo) return;
 
     // If service already has variants, use it directly
-    if (target.variants !== undefined && target.variants.length >= 0) {
-      setSelectedService(target);
+    if (serviceInfo.variants !== undefined) {
+      setSelectedService(serviceInfo);
       setShowVariantsModal(true);
       return;
     }
 
     // Otherwise, fetch full service data
     try {
-      const response = await axios.get<ServiceDTO>(`${apiBase}/api/services/${target.id}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-        withCredentials: true,
-      });
+      const response = await axios.get<ServiceDTO>(
+        `${apiBase}/api/services/${serviceInfo.id}`,
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          withCredentials: true,
+        }
+      );
       setSelectedService(response.data);
       setShowVariantsModal(true);
     } catch (err) {
@@ -316,7 +183,7 @@ export default function CreateMedicalRecordModal({
         id: med.id,
         name: med.name,
         quantity: medicationInput.quantity.trim(),
-        instructions: medicationInput.instructions.trim() || med.defaultDosage || "As directed",
+        instructions: medicationInput.instructions.trim() || med.defaultDosage || "Theo chỉ định của bác sĩ",
       },
     ]);
     setMedicationInput({ medId: "", quantity: "", instructions: "" });
@@ -336,11 +203,10 @@ export default function CreateMedicalRecordModal({
     clinicId: clinicInfo?.id,
     doctorId,
     appointmentId,
-    serviceId: selectedService?.id ?? serviceInfo?.id ?? record?.serviceId,
+    serviceId: serviceInfo?.id ?? record?.serviceId,
     diagnosis: diagnosis.trim(),
     treatmentPlan: treatmentPlan.trim() || undefined,
-    // Store prescription as structured JSON string (meds + manual) for reliable parsing later
-    prescriptionNote: JSON.stringify({ meds: selectedMedications, manual: manualPrescriptionNote }),
+    prescriptionNote: buildPrescriptionText(selectedMedications, manualPrescriptionNote),
     note: generalNote.trim() || undefined,
     recordDate,
   });
@@ -456,7 +322,7 @@ export default function CreateMedicalRecordModal({
             <p>
               <span className="font-semibold text-blue-700">Service:</span>{" "}
               <span
-                className={selectedService || serviceInfo ? "text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition" : ""}
+                className={serviceInfo ? "text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition" : ""}
                 onClick={handleServiceClick}
               >
                 {serviceReadOnly}
@@ -482,59 +348,12 @@ export default function CreateMedicalRecordModal({
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600">Service</label>
-              {mode === "create" ? (
-                <div className="mt-1 w-full rounded border bg-white px-3 py-2 text-gray-700">
-                  <div className="font-medium text-gray-900">{serviceReadOnly}</div>
-                  {selectedService?.variants && selectedService.variants.length > 0 && (
-                    <div className="mt-2 text-xs text-gray-600">
-                      <div className="font-semibold mb-1">Variants:</div>
-                      <ul className="list-disc pl-5 space-y-1">
-                        {selectedService.variants.map((v) => (
-                          <li key={v.id} className="text-gray-700">
-                            {v.variantName}
-                            {v.price && (
-                              <span className="text-gray-500 ml-1">
-                                • {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(v.price)}
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                      <button
-                        type="button"
-                        onClick={handleServiceClick}
-                        className="mt-2 text-blue-600 text-xs hover:underline"
-                      >
-                        View all variants
-                      </button>
-                    </div>
-                  )}
-                  {(!selectedService?.variants || selectedService.variants.length === 0) && appointment?.serviceDetails && appointment.serviceDetails.length > 0 && (
-                    <div className="mt-2 text-xs text-gray-600">
-                      <div className="font-semibold mb-1">Variants:</div>
-                      <ul className="list-disc pl-5 space-y-1">
-                        {appointment.serviceDetails.map((name, idx) => (
-                          <li key={idx} className="text-gray-700">{name}</li>
-                        ))}
-                      </ul>
-                      <button
-                        type="button"
-                        onClick={handleServiceClick}
-                        className="mt-2 text-blue-600 text-xs hover:underline"
-                      >
-                        View all variants
-                      </button>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div
-                  className={`mt-1 w-full rounded border bg-gray-100 px-3 py-2 ${serviceInfo ? 'text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition' : 'text-gray-700'}`}
-                  onClick={handleServiceClick}
-                >
-                  {serviceReadOnly}
-                </div>
-              )}
+              <div
+                className={`mt-1 w-full rounded border bg-gray-100 px-3 py-2 ${serviceInfo ? 'text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition' : 'text-gray-700'}`}
+                onClick={handleServiceClick}
+              >
+                {serviceReadOnly}
+              </div>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600">Record Date</label>
@@ -591,14 +410,10 @@ export default function CreateMedicalRecordModal({
                 className="rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Select medication</option>
-                {medicationGroups.map((group) => (
-                  <optgroup key={group.category} label={group.category}>
-                    {group.items.map((med) => (
-                      <option key={med.id} value={med.id}>
-                        {med.name}
-                      </option>
-                    ))}
-                  </optgroup>
+                {medicationOptions.map((med) => (
+                  <option key={med.id} value={med.id}>
+                    {med.name}
+                  </option>
                 ))}
               </select>
               <input

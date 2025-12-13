@@ -6,7 +6,6 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
 import ServiceVariantsModal from "./ServiceVariantsModal";
-import CreateMedicalRecordModal from "./CreateMedicalRecordModal";
 
 type MedicalRecordImage = {
   imageId: number;
@@ -70,7 +69,6 @@ export default function MedicalRecordDetail() {
   const [serviceMap, setServiceMap] = useState<Record<number, ServiceDTO>>({});
   const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
   const [showVariantsModal, setShowVariantsModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchRecord = useCallback(async () => {
     if (!patientId || !recordId) return;
@@ -254,42 +252,6 @@ export default function MedicalRecordDetail() {
                   {record.appointmentId ? `#${record.appointmentId}` : "N/A"}
                 </p>
               </div>
-              <div className="mt-4 flex gap-2">
-                <button
-                  onClick={() => setShowEditModal(true)}
-                  className="rounded bg-yellow-500 px-3 py-2 text-sm font-medium text-white hover:bg-yellow-600"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={async () => {
-                    if (!patientId || !record) return;
-                    try {
-                      const url = `${apiBase}/api/patients/${patientId}/records/${record.recordId}/export/pdf`;
-                      const response = await axios.get(url, {
-                        headers: { Authorization: `Bearer ${accessToken}` },
-                        responseType: "arraybuffer",
-                        withCredentials: true,
-                      });
-                      const blob = new Blob([response.data], { type: "application/pdf" });
-                      const downloadUrl = window.URL.createObjectURL(blob);
-                      const a = document.createElement("a");
-                      a.href = downloadUrl;
-                      a.download = `${record.patient?.fullName || 'Patient'}-MedicalRecord-${record.recordId}-${Date.now()}.pdf`;
-                      document.body.appendChild(a);
-                      a.click();
-                      a.remove();
-                      window.URL.revokeObjectURL(downloadUrl);
-                    } catch (err) {
-                      console.error(err);
-                      toast.error("Failed to export PDF");
-                    }
-                  }}
-                  className="rounded bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-                >
-                  Export PDF
-                </button>
-              </div>
             </header>
 
             <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -340,47 +302,9 @@ export default function MedicalRecordDetail() {
               </div>
               <div>
                 <p className="text-xs font-semibold text-gray-500">Prescription Note</p>
-                <div className="mt-1 whitespace-pre-wrap rounded bg-gray-50 p-3 text-gray-900">
-                  {(() => {
-                    const note = record.prescriptionNote;
-                    if (!note) return <div className="text-gray-500">N/A</div>;
-                    // try parse JSON saved by the modal
-                    try {
-                      const parsed = JSON.parse(note);
-                      let meds: any[] = [];
-                      let manual = "";
-                      if (Array.isArray(parsed)) {
-                        meds = parsed;
-                      } else if (parsed && typeof parsed === "object") {
-                        meds = parsed.meds || parsed.medications || parsed.items || [];
-                        manual = parsed.manual || parsed.note || "";
-                      }
-                      if (meds && meds.length) {
-                        return (
-                          <div>
-                            <ul className="list-disc pl-5">
-                              {meds.map((m: any, idx: number) => (
-                                <li key={idx} className="text-gray-900">
-                                  <span className="font-medium">{m.name || m.medName || m.label || "Medication"}</span>
-                                  {m.quantity ? <span className="text-gray-600"> • Qty: {m.quantity}</span> : null}
-                                  {m.instructions ? <div className="text-sm text-gray-700">{m.instructions}</div> : null}
-                                </li>
-                              ))}
-                            </ul>
-                            {manual ? <div className="mt-2 text-sm text-gray-700">{manual}</div> : null}
-                          </div>
-                        );
-                      }
-                      // fallback: show manual only if present
-                      if (manual) return <div className="text-gray-900">{manual}</div>;
-                    } catch (e) {
-                      // not JSON, fallthrough to human-readable
-                    }
-
-                    // If it's plain text (possibly from older versions), try to display it nicely
-                    return <div className="text-gray-900">{note}</div>;
-                  })()}
-                </div>
+                <p className="mt-1 whitespace-pre-wrap rounded bg-gray-50 p-3 text-gray-900">
+                  {record.prescriptionNote || "N/A"}
+                </p>
               </div>
               <div>
                 <p className="text-xs font-semibold text-gray-500">General Note</p>
@@ -452,34 +376,6 @@ export default function MedicalRecordDetail() {
         onClose={() => {
           setShowVariantsModal(false);
           setSelectedService(null);
-        }}
-      />
-      <CreateMedicalRecordModal
-        isOpen={showEditModal}
-        mode="edit"
-        patientId={patientId ? Number(patientId) : undefined}
-        doctorId={record?.doctor ? (record.doctor as any).id : undefined}
-        appointment={null}
-        record={
-          record
-            ? {
-                recordId: record.recordId,
-                clinic: record.clinic,
-                patient: record.patient,
-                appointmentId: record.appointmentId,
-                serviceId: record.serviceId,
-                service: record.service,
-                diagnosis: record.diagnosis,
-                treatmentPlan: record.treatmentPlan,
-                prescriptionNote: record.prescriptionNote,
-                note: record.note,
-                recordDate: record.recordDate,
-              }
-            : null
-        }
-        onClose={() => setShowEditModal(false)}
-        onSuccess={() => {
-          fetchRecord();
         }}
       />
     </>
