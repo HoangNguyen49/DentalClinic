@@ -57,6 +57,7 @@ type DoctorAppointmentDTO = {
   channel?: string;
   note?: string;
   service?: ServiceDTO;
+  serviceDetails?: string[];
   createdBy?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -73,7 +74,9 @@ export default function AppointmentDetail() {
   const userInfo = JSON.parse(localStorage.getItem("user") || "null");
   const doctorId = userInfo?.doctorId || userInfo?.id || userInfo?.userId;
 
-  const [appointment, setAppointment] = useState<DoctorAppointmentDTO | null>(null);
+  const [appointment, setAppointment] = useState<DoctorAppointmentDTO | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
   const [showMedicalRecordModal, setShowMedicalRecordModal] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
@@ -111,8 +114,6 @@ export default function AppointmentDetail() {
     fetchAppointment();
   }, [appointmentId, doctorId, apiBase, accessToken, navigate]);
 
-
-
   const getStatusBadgeClass = (status: string) => {
     const s = status?.toLowerCase() || "";
     if (s === "pending") return "bg-yellow-100 text-yellow-800";
@@ -124,7 +125,7 @@ export default function AppointmentDetail() {
 
   const handleServiceClick = async () => {
     if (!appointment?.service) return;
-    
+
     // If service already has variants, use it directly
     if (appointment.service.variants !== undefined) {
       setSelectedService(appointment.service);
@@ -176,19 +177,21 @@ export default function AppointmentDetail() {
             >
               <ArrowLeft className="w-5 h-5" />
               Back to Appointments
-            </button>    
-              <button
-                onClick={() => setShowMedicalRecordModal(true)}
-                disabled={!appointment.patient?.id}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <FileText className="w-4 h-4" />
-                Create Medical Record
-              </button>
+            </button>
+            <button
+              onClick={() => setShowMedicalRecordModal(true)}
+              disabled={!appointment.patient?.id}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FileText className="w-4 h-4" />
+              Create Medical Record
+            </button>
           </div>
 
           <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-            <h1 className="text-2xl font-bold text-[#0D1B3E] mb-6">Appointment Details</h1>
+            <h1 className="text-2xl font-bold text-[#0D1B3E] mb-6">
+              Appointment Details
+            </h1>
 
             <div className="space-y-6">
               {/* Appointment Information */}
@@ -199,7 +202,9 @@ export default function AppointmentDetail() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Status</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Status
+                    </label>
                     <div className="mt-1">
                       <span
                         className={`inline-flex px-3 py-1 text-sm font-medium rounded-full ${getStatusBadgeClass(
@@ -211,28 +216,62 @@ export default function AppointmentDetail() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Channel</label>
-                    <div className="mt-1 text-gray-900">{appointment.channel || "N/A"}</div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Channel
+                    </label>
+                    <div className="mt-1 text-gray-900">
+                      {appointment.channel || "N/A"}
+                    </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Date & Time</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Date & Time
+                    </label>
                     <div className="mt-1 flex items-center gap-2 text-gray-900">
                       <Clock className="w-4 h-4 text-gray-400" />
-                      {format(new Date(appointment.startDateTime), "MMM dd, yyyy HH:mm")} -{" "}
-                      {format(new Date(appointment.endDateTime), "HH:mm")}
+                      {format(
+                        new Date(appointment.startDateTime),
+                        "MMM dd, yyyy HH:mm"
+                      )}{" "}
+                      - {format(new Date(appointment.endDateTime), "HH:mm")}
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
+                    <div className="mt-2 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      {appointment.serviceDetails &&
+                      appointment.serviceDetails.length > 0 ? (
+                        <ul className="space-y-1">
+                          {appointment.serviceDetails.map((name, index) => (
+                            <li
+                              key={index}
+                              className="flex items-start gap-2 text-gray-900 text-sm"
+                            >
+                              <span className="mt-1.5 w-1.5 h-1.5 bg-blue-600 rounded-full shrink-0" />
+
+                              <span className="font-medium">{name}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        // Fallback nếu chưa có list thì hiện logic cũ
+
+                        <div
+                          className={`text-gray-900 ${
+                            appointment.service
+                              ? "cursor-pointer hover:text-blue-600"
+                              : ""
+                          }`}
+                          onClick={handleServiceClick}
+                        >
+                          {appointment.service?.serviceName || "N/A"}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Service</label>
-                    <div 
-                      className={`mt-1 ${appointment.service ? 'text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition' : 'text-gray-900'}`}
-                      onClick={handleServiceClick}
-                    >
-                      {appointment.service?.serviceName || "N/A"}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium text-gray-500">Appointment Type</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Appointment Type
+                    </label>
                     <div className="mt-1 flex items-center gap-2">
                       {appointment.appointmentType ? (
                         <span
@@ -242,7 +281,13 @@ export default function AppointmentDetail() {
                               : "bg-gray-100 text-gray-800"
                           }`}
                         >
-                          <Crown className={`w-3 h-3 ${appointment.appointmentType === "VIP" ? "text-purple-600" : ""}`} />
+                          <Crown
+                            className={`w-3 h-3 ${
+                              appointment.appointmentType === "VIP"
+                                ? "text-purple-600"
+                                : ""
+                            }`}
+                          />
                           {appointment.appointmentType}
                         </span>
                       ) : (
@@ -251,10 +296,13 @@ export default function AppointmentDetail() {
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Booking Fee</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Booking Fee
+                    </label>
                     <div className="mt-1 flex items-center gap-2 text-gray-900">
                       <DollarSign className="w-4 h-4 text-gray-400" />
-                      {appointment.bookingFee !== undefined && appointment.bookingFee !== null
+                      {appointment.bookingFee !== undefined &&
+                      appointment.bookingFee !== null
                         ? new Intl.NumberFormat("vi-VN", {
                             style: "currency",
                             currency: "VND",
@@ -264,8 +312,12 @@ export default function AppointmentDetail() {
                   </div>
                   {appointment.note && (
                     <div className="md:col-span-2">
-                      <label className="text-sm font-medium text-gray-500">Note</label>
-                      <div className="mt-1 p-3 bg-gray-50 rounded text-gray-900">{appointment.note}</div>
+                      <label className="text-sm font-medium text-gray-500">
+                        Note
+                      </label>
+                      <div className="mt-1 p-3 bg-gray-50 rounded text-gray-900">
+                        {appointment.note}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -279,47 +331,72 @@ export default function AppointmentDetail() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Patient Code</label>
-                    <div className="mt-1 text-gray-900">{appointment.patient?.patientCode || "N/A"}</div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Patient Code
+                    </label>
+                    <div className="mt-1 text-gray-900">
+                      {appointment.patient?.patientCode || "N/A"}
+                    </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Full Name</label>
-                    <div className="mt-1 text-gray-900">{appointment.patient?.fullName || "N/A"}</div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Full Name
+                    </label>
+                    <div className="mt-1 text-gray-900">
+                      {appointment.patient?.fullName || "N/A"}
+                    </div>
                   </div>
-                     <div>
-                    <label className="text-sm font-medium text-gray-500">Email</label>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500">
+                      Email
+                    </label>
                     <div className="mt-1 flex items-center gap-2 text-gray-900">
                       <Mail className="w-4 h-4 text-gray-400" />
                       {appointment.patient?.email || "N/A"}
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Phone</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Phone
+                    </label>
                     <div className="mt-1 flex items-center gap-2 text-gray-900">
                       <Phone className="w-4 h-4 text-gray-400" />
                       {appointment.patient?.phone || "N/A"}
                     </div>
                   </div>
-               
+
                   {appointment.patient?.dateOfBirth && (
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Date of Birth</label>
+                      <label className="text-sm font-medium text-gray-500">
+                        Date of Birth
+                      </label>
                       <div className="mt-1 text-gray-900">
-                        {format(new Date(appointment.patient.dateOfBirth), "MMM dd, yyyy")}
+                        {format(
+                          new Date(appointment.patient.dateOfBirth),
+                          "MMM dd, yyyy"
+                        )}
                       </div>
                     </div>
                   )}
                   {appointment.patient?.gender && (
                     <div>
-                      <label className="text-sm font-medium text-gray-500">Gender</label>
-                      <div className="mt-1 text-gray-900">{appointment.patient.gender}</div>
+                      <label className="text-sm font-medium text-gray-500">
+                        Gender
+                      </label>
+                      <div className="mt-1 text-gray-900">
+                        {appointment.patient.gender}
+                      </div>
                     </div>
                   )}
                 </div>
                 {appointment.patient?.id && (
                   <div className="mt-4">
                     <button
-                      onClick={() => navigate(`/doctor/patients/${appointment.patient?.id}/records`)}
+                      onClick={() =>
+                        navigate(
+                          `/doctor/patients/${appointment.patient?.id}/records`
+                        )
+                      }
                       className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"
                     >
                       <FileText className="w-4 h-4" />
@@ -337,31 +414,37 @@ export default function AppointmentDetail() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Clinic</label>
+                    <label className="text-sm font-medium text-gray-500">
+                      Clinic
+                    </label>
                     <div className="mt-1 flex items-center gap-2 text-gray-900">
                       <MapPin className="w-4 h-4 text-gray-400" />
                       {appointment.clinic?.clinicName || "N/A"}
                     </div>
                     {appointment.clinic?.address && (
-                      <div className="mt-1 text-sm text-gray-600">{appointment.clinic.address}</div>
+                      <div className="mt-1 text-sm text-gray-600">
+                        {appointment.clinic.address}
+                      </div>
                     )}
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-gray-500">Room</label>
-                    <div className="mt-1 text-gray-900">
-                      {appointment.room?.roomName || "N/A"}
-                      {appointment.chair && ` - Chair ${appointment.chair.chairNumber}`}
-                    </div>
+                  
                   </div>
                 </div>
               </section>
 
               {/* Doctor Information */}
               <section className="border-t pt-6">
-                <h2 className="text-lg font-semibold text-gray-800 mb-4">Doctor Information</h2>
+                <h2 className="text-lg font-semibold text-gray-800 mb-4">
+                  Doctor Information
+                </h2>
                 <div>
-                  <label className="text-sm font-medium text-gray-500">Doctor</label>
-                  <div className="mt-1 text-gray-900">{appointment.doctor?.fullName || "N/A"}</div>
+                  <label className="text-sm font-medium text-gray-500">
+                    Doctor
+                  </label>
+                  <div className="mt-1 text-gray-900">
+                    {appointment.doctor?.fullName || "N/A"}
+                  </div>
                 </div>
               </section>
             </div>
@@ -394,4 +477,3 @@ export default function AppointmentDetail() {
     </>
   );
 }
-

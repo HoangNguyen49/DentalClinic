@@ -70,6 +70,20 @@ export default function AppointmentList() {
 
       let filtered = response.data || [];
 
+      // By default, doctors should only see these statuses
+      const allowedStatusesForDoctor = ["SCHEDULED", "PROCESSING", "COMPLETED", "CANCELED"];
+
+      // If no explicit status filter provided, restrict to allowed statuses
+      if (!statusFilter) {
+        filtered = filtered.filter((apt) => allowedStatusesForDoctor.includes(apt.status));
+      } else {
+        // If a status filter was chosen, ensure it's one of the allowed ones
+        if (!allowedStatusesForDoctor.includes(statusFilter)) {
+          // If user somehow selected an unsupported status, show none
+          filtered = [];
+        }
+      }
+
       // Client-side search by patient name or code
       if (searchInput.trim()) {
         const searchLower = searchInput.toLowerCase();
@@ -107,6 +121,12 @@ export default function AppointmentList() {
     try {
       if (!accessToken) {
         toast.error("Not authenticated");
+        return;
+      }
+
+      // Prevent doctors from setting status to RESCHEDULE
+      if (newStatus?.toString().toUpperCase() === "RESCHEDULE") {
+        toast.error("Doctors are not allowed to reschedule appointments.");
         return;
       }
 
@@ -204,9 +224,8 @@ export default function AppointmentList() {
                   className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All Status</option>
-                  <option value="PENDING">Pending</option>
                   <option value="SCHEDULED">Scheduled</option>
-                  <option value="PROCESSING">Processing</option>
+                  <option value="PROCESSING">Progressing</option>
                   <option value="COMPLETED">Completed</option>
                   <option value="CANCELED">Canceled</option>
                 </select>
