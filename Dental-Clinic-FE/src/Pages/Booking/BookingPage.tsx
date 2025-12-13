@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom'; // [AI ADDITION] Thêm useSearchParams
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import StepSelectType from './Steps/StepSelectType';
@@ -16,7 +16,8 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export default function BookingPage() {
   const navigate = useNavigate();
-  
+  const [searchParams] = useSearchParams(); // [AI ADDITION] Hook lấy tham số
+
   // Bắt đầu từ bước 0 (Chọn Loại)
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -37,10 +38,66 @@ export default function BookingPage() {
     doctorAvatar: '',
     doctorSpecialties: [] as string[],
     date: '',
-    time: ''
+    time: '',
+    
+    // [AI ADDITION] Lưu ID dịch vụ từ AI để Step 1 tự động chọn
+    prefilledServiceId: null as number | null 
   });
 
-  // --- 1. KHÔI PHỤC DỮ LIỆU SAU LOGIN ---
+  // --- [AI ADDITION] START: Xử lý dữ liệu từ Chatbot ---
+  useEffect(() => {
+    const typeParam = searchParams.get('type'); 
+    const doctorIdParam = searchParams.get('prefillDoctor');
+    const serviceIdParam = searchParams.get('prefillService');
+
+    let shouldSkipStep0 = false; 
+
+    // 1. Xử lý VIP (Do AI gửi type VIP hoặc có chọn bác sĩ)
+    if (typeParam === 'VIP' || doctorIdParam) {
+      setBookingData(prev => ({ 
+          ...prev, 
+          appointmentType: 'VIP',
+          bookingFee: 1000000 // [FIX] Set cứng phí VIP để không bị 0đ
+      }));
+      shouldSkipStep0 = true;
+    } 
+    // 2. Xử lý Standard (Nếu AI gửi service mà không phải VIP)
+    else if (serviceIdParam) {
+        setBookingData(prev => ({ 
+            ...prev, 
+            appointmentType: 'STANDARD',
+            bookingFee: 500000 // [FIX] Set cứng phí Standard
+        }));
+        shouldSkipStep0 = true;
+    }
+
+    // 3. Nếu AI gửi ID bác sĩ -> Lưu vào state
+    if (doctorIdParam) {
+      setBookingData(prev => ({ 
+        ...prev, 
+        appointmentType: 'VIP', 
+        bookingFee: 1000000, 
+        doctorId: Number(doctorIdParam) 
+      }));
+    }
+
+    // 4. Nếu AI gửi ID dịch vụ -> Lưu tạm
+    if (serviceIdParam) {
+      setBookingData(prev => ({
+        ...prev,
+        prefilledServiceId: Number(serviceIdParam)
+      }));
+    }
+
+    // 5. Logic nhảy bước: Bỏ qua bước 0 (Chọn loại) nếu AI đã định hướng
+    if (shouldSkipStep0) {
+        setCurrentStep(1);
+    }
+
+  }, [searchParams]);
+  // --- [AI ADDITION] END ---
+
+  // --- 1. KHÔI PHỤC DỮ LIỆU SAU LOGIN (CODE GỐC) ---
   useEffect(() => {
       const pending = sessionStorage.getItem("pendingBooking");
       if (pending) {
@@ -48,8 +105,6 @@ export default function BookingPage() {
             const parsed = JSON.parse(pending);
             setBookingData(parsed);
             
-            // Nếu Standard: Summary là bước 3
-            // Nếu VIP: Summary là bước 4
             const summaryStep = parsed.appointmentType === 'STANDARD' ? 3 : 4;
             setCurrentStep(summaryStep); 
             
@@ -68,15 +123,14 @@ export default function BookingPage() {
     navigate("/");
   };
 
-  // --- 2. XỬ LÝ CONFIRM ---
+  // --- 2. XỬ LÝ CONFIRM (CODE GỐC + SỬA LOGIC GỬI DỮ LIỆU) ---
   const handleConfirmBooking = async () => {
     const storedUser = localStorage.getItem("user");
     const token = localStorage.getItem("accessToken");
 
-    // Check Login
     if (!storedUser || !token) {
         sessionStorage.setItem("pendingBooking", JSON.stringify(bookingData));
-        toast.info("🔒 Vui lòng Đăng nhập (hoặc Đăng ký) để hoàn tất!");
+        toast.info("🔒 Vui lòng Đăng nhập để hoàn tất!");
         navigate("/login", { state: { from: "/booking" } });
         return;
     }
@@ -90,26 +144,35 @@ export default function BookingPage() {
       const timeString = bookingData.time.length === 5 ? `${bookingData.time}:00` : bookingData.time;
       const startDateTime = new Date(`${bookingData.date}T${timeString}`);
 
+      // Payload gửi lên Backend
       const payload = {
-        appointmentType: bookingData.appointmentType,
-        bookingFee: bookingData.bookingFee,
         clinicId: bookingData.clinicId,
         patientId: patientId,
-        // Standard -> doctorId = null
+        
+        // [AI FIXED] Gửi thêm 2 trường này để Backend lưu đúng
+        appointmentType: bookingData.appointmentType,
+        bookingFee: bookingData.bookingFee,
+
+        // Logic Doctor: VIP thì lấy doctorId, Standard thì null (hoặc xử lý tùy backend)
         doctorId: bookingData.appointmentType === 'VIP' ? bookingData.doctorId : null,
-        roomId: null,
+        
+        roomId: null, // Frontend chưa chọn phòng
         startDateTime: startDateTime.toISOString(),
         status: "PENDING",
         channel: "WEB_BOOKING",
         note: `Booking Online (${bookingData.appointmentType})`,
+        
+        // Map services đúng cấu trúc DTO Backend
         services: bookingData.selectedServices.map((s: any) => ({
-            serviceId: s.id,
+            serviceId: s.id, // Lưu ý: Backend dùng ServiceVariantId hay ServiceId? Kiểm tra lại DTO
             quantity: 1,
         }))
       };
 
       console.log("Sending Payload:", payload);
 
+      // Gọi API tạo lịch hẹn (Đường dẫn tùy thuộc vào Controller của bạn)
+      // Giả sử API là: /api/booking/appointments hoặc /api/patient/appointments
       await axios.post(`${API_BASE_URL}/api/booking/appointments`, payload, {
           headers: { 
             'Authorization': `Bearer ${token}`,
@@ -128,29 +191,29 @@ export default function BookingPage() {
     }
   };
 
-  // --- 3. RENDER STEP CONTENT ---
+  // --- 3. RENDER STEP CONTENT (CODE GỐC) ---
   const renderStepContent = () => {
     switch (currentStep) {
       case 0: // Chọn Loại
-        return <StepSelectType updateData={(d: any) => setBookingData({...bookingData, ...d})} onNext={nextStep} />;
+        return <StepSelectType 
+                  currentType={bookingData.appointmentType} // Truyền xuống để highlight
+                  updateData={(d: any) => setBookingData({...bookingData, ...d})} 
+                  onNext={nextStep} 
+               />;
         
       case 1: // Chọn Dịch vụ & Cơ sở
         return <StepServiceClinic data={bookingData} updateData={setBookingData} onNext={nextStep} onPrev={prevStep} />;
         
       case 2: // RẼ NHÁNH
         if (bookingData.appointmentType === 'STANDARD') {
-            // Standard: Chọn Buổi (Sáng/Chiều) -> Next sang bước 3 (Summary)
             return <StepDateTimeStandard data={bookingData} updateData={setBookingData} onNext={nextStep} onPrev={prevStep} />;
         }
-        // VIP: Chọn Bác sĩ
         return <StepDoctor data={bookingData} updateData={setBookingData} onNext={nextStep} onPrev={prevStep} />;
 
       case 3: // RẼ NHÁNH
         if (bookingData.appointmentType === 'STANDARD') {
-             // Standard: Summary
              return <StepSummary data={bookingData} onConfirm={handleConfirmBooking} onPrev={prevStep} loading={isSubmitting} />;
         }
-        // VIP: Chọn Giờ chi tiết
         return <StepDateTime data={bookingData} updateData={setBookingData} onNext={nextStep} onPrev={prevStep} />;
 
       case 4: // VIP: Summary
@@ -161,13 +224,8 @@ export default function BookingPage() {
     }
   };
 
-  // --- 4. STEPPER DYNAMIC ---
-  // Xác định tổng số bước (Index cuối cùng)
-  // Standard: 0, 1, 2, 3 (Tổng 4 bước)
-  // VIP: 0, 1, 2, 3, 4 (Tổng 5 bước)
+  // --- 4. STEPPER DYNAMIC (CODE GỐC) ---
   const maxStepIndex = bookingData.appointmentType === 'STANDARD' ? 3 : 4;
-
-  // Tạo mảng bước để map: [0, 1, 2, 3] hoặc [0, 1, 2, 3, 4]
   const stepsArray = Array.from({ length: maxStepIndex + 1 }, (_, i) => i);
 
   return (
@@ -181,11 +239,10 @@ export default function BookingPage() {
             <h2 className="text-3xl font-bold text-white mb-2">Đặt Lịch Khám</h2>
             <p className="text-blue-100">Hoàn tất các bước để chăm sóc nụ cười của bạn</p>
   
-            {/* STEPPER CLEAN & DYNAMIC */}
+            {/* STEPPER */}
              <div className="flex justify-center items-center mt-8 gap-2 sm:gap-4">
                 {stepsArray.map((stepIdx) => (
                     <div key={stepIdx} className="flex items-center">
-                        {/* Vòng tròn số */}
                         <div 
                             className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all duration-300
                             ${currentStep >= stepIdx 
@@ -194,11 +251,9 @@ export default function BookingPage() {
                         >
                             {stepIdx + 1}
                         </div>
-                        
-                        {/* Đường kẻ nối (Chỉ vẽ nếu không phải bước cuối) */}
                         {stepIdx < maxStepIndex && (
                             <div className={`w-8 sm:w-16 h-1 mx-1 sm:mx-2 rounded-full transition-all duration-500 
-                                ${currentStep > stepIdx ? 'bg-white' : 'bg-blue-400/40'}`}>
+                            ${currentStep > stepIdx ? 'bg-white' : 'bg-blue-400/40'}`}>
                             </div>
                         )}
                     </div>

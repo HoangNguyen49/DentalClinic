@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import employeeService from "../../../services/hr/employeeService";
-import type { Department, Role, Clinic } from "../../../services/hr/employeeService";
+import { hrApi } from "../../../services/hr/hrApi";
+import type { Department, Role, HrClinic } from "../../../services/hr/hrApi";
+import { useHrApi } from "../../../hooks/useHrApi";
 import { X, Save, ArrowLeft } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -24,76 +25,87 @@ function CreateEmployeeForm() {
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
-  const [clinics, setClinics] = useState<Clinic[]>([]);
+  const [clinics, setClinics] = useState<HrClinic[]>([]);
 
-  const [loading, setLoading] = useState(false);
+  const { execute: executeApi, loading } = useHrApi<any>();
   const [loadingOptions, setLoadingOptions] = useState(true);
 
   useEffect(() => {
     fetchOptions();
+    fetchPreviewCode();
   }, []);
+
+  // Lấy mã nhân viên preview để hiển thị trong form
+  const fetchPreviewCode = async () => {
+    await executeApi(() => hrApi.employees.previewCode(), {
+      onSuccess: (data: any) => {
+        if (data?.code) {
+          setCode(data.code);
+        }
+      },
+      errorMessage: "Không thể tải mã nhân viên",
+      showErrorToast: false, // Không hiển thị lỗi nếu không load được preview
+    });
+  };
 
   // Lấy dữ liệu các lựa chọn phòng ban, vai trò, phòng khám từ API và lọc dữ liệu không hợp lệ
   const fetchOptions = async () => {
     setLoadingOptions(true);
-    try {
-      const departmentsRes = await employeeService.getDepartments();
-      const forbiddenDepartmentNames = ["ADMIN", "ADMINISTRATION", "HUMAN RESOURCES", "HUMAN RESOURCE"];
-      const departmentsData = (departmentsRes.data || []).filter((dept) => {
-        if (!dept.departmentName) return false;
-        const name = dept.departmentName.toUpperCase();
-        return !forbiddenDepartmentNames.some(forbidden =>
-          name === forbidden || name.includes(forbidden)
-        );
-      });
-      setDepartments(departmentsData);
+    
+    await executeApi(hrApi.management.getDepartments, {
+      onSuccess: (data: any) => {
+        const forbiddenDepartmentNames = ["ADMIN", "ADMINISTRATION", "HUMAN RESOURCES", "HUMAN RESOURCE"];
+        const departmentsData = ((data as Department[]) || []).filter((dept) => {
+          if (!dept.departmentName) return false;
+          const name = dept.departmentName.toUpperCase();
+          return !forbiddenDepartmentNames.some(forbidden =>
+            name === forbidden || name.includes(forbidden)
+          );
+        });
+        setDepartments(departmentsData);
+      },
+      errorMessage: t("create.messages.failedToLoad"),
+      showErrorToast: false,
+    });
 
-      const rolesRes = await employeeService.getRoles();
-      const filteredRoles = (rolesRes.data || []).filter((role) => {
-        if (!role.roleName) return false;
-        const normalized = role.roleName.toUpperCase();
-        return normalized !== "ADMIN" &&
-          normalized !== "USER" &&
-          normalized !== "HR" &&
-          !normalized.includes("HR");
-      });
-      setRoles(filteredRoles);
+    await executeApi(hrApi.management.getRoles, {
+      onSuccess: (data: any) => {
+        const filteredRoles = ((data as Role[]) || []).filter((role) => {
+          if (!role.roleName) return false;
+          const normalized = role.roleName.toUpperCase();
+          return normalized !== "ADMIN" &&
+            normalized !== "USER" &&
+            normalized !== "HR" &&
+            !normalized.includes("HR");
+        });
+        setRoles(filteredRoles);
+      },
+      errorMessage: t("create.messages.failedToLoad"),
+      showErrorToast: false,
+    });
 
-      const clinicsRes = await employeeService.getClinics();
-      const clinicsData = (clinicsRes.data || []).map((c: any) => ({
-        id: c.id,
-        clinicName: c.clinicName || c.name,
-        isActive: c.isActive !== undefined ? c.isActive : true,
-      }));
-      setClinics(clinicsData);
-    } catch (err: any) {
-      console.error("Error fetching options:", err);
+    await executeApi(hrApi.management.getClinics, {
+      onSuccess: (data: any) => {
+        const clinicsData = ((data as HrClinic[]) || []).map((c: any) => ({
+          id: c.id,
+          clinicName: c.clinicName || c.name,
+          isActive: c.isActive !== undefined ? c.isActive : true,
+        }));
+        setClinics(clinicsData);
+      },
+      errorMessage: t("create.messages.failedToLoad"),
+      showErrorToast: false,
+    });
 
-      let errorMsg = t("create.messages.failedToLoad");
-
-      if (err?.response?.data) {
-        const errorData = err.response.data;
-        if (errorData.message) {
-          errorMsg = errorData.message;
-        } else if (errorData.error) {
-          errorMsg = errorData.error + (errorData.message ? `: ${errorData.message}` : "");
-        }
-      } else if (err?.message) {
-        errorMsg = `${t("create.messages.connectionError")} ${err.message}`;
-      }
-
-      toast.error(errorMsg);
-    } finally {
-      setLoadingOptions(false);
-    }
+    setLoadingOptions(false);
   };
 
   // Xử lý submit form tạo nhân viên mới
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate dữ liệu bắt buộc nhập
-    if (!fullName || !email || !phone || !code || !roleId || !departmentId) {
+    // Validate dữ liệu bắt buộc nhập (code không bắt buộc vì sẽ tự động sinh)
+    if (!fullName || !email || !phone || !roleId || !departmentId) {
       toast.error(t("create.validation.fillRequired"));
       return;
     }
@@ -116,73 +128,39 @@ function CreateEmployeeForm() {
       return;
     }
 
-    setLoading(true);
-    try {
-      // Dữ liệu gửi lên backend
-      const employeeRequest: any = {
-        code,
-        fullName,
-        email,
-        phone,
-        password,
-        departmentId,
-        roleId,
-        ...(isDoctor ? {} : { clinicId }),
-        ...(isDoctor && specialties.length > 0 ? { specialties } : {}),
-      };
+    // Dữ liệu gửi lên backend (code là optional, backend sẽ tự động sinh nếu không có)
+    const employeeRequest: any = {
+      ...(code && code.trim() ? { code: code.trim() } : {}), // Chỉ gửi code nếu có
+      fullName,
+      email,
+      phone,
+      password,
+      departmentId,
+      roleId,
+      ...(isDoctor ? {} : { clinicId }),
+      ...(isDoctor && specialties.length > 0 ? { specialties } : {}),
+    };
 
-      const createRes = await employeeService.createEmployee(employeeRequest);
-
-      const employeeId = createRes.data.id;
-
-      toast.success(t("create.messages.createdSuccess"));
-      navigate("/hr/employees");
-    } catch (err: any) {
-      console.error("Error creating employee:", err);
-
-      // Hiển thị lỗi trả về từ backend nếu có
-      let errorMsg = t("create.messages.failedToCreate");
-
-      if (err?.response?.data) {
-        const errorData = err.response.data;
-        if (errorData.errors && typeof errorData.errors === 'object' && !Array.isArray(errorData.errors)) {
-          const errorMessages = Object.entries(errorData.errors)
-            .map(([field, message]) => {
-              const fieldMap: { [key: string]: string } = {
-                fullName: t("create.fieldMap.fullName"),
-                email: t("create.fieldMap.email"),
-                phone: t("create.fieldMap.phone"),
-                password: t("create.fieldMap.password"),
-                roleId: t("create.fieldMap.roleId"),
-                departmentId: t("create.fieldMap.departmentId"),
-                clinicId: t("create.fieldMap.clinicId"),
-              };
-              const fieldName = fieldMap[field] || field;
-              return `${fieldName}: ${message}`;
-            })
-            .join("\n");
-          errorMsg = errorMessages || errorData.message || errorMsg;
-        }
-        else if (Array.isArray(errorData.errors)) {
-          errorMsg = errorData.errors.join("\n");
-        }
-        else if (errorData.validationErrors && Array.isArray(errorData.validationErrors)) {
-          errorMsg = errorData.validationErrors.join("\n");
-        }
-        else if (errorData.message) {
-          errorMsg = errorData.message;
-        }
-        else if (errorData.error) {
-          errorMsg = errorData.error + (errorData.message ? `: ${errorData.message}` : "");
-        }
-      } else if (err?.message) {
-        errorMsg = `${t("create.messages.connectionError")} ${err.message}`;
-      }
-
-      toast.error(errorMsg, { autoClose: 7000 });
-    } finally {
-      setLoading(false);
-    }
+    await executeApi(() => hrApi.employees.create(employeeRequest), {
+      onSuccess: (data: any) => {
+        const employeeCode = data?.code || "N/A";
+        toast.success(
+          <div>
+            <div>{t("create.messages.createdSuccess")}</div>
+            {!code && (
+              <div className="mt-1 text-sm font-semibold">
+                {t("create.messages.employeeCode", "Mã nhân viên")}: <span className="text-blue-600">{employeeCode}</span>
+              </div>
+            )}
+          </div>,
+          { autoClose: 5000 }
+        );
+        setTimeout(() => {
+          navigate("/hr/employees");
+        }, 2000);
+      },
+      errorMessage: t("create.messages.failedToCreate"),
+    });
   };
 
   if (loadingOptions) {
@@ -233,17 +211,21 @@ function CreateEmployeeForm() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t("create.form.employeeCode.label")} <span className="text-red-500">*</span>
+                  {t("create.form.employeeCode.label")} <span className="text-gray-500 text-xs">({t("create.form.employeeCode.optional", "Tùy chọn - sẽ tự động sinh nếu để trống")})</span>
                 </label>
                 <input
                   type="text"
                   value={code}
                   onChange={(e) => setCode(e.target.value)}
-                  required
                   className="w-full border border-gray-300 rounded-lg px-4 py-2.5 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder={t("create.form.employeeCode.placeholder")}
+                  placeholder={t("create.form.employeeCode.placeholder", "Để trống để tự động sinh mã SDC_NV...")}
                   aria-label={t("create.form.employeeCode.label")}
                 />
+                {!code && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    {t("create.form.employeeCode.autoGenerate", "Mã nhân viên sẽ được tự động sinh với format SDC_NV{number}")}
+                  </p>
+                )}
               </div>
 
               <div>

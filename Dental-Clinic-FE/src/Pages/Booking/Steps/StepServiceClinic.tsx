@@ -28,11 +28,12 @@ interface StepProps {
   data: {
     clinicId: number | null;
     selectedServices: any[];
+    prefilledServiceId?: number | null; 
     [key: string]: any;
   };
   updateData: (data: any) => void;
   onNext: () => void;
-  onPrev: () => void; // Nhận hàm onPrev từ cha
+  onPrev: () => void; 
 }
 
 // --- ICONS ---
@@ -74,6 +75,59 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
     };
     fetchData();
   }, []);
+
+  // --- [FIXED] LOGIC TỰ ĐỘNG CHỌN DỊCH VỤ TỪ AI ---
+  useEffect(() => {
+    // Chỉ chạy khi đã tải xong services và có ID từ AI gửi sang
+    if (services.length > 0 && data.prefilledServiceId) {
+        let found = false;
+
+        // Duyệt qua từng Service Cha
+        for (const service of services) {
+            // Tìm xem ID mà AI gửi (prefilledServiceId) có khớp với Variant nào trong service này không
+            const targetVariant = service.variants.find(v => v.variantId === data.prefilledServiceId);
+
+            if (targetVariant) {
+                // 1. Mở Dropdown của Service Cha
+                setExpandedServiceId(service.id);
+
+                // 2. Tạo object Variant để lưu vào state
+                const variantItem = {
+                    id: targetVariant.variantId,             
+                    serviceName: targetVariant.variantName,  
+                    parentName: service.serviceName,   
+                    category: service.category,        
+                    price: targetVariant.price,
+                    defaultDuration: targetVariant.duration,
+                    description: targetVariant.description
+                };
+
+                // 3. Cập nhật thẳng vào data (Thay vì giả lập click)
+                // Lưu ý: Logic này đang Replace (chọn 1). Nếu muốn chọn thêm thì dùng [...data.selectedServices, variantItem]
+                updateData({ 
+                    ...data,
+                    selectedServices: [variantItem], 
+                    serviceCategory: service.category,
+                    prefilledServiceId: null // Xóa ID để không bị chạy lại loop này
+                });
+
+                found = true;
+                break; // Tìm thấy rồi thì thoát vòng lặp
+            }
+        }
+
+        // Trường hợp phụ: Nếu AI gửi ID của Service Cha (không phải Variant)
+        if (!found) {
+            const parentService = services.find(s => s.id === data.prefilledServiceId);
+            if (parentService) {
+                setExpandedServiceId(parentService.id);
+                // Có thể tự chọn variant đầu tiên nếu muốn, hoặc chỉ mở ra để khách chọn
+                updateData({ ...data, prefilledServiceId: null });
+            }
+        }
+    }
+  }, [services, data.prefilledServiceId]); 
+  // --- END FIX ---
 
   const handleSelectClinic = (clinic: any) => {
     updateData({ 
@@ -119,7 +173,8 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
     updateData({ 
         ...data, 
         selectedServices: newSelected,
-        serviceCategory: primaryCategory
+        serviceCategory: primaryCategory,
+        prefilledServiceId: null 
     });
   };
 
@@ -150,8 +205,8 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
                 <span className="text-lg">📍</span> {clinic.address || 'TP.HCM'}
               </span>
               <div className={`absolute top-5 right-5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors
-                 ${data.clinicId === (clinic.id || clinic.clinicId) ? 'border-[#3366FF]' : 'border-gray-300'}`}>
-                 {data.clinicId === (clinic.id || clinic.clinicId) && <div className="w-2.5 h-2.5 bg-[#3366FF] rounded-full" />}
+                  ${data.clinicId === (clinic.id || clinic.clinicId) ? 'border-[#3366FF]' : 'border-gray-300'}`}>
+                  {data.clinicId === (clinic.id || clinic.clinicId) && <div className="w-2.5 h-2.5 bg-[#3366FF] rounded-full" />}
               </div>
             </div>
           ))}
@@ -168,6 +223,7 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
         <div className="grid grid-cols-1 gap-4 ml-0 md:ml-11">
           {services.map((service) => {
             const isExpanded = expandedServiceId === service.id;
+            // Kiểm tra xem có variant nào của service này đang được chọn không
             const hasSelection = (data.selectedServices || []).some((s: any) => s.category === service.category && s.parentName === service.serviceName);
 
             return (
@@ -209,6 +265,7 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
                             {service.variants && service.variants.length > 0 ? (
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                                     {service.variants.map((variant) => {
+                                        // Kiểm tra xem variant này có nằm trong selectedServices không
                                         const isSelected = (data.selectedServices || []).some((s: any) => s.id === variant.variantId);
                                         
                                         return (
@@ -256,7 +313,7 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
         </div>
       </div>
 
-      {/* NAVIGATION - CĂN 2 BÊN */}
+      {/* NAVIGATION */}
       <div className="flex justify-between pt-6 border-t border-gray-100 mt-8">
         <button
           onClick={onPrev}

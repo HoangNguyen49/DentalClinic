@@ -8,7 +8,7 @@ export default function HolidaysTab() {
     const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // State quản lý form nhập ngày lễ
+    // State phục vụ form nhập ngày lễ mới
     const [startDate, setStartDate] = useState("");
     const [endDate, setEndDate] = useState("");
     const [newName, setNewName] = useState("");
@@ -34,31 +34,44 @@ export default function HolidaysTab() {
         }
     };
 
-    // Lấy danh sách cơ sở
+    // Lấy danh sách tất cả các cơ sở trên hệ thống
     const loadClinics = async () => {
         try {
             const data = await systemService.getAllClinics();
             setClinics(data);
         } catch (error) {
-            console.error("Failed to load clinics", error);
+            console.error("Không thể tải danh sách cơ sở", error);
         }
     };
 
-    // Xử lý thêm ngày lễ mới
+    // Thêm ngày lễ mới
     const handleAdd = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!startDate || !newName || !endDate) return;
 
         const start = new Date(startDate);
         const end = new Date(endDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0); // Reset time to compare dates only
+        start.setHours(0, 0, 0, 0);
 
-        if (end < start) {
-            toast.error("Ngày kết thúc phải sau ngày bắt đầu");
+        // Kiểm tra ngày bắt đầu không được là quá khứ hoặc hiện tại
+        if (start <= today) {
+            toast.error("Ngày bắt đầu phải là ngày tương lai (sau ngày hôm nay)");
             return;
         }
 
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        const duration = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        if (end < start) {
+            toast.error("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu");
+            return;
+        }
+
+        // Tính số ngày diễn ra kỳ nghỉ lễ
+        // Nếu cùng một ngày thì duration = 1
+        // Nếu khác ngày thì tính số ngày chênh lệch + 1
+        const diffTime = end.getTime() - start.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        const duration = diffDays + 1; // +1 để bao gồm cả ngày bắt đầu
 
         setAdding(true);
         try {
@@ -70,14 +83,19 @@ export default function HolidaysTab() {
             setIsRecurring(false);
             setSelectedClinicId(null);
             toast.success("Đã thêm ngày lễ");
-        } catch (error) {
-            toast.error("Thêm thất bại");
+        } catch (error: any) {
+            // Hiển thị message từ backend nếu có
+            const errorMessage = error?.response?.data?.message || 
+                                error?.response?.data?.error || 
+                                error?.message || 
+                                "Thêm thất bại";
+            toast.error(errorMessage);
         } finally {
             setAdding(false);
         }
     };
 
-    // Xử lý xóa ngày lễ
+    // Xóa ngày lễ khỏi danh sách
     const handleDelete = async (id: number) => {
         if (!window.confirm("Bạn có chắc muốn xóa ngày lễ này?")) return;
         try {
@@ -89,7 +107,7 @@ export default function HolidaysTab() {
         }
     };
 
-    // Chọn cơ sở áp dụng ngày lễ
+    // Chọn cơ sở áp dụng cho ngày lễ, bỏ chọn nếu bấm lại
     const selectClinic = (clinicId: number) => {
         setSelectedClinicId(prev => prev === clinicId ? null : clinicId);
     };
@@ -98,7 +116,7 @@ export default function HolidaysTab() {
 
     return (
         <div className="space-y-8">
-            {/* Form thêm ngày lễ mới */}
+            {/* Form nhập ngày nghỉ lễ mới */}
             <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                 <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
                     <Plus className="w-4 h-4" /> Thêm ngày nghỉ lễ mới
@@ -133,7 +151,18 @@ export default function HolidaysTab() {
                                 id="holiday-start-date"
                                 type="date"
                                 value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
+                                onChange={(e) => {
+                                    setStartDate(e.target.value);
+                                    // Nếu endDate chưa được set hoặc nhỏ hơn startDate, tự động set endDate = startDate
+                                    if (!endDate || e.target.value > endDate) {
+                                        setEndDate(e.target.value);
+                                    }
+                                }}
+                                min={(() => {
+                                    const tomorrow = new Date();
+                                    tomorrow.setDate(tomorrow.getDate() + 1);
+                                    return tomorrow.toISOString().split('T')[0];
+                                })()}
                                 className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 required
                             />
@@ -166,8 +195,7 @@ export default function HolidaysTab() {
                             <label htmlFor="recurring" className="text-sm text-slate-700">Lặp lại hàng năm</label>
                         </div>
                     </div>
-
-                    {/* Chọn cơ sở áp dụng */}
+                    {/* Chọn cơ sở áp dụng cho ngày lễ */}
                     <div>
                         <label className="block text-xs font-medium text-slate-700 mb-2">Áp dụng cho cơ sở (Để trống nếu áp dụng tất cả)</label>
                         <div className="flex flex-wrap gap-2">
@@ -199,7 +227,7 @@ export default function HolidaysTab() {
                 </form>
             </div>
 
-            {/* Danh sách ngày lễ */}
+            {/* Bảng danh sách ngày nghỉ lễ */}
             <div className="border rounded-lg overflow-hidden">
                 <table className="min-w-full divide-y divide-slate-200">
                     <thead className="bg-slate-50">
@@ -213,7 +241,7 @@ export default function HolidaysTab() {
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
                         {holidays.map((holiday) => {
-                            // Tính toán ngày kết thúc kỳ nghỉ lễ
+                            // Tính ngày kết thúc kỳ nghỉ lễ
                             const start = new Date(holiday.date);
                             const end = new Date(start);
                             end.setDate(start.getDate() + (holiday.duration - 1));

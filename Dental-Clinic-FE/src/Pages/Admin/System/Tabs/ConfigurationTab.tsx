@@ -4,22 +4,28 @@ import { type SystemConfig, systemService } from "../../../../services/admin/sys
 import { toast } from "react-toastify";
 
 export default function ConfigurationTab() {
-    // State lưu danh sách cấu hình hệ thống
+    // State cho danh sách cấu hình hệ thống
     const [configs, setConfigs] = useState<SystemConfig[]>([]);
-    // Trạng thái loading khi tải dữ liệu
+    // Loading khi lấy dữ liệu
     const [loading, setLoading] = useState(true);
-    // Trạng thái khi đang lưu cấu hình nào đó
+    // Đang lưu cấu hình nào
     const [saving, setSaving] = useState<string | null>(null);
 
     useEffect(() => {
         loadConfigs();
     }, []);
 
-    // Hàm lấy tất cả cấu hình từ server
+    // Lấy toàn bộ cấu hình từ server (loại bỏ WORKING_HOURS_START và WORKING_HOURS_END vì backend không sử dụng)
     const loadConfigs = async () => {
         try {
             const data = await systemService.getAllConfigs();
-            setConfigs(data);
+            // Filter out WORKING_HOURS_START và WORKING_HOURS_END vì backend không sử dụng
+            const filteredData = data.filter(
+                (config) => 
+                    config.configKey !== "WORKING_HOURS_START" && 
+                    config.configKey !== "WORKING_HOURS_END"
+            );
+            setConfigs(filteredData);
         } catch (error) {
             toast.error("Không thể tải cấu hình");
         } finally {
@@ -27,7 +33,7 @@ export default function ConfigurationTab() {
         }
     };
 
-    // Hàm lưu thay đổi cho từng cấu hình
+    // Lưu 1 cấu hình
     const handleSave = async (config: SystemConfig) => {
         setSaving(config.configKey);
         try {
@@ -40,20 +46,19 @@ export default function ConfigurationTab() {
         }
     };
 
-    // Hàm thay đổi giá trị cấu hình khi nhập liệu
+    // Thay đổi giá trị cấu hình nhập liệu
     const handleChange = (key: string, value: string) => {
         setConfigs((prev) =>
             prev.map((c) => (c.configKey === key ? { ...c, configValue: value } : c))
         );
     };
 
-    // Hiển thị trạng thái loading khi chưa tải xong
+    // Loading khi chưa xong thì hiển thị icon quay
     if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-blue-600" /></div>;
 
     return (
         <div className="space-y-6 max-w-3xl">
             <div className="grid gap-6">
-                {/* Render danh sách các cấu hình */}
                 {configs.map((config) => (
                     <div key={config.id} className="bg-slate-50 p-4 rounded-lg border border-slate-200">
                         <div className="flex justify-between items-start gap-4">
@@ -75,7 +80,7 @@ export default function ConfigurationTab() {
                                     className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />
                             </div>
-                            {/* Nút lưu cấu hình */}
+                            {/* Nút lưu */}
                             <button
                                 onClick={() => handleSave(config)}
                                 disabled={saving === config.configKey}
@@ -92,7 +97,7 @@ export default function ConfigurationTab() {
                     </div>
                 ))}
 
-                {/* Thông báo nếu không có cấu hình */}
+                {/* Hiện thông báo nếu không có cấu hình */}
                 {configs.length === 0 && (
                     <p className="text-center text-slate-500 py-8">Chưa có cấu hình nào.</p>
                 )}

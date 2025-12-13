@@ -1,7 +1,8 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
 
-import type { TableSchedule, DaySchedule } from "./utils/scheduleUtils";
+import type { TableSchedule, DaySchedule } from "../../../utils/hr/scheduleUtils";
+import { isClinicHoliday } from "../../../utils/hr/scheduleUtils";
 
 type Holiday = {
     id: number;
@@ -46,96 +47,13 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
         return tableSchedules[doctorId]?.[dayKey] || {};
     };
 
-    // Check if a clinic has holiday on a specific date
-    const isClinicHoliday = (clinicId: number, date: string): boolean => {
-        if (!date || holidays.length === 0) return false;
-
-        // Parse date string (expecting YYYY-MM-DD format)
-        let checkDate: Date;
-        try {
-            // Try parsing as ISO format first (YYYY-MM-DD)
-            if (date.includes('-') && date.length >= 10) {
-                checkDate = new Date(date + 'T00:00:00');
-            } else {
-                // Fallback: try parsing as locale format
-                checkDate = new Date(date);
-            }
-
-            // Validate date
-            if (isNaN(checkDate.getTime())) {
-                console.warn('Invalid date format:', date);
-                return false;
-            }
-        } catch (e) {
-            console.warn('Error parsing date:', date, e);
-            return false;
-        }
-
-        const checkYear = checkDate.getFullYear();
-        const checkMonth = checkDate.getMonth();
-        const checkDay = checkDate.getDate();
-        const checkDateNum = checkYear * 10000 + checkMonth * 100 + checkDay;
-
-        for (const holiday of holidays) {
-            if (!holiday.date) continue;
-
-            try {
-                // Parse holiday date (assuming format YYYY-MM-DD)
-                const holidayDateStr = holiday.date.split('T')[0]; // Remove time if present
-                const holidayDate = new Date(holidayDateStr + 'T00:00:00');
-
-                if (isNaN(holidayDate.getTime())) {
-                    continue;
-                }
-
-                let holidayStart = new Date(holidayDate);
-
-                // Handle recurring holidays
-                if (holiday.isRecurring) {
-                    holidayStart.setFullYear(checkYear);
-                    // Handle leap year case (Feb 29)
-                    if (holidayStart.getMonth() !== holidayDate.getMonth() ||
-                        holidayStart.getDate() !== holidayDate.getDate()) {
-                        continue; // Skip if date doesn't exist in this year
-                    }
-                }
-
-                const holidayStartYear = holidayStart.getFullYear();
-                const holidayStartMonth = holidayStart.getMonth();
-                const holidayStartDay = holidayStart.getDate();
-
-                const holidayEnd = new Date(holidayStart);
-                holidayEnd.setDate(holidayEnd.getDate() + (holiday.duration || 1) - 1);
-                const holidayEndYear = holidayEnd.getFullYear();
-                const holidayEndMonth = holidayEnd.getMonth();
-                const holidayEndDay = holidayEnd.getDate();
-
-                // Compare dates (year, month, day only - ignore time)
-                const holidayStartNum = holidayStartYear * 10000 + holidayStartMonth * 100 + holidayStartDay;
-                const holidayEndNum = holidayEndYear * 10000 + holidayEndMonth * 100 + holidayEndDay;
-
-                // Check if date falls within holiday range
-                if (checkDateNum >= holidayStartNum && checkDateNum <= holidayEndNum) {
-                    // Global holiday (clinicId is null/undefined) applies to all clinics
-                    if (holiday.clinicId == null || holiday.clinicId === undefined) {
-                        return true;
-                    }
-                    // Specific clinic holiday
-                    if (holiday.clinicId === clinicId) {
-                        return true;
-                    }
-                }
-            } catch (e) {
-                console.warn('Error processing holiday:', holiday, e);
-                continue;
-            }
-        }
-        return false;
-    };
-
-    // Get available clinics for a specific date (filter out clinics on holiday)
+    // Get available clinics for a specific date (filter out clinics on holiday and inactive clinics)
     const getAvailableClinics = (date: string) => {
-        return clinics.filter(clinic => !isClinicHoliday(clinic.id, date));
+        // First, filter out any clinics that don't have isActive === true
+        const activeClinics = clinics.filter(clinic => clinic.isActive === true);
+        
+        // Then filter out clinics on holiday
+        return activeClinics.filter(clinic => !isClinicHoliday(clinic.id, date, holidays));
     };
 
     return (
@@ -217,6 +135,16 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                     </td>
                                     {daysOfWeek.map((day) => {
                                         const daySchedule = getDaySchedule(doctor.id, day.key);
+                                        const dayDate = day.dateStringISO || day.dateString;
+                                        const availableClinics = getAvailableClinics(dayDate);
+                                        const availableClinicIds = availableClinics.map(c => c.id);
+                                        
+                                        // Only show selected clinic if it's available (not on holiday)
+                                        const morningClinicId = daySchedule.morning?.clinicId;
+                                        const afternoonClinicId = daySchedule.afternoon?.clinicId;
+                                        const validMorningClinicId = morningClinicId && availableClinicIds.includes(morningClinicId) ? morningClinicId : "";
+                                        const validAfternoonClinicId = afternoonClinicId && availableClinicIds.includes(afternoonClinicId) ? afternoonClinicId : "";
+                                        
                                         return (
                                             <td
                                                 key={day.key}
@@ -228,7 +156,7 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                                             {t("create.shifts.morning")} (08:00 - 11:00)
                                                         </div>
                                                         <select
-                                                            value={daySchedule.morning?.clinicId || ""}
+                                                            value={validMorningClinicId}
                                                             onChange={(e) =>
                                                                 onUpdateShiftClinic(
                                                                     doctor.id,
@@ -240,14 +168,14 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                                             className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                             aria-label={`${doctor.fullName || doctor.name
                                                                 } - ${day.label} - Morning Shift - Clinic`}
-                                                            disabled={getAvailableClinics(day.dateStringISO || day.dateString).length === 0}
+                                                            disabled={availableClinics.length === 0}
                                                         >
                                                             <option value="">
-                                                                {getAvailableClinics(day.dateStringISO || day.dateString).length === 0
+                                                                {availableClinics.length === 0
                                                                     ? t("list.off")
                                                                     : t("create.table.selectClinic")}
                                                             </option>
-                                                            {getAvailableClinics(day.dateStringISO || day.dateString).map((clinic) => (
+                                                            {availableClinics.map((clinic) => (
                                                                 <option key={clinic.id} value={clinic.id}>
                                                                     {clinic.name || `Clinic ${clinic.id}`}
                                                                 </option>
@@ -259,7 +187,7 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                                             {t("create.shifts.afternoon")} (13:00 - 18:00)
                                                         </div>
                                                         <select
-                                                            value={daySchedule.afternoon?.clinicId || ""}
+                                                            value={validAfternoonClinicId}
                                                             onChange={(e) =>
                                                                 onUpdateShiftClinic(
                                                                     doctor.id,
@@ -271,14 +199,14 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                                             className="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                                                             aria-label={`${doctor.fullName || doctor.name
                                                                 } - ${day.label} - Afternoon Shift - Clinic`}
-                                                            disabled={getAvailableClinics(day.dateStringISO || day.dateString).length === 0}
+                                                            disabled={availableClinics.length === 0}
                                                         >
                                                             <option value="">
-                                                                {getAvailableClinics(day.dateStringISO || day.dateString).length === 0
+                                                                {availableClinics.length === 0
                                                                     ? t("list.off")
                                                                     : t("create.table.selectClinic")}
                                                             </option>
-                                                            {getAvailableClinics(day.dateStringISO || day.dateString).map((clinic) => (
+                                                            {availableClinics.map((clinic) => (
                                                                 <option key={clinic.id} value={clinic.id}>
                                                                     {clinic.name || `Clinic ${clinic.id}`}
                                                                 </option>

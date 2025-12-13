@@ -1,4 +1,5 @@
 interface StepProps {
+  currentType?: string; // [AI ADDITION] Thêm prop này
   updateData: (data: any) => void;
   onNext: () => void;
 }
@@ -8,7 +9,7 @@ const formatCurrency = (amount: number) => {
   return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount);
 };
 
-export default function StepSelectType({ updateData, onNext }: StepProps) {
+export default function StepSelectType({ currentType, updateData, onNext }: StepProps) { // Nhận prop currentType
   
   const handleSelect = (type: 'STANDARD' | 'VIP', fee: number) => {
     updateData({ 
@@ -30,7 +31,12 @@ export default function StepSelectType({ updateData, onNext }: StepProps) {
         {/* GÓI STANDARD */}
         <div 
             onClick={() => handleSelect('STANDARD', 500000)}
-            className="border-2 border-gray-100 hover:border-blue-500 bg-white p-8 rounded-2xl cursor-pointer transition-all hover:shadow-xl group relative flex flex-col h-full"
+            className={`
+                border-2 p-8 rounded-2xl cursor-pointer transition-all hover:shadow-xl group relative flex flex-col h-full
+                ${currentType === 'STANDARD' 
+                    ? 'border-[#3366FF] bg-blue-50 ring-2 ring-blue-200' 
+                    : 'border-gray-100 hover:border-blue-500 bg-white'}
+            `}
         >
             <div className="absolute top-0 right-0 bg-blue-100 text-blue-700 px-3 py-1 rounded-bl-xl text-xs font-bold">PHỔ BIẾN</div>
             <div className="text-center mb-6">
@@ -51,7 +57,12 @@ export default function StepSelectType({ updateData, onNext }: StepProps) {
         {/* GÓI VIP */}
         <div 
             onClick={() => handleSelect('VIP', 1000000)}
-            className="border-2 border-gray-100 hover:border-purple-500 bg-white p-8 rounded-2xl cursor-pointer transition-all hover:shadow-xl group relative overflow-hidden flex flex-col h-full"
+            className={`
+                border-2 p-8 rounded-2xl cursor-pointer transition-all hover:shadow-xl group relative overflow-hidden flex flex-col h-full
+                ${currentType === 'VIP' 
+                    ? 'border-purple-500 bg-purple-50 ring-2 ring-purple-200' 
+                    : 'border-gray-100 hover:border-purple-500 bg-white'}
+            `}
         >
             <div className="absolute top-0 right-0 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-bold px-4 py-1 rounded-bl-xl">CAO CẤP</div>
             <div className="text-center mb-6">

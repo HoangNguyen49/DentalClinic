@@ -10,7 +10,7 @@ export default function AuditLogsTab() {
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
 
-    // Bộ lọc tìm kiếm audit log
+    // Bộ lọc tìm kiếm log (action, table, userId)
     const [actionFilter, setActionFilter] = useState("");
     const [tableFilter, setTableFilter] = useState("");
     const [userIdFilter, setUserIdFilter] = useState<number | undefined>(undefined);
@@ -19,7 +19,7 @@ export default function AuditLogsTab() {
         loadLogs();
     }, [page, actionFilter, tableFilter, userIdFilter]);
 
-    // Lấy danh sách audit log từ server
+    // Lấy danh sách nhật ký từ server
     const loadLogs = async () => {
         setLoading(true);
         try {
@@ -30,8 +30,8 @@ export default function AuditLogsTab() {
                 tableName: tableFilter,
                 userId: userIdFilter,
             });
-            setLogs(data.content);
-            setTotalPages(data.totalPages);
+            setLogs(data?.content || []);
+            setTotalPages(data?.totalPages || 0);
         } catch (error) {
             toast.error("Không thể tải nhật ký hệ thống");
         } finally {
@@ -41,7 +41,7 @@ export default function AuditLogsTab() {
 
     return (
         <div className="space-y-6">
-            {/* Bộ lọc tìm kiếm */}
+            {/* Vùng bộ lọc tìm kiếm log */}
             <div className="flex flex-wrap gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
                 <div className="flex-1 min-w-[200px]">
                     <div className="relative">
@@ -86,7 +86,7 @@ export default function AuditLogsTab() {
                 </button>
             </div>
 
-            {/* Bảng hiển thị nhật ký audit */}
+            {/* Bảng hiển thị nhật ký hệ thống */}
             <div className="border rounded-lg overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="min-w-full divide-y divide-slate-200">
@@ -106,7 +106,7 @@ export default function AuditLogsTab() {
                                         <Loader2 className="w-6 h-6 animate-spin mx-auto text-blue-600" />
                                     </td>
                                 </tr>
-                            ) : logs.length === 0 ? (
+                            ) : !logs || logs.length === 0 ? (
                                 <tr>
                                     <td colSpan={5} className="px-6 py-8 text-center text-slate-500 text-sm">
                                         Không tìm thấy nhật ký nào.
@@ -144,6 +144,7 @@ export default function AuditLogsTab() {
             {/* Phân trang */}
             <div className="flex justify-between items-center pt-4">
                 <button
+                    // Xử lý lùi trang
                     onClick={() => setPage((p) => Math.max(0, p - 1))}
                     disabled={page === 0}
                     className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
@@ -154,6 +155,7 @@ export default function AuditLogsTab() {
                     Trang {page + 1} / {totalPages || 1}
                 </span>
                 <button
+                    // Xử lý tiến trang
                     onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                     disabled={page >= totalPages - 1}
                     className="px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"

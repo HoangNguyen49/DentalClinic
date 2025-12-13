@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from "react";
-import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
 import { Plus, Calendar, CheckCircle, XCircle, Clock } from "lucide-react";
@@ -7,35 +6,15 @@ import Header from "../../../widgets/Header/Header";
 import Footer from "../../../widgets/Footer/Footer";
 import CreateLeaveRequestForm from "./CreateLeaveRequestForm";
 import { useNotification } from "../../../app/providers/NotificationContext";
-
-const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
-
-// Định nghĩa kiểu dữ liệu cho đơn xin nghỉ
-type LeaveRequest = {
-  id: number;
-  userId: number;
-  userName: string;
-  userFullName?: string;
-  clinicId: number;
-  clinicName?: string;
-  startDate: string;
-  endDate: string;
-  type: string;
-  status: string;
-  reason: string;
-  shiftType?: string;
-  approvedBy?: number;
-  approvedByName?: string;
-  createdAt: string;
-  updatedAt: string;
-};
+import { hrApi } from "../../../services/hr/hrApi";
+import type { HrLeaveRequest } from "../../../services/hr/hrApi";
+import { useHrApi } from "../../../hooks/useHrApi";
 
 export default function LeaveRequestList() {
   const { t } = useTranslation("web");
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { execute: executeApi, loading } = useHrApi<any>();
+  const [leaveRequests, setLeaveRequests] = useState<HrLeaveRequest[]>([]);
   const [showCreateForm, setShowCreateForm] = useState(false);
-  const accessToken = localStorage.getItem("accessToken");
 
   // Lấy danh sách notification để tự động cập nhật khi có đơn được duyệt/từ chối
   const { notifications } = useNotification();
@@ -48,7 +27,6 @@ export default function LeaveRequestList() {
   // Theo dõi notification, nếu có thay đổi liên quan đến đơn xin nghỉ sẽ refetch lại dữ liệu
   useEffect(() => {
     if (!notifications || notifications.length === 0) return;
-    if (!accessToken) return;
 
     const latestNotification = notifications[0];
     if (!latestNotification || latestNotification.notificationId === lastNotificationIdRef.current) {
@@ -68,45 +46,29 @@ export default function LeaveRequestList() {
 
   // Lấy danh sách đơn xin nghỉ của người dùng hiện tại
   const fetchLeaveRequests = async () => {
-    if (!accessToken) return;
-    setLoading(true);
-    try {
-      const response = await axios.get<LeaveRequest[]>(
-        `${apiBase}/api/hr/leave-requests/my`,
-        {
-          headers: { Authorization: `Bearer ${accessToken}` },
-        }
-      );
-      setLeaveRequests(response.data || []);
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message ||
-        t("leaveRequest.messages.loadFailed")
-      );
-    } finally {
-      setLoading(false);
+    const response = await executeApi(hrApi.leaveRequests.getMy, {
+      errorMessage: t("leaveRequest.messages.loadFailed"),
+      showErrorToast: false,
+    }) as HrLeaveRequest[] | null;
+
+    if (response) {
+      setLeaveRequests(response || []);
     }
   };
 
   // Hủy đơn xin nghỉ (chỉ khi trạng thái là PENDING)
   const handleCancel = async (leaveRequestId: number) => {
-    if (!accessToken) return;
     if (!window.confirm(t("leaveRequest.messages.confirmCancel"))) {
       return;
     }
 
-    try {
-      await axios.delete(`${apiBase}/api/hr/leave-requests/${leaveRequestId}`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      toast.success(t("leaveRequest.messages.cancelSuccess"));
-      fetchLeaveRequests();
-    } catch (error: any) {
-      toast.error(
-        error?.response?.data?.message ||
-        t("leaveRequest.messages.cancelFailed")
-      );
-    }
+    await executeApi(() => hrApi.leaveRequests.cancel(leaveRequestId), {
+      onSuccess: () => {
+        toast.success(t("leaveRequest.messages.cancelSuccess"));
+        fetchLeaveRequests();
+      },
+      errorMessage: t("leaveRequest.messages.cancelFailed"),
+    });
   };
 
   // Màu nền trạng thái đơn
