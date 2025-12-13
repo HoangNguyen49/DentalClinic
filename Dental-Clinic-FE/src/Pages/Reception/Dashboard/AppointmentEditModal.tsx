@@ -82,7 +82,7 @@ export default function AppointmentEditModal({ appointment, onClose, onSuccess }
                     <span className="text-gray-500">Thời gian</span>
                     <span className="font-medium text-gray-900">
                         {new Date(appointment.startDateTime).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})} - 
-                        {new Date(appointment.endDateTime).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}
+                        {new Date(appointment.endDateTime ?? appointment.startDateTime).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}
                     </span>
                 </div>
             </div>

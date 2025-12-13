@@ -6,55 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
 import ServiceVariantsModal from "./ServiceVariantsModal";
-
-type MedicalRecordImage = {
-  imageId: number;
-  imageUrl: string;
-  description?: string;
-  aiTag?: string;
-  createdAt?: string;
-};
-
-type ServiceVariantDTO = {
-  id: number;
-  variantName: string;
-  description?: string;
-  price?: number;
-};
-
-type ServiceDTO = {
-  id: number;
-  serviceName: string;
-  category?: string;
-  description?: string;
-  defaultDuration?: number;
-  isActive?: boolean;
-  variants?: ServiceVariantDTO[];
-};
-
-type MedicalRecordDTO = {
-  recordId: number;
-  clinic?: { id: number; clinicName: string; address?: string };
-  doctor?: { id: number; fullName: string };
-  patient?: {
-    id: number;
-    patientCode: string;
-    fullName: string;
-    phone?: string;
-    email?: string;
-  };
-  appointmentId?: number;
-  appointmentDateTime?: string;
-  serviceId?: number;
-  serviceName?: string;
-  service?: ServiceDTO;
-  diagnosis: string;
-  treatmentPlan?: string;
-  prescriptionNote?: string;
-  note?: string;
-  recordDate: string;
-  images?: MedicalRecordImage[];
-};
+import type { MedicalRecordDTO, MedicalRecordImage, ServiceDTO } from "../types/doctor";
 
 export default function MedicalRecordDetail() {
   const navigate = useNavigate();
@@ -69,6 +21,8 @@ export default function MedicalRecordDetail() {
   const [serviceMap, setServiceMap] = useState<Record<number, ServiceDTO>>({});
   const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
   const [showVariantsModal, setShowVariantsModal] = useState(false);
+  const [activeVariantId, setActiveVariantId] = useState<number | undefined>(undefined);
+  const [activeVariantName, setActiveVariantName] = useState<string | undefined>(undefined);
 
   const fetchRecord = useCallback(async () => {
     if (!patientId || !recordId) return;
@@ -87,6 +41,9 @@ export default function MedicalRecordDetail() {
         navigate(-1);
         return;
       }
+      console.log("Medical record data:", data);
+      console.log("Medical record service:", data.service);
+      console.log("Medical record serviceVariant:", data.serviceVariant);
       setRecord(data);
       setImages(data.images || []);
     } catch (err) {
@@ -124,20 +81,33 @@ export default function MedicalRecordDetail() {
 
   const serviceLabel = useMemo(() => {
     if (!record) return "N/A";
-    return (
+    const serviceName = 
       record.service?.serviceName ||
       record.serviceName ||
       (record.serviceId && serviceMap[record.serviceId]?.serviceName) ||
-      (record.serviceId ? `Service #${record.serviceId}` : "N/A")
-    );
+      (record.serviceId ? `Service #${record.serviceId}` : "N/A");
+    
+    // Nếu có variant, hiển thị cả variant name
+    if (record.serviceVariant?.variantName) {
+      return `${serviceName} - ${record.serviceVariant.variantName}`;
+    }
+    
+    return serviceName;
   }, [record, serviceMap]);
 
   const handleServiceClick = () => {
     if (record?.service) {
       setSelectedService(record.service);
+      // Set active variant from record
+      const vid = record.serviceVariant?.variantId ?? record.serviceVariant?.id;
+      if (vid) setActiveVariantId(vid);
+      else if (record.serviceVariant?.variantName) setActiveVariantName(record.serviceVariant.variantName);
       setShowVariantsModal(true);
     } else if (record?.serviceId && serviceMap[record.serviceId]) {
       setSelectedService(serviceMap[record.serviceId]);
+      const vid = record.serviceVariant?.variantId ?? record.serviceVariant?.id;
+      if (vid) setActiveVariantId(vid);
+      else if (record.serviceVariant?.variantName) setActiveVariantName(record.serviceVariant.variantName);
       setShowVariantsModal(true);
     }
   };
@@ -373,9 +343,14 @@ export default function MedicalRecordDetail() {
       <ServiceVariantsModal
         isOpen={showVariantsModal}
         service={selectedService}
+        activeVariantId={activeVariantId}
+        activeVariantName={activeVariantName}
+        onlyShowActiveVariant={Boolean(activeVariantId || activeVariantName)}
         onClose={() => {
           setShowVariantsModal(false);
           setSelectedService(null);
+          setActiveVariantId(undefined);
+          setActiveVariantName(undefined);
         }}
       />
     </>

@@ -6,42 +6,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
 import ServiceVariantsModal from "./ServiceVariantsModal";
-
-type ServiceVariantDTO = {
-  id: number;
-  variantName: string;
-  description?: string;
-  price?: number;
-};
-
-type ServiceDTO = {
-  id: number;
-  serviceName: string;
-  category?: string;
-  description?: string;
-  defaultDuration?: number;
-  isActive?: boolean;
-  variants?: ServiceVariantDTO[];
-};
-
-type MedicalRecordDTO = {
-  recordId: number;
-  recordDate: string;
-  diagnosis: string;
-  treatmentPlan?: string;
-  serviceName?: string;
-  serviceId?: number;
-  service?: ServiceDTO;
-  clinic?: { id: number; clinicName: string };
-  doctor?: { id: number; fullName: string };
-  patient?: {
-    id: number;
-    patientCode: string;
-    fullName: string;
-    phone?: string;
-    email?: string;
-  };
-};
+import type { MedicalRecordDTO, ServiceDTO, ServiceVariantDTO } from "../types/doctor";
 
 export default function PatientMedicalRecords() {
   const { patientId } = useParams<{ patientId: string }>();
@@ -54,6 +19,8 @@ export default function PatientMedicalRecords() {
   const [loading, setLoading] = useState(true);
   const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
   const [showVariantsModal, setShowVariantsModal] = useState(false);
+  const [activeVariantId, setActiveVariantId] = useState<number | undefined>(undefined);
+  const [activeVariantName, setActiveVariantName] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!patientId) return;
@@ -67,6 +34,16 @@ export default function PatientMedicalRecords() {
             withCredentials: true,
           }
         );
+        console.log("Medical records response:", response.data);
+        response.data?.forEach((record, index) => {
+          console.log(`Record ${index}:`, {
+            recordId: record.recordId,
+            service: record.service,
+            serviceVariant: record.serviceVariant,
+            serviceId: record.serviceId,
+            serviceName: record.serviceName
+          });
+        });
         const data =
           response.data?.sort(
             (a, b) => new Date(b.recordDate).getTime() - new Date(a.recordDate).getTime()
@@ -103,13 +80,25 @@ export default function PatientMedicalRecords() {
     fetchServices();
   }, [apiBase, accessToken]);
 
-  const handleServiceClick = (service: ServiceDTO | undefined, serviceId?: number) => {
+  const handleServiceClick = (service: ServiceDTO | null | undefined, serviceId?: number, selectedVariant?: ServiceVariantDTO | null | undefined) => {
     if (service) {
       setSelectedService(service);
       setShowVariantsModal(true);
     } else if (serviceId && serviceMap[serviceId]) {
       setSelectedService(serviceMap[serviceId]);
       setShowVariantsModal(true);
+    }
+    // Determine active variant from selectedVariant if provided
+    const vid = selectedVariant?.variantId ?? selectedVariant?.id;
+    if (vid) {
+      setActiveVariantId(vid);
+      setActiveVariantName(undefined);
+    } else if (selectedVariant?.variantName) {
+      setActiveVariantName(selectedVariant.variantName);
+      setActiveVariantId(undefined);
+    } else {
+      setActiveVariantId(undefined);
+      setActiveVariantName(undefined);
     }
   };
 
@@ -167,13 +156,23 @@ export default function PatientMedicalRecords() {
                         </p>
                         <h3 
                           className="text-lg font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition"
-                          onClick={() => handleServiceClick(record.service, record.serviceId)}
+                          onClick={() => handleServiceClick(record.service, record.serviceId, record.serviceVariant)}
                         >
-                          {record.service?.serviceName ||
-                            record.serviceName ||
-                            (record.service?.id && serviceMap[record.service.id]?.serviceName) ||
-                            (record.serviceId && serviceMap[record.serviceId]?.serviceName) ||
-                            (record.serviceId ? `Service #${record.serviceId}` : "Unknown service")}
+                          {(() => {
+                            const serviceName = 
+                              record.service?.serviceName ||
+                              record.serviceName ||
+                              (record.service?.id && serviceMap[record.service.id]?.serviceName) ||
+                              (record.serviceId && serviceMap[record.serviceId]?.serviceName) ||
+                              (record.serviceId ? `Service #${record.serviceId}` : "Unknown service");
+                            
+                            // Nếu có variant, hiển thị cả variant name
+                            if (record.serviceVariant?.variantName) {
+                              return `${serviceName} - ${record.serviceVariant.variantName}`;
+                            }
+                            
+                            return serviceName;
+                          })()}
                         </h3>
                         <p className="text-sm text-gray-500">
                           <Calendar className="mr-1 inline h-4 w-4 text-gray-400" />
@@ -217,9 +216,14 @@ export default function PatientMedicalRecords() {
       <ServiceVariantsModal
         isOpen={showVariantsModal}
         service={selectedService}
+        activeVariantId={activeVariantId}
+        activeVariantName={activeVariantName}
+        onlyShowActiveVariant={Boolean(activeVariantId || activeVariantName)}
         onClose={() => {
           setShowVariantsModal(false);
           setSelectedService(null);
+          setActiveVariantId(undefined);
+          setActiveVariantName(undefined);
         }}
       />
     </>

@@ -5,25 +5,7 @@ import { Search, Filter, Eye, Calendar, Clock, User, MapPin, Crown, DollarSign }
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
-
-type DoctorAppointmentDTO = {
-  appointmentId: number;
-  clinic?: { id: number; clinicName: string };
-  patient?: { id: number; patientCode: string; fullName: string; phone?: string; email?: string };
-  doctor?: { id: number; fullName: string };
-  room?: { id: number; roomName: string };
-  chair?: { id: number; chairNumber: string };
-  startDateTime: string;
-  endDateTime: string;
-  status: string;
-  channel?: string;
-  note?: string;
-  createdBy?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  appointmentType?: string; // "VIP" hoặc "STANDARD"
-  bookingFee?: number; // Phí đặt lịch hẹn
-};
+import type { DoctorAppointmentDTO } from "../types/doctor";
 
 export default function AppointmentList() {
   const navigate = useNavigate();
@@ -132,7 +114,7 @@ export default function AppointmentList() {
 
   const checkAndAutoComplete = (appointment: DoctorAppointmentDTO) => {
     const now = new Date();
-    const endTime = new Date(appointment.endDateTime);
+    const endTime = new Date(appointment.endDateTime ?? appointment.startDateTime);
     // Auto-complete if past end time and not already completed
     if (now > endTime && appointment.status !== "COMPLETED") {
       changeStatus(appointment.appointmentId, "COMPLETED");
@@ -257,6 +239,9 @@ export default function AppointmentList() {
                         Clinic
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Service
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Room
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -282,7 +267,7 @@ export default function AppointmentList() {
                             <div>
                               <div className="font-medium text-gray-900">
                                 {format(new Date(appointment.startDateTime), "HH:mm")} -{" "}
-                                {format(new Date(appointment.endDateTime), "HH:mm")}
+                                {format(new Date(appointment.endDateTime ?? appointment.startDateTime), "HH:mm")}
                               </div>
                               <div className="text-gray-500 text-xs">
                                 {format(new Date(appointment.startDateTime), "MMM dd, yyyy")}
@@ -305,6 +290,24 @@ export default function AppointmentList() {
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
                           {appointment.clinic?.clinicName || "-"}
+                        </td>
+                        <td className="px-4 py-4 text-sm text-gray-600">
+                          <div>
+                            {appointment.service?.serviceName || "-"}
+                            {appointment.serviceVariant && (
+                              <div className="text-xs text-gray-500 mt-0.5">
+                                {appointment.serviceVariant.variantName}
+                                {appointment.serviceVariant.price && (
+                                  <span className="ml-1">
+                                    • {new Intl.NumberFormat("vi-VN", {
+                                      style: "currency",
+                                      currency: appointment.serviceVariant.currency || "VND",
+                                    }).format(appointment.serviceVariant.price)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
                           <div className="flex items-center gap-1">

@@ -5,65 +5,28 @@ import { toast } from "react-toastify";
 import { format } from "date-fns";
 import medications from "../../data/dental-medications.json";
 import ServiceVariantsModal from "./ServiceVariantsModal";
+import type {
+  DoctorAppointmentDTO,
+  MedicalRecordDTO,
+  MedicalRecordRequest,
+  ServiceDTO,
+} from "../types/doctor";
 
 type MedicationOption = { id: string; name: string; defaultDosage?: string; description?: string };
 type SelectedMedication = { id: string; name: string; quantity: string; instructions: string };
-
-type ServiceVariantDTO = {
-  id: number;
-  variantName: string;
-  description?: string;
-  price?: number;
-};
-
-type ServiceDTO = {
-  id: number;
-  serviceName: string;
-  category?: string;
-  description?: string;
-  defaultDuration?: number;
-  isActive?: boolean;
-  variants?: ServiceVariantDTO[];
-};
-
-type DoctorAppointment = {
-  appointmentId: number;
-  startDateTime: string;
-  endDateTime: string;
-  clinic?: { id: number; clinicName: string };
-  patient?: { id: number; patientCode: string; fullName: string; phone?: string; email?: string };
-  service?: ServiceDTO;
-  appointmentType?: string; // "VIP" hoặc "STANDARD"
-  bookingFee?: number; // Phí đặt lịch hẹn
-};
-
-type MedicalRecordDTO = {
-  recordId: number;
-  clinic?: { id: number; clinicName: string };
-  patient?: { id: number; patientCode: string; fullName: string };
-  appointmentId?: number;
-  serviceId?: number;
-  serviceName?: string;
-  service?: ServiceDTO;
-  diagnosis: string;
-  treatmentPlan?: string;
-  prescriptionNote?: string;
-  note?: string;
-  recordDate: string;
-};
 
 type Props = {
   isOpen: boolean;
   mode: "create" | "edit";
   patientId?: number;
   doctorId?: number;
-  appointment?: DoctorAppointment | null;
+  appointment?: DoctorAppointmentDTO | null;
   record?: MedicalRecordDTO | null;
   onClose: () => void;
   onSuccess?: () => void;
 };
 
-const medicationOptions = medications as MedicationOption[];
+const medicationOptions = (medications as { category: string; items: MedicationOption[] }[]).flatMap((g) => g.items);
 
 const buildPrescriptionText = (meds: SelectedMedication[], manualNote: string) => {
   const auto = meds
@@ -90,6 +53,15 @@ export default function CreateMedicalRecordModal({
   const patientInfo = appointment?.patient || record?.patient;
   const serviceInfo = appointment?.service || record?.service;
   const appointmentId = appointment?.appointmentId ?? record?.appointmentId;
+  
+  // Debug: Log appointment data to see what we're receiving
+  useEffect(() => {
+    if (appointment && isOpen) {
+      console.log("Appointment data:", appointment);
+      console.log("Appointment service:", appointment.service);
+      console.log("Appointment appointmentServiceId:", appointment.appointmentServiceId);
+    }
+  }, [appointment, isOpen]);
 
   const [diagnosis, setDiagnosis] = useState(record?.diagnosis || "");
   const [treatmentPlan, setTreatmentPlan] = useState(record?.treatmentPlan || "");
@@ -108,6 +80,11 @@ export default function CreateMedicalRecordModal({
   const [loading, setLoading] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
   const [showVariantsModal, setShowVariantsModal] = useState(false);
+  const [activeVariantId, setActiveVariantId] = useState<number | undefined>(undefined);
+  const [activeVariantName, setActiveVariantName] = useState<string | undefined>(undefined);
+  const showOnlyActiveVariantForModal = Boolean(
+    appointment?.serviceVariant || appointment?.appointmentServiceId || (appointment?.serviceDetails && appointment.serviceDetails.length === 1)
+  );
 
   const resetState = () => {
     setDiagnosis(record?.diagnosis || "");
@@ -124,27 +101,41 @@ export default function CreateMedicalRecordModal({
     setSelectedMedications([]);
     setMedicationInput({ medId: "", quantity: "", instructions: "" });
     setAttachments([]);
+    setActiveVariantId(undefined);
+    setActiveVariantName(undefined);
   };
 
   useEffect(() => {
     if (isOpen) {
       resetState();
+      // Pre-fill active variant using appointment or record if available
+      const svcVariantId = appointment?.serviceVariant?.variantId ?? appointment?.serviceVariant?.id ?? record?.serviceVariant?.variantId ?? record?.serviceVariant?.id;
+      const svcVariantName = appointment?.serviceVariant?.variantName ?? appointment?.serviceDetails?.[0] ?? record?.serviceVariant?.variantName ?? record?.serviceName;
+      if (svcVariantId) setActiveVariantId(svcVariantId);
+      if (!svcVariantId && svcVariantName) setActiveVariantName(svcVariantName);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, record, appointment]);
 
-  const serviceReadOnly = serviceInfo?.serviceName || "N/A";
+  const appointmentVariantName = appointment?.serviceVariant?.variantName || appointment?.serviceDetails?.[0] || record?.serviceVariant?.variantName || undefined;
+  const serviceReadOnly = serviceInfo?.serviceName ? (appointmentVariantName ? `${serviceInfo.serviceName} - ${appointmentVariantName}` : serviceInfo.serviceName) : "N/A";
   const clinicReadOnly = clinicInfo?.clinicName || "N/A";
   const doctorReadOnly = doctorId ? `Doctor #${doctorId}` : "N/A";
   const appointmentTime = appointment
     ? `${format(new Date(appointment.startDateTime), "MMM dd, yyyy HH:mm")} - ${format(
-        new Date(appointment.endDateTime),
+        new Date(appointment.endDateTime ?? appointment.startDateTime),
         "HH:mm"
       )}`
     : "N/A";
 
   const handleServiceClick = async () => {
     if (!serviceInfo) return;
+
+    // Determine active variant id or name from appointment/record
+    const svcVariantId = appointment?.serviceVariant?.variantId ?? appointment?.serviceVariant?.id ?? record?.serviceVariant?.variantId ?? record?.serviceVariant?.id;
+    const svcVariantName = appointment?.serviceVariant?.variantName ?? appointment?.serviceDetails?.[0] ?? record?.serviceVariant?.variantName;
+    if (svcVariantId) setActiveVariantId(svcVariantId);
+    if (!svcVariantId && svcVariantName) setActiveVariantName(svcVariantName);
 
     // If service already has variants, use it directly
     if (serviceInfo.variants !== undefined) {
@@ -199,17 +190,86 @@ export default function CreateMedicalRecordModal({
     }
   };
 
-  const buildPayload = () => ({
-    clinicId: clinicInfo?.id,
-    doctorId,
-    appointmentId,
-    serviceId: serviceInfo?.id ?? record?.serviceId,
-    diagnosis: diagnosis.trim(),
-    treatmentPlan: treatmentPlan.trim() || undefined,
-    prescriptionNote: buildPrescriptionText(selectedMedications, manualPrescriptionNote),
-    note: generalNote.trim() || undefined,
-    recordDate,
-  });
+  const buildPayload = (): MedicalRecordRequest => {
+    // Ưu tiên sử dụng appointmentServiceId nếu có từ appointment
+    // If the manual prescription note contains a JSON object like {meds: [...], manual: "..."}, parse it
+    let parsedMedText = manualPrescriptionNote || "";
+    try {
+      const maybeJson = JSON.parse(manualPrescriptionNote || "{}");
+      const maybeParsedJson = maybeJson as { meds?: unknown[]; manual?: string };
+      if (maybeJson && Array.isArray(maybeParsedJson.meds)) {
+        const medsArray = maybeParsedJson.meds || [];
+        const medsFromJson: SelectedMedication[] = medsArray.map((m) => {
+          const obj = m as Record<string, unknown>;
+          return {
+            id: String(obj.id ?? obj.medId ?? obj.name ?? ""),
+            name: String(obj.name ?? obj.medName ?? ""),
+            quantity: String(obj.quantity ?? obj.qty ?? ""),
+            instructions: String(obj.instructions ?? obj.instruction ?? ""),
+          };
+        });
+        parsedMedText = buildPrescriptionText(medsFromJson, maybeParsedJson.manual || "");
+      }
+    } catch {
+      // not JSON, ignore
+    }
+
+    const payload: MedicalRecordRequest = {
+      clinicId: clinicInfo?.id || 0,
+      doctorId: doctorId || 0,
+      appointmentId: appointmentId || null,
+      diagnosis: diagnosis.trim(),
+      treatmentPlan: treatmentPlan.trim() || null,
+      // Use meds selected in UI if present; otherwise use parsed text from manual (if JSON) or the manual note itself
+      prescriptionNote: (selectedMedications.length > 0
+        ? buildPrescriptionText(selectedMedications, manualPrescriptionNote)
+        : (parsedMedText.trim() || null)) || null,
+      note: generalNote.trim() || null,
+      recordDate: recordDate || null,
+    };
+
+    // Ưu tiên 1: Nếu có appointmentServiceId trực tiếp từ appointment
+    if (appointment?.appointmentServiceId) {
+      payload.appointmentServiceId = appointment.appointmentServiceId;
+      console.log("Using appointmentServiceId:", appointment.appointmentServiceId);
+    } 
+    // Ưu tiên 2: Nếu có appointmentServices array, lấy id của service đầu tiên
+    else if (appointment?.appointmentServices && appointment.appointmentServices.length > 0) {
+      const firstAppointmentService = appointment.appointmentServices[0];
+      const serviceId = firstAppointmentService.id || firstAppointmentService.appointmentServiceId;
+      if (serviceId) {
+        payload.appointmentServiceId = serviceId;
+        console.log("Using appointmentServiceId from array:", serviceId);
+      }
+    }
+    // Ưu tiên 3: Nếu chỉ có appointmentId, backend sẽ tự động lấy AppointmentService đầu tiên
+    // Không cần gửi thêm gì, chỉ cần appointmentId
+    // Ưu tiên 4: Fallback - dùng serviceId và variantId nếu không có appointmentServiceId
+    else if (serviceInfo?.id) {
+      payload.serviceId = serviceInfo.id;
+      // Nếu có variant từ appointment hoặc record
+      const variantId = appointment?.serviceVariant?.variantId || 
+                       appointment?.serviceVariant?.id ||
+                       record?.serviceVariant?.variantId ||
+                       record?.serviceVariant?.id;
+      if (variantId) {
+        payload.variantId = variantId;
+      }
+      console.log("Using serviceId and variantId:", payload.serviceId, payload.variantId);
+    } 
+    // Ưu tiên 5: Dùng serviceId từ record khi edit
+    else if (record?.serviceId) {
+      payload.serviceId = record.serviceId;
+      const variantId = record?.serviceVariant?.variantId || record?.serviceVariant?.id;
+      if (variantId) {
+        payload.variantId = variantId;
+      }
+      console.log("Using record serviceId and variantId:", payload.serviceId, payload.variantId);
+    }
+
+    console.log("Medical record payload:", payload);
+    return payload;
+  };
 
   const validate = () => {
     if (!patientId) {
@@ -538,9 +598,14 @@ export default function CreateMedicalRecordModal({
       <ServiceVariantsModal
         isOpen={showVariantsModal}
         service={selectedService}
+        activeVariantId={activeVariantId}
+        activeVariantName={activeVariantName}
+        onlyShowActiveVariant={showOnlyActiveVariantForModal}
         onClose={() => {
           setShowVariantsModal(false);
           setSelectedService(null);
+          setActiveVariantId(undefined);
+          setActiveVariantName(undefined);
         }}
       />
     </div>

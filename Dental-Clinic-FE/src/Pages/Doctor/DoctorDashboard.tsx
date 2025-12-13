@@ -14,18 +14,7 @@ import {
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
-
-type Appointment = {
-  appointmentId: number;
-  startDateTime: string;
-  endDateTime: string;
-  status: string;
-  patient?: { fullName: string; patientCode: string };
-  clinic?: { clinicName: string };
-  room?: { roomName: string };
-  appointmentType?: string; // "VIP" hoặc "STANDARD"
-  bookingFee?: number; // Phí đặt lịch hẹn
-};
+import type { DoctorAppointmentDTO } from "../types/doctor";
 
 type MedicalRecord = {
   recordId: number;
@@ -54,8 +43,8 @@ export default function DoctorDashboard() {
     monthPatients: 0,
     monthRecords: 0,
   });
-  const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
-  const [upcomingAppointments, setUpcomingAppointments] = useState<Appointment[]>([]);
+  const [todayAppointments, setTodayAppointments] = useState<DoctorAppointmentDTO[]>([]);
+  const [upcomingAppointments, setUpcomingAppointments] = useState<DoctorAppointmentDTO[]>([]);
   const [recentRecords, setRecentRecords] = useState<MedicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -78,7 +67,7 @@ export default function DoctorDashboard() {
 
         // Fetch today's appointments
         try {
-          const todayRes = await axios.get<Appointment[]>(
+          const todayRes = await axios.get<DoctorAppointmentDTO[]>(
             `${apiBase}/api/doctor/appointments/${doctorId}/date-range`,
             {
               params: {
@@ -97,7 +86,7 @@ export default function DoctorDashboard() {
 
         // Fetch week's appointments
         try {
-          const weekRes = await axios.get<Appointment[]>(
+          const weekRes = await axios.get<DoctorAppointmentDTO[]>(
             `${apiBase}/api/doctor/appointments/${doctorId}/date-range`,
             {
               params: {
@@ -116,7 +105,7 @@ export default function DoctorDashboard() {
         try {
           const upcomingEnd = new Date(today);
           upcomingEnd.setDate(upcomingEnd.getDate() + 3);
-          const upcomingRes = await axios.get<Appointment[]>(
+          const upcomingRes = await axios.get<DoctorAppointmentDTO[]>(
             `${apiBase}/api/doctor/appointments/${doctorId}/date-range`,
             {
               params: {
@@ -281,11 +270,15 @@ export default function DoctorDashboard() {
                           <Clock className="w-4 h-4 text-gray-400" />
                           <span className="font-medium text-gray-900">
                             {format(new Date(apt.startDateTime), "HH:mm")} -{" "}
-                            {format(new Date(apt.endDateTime), "HH:mm")}
+                            {format(new Date(apt.endDateTime ?? apt.startDateTime), "HH:mm")}
                           </span>
                         </div>
                         <div className="text-sm text-gray-600">
                           {apt.patient?.fullName || "Unknown"} ({apt.patient?.patientCode || "N/A"})
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {apt.service?.serviceName || "N/A"}
+                          {apt.serviceVariant && ` • ${apt.serviceVariant.variantName}`}
                         </div>
                         <div className="text-xs text-gray-500">
                           {apt.clinic?.clinicName || "N/A"} • {apt.room?.roomName || "N/A"}
@@ -362,6 +355,10 @@ export default function DoctorDashboard() {
                         </div>
                         <div className="text-sm text-gray-600">
                           {apt.patient?.fullName || "Unknown"} ({apt.patient?.patientCode || "N/A"})
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {apt.service?.serviceName || "N/A"}
+                          {apt.serviceVariant && ` • ${apt.serviceVariant.variantName}`}
                         </div>
                         {(apt.appointmentType || apt.bookingFee !== undefined) && (
                           <div className="flex items-center gap-2 mt-1">
