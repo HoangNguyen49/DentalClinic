@@ -80,3 +80,72 @@ export const getDaysOfWeek = (weekStartDate: string, locale: string = "en-GB") =
     }
     return days;
 };
+
+/**
+ * Format date string to localized date format
+ * @param dateString - ISO date string
+ * @param locale - Locale string (default: "vi-VN")
+ * @returns Formatted date string (DD/MM/YYYY)
+ */
+export const formatDate = (dateString: string, locale: string = "vi-VN"): string => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString(locale, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    });
+};
+
+/**
+ * Format date string to localized date-time format
+ * @param dateString - ISO date string
+ * @param locale - Locale string (default: "vi-VN")
+ * @returns Formatted date-time string (DD/MM/YYYY HH:MM)
+ */
+export const formatDateTime = (dateString: string, locale: string = "vi-VN"): string => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleString(locale, {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+};
+
+export const formatDateWithWeekday = (dateString: string, locale: string = "vi-VN"): string => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat(locale, {
+        weekday: "long",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    }).format(date);
+};
+
+
+export const formatRelativeTime = (dateString: string, locale: string = "vi-VN"): string => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInSeconds = Math.floor(diffInMs / 1000);
+    const diffInMinutes = Math.floor(diffInSeconds / 60);
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInDays > 7) {
+        return formatDate(dateString, locale);
+    } else if (diffInDays > 0) {
+        return `${diffInDays} ${locale === "vi-VN" ? "ngày trước" : "days ago"}`;
+    } else if (diffInHours > 0) {
+        return `${diffInHours} ${locale === "vi-VN" ? "giờ trước" : "hours ago"}`;
+    } else if (diffInMinutes > 0) {
+        return `${diffInMinutes} ${locale === "vi-VN" ? "phút trước" : "minutes ago"}`;
+    } else {
+        return locale === "vi-VN" ? "Vừa xong" : "Just now";
+    }
+};

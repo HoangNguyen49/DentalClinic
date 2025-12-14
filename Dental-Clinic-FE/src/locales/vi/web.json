@@ -124,6 +124,7 @@
   },
   "leaveRequest": {
     "title": "Đơn xin nghỉ của tôi",
+    "subtitle": "Xem và quản lý các đơn xin nghỉ của bạn",
     "createTitle": "Tạo đơn xin nghỉ",
     "createNew": "Tạo đơn mới",
     "startDate": "Ngày bắt đầu",
@@ -133,12 +134,16 @@
       "vacation": "Nghỉ phép",
       "sick": "Nghỉ ốm",
       "personal": "Nghỉ cá nhân",
+      "resignation": "Nghỉ việc",
       "other": "Khác"
     },
     "status": {
+      "label": "Trạng thái",
       "approved": "Đã duyệt",
       "rejected": "Đã từ chối",
-      "pending": "Chờ duyệt"
+      "pending": "Chờ duyệt",
+      "pendingHR": "Chờ HR duyệt",
+      "pendingAdmin": "Chờ Admin duyệt"
     },
     "reason": "Lý do",
     "reasonPlaceholder": "Nhập lý do xin nghỉ...",
@@ -156,7 +161,8 @@
     "approve": "Duyệt",
     "reject": "Từ chối",
     "management": {
-      "title": "Quản lý đơn xin nghỉ"
+      "title": "Quản lý đơn xin nghỉ",
+      "subtitle": "Xem xét và xử lý các đơn xin nghỉ của nhân viên"
     },
     "searchPlaceholder": "Tìm kiếm...",
     "processTitle": "Xử lý đơn xin nghỉ",
@@ -166,6 +172,7 @@
     "messages": {
       "loadFailed": "Không thể tải danh sách đơn xin nghỉ",
       "noRequests": "Chưa có đơn xin nghỉ nào",
+      "noRequestsDesc": "Bạn chưa gửi đơn xin nghỉ nào",
       "confirmCancel": "Bạn có chắc muốn hủy đơn này?",
       "cancelSuccess": "Hủy đơn thành công",
       "cancelFailed": "Không thể hủy đơn",
@@ -178,11 +185,14 @@
       "noClinic": "Không thể xác định cơ sở. Vui lòng liên hệ quản trị viên.",
       "fillAllFields": "Vui lòng điền đầy đủ thông tin",
       "invalidDateRange": "Ngày bắt đầu phải trước ngày kết thúc",
-      "pastDate": "Không thể tạo đơn cho ngày trong quá khứ"
+      "pastDate": "Không thể tạo đơn cho ngày trong quá khứ",
+      "adminApprovalRequired": "Đơn này cần Admin phê duyệt",
+      "pendingHRApproval": "Đang chờ HR duyệt"
     },
     "employee": "Nhân viên",
     "time": "Thời gian",
-    "monthlyLeave": "Ngày nghỉ tháng này",
+    "monthlyLeave": "Đã nghỉ tháng này",
+    "days": "ngày",
     "replacement": "Người thay thế",
     "none": "Không có",
     "remainingLeave": "Phép còn lại",
@@ -193,9 +203,10 @@
       "noApproved": "Chưa có đơn nghỉ việc nào đã được duyệt",
       "tip": "Tip: Chọn tab \"Đơn nghỉ việc\" để xem các đơn nghỉ việc đã được duyệt và có thể xóa vĩnh viễn",
       "adminConfirmed": "Đã xác nhận. HR sẽ thực hiện xóa vĩnh viễn trong trang Quản lý nhân viên.",
-      "title": "ĐƠN NGHỈ VIỆC",
+      "title": "Đơn nghỉ việc",
       "subtitle": "Yêu cầu xác nhận xóa vĩnh viễn",
-      "important": "QUAN TRỌNG",
+      "important": "Quan trọng",
+      "warning": "Đây là đơn nghỉ việc - cần phê duyệt từ admin",
       "processTitle": "Quy trình xóa vĩnh viễn",
       "step1": "HR duyệt",
       "step2": "Admin xác nhận",

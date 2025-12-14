@@ -62,8 +62,31 @@ export function calculateWorkedHours(attendance: AttendanceResponse): number {
     const start = new Date(attendance.checkInTime).getTime();
     const end = new Date(attendance.checkOutTime).getTime();
     if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return 0;
+    
+    // Tính tổng số giờ làm việc
     const diffMs = end - start;
-    return diffMs / (1000 * 60 * 60);
+    const totalHours = diffMs / (1000 * 60 * 60);
+    
+    // Trừ lunch break nếu là nhân viên (không phải bác sĩ)
+    // Bác sĩ: shiftType là MORNING hoặc AFTERNOON
+    // Nhân viên: shiftType là FULL_DAY hoặc null
+    const isDoctor = attendance.shiftType === "MORNING" || attendance.shiftType === "AFTERNOON";
+    
+    if (!isDoctor) {
+        // Nhân viên: trừ 120 phút (2 giờ) nếu check-in trước 11h và check-out sau 13h
+        const checkInDate = new Date(attendance.checkInTime);
+        const checkOutDate = new Date(attendance.checkOutTime);
+        const checkInHour = checkInDate.getHours();
+        const checkOutHour = checkOutDate.getHours();
+        
+        if (checkInHour < 11 && checkOutHour > 13) {
+            // Trừ 2 giờ nghỉ trưa
+            return Math.max(0, totalHours - 2);
+        }
+    }
+    
+    // Bác sĩ hoặc nhân viên không làm qua giờ nghỉ trưa: không trừ
+    return totalHours;
 }
 
 export function formatHourValue(value: number): string {

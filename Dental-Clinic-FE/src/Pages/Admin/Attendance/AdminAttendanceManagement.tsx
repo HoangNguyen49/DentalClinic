@@ -164,16 +164,16 @@ export default function AdminAttendanceManagement() {
   const statusBadgeClass = (status?: string | null) => {
     switch (status) {
       case "ON_TIME":
-        return "bg-gradient-to-r from-emerald-100 to-emerald-50 text-emerald-700 border border-emerald-200";
+        return "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200/50";
       case "LATE":
-        return "bg-gradient-to-r from-amber-100 to-amber-50 text-amber-700 border border-amber-200";
+        return "bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg shadow-orange-200/50";
       case "ABSENT":
-        return "bg-gradient-to-r from-rose-100 to-rose-50 text-rose-700 border border-rose-200";
+        return "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg shadow-red-200/50";
       case "APPROVED_ABSENCE":
       case "APPROVED_LATE":
-        return "bg-gradient-to-r from-sky-100 to-slate-50 text-sky-700 border border-sky-200";
+        return "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200/50";
       default:
-        return "bg-slate-100 text-slate-700 border border-slate-200";
+        return "bg-gradient-to-r from-slate-500 to-gray-600 text-white shadow-lg shadow-slate-200/50";
     }
   };
 
@@ -225,10 +225,10 @@ export default function AdminAttendanceManagement() {
     icon: ReactNode;
     children: ReactNode;
   }) => (
-    <label className="flex flex-col gap-2 text-base font-semibold text-slate-700">
-      <span>{label}</span>
-      <div className="flex items-center gap-4 rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 shadow-inner">
-        <span className="text-slate-400">{icon}</span>
+    <label className="flex flex-col gap-2 group">
+      <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">{label}</span>
+      <div className="flex items-center gap-3 rounded-xl border-2 border-slate-200 bg-gradient-to-br from-white to-slate-50 px-4 py-3.5 shadow-sm group-focus-within:border-blue-500 group-focus-within:ring-4 group-focus-within:ring-blue-100 group-focus-within:shadow-md transition-all duration-200">
+        <span className="text-slate-400 group-focus-within:text-blue-500 transition-colors">{icon}</span>
         {children}
       </div>
     </label>
@@ -248,106 +248,98 @@ export default function AdminAttendanceManagement() {
   }) => {
     const toneMap: Record<
       "emerald" | "amber" | "rose" | "slate",
-      { bg: string; text: string; border: string }
+      { gradient: string; iconBg: string; ring: string }
     > = {
       emerald: {
-        bg: "from-emerald-50 to-white",
-        text: "text-emerald-700",
-        border: "border-emerald-100",
+        gradient: "from-green-50 via-emerald-50 to-teal-50", 
+        iconBg: "from-green-500 to-emerald-600", 
+        ring: "ring-green-100"
       },
       amber: {
-        bg: "from-amber-50 to-white",
-        text: "text-amber-700",
-        border: "border-amber-100",
+        gradient: "from-orange-50 via-amber-50 to-yellow-50", 
+        iconBg: "from-orange-500 to-amber-600", 
+        ring: "ring-orange-100"
       },
       rose: {
-        bg: "from-rose-50 to-white",
-        text: "text-rose-700",
-        border: "border-rose-100",
+        gradient: "from-red-50 via-rose-50 to-pink-50", 
+        iconBg: "from-red-500 to-rose-600", 
+        ring: "ring-red-100"
       },
       slate: {
-        bg: "from-slate-50 to-white",
-        text: "text-slate-700",
-        border: "border-slate-100",
+        gradient: "from-slate-50 via-gray-50 to-slate-50", 
+        iconBg: "from-slate-600 to-gray-700", 
+        ring: "ring-slate-100"
       },
     };
 
     const tones = toneMap[tone];
 
     return (
-      <div
-        className={`rounded-2xl border ${tones.border} bg-gradient-to-br ${tones.bg} p-5 shadow-sm flex flex-col gap-3`}
-      >
-        <div className="flex items-center gap-3">
-          <div className="h-11 w-11 rounded-2xl bg-white shadow-inner flex items-center justify-center text-slate-500">
-            {icon}
+      <div className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${tones.gradient} p-6 shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 border border-white/50`}>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/30 rounded-full -mr-16 -mt-16"></div>
+        <div className="relative flex items-start justify-between">
+          <div className="flex-1">
+            <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-3">{label}</p>
+            <p className="text-4xl font-bold text-slate-900 mb-1">{value}</p>
           </div>
-          <span className={`text-xs font-semibold uppercase tracking-[0.3em] ${tones.text}`}>{label}</span>
+          <div className={`p-4 rounded-2xl bg-gradient-to-br ${tones.iconBg} shadow-lg ring-4 ${tones.ring}`}>
+            <span className="text-white">{icon}</span>
+          </div>
         </div>
-        <span className="text-4xl font-bold text-slate-900">{value}</span>
       </div>
     );
   };
 
   return (
-    <div className={`min-h-screen ${palette.background} p-6`}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 p-8">
       <ToastContainer position="top-right" autoClose={3000} />
       <div className="max-w-7xl mx-auto space-y-8">
-        <section className="space-y-4">
-          <p className="text-xs font-semibold tracking-[0.35em] uppercase text-slate-400">
-            {t("attendance.sectionLabel", "Operations • Attendance")}
-          </p>
-          <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div className="space-y-3">
-              <h1 className={`text-4xl font-bold ${palette.heading}`}>
+        <section className="flex items-center gap-4">
+          <div className="p-3 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg ring-4 ring-blue-100">
+            <Calendar className="w-7 h-7 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                 {t("pageTitles.attendanceManagement", "Attendance Management")}
               </h1>
-              <p className={`text-base leading-relaxed ${palette.subtleText}`}>
-                {t(
-                  "attendance.pageDescription",
-                  "Review late check-ins or leave requests submitted by employees, update their status, and append admin notes."
-                )}
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <button
-                onClick={() => fetchAttendance()}
-                className="inline-flex items-center rounded-2xl border border-slate-200 bg-white px-5 py-3 text-base font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-              >
-                {t("attendance.actions.refresh", "Refresh")}
-              </button>
-            </div>
+            <p className="text-sm text-gray-600 font-medium mt-1">{t("attendance.pageDescription", "Track and manage employee attendance")}</p>
           </div>
         </section>
 
-        <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
           <SummaryCard
             icon={<FileText className="h-5 w-5" />}
-            label={t("attendance.summary.total", "TOTAL RECORDS")}
+            label={t("attendance.summary.total", "Total Records")}
             value={attendanceSummary.total}
             tone="slate"
           />
           <SummaryCard
             icon={<CheckCircle2 className="h-5 w-5" />}
-            label={t("attendance.summary.onTime", "ON TIME")}
+            label={t("attendance.summary.onTime", "On Time")}
             value={attendanceSummary.onTime}
             tone="emerald"
           />
           <SummaryCard
             icon={<Clock3 className="h-5 w-5" />}
-            label={t("attendance.summary.late", "LATE")}
+            label={t("attendance.summary.late", "Late")}
             value={attendanceSummary.late}
             tone="amber"
           />
           <SummaryCard
             icon={<XCircle className="h-5 w-5" />}
-            label={t("attendance.summary.absent", "ABSENT")}
+            label={t("attendance.summary.absent", "Absent")}
             value={attendanceSummary.absent}
             tone="rose"
           />
         </section>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
+        <section className="rounded-2xl border border-slate-200/60 bg-white/90 backdrop-blur-sm p-6 shadow-xl">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2.5 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl">
+              <SlidersHorizontal className="w-5 h-5 text-purple-600" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-900">Filter Options</h2>
+          </div>
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             <FilterField
               label={t("attendance.filters.date", "Date")}
@@ -357,7 +349,7 @@ export default function AdminAttendanceManagement() {
                 type="date"
                 value={filters.date}
                 onChange={(e) => handleFilterChange("date", e.target.value)}
-                className="w-full border-none bg-transparent text-lg text-slate-900 focus:outline-none"
+                className="w-full border-none bg-transparent text-sm text-slate-900 focus:outline-none"
                 aria-label={t("attendance.filters.date", "Date")}
               />
             </FilterField>
@@ -368,7 +360,7 @@ export default function AdminAttendanceManagement() {
               <select
                 value={filters.clinicId}
                 onChange={(e) => handleFilterChange("clinicId", e.target.value)}
-                className="w-full border-none bg-transparent text-lg text-slate-900 focus:outline-none"
+                className="w-full border-none bg-transparent text-sm text-slate-900 focus:outline-none"
                 aria-label={t("attendance.filters.clinic", "Clinic")}
               >
                 <option value="all">{t("attendance.filters.allClinics", "All clinics")}</option>
@@ -386,7 +378,7 @@ export default function AdminAttendanceManagement() {
               <select
                 value={filters.status}
                 onChange={(e) => handleFilterChange("status", e.target.value)}
-                className="w-full border-none bg-transparent text-lg text-slate-900 focus:outline-none"
+                className="w-full border-none bg-transparent text-sm text-slate-900 focus:outline-none"
                 aria-label={t("attendance.filters.status", "Status")}
               >
                 <option value="all">{t("attendance.filters.allStatus", "All statuses")}</option>
@@ -401,92 +393,101 @@ export default function AdminAttendanceManagement() {
         </section>
 
         {/* Bảng danh sách chấm công */}
-        <section className="rounded-3xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <section className="rounded-2xl border border-slate-200/60 bg-white/90 backdrop-blur-sm shadow-2xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-200/60 bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl">
+                <FileText className="w-5 h-5 text-blue-600" />
+              </div>
+              <h2 className="text-lg font-bold text-slate-900">Attendance Records</h2>
+            </div>
+          </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse">
-              <thead className="bg-slate-50">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">
                     {t("attendance.table.employee", "Employee")}
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">
                     {t("attendance.table.clinic", "Clinic")}
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">
                     {t("attendance.table.workDate", "Work Date")}
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">
                     {t("attendance.table.checkIn", "Check-in")}
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">
                     {t("attendance.table.checkOut", "Check-out")}
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">
                     {t("attendance.table.status", "Status")}
                   </th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-700">
                     {t("attendance.table.note", "Note")}
                   </th>
-                  <th className="px-6 py-4 text-right text-sm font-semibold uppercase tracking-wide text-slate-500" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100">
+              <tbody className="bg-white divide-y divide-slate-200">
                 {loading ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-8 text-center text-slate-500">
-                      {t("attendance.messages.loading", "Loading attendance records...")}
+                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                      <div className="flex items-center justify-center gap-3">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                        <span>{t("attendance.messages.loading", "Loading attendance records...")}</span>
+                      </div>
                     </td>
                   </tr>
                 ) : attendances.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="px-5 py-8 text-center text-slate-500">
+                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                       {t("attendance.messages.noData", "No attendance records found")}
                     </td>
                   </tr>
                 ) : (
                   // Render từng dòng dữ liệu chấm công
                   attendances.map((attendance) => (
-                    <tr key={attendance.id} className="transition hover:bg-slate-50">
-                      <td className="px-6 py-5 text-base text-slate-900">
+                    <tr key={attendance.id} className="hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-indigo-50/20 transition-all duration-200">
+                      <td className="px-6 py-5 text-sm text-slate-900">
                         <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center text-lg font-semibold text-slate-500">
+                          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-base font-bold text-white shadow-lg ring-4 ring-blue-100">
                             {(attendance.userName || attendance.userId.toString()).charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div className="text-base font-semibold text-slate-900">
+                            <div className="font-semibold text-slate-900 text-base">
                               {attendance.userName || `#${attendance.userId}`}
                             </div>
-                            <div className="text-xs uppercase tracking-wide text-slate-400">
-                              {t("attendance.table.employeeId", { defaultValue: "ID" })}: {attendance.userId}
+                            <div className="text-sm text-slate-500">
+                              ID: {attendance.userId}
                             </div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-5 text-base text-slate-700">
+                      <td className="px-6 py-5 text-sm text-slate-700">
                         {attendance.clinicName || t("attendance.table.unknownClinic", "Unknown clinic")}
                       </td>
-                      <td className="px-6 py-5 text-base text-slate-700">{attendance.workDate}</td>
-                      <td className="px-6 py-5 text-base text-slate-700">
-                        {formatTime(attendance.checkInTime)}
+                      <td className="px-6 py-5 text-sm font-medium text-slate-700">{attendance.workDate}</td>
+                      <td className="px-6 py-5 text-sm text-slate-700">
+                        <span className="font-mono">{formatTime(attendance.checkInTime)}</span>
                       </td>
-                      <td className="px-6 py-5 text-base text-slate-700">
-                        {formatTime(attendance.checkOutTime)}
+                      <td className="px-6 py-5 text-sm text-slate-700">
+                        <span className="font-mono">{formatTime(attendance.checkOutTime)}</span>
                       </td>
-                      <td className="px-6 py-5 text-base font-medium">
+                      <td className="px-6 py-5 text-sm">
                         <span
-                          className={`inline-flex items-center rounded-full px-4 py-1.5 text-sm font-semibold ${statusBadgeClass(
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(
                             attendance.attendanceStatus
                           )}`}
                         >
                           {normalizeStatus(attendance.attendanceStatus, translateStatusLabel)}
                         </span>
                       </td>
-                      <td className="px-6 py-5 text-base text-slate-700 whitespace-pre-line">
+                      <td className="px-6 py-5 text-sm text-slate-600">
                         {attendance.note && attendance.note.trim().length > 0
                           ? attendance.note
-                          : t("attendance.table.noNote", "No note provided")}
+                          : <span className="italic text-slate-400">{t("attendance.table.noNote", "No note provided")}</span>}
                       </td>
-                      <td className="px-6 py-5 text-sm text-right" />
                     </tr>
                   ))
                 )}

@@ -19,7 +19,7 @@ function CreateScheduleForm() {
   const [note, setNote] = useState<string>("");
   const [aiDescription, setAiDescription] = useState<string>("");
 
-  const { doctors, clinics, holidays, approvedLeaves } = useScheduleData(weekStart);
+  const { doctors, clinics, holidays, approvedLeaves, refreshClinics } = useScheduleData(weekStart);
   const daysOfWeek = getDaysOfWeek(weekStart, i18n.language === "vi" ? "vi-VN" : "en-GB");
 
   const {
@@ -185,12 +185,23 @@ function CreateScheduleForm() {
                 {t("create.subtitle")}
               </p>
             </div>
-            <button
-              onClick={() => navigate("/hr/schedules")}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-            >
-              {t("create.back")}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  await refreshClinics();
+                  toast.success(t("create.messages.clinicRefreshed", { defaultValue: "Clinics refreshed" }));
+                }}
+                className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200 text-sm"
+              >
+                {t("create.actions.refreshClinics", { defaultValue: "Refresh clinics" })}
+              </button>
+              <button
+                onClick={() => navigate("/hr/schedules")}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+              >
+                {t("create.back")}
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200 mb-6">

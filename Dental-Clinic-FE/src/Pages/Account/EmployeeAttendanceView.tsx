@@ -119,8 +119,31 @@ function calculateWorkedHours(attendance: AttendanceResponse): number {
   const start = new Date(attendance.checkInTime).getTime();
   const end = new Date(attendance.checkOutTime).getTime();
   if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return 0;
+  
+  // Tính tổng số giờ làm việc
   const diffMs = end - start;
-  return diffMs / (1000 * 60 * 60);
+  const totalHours = diffMs / (1000 * 60 * 60);
+  
+  // Trừ lunch break nếu là nhân viên (không phải bác sĩ)
+  // Bác sĩ: shiftType là MORNING hoặc AFTERNOON
+  // Nhân viên: shiftType là FULL_DAY hoặc null
+  const isDoctor = attendance.shiftType === "MORNING" || attendance.shiftType === "AFTERNOON";
+  
+  if (!isDoctor) {
+    // Nhân viên: trừ 120 phút (2 giờ) nếu check-in trước 11h và check-out sau 13h
+    const checkInDate = new Date(attendance.checkInTime);
+    const checkOutDate = new Date(attendance.checkOutTime);
+    const checkInHour = checkInDate.getHours();
+    const checkOutHour = checkOutDate.getHours();
+    
+    if (checkInHour < 11 && checkOutHour > 13) {
+      // Trừ 2 giờ nghỉ trưa
+      return Math.max(0, totalHours - 2);
+    }
+  }
+  
+  // Bác sĩ hoặc nhân viên không làm qua giờ nghỉ trưa: không trừ
+  return totalHours;
 }
 
 // Định dạng số giờ hiển thị
@@ -407,6 +430,7 @@ export default function EmployeeAttendanceView() {
           {
             params: { userId },
             headers: { Authorization: `Bearer ${accessToken}` },
+            timeout: 30000, // 30 seconds timeout
           }
         );
         const attendances = (response.data || []).filter(att => att && att.userId === userId);
@@ -423,6 +447,7 @@ export default function EmployeeAttendanceView() {
           {
             params: { userId },
             headers: { Authorization: `Bearer ${accessToken}` },
+            timeout: 30000, // 30 seconds timeout
           }
         );
         if (response.data && response.data.userId === userId) {
@@ -435,10 +460,15 @@ export default function EmployeeAttendanceView() {
       }
     } catch (error: any) {
       // Handle cả 404 (nếu backend vẫn throw) và các lỗi khác
-      if (error.response?.status === 404) {
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        toast.error(t("attendance.loadFailed.timeout", "Request timeout. Please try again."));
+      } else if (error.response?.status === 404) {
         setTodayAttendance(null);
         setTodayAttendanceList([]);
+      } else if (error.response?.status === 500) {
+        toast.error(t("attendance.loadFailed.server", "Server error. Please try again later."));
       } else {
+        console.error("Failed to fetch today attendance:", error);
         toast.error(t("attendance.monthlyHistory.loadFailed", "Cannot load today's attendance"));
       }
     } finally {
@@ -508,6 +538,7 @@ export default function EmployeeAttendanceView() {
             size: 100,
           },
           headers: { Authorization: `Bearer ${accessToken}` },
+          timeout: 30000, // 30 seconds timeout
         }
       );
 
@@ -519,7 +550,13 @@ export default function EmployeeAttendanceView() {
       setMonthlyAttendances(filtered);
     } catch (error: any) {
       console.error("Failed to fetch monthly attendances:", error);
-      if (error.response?.status === 403) {
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        toast.error(t("attendance.loadFailed.timeout", "Request timeout. Please try again."));
+      } else if (error.response?.status === 403) {
+        toast.error(t("attendance.monthlyHistory.loadFailed", "Unable to load attendance history. Please contact HR."));
+      } else if (error.response?.status === 500) {
+        toast.error(t("attendance.loadFailed.server", "Server error. Please try again later."));
+      } else {
         toast.error(t("attendance.monthlyHistory.loadFailed", "Unable to load attendance history. Please contact HR."));
       }
       setMonthlyAttendances([]);
@@ -748,7 +785,10 @@ export default function EmployeeAttendanceView() {
           <div className="bg-white rounded-lg shadow-md p-6">
             <h2 className="text-xl font-semibold mb-4">{t("attendance.today", "Today")}</h2>
             {loading ? (
-              <div className="text-center py-8">{t("attendance.loading", "Loading...")}</div>
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+                <p className="text-gray-600">{t("attendance.loading", "Loading...")}</p>
+              </div>
             ) : isDoctor ? (
               // Bác sĩ: hiển thị tất cả các ca (cả attendance và schedule chưa check-in)
               <div className="space-y-4">

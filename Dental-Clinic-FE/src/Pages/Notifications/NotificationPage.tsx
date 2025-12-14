@@ -60,6 +60,48 @@ const NotificationPage = () => {
           navigate('/my-attendance');
         }
         break;
+      case 'APPOINTMENT':
+        // Thông báo về lịch hẹn (xác nhận, hủy, hoàn thành, v.v.)
+        if (notification.type === 'APPOINTMENT_CONFIRMED' || 
+            notification.type === 'APPOINTMENT_CANCELLED' ||
+            notification.type === 'APPOINTMENT_COMPLETED' ||
+            notification.type === 'APPOINTMENT_IN_PROGRESS' ||
+            notification.type === 'APPOINTMENT_STATUS_UPDATED' ||
+            notification.type === 'APPOINTMENT_REMINDER') {
+          navigate('/appointments');
+        } else if (notification.actionUrl) {
+          navigate(notification.actionUrl);
+        } else {
+          navigate('/appointments');
+        }
+        break;
+      case 'MEDICAL_RECORD':
+        // Thông báo về bệnh án (hoàn thành, cập nhật)
+        if (notification.type === 'MEDICAL_RECORD_COMPLETED' || 
+            notification.type === 'MEDICAL_RECORD_UPDATED') {
+          navigate('/patients/records');
+        } else if (notification.actionUrl) {
+          navigate(notification.actionUrl);
+        } else {
+          navigate('/patients/records');
+        }
+        break;
+      case 'DOCTOR_SCHEDULE':
+        // Thông báo về bác sĩ chưa check-in hoặc check-in trễ
+        if (notification.type === 'DOCTOR_MISSING_CHECKIN' || notification.type === 'DOCTOR_LATE_CHECKIN') {
+          if (isHR) {
+            navigate('/hr/attendance');
+          } else if (isAdmin) {
+            navigate('/admin/attendance');
+          } else if (hasRole('RECEPTION')) {
+            navigate('/hr/attendance');
+          } else {
+            navigate('/my-attendance');
+          }
+        } else if (notification.actionUrl) {
+          navigate(notification.actionUrl);
+        }
+        break;
       default:
         if (notification.actionUrl) {
           navigate(notification.actionUrl);

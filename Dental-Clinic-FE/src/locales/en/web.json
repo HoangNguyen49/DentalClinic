@@ -124,6 +124,7 @@
   },
   "leaveRequest": {
     "title": "My Leave Requests",
+    "subtitle": "View and manage your leave requests",
     "createTitle": "Create Leave Request",
     "createNew": "Create New Request",
     "startDate": "Start Date",
@@ -133,12 +134,16 @@
       "vacation": "Vacation",
       "sick": "Sick Leave",
       "personal": "Personal Leave",
+      "resignation": "Resignation",
       "other": "Other"
     },
     "status": {
+      "label": "Status",
       "approved": "Approved",
       "rejected": "Rejected",
-      "pending": "Pending"
+      "pending": "Pending",
+      "pendingHR": "Pending HR",
+      "pendingAdmin": "Pending Admin"
     },
     "reason": "Reason",
     "reasonPlaceholder": "Enter leave reason...",
@@ -156,7 +161,8 @@
     "approve": "Approve",
     "reject": "Reject",
     "management": {
-      "title": "Leave Request Management"
+      "title": "Leave Request Management",
+      "subtitle": "Review and process employee leave requests"
     },
     "searchPlaceholder": "Search...",
     "processTitle": "Process Leave Request",
@@ -178,11 +184,14 @@
       "noClinic": "Unable to determine clinic. Please contact administrator.",
       "fillAllFields": "Please fill in all required fields",
       "invalidDateRange": "Start date must be before end date",
-      "pastDate": "Cannot create request for past dates"
+      "pastDate": "Cannot create request for past dates",
+      "adminApprovalRequired": "This request requires Admin approval",
+      "pendingHRApproval": "Waiting for HR approval"
     },
     "employee": "Employee",
     "time": "Time",
-    "monthlyLeave": "Leave this month",
+    "monthlyLeave": "Days off this month",
+    "days": "days",
     "replacement": "Replacement",
     "none": "None",
     "remainingLeave": "Remaining Leave",
@@ -193,9 +202,10 @@
       "noApproved": "No approved resignation requests yet",
       "tip": "Tip: Select \"Resignation Requests\" tab to view approved resignation requests that can be permanently deleted",
       "adminConfirmed": "Confirmed. HR will perform permanent deletion in Employee Management page.",
-      "title": "RESIGNATION APPLICATION",
+      "title": "Resignation Request",
       "subtitle": "Request for permanent deletion",
-      "important": "IMPORTANT",
+      "important": "Important",
+      "warning": "This is a resignation request - requires admin approval",
       "processTitle": "Permanent deletion process",
       "step1": "HR Approved",
       "step2": "Admin Confirm",

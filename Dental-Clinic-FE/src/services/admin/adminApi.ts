@@ -1,5 +1,16 @@
 import axiosClient from "../../huybro_api/axiosClient"
 
+// Type cho response phân trang từ Spring Boot
+export interface PageResponse<T> {
+  content: T[]
+  totalPages: number
+  totalElements: number
+  size: number
+  number: number
+  first: boolean
+  last: boolean
+}
+
 // Các interface định nghĩa kiểu dữ liệu cho admin
 export interface AdminStaff {
   id: number
@@ -82,7 +93,7 @@ export const adminApi = {
   // Nhân sự (Staff)
   staff: {
     getAll: async (params?: { search?: string; page?: number; size?: number }) => {
-      const response = await axiosClient.get<AdminStaff[] | { content: AdminStaff[]; totalPages: number; totalElements: number }>("/api/admin/staff", {
+      const response = await axiosClient.get<PageResponse<AdminStaff>>("/api/admin/staff", {
         params,
       })
       return { data: response.data }
@@ -91,7 +102,7 @@ export const adminApi = {
   // Khách hàng (Customer)
   customers: {
     getAll: async (params?: { search?: string; page?: number; size?: number }) => {
-      const response = await axiosClient.get<AdminCustomer[] | { content: AdminCustomer[]; totalPages: number; totalElements: number }>("/api/admin/customers", {
+      const response = await axiosClient.get<PageResponse<AdminCustomer>>("/api/admin/customers", {
         params,
       })
       return { data: response.data }

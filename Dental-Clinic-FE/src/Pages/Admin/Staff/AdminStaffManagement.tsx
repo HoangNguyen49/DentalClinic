@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo, useCallback } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
+import { Building2 } from "lucide-react";
 import { adminApi, type AdminStaff } from "../../../services/admin/adminApi";
 import { formatDate } from "../../../utils/adminUtils";
 import { useDebounce } from "../../../hooks/useDebounce";
@@ -41,16 +42,14 @@ export default function AdminStaffManagement() {
         showErrorToast: true,
         errorMessage: t("staff.messages.loadFailed", "Unable to load staff"),
         onSuccess: (data) => {
-          // Xử lý trường hợp trả về mảng hoặc dạng phân trang
-          if (Array.isArray(data)) {
-            setStaff(data);
-            setTotalPages(0);
-            setTotalElements(data.length);
-          } else if (data && typeof data === 'object' && 'content' in data) {
+          // Backend luôn trả về Page response với pagination
+          if (data && typeof data === 'object' && 'content' in data) {
             setStaff(data.content || []);
             setTotalPages(data.totalPages || 0);
             setTotalElements(data.totalElements || 0);
           } else {
+            // Fallback nếu response không đúng format
+            console.warn("Unexpected response format from staff API:", data);
             setStaff([]);
             setTotalPages(0);
             setTotalElements(0);
@@ -85,29 +84,29 @@ export default function AdminStaffManagement() {
     return [
       {
         key: "active",
-        label: "Trạng thái",
+        label: t("staff.filters.status", "Status"),
         type: "boolean" as const,
       },
       {
         key: "department",
-        label: "Phòng ban",
+        label: t("staff.filters.department", "Department"),
         type: "select" as const,
         options: [
-          { value: "all", label: "Tất cả" },
+          { value: "all", label: t("staff.filters.allDepartments", "All departments") },
           ...departments.map((d) => ({ value: d, label: d })),
         ],
       },
       {
         key: "role",
-        label: "Vai trò",
+        label: t("staff.filters.role", "Role"),
         type: "select" as const,
         options: [
-          { value: "all", label: "Tất cả" },
+          { value: "all", label: t("staff.filters.allRoles", "All roles") },
           ...roles.map((r) => ({ value: r, label: r })),
         ],
       },
     ] as FilterOption[];
-  }, [staff]);
+  }, [staff, t]);
 
   // Fetch lại danh sách khi search thay đổi (debounce)
   useEffect(() => {
@@ -128,24 +127,27 @@ export default function AdminStaffManagement() {
 
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 p-8">
       <ToastContainer position="top-right" autoClose={3000} />
+      <div className="max-w-7xl mx-auto space-y-8">
 
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-gray-900">{t("pageTitles.staffManagement", "Staff Management")}</h1>
-        <p className="text-sm text-gray-600">
-          {t(
-            "staff.pageDescription",
-            "Overview of all employees in the organization, including their roles, departments, and clinic assignments."
-          )}
+      <section className="flex items-center gap-4">
+        <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-lg ring-4 ring-purple-100">
+          <Building2 className="w-7 h-7 text-white" />
+        </div>
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{t("pageTitles.staffManagement", "Staff Management")}</h1>
+          <p className="text-sm text-gray-600 font-medium mt-1">
+            {t("staff.pageDescription", "Manage employees and their assignments")}
         </p>
       </div>
+      </section>
 
       {/* Thanh tìm kiếm và bộ lọc nâng cao */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm space-y-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end">
+      <section className="bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 shadow-xl space-y-4">
+        <div className="flex flex-col gap-6 md:flex-row md:items-end">
           <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 mb-2">
               {t("staff.filters.search", "Search")}
             </label>
             <input
@@ -156,13 +158,13 @@ export default function AdminStaffManagement() {
                 if (e.key === "Enter") handleSearch();
               }}
               placeholder={t("staff.filters.searchPlaceholder", "Search by name, email, phone, or code")}
-              className="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full border border-slate-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               onClick={handleSearch}
-              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+              className="px-6 py-3 text-base font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm hover:shadow transition-all"
             >
               {t("staff.actions.search", "Search")}
             </button>
@@ -173,7 +175,7 @@ export default function AdminStaffManagement() {
                 resetSort();
                 fetchStaff();
               }}
-              className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-100 transition"
+              className="px-6 py-3 text-base font-medium border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-all"
             >
               {t("staff.actions.clear", "Clear")}
             </button>
@@ -188,12 +190,21 @@ export default function AdminStaffManagement() {
           </div>
         </div>
 
-      </div>
+      </section>
 
       {/* Bảng danh sách nhân viên */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-x-auto">
-        <table className="min-w-full border-collapse">
-          <thead className="bg-gray-50">
+      <section className="bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="px-6 py-5 border-b border-slate-200/60 bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl">
+              <Building2 className="w-5 h-5 text-purple-600" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-900">Staff Directory</h2>
+          </div>
+        </div>
+        <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-slate-200">
+          <thead className="bg-gradient-to-r from-purple-50 via-pink-50 to-purple-50">
             <tr>
               <TableSortHeader
                 label={t("staff.table.employee", "Employee")}
@@ -209,13 +220,13 @@ export default function AdminStaffManagement() {
                 currentDirection={sortState.direction}
                 onSort={handleSort}
               />
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 {t("staff.table.roles", "Roles")}
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 {t("staff.table.clinics", "Clinics")}
               </th>
-              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">
                 {t("staff.table.contact", "Contact")}
               </th>
               <TableSortHeader
@@ -244,74 +255,87 @@ export default function AdminStaffManagement() {
               />
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
+          <tbody className="bg-white divide-y divide-slate-200">
             {loading ? (
               // Hiển thị dòng loading khi đang lấy dữ liệu
               <tr>
-                <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
-                  {t("staff.messages.loading", "Loading staff...")}
+                <td colSpan={9} className="px-6 py-12 text-center text-slate-500">
+                  <div className="flex items-center justify-center gap-3">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span>{t("staff.messages.loading", "Loading staff...")}</span>
+                  </div>
                 </td>
               </tr>
             ) : filteredAndSortedStaff.length === 0 ? (
               // Hiển thị khi không có dữ liệu
               <tr>
-                <td colSpan={9} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={9} className="px-6 py-12 text-center text-slate-500">
                   {t("staff.messages.noData", "No staff found")}
                 </td>
               </tr>
             ) : (
               // Hiển thị các dòng nhân viên
               filteredAndSortedStaff.map((person) => (
-                <tr key={person.id} className="hover:bg-gray-50 transition">
-                  <td className="px-4 py-3">
+                <tr key={person.id} className="hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-pink-50/20 transition-all duration-200">
+                  <td className="px-6 py-5">
                     {/* Hiển thị avatar và thông tin cơ bản */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       {person.avatarUrl ? (
                         <img
                           src={person.avatarUrl}
                           alt={person.fullName}
-                          className="w-10 h-10 rounded-full object-cover"
+                          className="w-12 h-12 rounded-2xl object-cover shadow-lg ring-4 ring-purple-100"
                         />
                       ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-500 text-sm font-semibold">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-lg ring-4 ring-purple-100">
+                          <span className="text-white text-base font-bold">
                             {person.fullName?.charAt(0).toUpperCase()}
                           </span>
                         </div>
                       )}
                       <div>
-                        <div className="text-sm font-semibold text-gray-900">{person.fullName}</div>
-                        <div className="text-xs text-gray-500">
+                        <div className="font-semibold text-slate-900 text-base">{person.fullName}</div>
+                        <div className="text-sm text-slate-500">
                           {person.code ? `#${person.code}` : `ID: ${person.id}`}
                         </div>
                         {person.username && (
-                          <div className="text-xs text-gray-500">{person.username}</div>
+                          <div className="text-xs text-slate-400">{person.username}</div>
                         )}
                       </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    {person.departmentName || t("staff.table.noDepartment", "Not assigned")}
+                  <td className="px-6 py-5 text-sm text-slate-700">
+                    {person.departmentName || <span className="italic text-slate-400">{t("staff.table.noDepartment", "Not assigned")}</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    {person.roles.length > 0 ? person.roles.join(", ") : t("staff.table.noRole", "N/A")}
+                  <td className="px-6 py-5 text-sm text-slate-700">
+                    {person.roles.length > 0 ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {person.roles.map((role, idx) => (
+                          <span key={idx} className="inline-flex px-3 py-1 rounded-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white text-xs font-semibold shadow-md">
+                            {role}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="italic text-slate-400">{t("staff.table.noRole", "N/A")}</span>
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    {person.clinics.length > 0 ? person.clinics.join(", ") : t("staff.table.noClinic", "N/A")}
+                  <td className="px-6 py-5 text-sm text-slate-700">
+                    {person.clinics.length > 0 ? person.clinics.join(", ") : <span className="italic text-slate-400">{t("staff.table.noClinic", "N/A")}</span>}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">
-                    <div className="flex flex-col">
-                      <span>{person.phone || "-"}</span>
-                      <span className="text-xs text-gray-500">{person.email || "-"}</span>
+                  <td className="px-6 py-5 text-sm text-slate-700">
+                    <div className="flex flex-col gap-1">
+                      <span className="font-medium">{person.phone || "-"}</span>
+                      <span className="text-xs text-slate-500">{person.email || "-"}</span>
                     </div>
                   </td>
-                  <td className="px-4 py-3 text-sm">
+                  <td className="px-6 py-5 text-sm">
                     {/* Trạng thái hoạt động */}
                     <span
-                      className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
+                      className={`inline-flex px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${
                         person.active
-                          ? "bg-green-100 text-green-700 border border-green-200"
-                          : "bg-red-100 text-red-700 border border-red-200"
+                          ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-green-200/50"
+                          : "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-red-200/50"
                       }`}
                     >
                       {person.active
@@ -319,36 +343,37 @@ export default function AdminStaffManagement() {
                         : t("staff.table.inactive", "Inactive")}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-sm">
+                  <td className="px-6 py-5 text-sm">
                     {/* Duyệt nghỉ việc */}
                     {person.hasApprovedResignation ? (
-                      <span className="inline-flex px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
+                      <span className="inline-flex px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-orange-500 to-amber-600 text-white shadow-lg shadow-orange-200/50">
                         {t("staff.table.approvedResignation", "Approved Resignation")}
                       </span>
                     ) : (
-                      <span className="text-gray-400">-</span>
+                      <span className="text-slate-400">-</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{formatDate(person.createdAt)}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{formatDate(person.lastLoginAt)}</td>
+                  <td className="px-6 py-5 text-sm text-slate-700">{formatDate(person.createdAt)}</td>
+                  <td className="px-6 py-5 text-sm text-slate-700">{formatDate(person.lastLoginAt)}</td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+      </section>
 
       {/* Phân trang khi số trang nhiều hơn 1 */}
       {totalPages > 1 && (
-        <div className="flex items-center justify-between bg-white border border-gray-200 rounded-lg p-4">
-          <div className="text-sm text-gray-700">
-            {t("common.showing", "Hiển thị")} {page * pageSize + 1} - {Math.min((page + 1) * pageSize, totalElements)} {t("common.of", "của")} {totalElements} {t("common.results", "kết quả")}
+        <section className="flex items-center justify-between bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-2xl px-6 py-4 shadow-xl">
+          <div className="text-base text-slate-700 font-medium">
+            {t("common.showing", "Hiển thị")} <span className="font-semibold">{page * pageSize + 1}</span> - <span className="font-semibold">{Math.min((page + 1) * pageSize, totalElements)}</span> {t("common.of", "của")} <span className="font-semibold">{totalElements}</span> {t("common.results", "kết quả")}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0 || loading}
-              className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
+              className="px-5 py-2.5 text-sm font-medium border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-all"
             >
               {t("common.previous", "Trước")}
             </button>
@@ -370,10 +395,10 @@ export default function AdminStaffManagement() {
                     key={pageNum}
                     onClick={() => setPage(pageNum)}
                     disabled={loading}
-                    className={`px-3 py-2 rounded-lg text-sm transition ${
+                    className={`px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
                       page === pageNum
-                        ? "bg-blue-600 text-white"
-                        : "border hover:bg-gray-50"
+                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200/50"
+                        : "border border-slate-300 hover:bg-slate-50"
                     } disabled:opacity-50`}
                   >
                     {pageNum + 1}
@@ -384,13 +409,14 @@ export default function AdminStaffManagement() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1 || loading}
-              className="px-4 py-2 border rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition"
+              className="px-5 py-2.5 text-sm font-medium border border-slate-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 transition-all"
             >
               {t("common.next", "Sau")}
             </button>
           </div>
-        </div>
+        </section>
       )}
+      </div>
     </div>
   );
 }
