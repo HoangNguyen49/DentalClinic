@@ -170,9 +170,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
       handleSelect(createdPatient); // sang step 2
     }
     setSuccessModalOpen(false);
-    // có thể reset form nếu muốn
-    // setNewPatient({ fullName: "", phone: "", gender: "Nam", email: "", dateOfBirth: "", address: "" });
-    // setShowCreateForm(false); // nếu muốn quay về màn search sau khi chọn xong
+    
   };
 
   return (

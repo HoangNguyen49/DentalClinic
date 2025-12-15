@@ -11,6 +11,7 @@ import Product from "../Pages/Product/index";
 import Cart from "../Pages/Product/sections/GetProductsInvoice/index";
 import BookingPage from "../Pages/Booking/BookingPage";
 
+
 // Pages - Auth
 import LoginPage from "../Pages/Auth/LoginPage";
 import SignUp from "../Pages/Auth/SignUp";
@@ -80,6 +81,7 @@ import AuthGuard from "./routes/AuthGuard";
 
 // Providers
 import { NotificationProvider } from "./providers/NotificationContext";
+import PaymentResult from "../Pages/Booking/DepositService/PaymentResult";
 
 function App() {
     return (
@@ -100,6 +102,7 @@ function App() {
                     <Route path="/my-attendance" element={<EmployeeAttendanceView />} />
                     <Route path="/my-leave-requests" element={<LeaveRequestList />} />
                     <Route path="/booking" element={<BookingPage />} />
+                    <Route path="/booking/payment-result" element={<PaymentResult />} />
 
                     <Route element={<AuthGuard />}>
                         <Route path="/admin" element={<ProtectedRouteAdmin />}>

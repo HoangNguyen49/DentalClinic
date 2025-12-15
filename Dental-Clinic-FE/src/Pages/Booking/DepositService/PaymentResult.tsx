@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { verifyVnpay } from '../DepositService/paymentApi';
+import { verifyVnpay, capturePaypalOrder } from '../DepositService/paymentApi'; 
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
 
 const PaymentResult = () => {
@@ -8,32 +8,57 @@ const PaymentResult = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState<'LOADING' | 'SUCCESS' | 'FAILED'>('LOADING');
 
+  const clearBookingSession = () => {
+  
+    sessionStorage.removeItem("pendingBooking");
+    sessionStorage.removeItem("bookingRetryData");
+
+    localStorage.removeItem("bookingTimer"); 
+    localStorage.removeItem("bookingStep");
+    localStorage.removeItem("activeStep");
+  };
+
   useEffect(() => {
-    const verifyPayment = async () => {
+    const processPayment = async () => {
       try {
+        let isSuccess = false;
+
         // --- XỬ LÝ VNPAY ---
         if (searchParams.get('vnp_Amount')) {
-          // Chuyển searchParams thành object để gửi về BE
           const vnpParams = Object.fromEntries(searchParams.entries());
           await verifyVnpay(vnpParams);
-          setStatus('SUCCESS');
+          isSuccess = true;
         } 
         
         // --- XỬ LÝ PAYPAL ---
-        else if (searchParams.get('token')) { 
-           setStatus('SUCCESS');
-        } 
-        
-        else {
+        else if (searchParams.get('token')) {
+            const orderId = searchParams.get('token');
+            const appointmentId = searchParams.get('appointmentId'); 
+
+            if (orderId && appointmentId) {
+                await capturePaypalOrder(orderId, Number(appointmentId));
+                isSuccess = true;
+            } else {
+                setStatus('FAILED');
+            }
+        } else {
           setStatus('FAILED');
         }
+
+        if (isSuccess) {
+            setStatus('SUCCESS');
+            clearBookingSession(); 
+        }
+
       } catch (error) {
-        console.error(error);
+        console.error("Lỗi xử lý thanh toán:", error);
         setStatus('FAILED');
       }
     };
 
-    verifyPayment();
+    if (searchParams.toString()) {
+        processPayment();
+    }
   }, [searchParams]);
 
   return (
@@ -43,8 +68,7 @@ const PaymentResult = () => {
         {status === 'LOADING' && (
           <div className="space-y-4">
             <Loader className="w-16 h-16 text-blue-500 animate-spin mx-auto" />
-            <h2 className="text-xl font-semibold text-gray-700">Đang xử lý thanh toán...</h2>
-            <p className="text-gray-500">Vui lòng không tắt trình duyệt.</p>
+            <h2 className="text-xl font-semibold text-gray-700">Đang xử lý giao dịch...</h2>
           </div>
         )}
 
@@ -52,39 +76,43 @@ const PaymentResult = () => {
           <div className="space-y-4">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
             <h2 className="text-2xl font-bold text-gray-800">Thanh toán thành công!</h2>
-            <p className="text-gray-600">Lịch hẹn VIP của bạn đã được xác nhận.</p>
+            <p className="text-gray-600">Lịch hẹn đã được xác nhận. Dữ liệu đặt lịch cũ đã được xóa.</p>
+            
             <button 
-              onClick={() => navigate('/patient/appointments')}
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+              onClick={() => {
+                  clearBookingSession(); 
+                  navigate('/my-appointments');
+              }}
+              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
             >
               Xem lịch hẹn của tôi
+            </button>
+            
+            <button
+                onClick={() => {
+                    clearBookingSession(); // Xóa lần nữa cho chắc
+                    navigate('/booking'); // Về trang booking -> Sẽ thấy form trắng trơn (Step 0)
+                }}
+                className="mt-2 text-sm text-blue-600 hover:underline block w-full"
+            >
+                Đặt lịch hẹn mới
             </button>
           </div>
         )}
 
         {status === 'FAILED' && (
-          <div className="space-y-4">
+           <div className="space-y-4">
             <XCircle className="w-16 h-16 text-red-500 mx-auto" />
-            <h2 className="text-2xl font-bold text-gray-800">Thanh toán chưa hoàn tất</h2>
-            <p className="text-gray-600">Bạn đã hủy giao dịch hoặc có lỗi xảy ra.</p>
-            
-            {/* SỬA NÚT NÀY */}
+            <h2 className="text-2xl font-bold text-gray-800">Giao dịch thất bại</h2>
             <button 
-              onClick={() => navigate('/booking')} // Quay lại trang booking
-              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 font-medium"
+                onClick={() => {
+                    navigate('/booking'); 
+                }} 
+                className="mt-4 px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 w-full"
             >
-              Chọn phương thức thanh toán khác
+                Quay lại thử lại
             </button>
-            
-            <div className="mt-2">
-                <button 
-                  onClick={() => navigate('/')}
-                  className="text-sm text-gray-500 hover:underline"
-                >
-                  Về trang chủ
-                </button>
-            </div>
-          </div>
+           </div>
         )}
 
       </div>
