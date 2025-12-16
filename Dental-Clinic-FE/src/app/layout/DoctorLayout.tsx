@@ -5,6 +5,7 @@ import {
   FaCalendarAlt,
   FaSignOutAlt,
   FaCalendarCheck
+  ,FaRobot
 } from "react-icons/fa";
 
 const DoctorLayout = () => {
@@ -30,6 +31,7 @@ const DoctorLayout = () => {
           <NavItem to="/doctor/dashboard" label="Dashboard" icon={<FaChartBar />} />
           <NavItem to="/doctor/appointments" label="Appointments" icon={<FaCalendarAlt />} />
           <NavItem to="/doctor/schedule" label="My Schedule" icon={<FaCalendarCheck />} />
+          <NavItem to="/doctor/chatbot" label="Doctor Chatbot" icon={<FaRobot />} />
         </nav>
         <div className="p-4 border-t">
           <button

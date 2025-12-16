@@ -15,6 +15,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
 import type { DoctorAppointmentDTO } from "../types/doctor";
+import DoctorChatbotPanel from "./doc/DoctorChatbotPanel";
 
 type MedicalRecord = {
   recordId: number;
@@ -402,72 +403,90 @@ export default function DoctorDashboard() {
             </div>
           </div>
 
-          {/* Recent Medical Records */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Recent Medical Records</h2>
-              <button
-                onClick={() => navigate("/doctor/patients")}
-                className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm"
-              >
-                View All
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
-            {recentRecords.length === 0 ? (
-              <div className="text-center text-gray-500 py-8">No recent medical records</div>
-            ) : (
-              <div className="space-y-3">
-                {recentRecords.map((record) => (
-                  <div
-                    key={record.recordId}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
-                    onClick={() => navigate(`/doctor/medical-records/${record.recordId}`)}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              {/* Recent Medical Records */}
+              <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-semibold text-gray-800">Recent Medical Records</h2>
+                  <button
+                    onClick={() => navigate("/doctor/patients")}
+                    className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm"
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <FileText className="w-4 h-4 text-gray-400" />
-                        <span className="font-medium text-gray-900">
-                          {format(new Date(record.recordDate), "MMM dd, yyyy")}
-                        </span>
+                    View All
+                    <ArrowRight className="w-4 h-4" />
+                  </button>
+                </div>
+                {recentRecords.length === 0 ? (
+                  <div className="text-center text-gray-500 py-8">No recent medical records</div>
+                ) : (
+                  <div className="space-y-3">
+                    {recentRecords.map((record) => (
+                      <div
+                        key={record.recordId}
+                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
+                        onClick={() => navigate(`/doctor/medical-records/${record.recordId}`)}
+                      >
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <FileText className="w-4 h-4 text-gray-400" />
+                            <span className="font-medium text-gray-900">
+                              {format(new Date(record.recordDate), "MMM dd, yyyy")}
+                            </span>
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {record.patient?.fullName || "Unknown"} ({record.patient?.patientCode || "N/A"})
+                          </div>
+                          <div className="text-xs text-gray-500 truncate max-w-2xl">{record.diagnosis}</div>
+                        </div>
+                        <ArrowRight className="w-5 h-5 text-gray-400" />
                       </div>
-                      <div className="text-sm text-gray-600">
-                        {record.patient?.fullName || "Unknown"} ({record.patient?.patientCode || "N/A"})
-                      </div>
-                      <div className="text-xs text-gray-500 truncate max-w-2xl">{record.diagnosis}</div>
-                    </div>
-                    <ArrowRight className="w-5 h-5 text-gray-400" />
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Quick Actions */}
-          <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <button
-                onClick={() => navigate("/doctor/appointments/calendar")}
-                className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
-              >
-                <Calendar className="w-6 h-6 text-blue-600" />
-                <span className="font-medium">View Calendar</span>
-              </button>
-              <button
-                onClick={() => navigate("/doctor/medical-records/create")}
-                className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
-              >
-                <FileText className="w-6 h-6 text-green-600" />
-                <span className="font-medium">Create Medical Record</span>
-              </button>
-              <button
-                onClick={() => navigate("/doctor/schedule")}
-                className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
-              >
-                <Clock className="w-6 h-6 text-purple-600" />
-                <span className="font-medium">View My Schedule</span>
-              </button>
+              {/* Quick Actions */}
+              <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
+                <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <button
+                    onClick={() => navigate("/doctor/appointments/calendar")}
+                    className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
+                  >
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                    <span className="font-medium">View Calendar</span>
+                  </button>
+                  <button
+                    onClick={() => navigate("/doctor/medical-records/create")}
+                    className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
+                  >
+                    <FileText className="w-6 h-6 text-green-600" />
+                    <span className="font-medium">Create Medical Record</span>
+                  </button>
+                  <button
+                    onClick={() => navigate("/doctor/schedule")}
+                    className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
+                  >
+                    <Clock className="w-6 h-6 text-purple-600" />
+                    <span className="font-medium">View My Schedule</span>
+                  </button>
+                  <button
+                    onClick={() => navigate("/doctor/chatbot")}
+                    className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
+                  >
+                    <FileText className="w-6 h-6 text-indigo-600" />
+                    <span className="font-medium">Doctor Chatbot</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="lg:col-span-1">
+              {/* Chatbot Panel */}
+              <div className="sticky top-6">
+                <DoctorChatbotPanel />
+              </div>
             </div>
           </div>
         </div>

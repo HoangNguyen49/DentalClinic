@@ -6,6 +6,8 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
 import ServiceVariantsModal from "./ServiceVariantsModal";
+import CreateMedicalRecordModal from "./CreateMedicalRecordModal";
+import MedicalRecordPdfExporter from "../../components/MedicalRecordPdfExporter";
 import type { MedicalRecordDTO, MedicalRecordImage, ServiceDTO } from "../types/doctor";
 
 export default function MedicalRecordDetail() {
@@ -17,6 +19,8 @@ export default function MedicalRecordDetail() {
   const [record, setRecord] = useState<MedicalRecordDTO | null>(null);
   const [images, setImages] = useState<MedicalRecordImage[]>([]);
   const [loading, setLoading] = useState(true);
+  // export handled by MedicalRecordPdfExporter component
+  const [showEditModal, setShowEditModal] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [serviceMap, setServiceMap] = useState<Record<number, ServiceDTO>>({});
   const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
@@ -222,6 +226,22 @@ export default function MedicalRecordDetail() {
                   {record.appointmentId ? `#${record.appointmentId}` : "N/A"}
                 </p>
               </div>
+              <div className="mt-4 flex gap-2">
+                {record?.patient?.id && record?.recordId && (
+                  <MedicalRecordPdfExporter
+                    patientId={record.patient.id}
+                    recordId={record.recordId}
+                    onError={() => toast.error("Failed to export PDF")}
+                    onSuccess={() => toast.success("PDF exported")}
+                  />
+                )}
+                <button
+                  onClick={() => setShowEditModal(true)}
+                  className="rounded border px-3 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Edit Record
+                </button>
+              </div>
             </header>
 
             <section className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -351,6 +371,19 @@ export default function MedicalRecordDetail() {
           setSelectedService(null);
           setActiveVariantId(undefined);
           setActiveVariantName(undefined);
+        }}
+      />
+
+      <CreateMedicalRecordModal
+        isOpen={showEditModal}
+        mode="edit"
+        patientId={record?.patient?.id}
+        doctorId={record?.doctor?.id}
+        record={record ?? undefined}
+        onClose={() => setShowEditModal(false)}
+        onSuccess={() => {
+          setShowEditModal(false);
+          fetchRecord();
         }}
       />
     </>

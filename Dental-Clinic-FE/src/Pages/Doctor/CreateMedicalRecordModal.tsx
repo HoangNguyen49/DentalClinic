@@ -105,6 +105,77 @@ export default function CreateMedicalRecordModal({
     setActiveVariantName(undefined);
   };
 
+  const tryParsePrescriptionNote = (note?: string) => {
+    if (!note) return undefined;
+    // Try JSON first
+    try {
+      const maybeJson = JSON.parse(note);
+      const maybeParsed = maybeJson as { meds?: unknown[] };
+      if (maybeParsed && Array.isArray(maybeParsed.meds) && maybeParsed.meds.length > 0) {
+        const medsArray = maybeParsed.meds as unknown[];
+        const meds = medsArray.map((m) => {
+          const obj = m as Record<string, unknown>;
+          return {
+            id: String(obj.id ?? obj.medId ?? obj.name ?? ""),
+            name: String(obj.name ?? obj.medName ?? ""),
+            quantity: String(obj.quantity ?? obj.qty ?? ""),
+            instructions: String(obj.instructions ?? obj.instruction ?? ""),
+          } as SelectedMedication;
+        });
+        return meds;
+      }
+    } catch {
+      // not JSON, continue
+    }
+
+    // Try parse numbered lines of our format: "1. Name • SL: qty • HDSD: instr"
+    const lines = note.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    const parsed: SelectedMedication[] = [];
+    for (const line of lines) {
+      // Remove leading numbering
+      const m = line.match(/^\s*\d+\.\s*(.*)$/);
+      const content = m ? m[1] : line;
+      // Split by bullet separators '•' or similar
+      const parts = content.split(/\s*[•··]\s*/).map((p) => p.trim());
+      const name = parts[0] || "";
+      let quantity = "";
+      let instructions = "";
+      for (let i = 1; i < parts.length; i++) {
+        const part = parts[i];
+        const slMatch = part.match(/SL\s*:\s*(.*)/i);
+        const hdMatch = part.match(/HDSD\s*:\s*(.*)/i);
+        if (slMatch) quantity = slMatch[1].trim();
+        else if (hdMatch) instructions = hdMatch[1].trim();
+      }
+      // Fallback: if parts length === 2 and second part doesn't contain labels, assume it is quantity
+      if (!quantity && parts.length === 2) {
+        quantity = parts[1];
+      }
+      parsed.push({ id: name, name, quantity, instructions });
+    }
+    return parsed.length > 0 ? parsed : undefined;
+  };
+
+  const noteHasMeds = (note?: string) => {
+    if (!note) return false;
+    // JSON with meds
+    try {
+      const maybe = JSON.parse(note) as { meds?: unknown[] };
+      if (maybe && Array.isArray(maybe.meds) && maybe.meds.length > 0) return true;
+    } catch {
+      // not JSON
+    }
+    // Numbered lines like '1. Name • SL: ...'
+    const lines = note.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    if (lines.length === 0) return false;
+    let countNumbered = 0;
+    for (const line of lines) {
+      if (/^\s*\d+\./.test(line)) countNumbered++;
+      else if (/SL\s*:/i.test(line) && /HDSD\s*:/i.test(line)) countNumbered++;
+    }
+    return countNumbered > 0;
+  };
+
   useEffect(() => {
     if (isOpen) {
       resetState();
@@ -113,6 +184,13 @@ export default function CreateMedicalRecordModal({
       const svcVariantName = appointment?.serviceVariant?.variantName ?? appointment?.serviceDetails?.[0] ?? record?.serviceVariant?.variantName ?? record?.serviceName;
       if (svcVariantId) setActiveVariantId(svcVariantId);
       if (!svcVariantId && svcVariantName) setActiveVariantName(svcVariantName);
+      // Parse prescription note into selected medications preserving order when editing
+      if (mode === "edit" && record?.prescriptionNote) {
+        const parsed = tryParsePrescriptionNote(record.prescriptionNote);
+        if (parsed && parsed.length > 0) {
+          setSelectedMedications(parsed);
+        }
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, record, appointment]);
@@ -220,9 +298,9 @@ export default function CreateMedicalRecordModal({
       appointmentId: appointmentId || null,
       diagnosis: diagnosis.trim(),
       treatmentPlan: treatmentPlan.trim() || null,
-      // Use meds selected in UI if present; otherwise use parsed text from manual (if JSON) or the manual note itself
+      // Use meds selected in UI if present; avoid appending manual note if it already contains the med list (prevents duplication)
       prescriptionNote: (selectedMedications.length > 0
-        ? buildPrescriptionText(selectedMedications, manualPrescriptionNote)
+        ? buildPrescriptionText(selectedMedications, noteHasMeds(manualPrescriptionNote) ? "" : manualPrescriptionNote)
         : (parsedMedText.trim() || null)) || null,
       note: generalNote.trim() || null,
       recordDate: recordDate || null,

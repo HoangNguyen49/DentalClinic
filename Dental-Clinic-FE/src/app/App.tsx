@@ -56,6 +56,7 @@ import AppointmentDetail from "../Pages/Doctor/AppointmentDetail";
 import PatientMedicalRecords from "../Pages/Doctor/PatientMedicalRecords";
 import MedicalRecordDetail from "../Pages/Doctor/MedicalRecordDetail";
 import AppointmentListDoctor from "../Pages/Doctor/AppointmentListDoctor";
+import DoctorChatbotPage from "../Pages/Doctor/DoctorChatbotPage";
 
 // --- RECEPTION PAGES ---
 import ReceptionDashboard from "../Pages/Reception/Dashboard/ReceptionDashboard";
@@ -69,7 +70,7 @@ import AccountantRoutes from "../Pages/Product/accountant";
 // --- PATIENT PAGES [CỦA TUẤN] ---
 import AppointmentSchedule from "../Pages/Patient/AppointmentSchedule";
 import PatientDashboardPage from "../Pages/Patient/Dashboard/PatientDashboardPage";
-// import PatientProfilePage from "../Pages/Patient/Profile/PatientProfilePage";
+import PatientProfilePage from "../Pages/Patient/Profile/PatientProfilePage";
 
 // --- LAYOUTS ---
 import AdminLayout from "./layout/AdminLayouts";
@@ -122,7 +123,7 @@ function App() {
                         {/* PATIENT ROUTES [CỦA TUẤN] */}
                         <Route path="/my-appointments" element={<AppointmentSchedule />} />
                         <Route path="/patient-dashboard" element={<PatientDashboardPage />} />
-                        {/* <Route path="/patient-profile" element={<PatientProfilePage />} /> */}
+                        <Route path="/patient-profile" element={<PatientProfilePage />} />
 
                         {/* --- ADMIN --- */}
                         <Route path="/admin" element={<ProtectedRouteAdmin />}>
@@ -177,6 +178,7 @@ function App() {
                                 <Route path="appointments/:appointmentId" element={<AppointmentDetail />} />
                                 <Route path="patients/:patientId/records" element={<PatientMedicalRecords />} />
                                 <Route path="patients/:patientId/records/:recordId" element={<MedicalRecordDetail />} />
+                                <Route path="chatbot" element={<DoctorChatbotPage/>} />
                             </Route>
                         </Route>
 
