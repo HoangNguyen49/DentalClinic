@@ -1,5 +1,5 @@
 import { X, Printer, CheckCircle, CreditCard, Building2, Phone } from 'lucide-react';
-// 👇 Nhớ kiểm tra lại đường dẫn import này cho đúng với cấu trúc folder của bạn
+import { useTranslation } from 'react-i18next'; 
 import { type BillInvoice } from '../receptionApi'; 
 
 // --- CẤU HÌNH NGÂN HÀNG (DUMMY DATA CHO DEMO) ---
@@ -19,7 +19,9 @@ interface InvoiceModalProps {
 }
 
 export default function InvoiceModal({ isOpen, onClose, data, onConfirm, loadingConfirm }: InvoiceModalProps) {
-    // Nếu modal đóng hoặc chưa có dữ liệu thì không render gì cả
+    const { t } = useTranslation("reception"); 
+
+   
     if (!isOpen || !data) return null;
 
     // Hàm format tiền VND
@@ -53,7 +55,7 @@ export default function InvoiceModal({ isOpen, onClose, data, onConfirm, loading
                 <div className="flex justify-between items-center p-4 border-b bg-gray-50 print:hidden">
                     <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
                         <CreditCard className="w-5 h-5 text-blue-600"/> 
-                        Chi Tiết Hóa Đơn & Thanh Toán
+                        {t("invoice.title")}
                     </h2>
                     <button 
                         onClick={onClose} 
@@ -78,31 +80,31 @@ export default function InvoiceModal({ isOpen, onClose, data, onConfirm, loading
                             </p>
                         </div>
                         <div className="text-right">
-                            <h2 className="text-3xl font-extrabold text-gray-800 tracking-tighter">HÓA ĐƠN</h2>
-                            <p className="text-sm text-gray-500 mt-1">Mã HĐ: <span className="font-mono font-bold text-black">{data.invoiceId}</span></p>
-                            <p className="text-sm text-gray-500">Ngày: {new Date(data.createdDate).toLocaleDateString('vi-VN')}</p>
+                            <h2 className="text-3xl font-extrabold text-gray-800 tracking-tighter">{t("invoice.invoiceHeader")}</h2>
+                            <p className="text-sm text-gray-500 mt-1">{t("invoice.invoiceId")}: <span className="font-mono font-bold text-black">{data.invoiceId}</span></p>
+                            <p className="text-sm text-gray-500">{t("invoice.date")}: {new Date(data.createdDate).toLocaleDateString('vi-VN')}</p>
                         </div>
                     </div>
 
                     {/* 2. Thông tin Khách hàng */}
                     <div className="grid grid-cols-2 gap-8 mb-8">
                         <div>
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Khách hàng</h3>
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t("invoice.customer")}</h3>
                             <p className="font-bold text-lg text-gray-800">{data.patientName}</p>
                             <p className="text-sm text-gray-600">SĐT: {data.patientPhone}</p>
                             <p className="text-sm text-gray-600 font-mono">Mã BN: {data.patientCode}</p>
                         </div>
                         <div className="text-right">
-                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Hạng thành viên</h3>
+                            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">{t("invoice.rank")}</h3>
                             <div className="flex justify-end">
                                 <span className={`px-4 py-1.5 rounded-lg text-sm font-bold border ${getRankColor(data.membershipRank)} shadow-sm`}>
                                     {data.membershipRank || 'MEMBER'}
                                 </span>
                             </div>
                             <p className="text-xs text-gray-400 mt-2 italic">
-                                {data.membershipRank === 'DIAMOND' ? '(Ưu đãi giảm 15%)' : 
-                                 data.membershipRank === 'GOLD' ? '(Ưu đãi giảm 10%)' :
-                                 data.membershipRank === 'SILVER' ? '(Ưu đãi giảm 5%)' : '(Chưa có ưu đãi)'}
+                                {data.membershipRank === 'DIAMOND' ? '(Discount 15%)' : 
+                                 data.membershipRank === 'GOLD' ? '(Discount 10%)' :
+                                 data.membershipRank === 'SILVER' ? '(Discount 5%)' : ''}
                             </p>
                         </div>
                     </div>
@@ -111,10 +113,10 @@ export default function InvoiceModal({ isOpen, onClose, data, onConfirm, loading
                     <table className="w-full mb-8 border-collapse">
                         <thead>
                             <tr className="bg-gray-50 text-gray-600 text-xs uppercase border-y border-gray-200">
-                                <th className="text-left py-3 px-2 font-semibold">Dịch vụ / Hạng mục</th>
-                                <th className="text-center py-3 px-2 font-semibold">SL</th>
-                                <th className="text-right py-3 px-2 font-semibold">Đơn giá</th>
-                                <th className="text-right py-3 px-2 font-semibold">Thành tiền</th>
+                                <th className="text-left py-3 px-2 font-semibold">{t("invoice.tableService")}</th>
+                                <th className="text-center py-3 px-2 font-semibold">{t("invoice.tableQty")}</th>
+                                <th className="text-right py-3 px-2 font-semibold">{t("invoice.tablePrice")}</th>
+                                <th className="text-right py-3 px-2 font-semibold">{t("invoice.tableTotal")}</th>
                             </tr>
                         </thead>
                         <tbody className="text-gray-700 text-sm">
@@ -136,7 +138,7 @@ export default function InvoiceModal({ isOpen, onClose, data, onConfirm, loading
                         {/* --- CỘT TRÁI: QR CODE (Chỉ hiện khi chưa thanh toán hết) --- */}
                         {!isFullyPaid && (
                             <div className="flex-1 flex flex-col items-center justify-center bg-blue-50 rounded-xl p-4 border border-blue-100 print:hidden">
-                                <p className="text-sm font-bold text-blue-800 mb-2 uppercase">Quét mã để thanh toán</p>
+                                <p className="text-sm font-bold text-blue-800 mb-2 uppercase">{t("invoice.scanQr")}</p>
                                 
                                 {/* Ảnh QR từ VietQR */}
                                 <img 
@@ -146,9 +148,9 @@ export default function InvoiceModal({ isOpen, onClose, data, onConfirm, loading
                                 />
                                 
                                 <div className="mt-3 text-center space-y-1">
-                                    <p className="text-xs text-gray-500">Ngân hàng: <span className="font-bold text-gray-700">MB Bank</span></p>
-                                    <p className="text-xs text-gray-500">STK: <span className="font-bold text-gray-700">{BANK_INFO.ACCOUNT_NO}</span></p>
-                                    <p className="text-xs text-gray-500">Nội dung: <span className="font-mono font-bold text-blue-600">THANHTOAN {data.invoiceId}</span></p>
+                                    <p className="text-xs text-gray-500">{t("invoice.bank")}: <span className="font-bold text-gray-700">MB Bank</span></p>
+                                    <p className="text-xs text-gray-500">{t("invoice.accountNo")}: <span className="font-bold text-gray-700">{BANK_INFO.ACCOUNT_NO}</span></p>
+                                    <p className="text-xs text-gray-500">{t("invoice.content")}: <span className="font-mono font-bold text-blue-600">THANHTOAN {data.invoiceId}</span></p>
                                 </div>
                             </div>
                         )}
@@ -157,39 +159,39 @@ export default function InvoiceModal({ isOpen, onClose, data, onConfirm, loading
                         <div className="flex-1 bg-gray-50 p-6 rounded-lg print:bg-transparent print:p-0">
                             {/* SubTotal */}
                             <div className="flex justify-between mb-2 text-sm">
-                                <span className="text-gray-600">Tổng tiền dịch vụ:</span>
+                                <span className="text-gray-600">{t("invoice.subTotal")}:</span>
                                 <span className="font-semibold text-gray-800">{formatMoney(data.subTotal)}</span>
                             </div>
 
                             {/* Discount */}
                             {data.discountAmount > 0 && (
                                 <div className="flex justify-between mb-2 text-sm text-green-600">
-                                    <span>Giảm giá hạng {data.membershipRank}:</span>
+                                    <span>{t("invoice.discount", {rank: data.membershipRank})}:</span>
                                     <span className="font-bold">- {formatMoney(data.discountAmount)}</span>
                                 </div>
                             )}
 
                             {/* Booking Fee */}
                             <div className="flex justify-between mb-2 text-sm border-b border-gray-200 pb-2">
-                                <span className="text-gray-600">Phí đặt lịch ({data.appointmentType}):</span>
+                                <span className="text-gray-600">{t("invoice.bookingFee", {type: data.appointmentType})}:</span>
                                 <span className="font-semibold text-gray-800">{formatMoney(data.bookingFee)}</span>
                             </div>
 
                             {/* GRAND TOTAL */}
                             <div className="flex justify-between items-center mb-4">
-                                <span className="text-base font-bold text-gray-800">TỔNG CỘNG:</span>
+                                <span className="text-base font-bold text-gray-800">{t("invoice.grandTotal")}:</span>
                                 <span className="text-xl font-extrabold text-blue-700">{formatMoney(data.totalAmount)}</span>
                             </div>
 
                             {/* Đã thanh toán */}
                             <div className="flex justify-between mb-2 text-sm text-gray-500 italic">
-                                <span>Đã thanh toán (Cọc):</span>
+                                <span>{t("invoice.paidDeposit")}:</span>
                                 <span>{formatMoney(data.totalPaid)}</span>
                             </div>
 
                             {/* CÒN LẠI */}
                             <div className={`flex justify-between items-center p-3 rounded border ${isFullyPaid ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'}`}>
-                                <span className="font-bold text-sm uppercase">Khách phải trả:</span>
+                                <span className="font-bold text-sm uppercase">{t("invoice.remaining")}:</span>
                                 <span className="text-lg font-bold">{formatMoney(data.remainingBalance)}</span>
                             </div>
                         </div>
@@ -197,10 +199,10 @@ export default function InvoiceModal({ isOpen, onClose, data, onConfirm, loading
 
                     {/* Footer in */}
                     <div className="mt-16 text-center text-xs text-gray-400 hidden print:block">
-                        <p className="mb-1">Cảm ơn quý khách đã sử dụng dịch vụ tại {data.clinicName}!</p>
-                        <p>Hóa đơn này có giá trị trong ngày. Vui lòng kiểm tra kỹ trước khi rời quầy.</p>
+                        <p className="mb-1">{t("invoice.thankYou", {clinic: data.clinicName})}</p>
+                        <p>{t("invoice.footerNote")}</p>
                         <p className="mt-4">________________________________</p>
-                        <p>Chữ ký thu ngân</p>
+                        <p>{t("invoice.sign")}</p>
                     </div>
                 </div>
 
@@ -210,7 +212,7 @@ export default function InvoiceModal({ isOpen, onClose, data, onConfirm, loading
                         onClick={handlePrint}
                         className="flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 hover:text-black transition-all shadow-sm font-medium"
                     >
-                        <Printer size={18} /> In Hóa Đơn
+                        <Printer size={18} /> {t("invoice.btnPrint")}
                     </button>
                     
                     {!isFullyPaid ? (
@@ -224,11 +226,11 @@ export default function InvoiceModal({ isOpen, onClose, data, onConfirm, loading
                             ) : (
                                 <CheckCircle size={18} />
                             )}
-                            Xác Nhận Đã Thu Tiền
+                            {t("invoice.btnConfirm")}
                         </button>
                     ) : (
                         <div className="flex items-center gap-2 px-6 py-2.5 bg-green-100 text-green-700 rounded-lg font-bold border border-green-200 cursor-default">
-                            <CheckCircle size={18} /> Đã Thanh Toán
+                            <CheckCircle size={18} /> {t("invoice.paidBadge")}
                         </div>
                     )}
                 </div>

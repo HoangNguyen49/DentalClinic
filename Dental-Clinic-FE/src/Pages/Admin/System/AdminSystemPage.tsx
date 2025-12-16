@@ -2,8 +2,11 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Calendar, FileText, Settings } from "lucide-react";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 import HolidaysTab from "./Tabs/HolidaysTab";
 import AuditLogsTab from "./Tabs/AuditLogsTab";
+import ConfigurationTab from "./Tabs/ConfigurationTab";
 
 export default function AdminSystemPage() {
     const { t } = useTranslation("admin");
@@ -11,16 +14,18 @@ export default function AdminSystemPage() {
     
     // Đọc tab từ URL query param, mặc định là "holidays"
     const tabFromUrl = searchParams.get("tab");
-    const initialTab = (tabFromUrl === "logs" ? "logs" : "holidays") as "holidays" | "logs";
+    const initialTab = (tabFromUrl === "logs" ? "logs" : "holidays") as "holidays" | "logs" | "configs"; 
     
     // State cho tab đang chọn
-    const [activeTab, setActiveTab] = useState<"holidays" | "logs">(initialTab);
+    const [activeTab, setActiveTab] = useState<"holidays" | "logs" | "configs">(initialTab);
     
     // Cập nhật tab khi URL query param thay đổi
     useEffect(() => {
         const tabFromUrl = searchParams.get("tab");
         if (tabFromUrl === "logs") {
             setActiveTab("logs");
+        } else if (tabFromUrl === "configs") {
+            setActiveTab("configs"); // <--- 2. XỬ LÝ URL CHO CONFIGS
         } else if (tabFromUrl === "holidays" || !tabFromUrl) {
             setActiveTab("holidays");
         }
@@ -28,6 +33,12 @@ export default function AdminSystemPage() {
 
     // Danh sách tabs của hệ thống
     const tabs = [
+        {
+            id: "configs", 
+            label: t("system.tabs.config", "Cấu hình chung"),
+            icon: Settings, 
+            component: <ConfigurationTab />,
+        },
         {
             id: "holidays",
             label: t("system.tabs.holidays", "Ngày nghỉ lễ"),
@@ -44,6 +55,7 @@ export default function AdminSystemPage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 p-8">
+            <ToastContainer position="top-right" autoClose={3000} />
             <div className="max-w-7xl mx-auto space-y-8">
                 {/* Header */}
                 <section className="flex items-center gap-4">

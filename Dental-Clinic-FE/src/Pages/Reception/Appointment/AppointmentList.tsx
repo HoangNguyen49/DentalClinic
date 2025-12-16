@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Search, Filter, CreditCard, Calendar, DollarSign, RefreshCw, ChevronLeft, ChevronRight, User } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next'; 
 import InvoiceModal from './InvoiceModal'; 
-// 👇 Cập nhật đường dẫn import dựa theo hình ảnh cấu trúc thư mục của bạn
+
 import { 
     searchAppointments, 
     getBillDetails, 
@@ -12,6 +13,8 @@ import {
 } from '../receptionApi'; 
 
 export default function AppointmentList() {
+    const { t } = useTranslation("reception"); 
+
     // --- 1. STATE QUẢN LÝ DỮ LIỆU ---
     const [appointments, setAppointments] = useState<AppointmentDTO[]>([]);
     const [loading, setLoading] = useState(false);
@@ -51,7 +54,6 @@ export default function AppointmentList() {
             
         } catch (error) {
             console.error(error);
-            // toast.error("Lỗi tải danh sách."); // Bật lại nếu cần
         } finally {
             setLoading(false);
         }
@@ -69,7 +71,7 @@ export default function AppointmentList() {
             setBillData(data);
             setIsBillModalOpen(true);
         } catch (error) {
-            toast.error("Không thể tải chi tiết hóa đơn!");
+            toast.error(t("invoice.errorLoad")); // Dịch lỗi tải hóa đơn
         } finally {
             setProcessingId(null);
         }
@@ -84,11 +86,12 @@ export default function AppointmentList() {
 
         try {
             await confirmPayment(appId);
-            toast.success(`Thanh toán thành công cho ${billData.patientName}`);
+            // Dịch thông báo thành công có kèm tên bệnh nhân
+            toast.success(t("invoice.confirmSuccess", { name: billData.patientName }));
             setIsBillModalOpen(false);
             fetchData(); // Reload lại bảng
         } catch (error) {
-            toast.error("Lỗi xác nhận thanh toán.");
+            toast.error(t("invoice.errorConfirm")); // Dịch lỗi xác nhận
         }
     };
 
@@ -101,13 +104,14 @@ export default function AppointmentList() {
 
     const renderPaymentBadge = (status: string | null) => {
         const safeStatus = status ? status : 'UNPAID';
+        // Sử dụng key từ file reception.json (status.PAID, status.UNPAID...)
         switch (safeStatus) {
             case 'PAID': 
-                return <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">Đã thanh toán</span>;
+                return <span className="px-2 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700 border border-green-200">{t("status.PAID")}</span>;
             case 'UNPAID': 
-                return <span className="px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">Chưa thanh toán</span>;
+                return <span className="px-2 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700 border border-red-200">{t("status.UNPAID")}</span>;
             case 'DEPOSIT_PAID': 
-                return <span className="px-2 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">Đã cọc</span>;
+                return <span className="px-2 py-1 rounded-full text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-200">{t("status.DEPOSIT_PAID")}</span>;
             default: 
                 return <span className="text-gray-400 text-xs">--</span>;
         }
@@ -118,15 +122,15 @@ export default function AppointmentList() {
             {/* --- HEADER --- */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 flex-shrink-0">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-800">Quản Lý Thu Ngân</h1>
-                    <p className="text-sm text-gray-500">Tra cứu lịch hẹn và xử lý thanh toán viện phí</p>
+                    <h1 className="text-2xl font-bold text-gray-800">{t("list.title")}</h1>
+                    <p className="text-sm text-gray-500">{t("list.subtitle")}</p>
                 </div>
                 
                 <div className="relative w-full md:w-64">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input 
                         type="text" 
-                        placeholder="Tìm tên, SĐT, mã BN..." 
+                        placeholder={t("list.searchPlaceholder")} 
                         value={keyword}
                         onChange={(e) => { setKeyword(e.target.value); setPage(0); }}
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none shadow-sm" 
@@ -138,7 +142,7 @@ export default function AppointmentList() {
             <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6 flex flex-wrap gap-4 items-center flex-shrink-0">
                 <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-gray-500" />
-                    <span className="text-sm font-semibold text-gray-700">Bộ lọc:</span>
+                    <span className="text-sm font-semibold text-gray-700">{t("list.filter")}:</span>
                 </div>
 
                 <input 
@@ -153,10 +157,10 @@ export default function AppointmentList() {
                     onChange={(e) => { setFilterStatus(e.target.value); setPage(0); }}
                     className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 >
-                    <option value="">-- Tất cả trạng thái --</option>
-                    <option value="SCHEDULED">Đang chờ / Đặt trước</option>
-                    <option value="COMPLETED">Đã khám xong</option>
-                    <option value="CANCELLED">Đã hủy</option>
+                    <option value="">{t("list.allStatus")}</option>
+                    <option value="SCHEDULED">{t("status.CONFIRMED")}</option>
+                    <option value="COMPLETED">{t("status.COMPLETED")}</option>
+                    <option value="CANCELLED">{t("status.CANCELLED")}</option>
                 </select>
 
                 <select 
@@ -164,15 +168,15 @@ export default function AppointmentList() {
                     onChange={(e) => { setFilterPayment(e.target.value); setPage(0); }}
                     className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 >
-                    <option value="">-- Tất cả thanh toán --</option>
-                    <option value="UNPAID">Chưa thanh toán</option>
-                    <option value="PAID">Đã thanh toán</option>
+                    <option value="">{t("list.allPayment")}</option>
+                    <option value="UNPAID">{t("status.UNPAID")}</option>
+                    <option value="PAID">{t("status.PAID")}</option>
                 </select>
 
                 <button 
                     onClick={fetchData} 
                     className="ml-auto p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all" 
-                    title="Làm mới"
+                    title={t("list.refresh")}
                 >
                     <RefreshCw size={18} className={loading ? "animate-spin" : ""} />
                 </button>
@@ -180,22 +184,16 @@ export default function AppointmentList() {
 
             {/* --- DATA TABLE CONTAINER --- */}
             <div className="bg-white rounded-xl shadow-sm border border-gray-200 flex-1 flex flex-col overflow-hidden min-h-0">
-                
-                {/* 🔥 FIX QUAN TRỌNG: 
-                   - overflow-y-auto: Cho phép cuộn dọc nội bộ bảng
-                   - max-h-[...]: Giới hạn chiều cao để thanh cuộn xuất hiện
-                */}
                 <div className="overflow-x-auto overflow-y-auto flex-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
                     <table className="w-full text-left border-collapse relative">
-                        {/* sticky top-0: Giữ tiêu đề dính lên trên khi cuộn */}
                         <thead className="bg-gray-50 text-gray-600 text-xs uppercase font-bold tracking-wider sticky top-0 z-10 shadow-sm">
                             <tr>
-                                <th className="p-4 border-b bg-gray-50">Bệnh Nhân</th>
-                                <th className="p-4 border-b bg-gray-50">Thời gian</th>
-                                <th className="p-4 border-b bg-gray-50">Bác sĩ / Loại</th>
-                                <th className="p-4 border-b text-center bg-gray-50">Trạng thái</th>
-                                <th className="p-4 border-b text-center bg-gray-50">Thanh toán</th>
-                                <th className="p-4 border-b text-right bg-gray-50">Hành động</th>
+                                <th className="p-4 border-b bg-gray-50">{t("list.colPatient")}</th>
+                                <th className="p-4 border-b bg-gray-50">{t("list.colTime")}</th>
+                                <th className="p-4 border-b bg-gray-50">{t("list.colDoctor")}</th>
+                                <th className="p-4 border-b text-center bg-gray-50">{t("list.colStatus")}</th>
+                                <th className="p-4 border-b text-center bg-gray-50">{t("list.colPayment")}</th>
+                                <th className="p-4 border-b text-right bg-gray-50">{t("list.colAction")}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 text-sm text-gray-700">
@@ -203,13 +201,13 @@ export default function AppointmentList() {
                                 <tr>
                                     <td colSpan={6} className="p-8 text-center text-gray-500">
                                         <div className="inline-block w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"></div>
-                                        <p>Đang tải dữ liệu...</p>
+                                        <p>{t("list.loading")}</p>
                                     </td>
                                 </tr>
                             ) : appointments.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="p-8 text-center text-gray-400 italic">
-                                        Không tìm thấy lịch hẹn nào phù hợp.
+                                        {t("list.noData")}
                                     </td>
                                 </tr>
                             ) : (
@@ -232,7 +230,7 @@ export default function AppointmentList() {
                                             </div>
                                         </td>
                                         <td className="p-4">
-                                            <div className="text-gray-900 font-medium">{app.doctorName || 'Chưa chỉ định'}</div>
+                                            <div className="text-gray-900 font-medium">{app.doctorName || t("list.unassignedDoc")}</div>
                                             <span className={`inline-block mt-1 text-[10px] px-2 py-0.5 rounded border ${
                                                 app.appointmentType === 'VIP' 
                                                 ? 'bg-purple-50 text-purple-600 border-purple-200' 
@@ -247,7 +245,7 @@ export default function AppointmentList() {
                                                 app.status === 'CANCELLED' ? 'text-gray-400 bg-gray-100 line-through' :
                                                 'text-blue-600 bg-blue-50'
                                             }`}>
-                                                {app.status}
+                                                {t(`status.${app.status}`)}
                                             </span>
                                         </td>
                                         <td className="p-4 text-center">
@@ -265,7 +263,7 @@ export default function AppointmentList() {
                                                     ) : (
                                                         <DollarSign className="w-3 h-3" />
                                                     )}
-                                                    Thu Tiền
+                                                    {t("list.collectMoney")}
                                                 </button>
                                             )}
                                             {app.paymentStatus === 'PAID' && (
@@ -273,7 +271,7 @@ export default function AppointmentList() {
                                                     onClick={() => handleOpenBill(app.id)}
                                                     className="inline-flex items-center gap-1 px-3 py-1.5 border border-gray-300 text-gray-600 rounded-md hover:bg-gray-100 transition-all text-xs font-medium"
                                                 >
-                                                    <CreditCard className="w-3 h-3" /> In Bill
+                                                    <CreditCard className="w-3 h-3" /> {t("list.printBill")}
                                                 </button>
                                             )}
                                         </td>
@@ -284,10 +282,10 @@ export default function AppointmentList() {
                     </table>
                 </div>
 
-                {/* --- PAGINATION (Ghim ở dưới cùng) --- */}
+                {/* --- PAGINATION --- */}
                 <div className="bg-gray-50 px-4 py-3 border-t border-gray-200 flex justify-between items-center flex-shrink-0">
                     <span className="text-sm text-gray-500">
-                        Trang {isNaN(page) ? 0 : page + 1} / {totalPages || 0} (Tổng: {appointments.length} dòng)
+                        {t("list.pageInfo", { current: isNaN(page) ? 0 : page + 1, total: totalPages || 0, count: appointments.length })}
                     </span>
 
                     <div className="flex gap-2">

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { FaSearch, FaTimes, FaPlus, FaTrash } from 'react-icons/fa';
+import { useTranslation } from 'react-i18next'; 
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -18,6 +19,7 @@ interface SelectedService {
 }
 
 export default function QuickBookingModal({ onClose, onSuccess }: Props) {
+    const { t } = useTranslation("reception"); // 2. Khởi tạo hook
     
     // --- STATE KHÁCH HÀNG ---
     const [keyword, setKeyword] = useState('');
@@ -107,7 +109,7 @@ export default function QuickBookingModal({ onClose, onSuccess }: Props) {
         const validServices = selectedServices.filter(s => s.variantId !== '');
 
         if (!selectedPatient || validServices.length === 0) {
-            toast.warning("Vui lòng chọn Khách hàng và ít nhất 1 Dịch vụ!");
+            toast.warning(t("quickBooking.validate")); // Dịch validate
             return;
         }
 
@@ -136,12 +138,13 @@ export default function QuickBookingModal({ onClose, onSuccess }: Props) {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
-            toast.success(`Đã tạo phiếu cho ${validServices.length} dịch vụ! 👋`);
+            // Dịch thông báo thành công (có truyền tham số count)
+            toast.success(t("quickBooking.success", { count: validServices.length }));
             onSuccess();
             onClose();
 
         } catch (error: any) {
-            toast.error(error.response?.data?.message || "Lỗi tạo phiếu.");
+            toast.error(error.response?.data?.message || t("quickBooking.error"));
         } finally {
             setLoading(false);
         }
@@ -158,8 +161,8 @@ export default function QuickBookingModal({ onClose, onSuccess }: Props) {
                 {/* Header */}
                 <div className="bg-gray-900 text-white px-6 py-4 flex justify-between items-center shrink-0">
                     <div>
-                        <h3 className="font-bold text-lg">Tạo Phiếu Hẹn Nhanh</h3>
-                        <p className="text-gray-400 text-xs">Thêm khách vào hàng chờ (Walk-in)</p>
+                        <h3 className="font-bold text-lg">{t("quickBooking.title")}</h3>
+                        <p className="text-gray-400 text-xs">{t("quickBooking.subtitle")}</p>
                     </div>
                     <button onClick={onClose} className="text-gray-400 hover:text-white transition">
                         <FaTimes size={20} />
@@ -168,16 +171,18 @@ export default function QuickBookingModal({ onClose, onSuccess }: Props) {
 
                 <div className="p-6 space-y-6 overflow-y-auto custom-scrollbar">
                     
-                    {/* 1. CHỌN KHÁCH HÀNG (Giữ nguyên) */}
+                    {/* 1. CHỌN KHÁCH HÀNG */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">1. Khách Hàng <span className="text-red-500">*</span></label>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">
+                            {t("quickBooking.labelPatient")} <span className="text-red-500">*</span>
+                        </label>
                         
                         {!selectedPatient ? (
                             <div className="relative group">
                                 <input 
                                     type="text" 
                                     className="w-full border-2 border-gray-200 p-3 pl-10 rounded-xl outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-50 transition-all"
-                                    placeholder="Tìm tên hoặc SĐT..."
+                                    placeholder={t("quickBooking.placeholderSearch")}
                                     value={keyword}
                                     onChange={e => setKeyword(e.target.value)}
                                     autoFocus
@@ -214,21 +219,23 @@ export default function QuickBookingModal({ onClose, onSuccess }: Props) {
                                     </div>
                                 </div>
                                 <button onClick={() => setSelectedPatient(null)} className="text-sm text-gray-500 hover:text-red-500 font-medium underline decoration-dashed">
-                                    Thay đổi
+                                    {t("quickBooking.change")}
                                 </button>
                             </div>
                         )}
                     </div>
 
-                    {/* 2. CHỌN DỊCH VỤ (NÂNG CẤP) */}
+                    {/* 2. CHỌN DỊCH VỤ */}
                     <div>
                         <div className="flex justify-between items-center mb-2">
-                            <label className="block text-sm font-bold text-gray-700">2. Dịch Vụ <span className="text-red-500">*</span></label>
+                            <label className="block text-sm font-bold text-gray-700">
+                                {t("quickBooking.labelService")} <span className="text-red-500">*</span>
+                            </label>
                             <button 
                                 onClick={addServiceRow}
                                 className="text-xs flex items-center gap-1 font-bold text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-2 py-1 rounded transition"
                             >
-                                <FaPlus size={10} /> Thêm dịch vụ
+                                <FaPlus size={10} /> {t("quickBooking.addService")}
                             </button>
                         </div>
                         
@@ -241,7 +248,7 @@ export default function QuickBookingModal({ onClose, onSuccess }: Props) {
                                             onChange={(e) => handleServiceChange(item.localId, e.target.value)}
                                             value={item.variantId}
                                         >
-                                            <option value="">-- Chọn dịch vụ {index + 1} --</option>
+                                            <option value="">{t("quickBooking.selectService", { index: index + 1 })}</option>
                                             {servicesList.map((s: any) => (
                                                 <optgroup key={s.id} label={s.serviceName}>
                                                     {s.variants?.map((v: any) => (
@@ -270,7 +277,7 @@ export default function QuickBookingModal({ onClose, onSuccess }: Props) {
                         {/* Tổng tiền tạm tính */}
                         {totalEstimated > 0 && (
                             <div className="mt-4 flex justify-between items-center border-t border-dashed border-gray-200 pt-3">
-                                <span className="text-sm text-gray-500">Tạm tính:</span>
+                                <span className="text-sm text-gray-500">{t("quickBooking.estimated")}:</span>
                                 <span className="font-bold text-blue-700 text-lg">{formatMoney(totalEstimated)}</span>
                             </div>
                         )}
@@ -279,7 +286,7 @@ export default function QuickBookingModal({ onClose, onSuccess }: Props) {
                     {/* FOOTER */}
                     <div className="pt-4 border-t border-gray-100 flex justify-end gap-3 mt-auto">
                         <button onClick={onClose} className="px-5 py-2.5 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200 font-medium transition">
-                            Hủy bỏ
+                            {t("quickBooking.cancel")}
                         </button>
                         <button 
                             onClick={handleCreateTicket} 
@@ -287,7 +294,7 @@ export default function QuickBookingModal({ onClose, onSuccess }: Props) {
                             className="px-6 py-2.5 rounded-lg bg-[#3366FF] text-white font-bold hover:bg-blue-700 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition flex items-center gap-2"
                         >
                             {loading && <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>}
-                            Tạo Phiếu
+                            {t("quickBooking.create")}
                         </button>
                     </div>
                 </div>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Trash2, Plus, Loader2, Calendar as CalendarIcon } from "lucide-react";
+import { Trash2, Plus, Calendar as CalendarIcon } from "lucide-react";
 import { type Holiday, systemService } from "../../../../services/admin/systemService";
 import { toast } from "react-toastify";
 import { format } from "date-fns";

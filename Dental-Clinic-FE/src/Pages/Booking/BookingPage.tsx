@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom'; // [AI ADDITION] Thêm useSearchParams
+import { useNavigate, useSearchParams } from 'react-router-dom'; 
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next'; // 1. Import i18n
+
 import StepSelectType from './Steps/StepSelectType';
 import StepServiceClinic from './Steps/StepServiceClinic';
 import StepDoctor from './Steps/StepDoctor';
@@ -15,8 +17,9 @@ import Footer from '../../widgets/Footer/Footer';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export default function BookingPage() {
+  const { t } = useTranslation("booking"); // 2. Khởi tạo hook
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams(); // [AI ADDITION] Hook lấy tham số
+  const [searchParams] = useSearchParams();
 
   // Bắt đầu từ bước 0 (Chọn Loại)
   const [currentStep, setCurrentStep] = useState(0);
@@ -112,29 +115,27 @@ export default function BookingPage() {
             const summaryStep = parsed.appointmentType === 'STANDARD' ? 3 : 4;
             setCurrentStep(summaryStep); 
             
-            toast.warning("Giao dịch chưa hoàn tất. Vui lòng chọn phương thức thanh toán khác.");
+            toast.warning(t("stepSummary.expiredModal.message")); // Dùng message tạm hoặc tạo key mới
           } catch (e) {
             console.error("Lỗi khôi phục data pending:", e);
           }
       } 
-      // Trường hợp 2: Quay lại sau khi Hủy/Lỗi thanh toán (MỚI THÊM)
+      // Trường hợp 2: Quay lại sau khi Hủy/Lỗi thanh toán
       else if (retryData) {
           try {
             const parsed = JSON.parse(retryData);
             setBookingData(parsed);
             
-            // Vì chỉ VIP mới thanh toán nên thường là bước 4, 
-            // nhưng cứ để logic check type cho chắc chắn
             const summaryStep = parsed.appointmentType === 'STANDARD' ? 3 : 4;
             setCurrentStep(summaryStep); 
             
             sessionStorage.removeItem("bookingRetryData");
-            toast.warning("Giao dịch chưa hoàn tất. Vui lòng chọn phương thức thanh toán khác.");
+            toast.warning(t("paymentResult.failed.message")); // Dùng message lỗi thanh toán
           } catch (e) {
             console.error("Lỗi khôi phục data retry:", e);
           }
       }
-  }, []);
+  }, [t]);
 
   const nextStep = () => setCurrentStep((prev) => prev + 1);
   const prevStep = () => setCurrentStep((prev) => prev - 1);
@@ -150,9 +151,9 @@ export default function BookingPage() {
 
     if (!storedUser || !token) {
         sessionStorage.setItem("pendingBooking", JSON.stringify(bookingData));
-        toast.info("🔒 Vui lòng Đăng nhập để hoàn tất!");
+        toast.info("🔒 " + t("stepDateVIP.errors.login")); // Dịch thông báo cần login
         navigate("/login", { state: { from: "/booking" } });
-        return; // Dừng lại, không trả về gì
+        return; 
     }
 
     if (bookingData.appointmentId) {
@@ -178,7 +179,7 @@ export default function BookingPage() {
         appointmentType: bookingData.appointmentType,
         bookingFee: bookingData.bookingFee,
 
-        // Logic Doctor: VIP thì lấy doctorId, Standard thì null (hoặc xử lý tùy backend)
+        // Logic Doctor: VIP thì lấy doctorId, Standard thì null
         doctorId: bookingData.appointmentType === 'VIP' ? bookingData.doctorId : null,
         
         roomId: null, // Frontend chưa chọn phòng
@@ -190,7 +191,7 @@ export default function BookingPage() {
         
         // Map services đúng cấu trúc DTO Backend
         services: bookingData.selectedServices.map((s: any) => ({
-            serviceId: s.id, // Lưu ý: Backend dùng ServiceVariantId hay ServiceId? Kiểm tra lại DTO
+            serviceId: s.id, 
             quantity: 1,
         }))
       };
@@ -220,20 +221,20 @@ export default function BookingPage() {
 
     } catch (error: any) {
       console.error("Booking Error:", error);
-      const msg = error.response?.data?.message || "Đặt lịch thất bại. Vui lòng thử lại.";
+      const msg = error.response?.data?.message || t("common.error");
       toast.error(msg);
-      throw error; // Ném lỗi để StepSummary biết mà dừng loading
+      throw error; 
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // --- 3. RENDER STEP CONTENT (CODE GỐC) ---
+  // --- 3. RENDER STEP CONTENT ---
   const renderStepContent = () => {
     switch (currentStep) {
       case 0: // Chọn Loại
         return <StepSelectType 
-                  currentType={bookingData.appointmentType} // Truyền xuống để highlight
+                  currentType={bookingData.appointmentType} 
                   updateData={(d: any) => setBookingData({...bookingData, ...d})} 
                   onNext={nextStep} 
                />;
@@ -261,7 +262,7 @@ export default function BookingPage() {
     }
   };
 
-  // --- 4. STEPPER DYNAMIC (CODE GỐC) ---
+  // --- 4. STEPPER DYNAMIC ---
   const maxStepIndex = bookingData.appointmentType === 'STANDARD' ? 3 : 4;
   const stepsArray = Array.from({ length: maxStepIndex + 1 }, (_, i) => i);
 
@@ -273,8 +274,8 @@ export default function BookingPage() {
           
           {/* HEADER */}
           <div className="bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] p-8 text-center relative shrink-0">
-            <h2 className="text-3xl font-bold text-white mb-2">Đặt Lịch Khám</h2>
-            <p className="text-blue-100">Hoàn tất các bước để chăm sóc nụ cười của bạn</p>
+            <h2 className="text-3xl font-bold text-white mb-2">{t("title")}</h2>
+            <p className="text-blue-100">{t("stepType.title")}</p> {/* Có thể đổi key subtitle khác nếu muốn */}
   
             {/* STEPPER */}
              <div className="flex justify-center items-center mt-8 gap-2 sm:gap-4">

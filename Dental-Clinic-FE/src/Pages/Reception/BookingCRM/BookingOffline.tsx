@@ -2,6 +2,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next'; // 1. Import i18n
 
 // --- IMPORT CÁC STEPS ---
 import StepSelectPatient from '../Patient/StepSelectPatient'; // Bước 1: Chọn Khách
@@ -15,6 +16,7 @@ import StepSummary from '../../Booking/Steps/StepSummary'; // Bước Cuối: X�
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export default function BookingOffline() {
+  const { t } = useTranslation("reception"); // 2. Khởi tạo hook
   const navigate = useNavigate();
   
   // Bắt đầu từ Bước 1 (Chọn Khách)
@@ -170,12 +172,12 @@ export default function BookingOffline() {
         { headers: { 'Authorization': `Bearer ${token}` } }
       );
 
-      toast.success("Đặt lịch thành công! ✅");
+      toast.success(t("bookingOffline.success")); // Dịch thông báo thành công
       navigate('/reception/dashboard'); // Quay về Dashboard để xếp lịch
       
     } catch (error: any) {
       console.error(error);
-      const msg = error.response?.data?.message || "Lỗi đặt lịch.";
+      const msg = error.response?.data?.message || t("bookingOffline.error"); // Dịch thông báo lỗi
       toast.error(msg);
     } finally {
       setIsSubmitting(false);
@@ -198,9 +200,9 @@ export default function BookingOffline() {
         
         <div>
           <h2 className="text-xl font-bold flex items-center gap-2">
-            🏥 Walk-in Booking
+            🏥 {t("bookingOffline.title")}
           </h2>
-          <p className="text-gray-400 text-xs mt-1">Tiếp nhận & Đặt lịch tại quầy</p>
+          <p className="text-gray-400 text-xs mt-1">{t("bookingOffline.subtitle")}</p>
         </div>
 
         {/* STEP INDICATOR */}
