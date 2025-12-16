@@ -106,6 +106,7 @@
       "ON_TIME": "Đúng giờ",
       "LATE": "Đi trễ",
       "ABSENT": "Vắng mặt",
+      "PENDING": "Chờ check-in",
       "APPROVED_ABSENCE": "Nghỉ được duyệt",
       "APPROVED_LATE": "Đi trễ được duyệt",
       "UNKNOWN": "Không xác định"

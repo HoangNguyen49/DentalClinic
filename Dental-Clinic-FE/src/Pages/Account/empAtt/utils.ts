@@ -27,6 +27,47 @@ export function formatTime(value?: string | null): string {
     }
 }
 
+
+export function getStatusDisplay(
+    status?: string | null,
+    startTime?: string | null,
+    checkInTime?: string | null
+): { color: string; displayStatus: string } {
+    // Nếu status = ABSENT và chưa check-in, kiểm tra thời gian
+    if (
+        (status?.toUpperCase() === "ABSENT" || status?.toUpperCase() === "APPROVED_ABSENCE") &&
+        !checkInTime &&
+        startTime
+    ) {
+        try {
+            // Parse startTime (format: HH:mm:ss hoặc HH:mm)
+            const timeParts = startTime.split(":");
+            if (timeParts.length >= 2) {
+                const hour = parseInt(timeParts[0]);
+                const minute = parseInt(timeParts[1]);
+                const now = new Date();
+                const shiftStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute);
+
+                // Nếu chưa tới giờ bắt đầu ca → hiển thị "Chờ check-in"
+                if (now < shiftStart) {
+                    return {
+                        color: "bg-blue-100 text-blue-800",
+                        displayStatus: "PENDING",
+                    };
+                }
+            }
+        } catch (e) {
+            // Nếu parse lỗi thì vẫn hiển thị status như cũ
+        }
+    }
+
+    // Trả về status gốc nếu không cần override
+    return {
+        color: getStatusColor(status),
+        displayStatus: status || "UNKNOWN",
+    };
+}
+
 export function getStatusColor(status?: string | null): string {
     if (!status) return "bg-gray-100 text-gray-800";
     switch (status.toUpperCase()) {
@@ -38,6 +79,8 @@ export function getStatusColor(status?: string | null): string {
             return "bg-yellow-100 text-yellow-800";
         case "ABSENT":
             return "bg-red-100 text-red-800";
+        case "PENDING":
+            return "bg-blue-100 text-blue-800";
         default:
             return "bg-gray-100 text-gray-800";
     }

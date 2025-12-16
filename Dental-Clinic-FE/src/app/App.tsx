@@ -47,7 +47,6 @@ import AdminReportsPage from "../Pages/Admin/Reports/AdminReportsPage";
 import AdminCustomerManagement from "../Pages/Admin/Customers/AdminCustomerManagement";
 import AdminInventoryManagement from "../Pages/Admin/Inventory/AdminInventoryManagement";
 import AdminDashboardPage from "../Pages/Admin/Dashboard/AdminDashboardPage";
-// import AppointmentList from "../Pages/Admin/Appointments/AppointmentList"; // Admin Appointment List
 
 // --- DOCTOR PAGES ---
 import DoctorDashboard from "../Pages/Doctor/DoctorDashboard";
@@ -129,7 +128,6 @@ function App() {
                             <Route element={<AdminLayout />}>
                                 <Route index element={<AdminDashboardPage />} />
                                 <Route path="dashboard" element={<AdminDashboardPage />} />
-                                {/* <Route path="appointments" element={<AppointmentList />} /> */}
                                 <Route path="attendance" element={<AdminAttendanceManagement />} />
                                 <Route path="clinics" element={<ClinicManagement />} />
                                 <Route path="staff" element={<AdminStaffManagement />} />

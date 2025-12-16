@@ -122,14 +122,25 @@
     "of": "của",
     "results": "kết quả",
     "previous": "Trước",
-    "next": "Sau"
+    "next": "Sau",
+    "all": "Tất cả",
+    "yes": "Có",
+    "no": "Không",
+    "filters": "Bộ lọc",
+    "advancedFilters": "Bộ lọc nâng cao",
+    "closeFilters": "Đóng bộ lọc",
+    "reset": "Đặt lại",
+    "apply": "Áp dụng",
+    "enterFilter": "Nhập {{label}}...",
+    "page": "Trang"
   },
   "pageTitles": {
     "adminDashboard": "Trang quản trị",
     "appointmentList": "Danh sách lịch hẹn",
     "clinicManagement": "Quản lý cơ sở",
     "attendanceManagement": "Quản lý chấm công",
-    "staffManagement": "Quản lý nhân viên"
+    "staffManagement": "Quản lý nhân viên",
+    "customerManagement": "Quản lý khách hàng"
   },
   "pageDescriptions": {
     "clinicManagement": "Xem và điều chỉnh trạng thái hoạt động của từng cơ sở. Cơ sở bị tắt sẽ không xuất hiện khi lập lịch."
@@ -323,20 +334,28 @@
     "tabs": {
       "holidays": "Ngày nghỉ lễ",
       "logs": "Nhật ký hệ thống",
-      "configuration": "Cấu hình"
+      "config": "Tham số hệ thống"
     },
     "holidays": {
       "addTitle": "Thêm ngày nghỉ lễ mới",
+      "addNew": "Thêm ngày nghỉ lễ mới",
       "name": "Tên ngày lễ",
       "namePlaceholder": "Ví dụ: Nghỉ mát công ty",
       "startDate": "Từ ngày",
       "endDate": "Đến ngày",
       "recurring": "Lặp lại hàng năm",
       "applyToClinic": "Áp dụng cho cơ sở",
+      "applyTo": "Áp dụng cho cơ sở",
       "applyToClinicHint": "(Để trống nếu áp dụng tất cả)",
+      "applyToAll": "Để trống nếu áp dụng tất cả",
       "allClinics": "Tất cả",
       "addButton": "Thêm ngày lễ",
       "adding": "Đang thêm...",
+      "yes": "Có",
+      "no": "Không",
+      "days": "ngày",
+      "to": "đến",
+      "deleteConfirm": "Bạn có chắc muốn xóa ngày lễ này?",
       "table": {
         "time": "Thời gian",
         "name": "Tên ngày lễ",
@@ -350,9 +369,12 @@
       },
       "messages": {
         "noHolidays": "Chưa có ngày nghỉ lễ nào được thiết lập.",
+        "noData": "Chưa có ngày nghỉ lễ nào được thiết lập",
         "confirmDelete": "Bạn có chắc muốn xóa ngày lễ này?",
         "added": "Đã thêm ngày lễ",
+        "addSuccess": "Đã thêm ngày lễ",
         "deleted": "Đã xóa",
+        "deleteSuccess": "Đã xóa",
         "deleteFailed": "Xóa thất bại",
         "addFailed": "Thêm thất bại",
         "loadFailed": "Không thể tải danh sách ngày lễ",
@@ -375,79 +397,14 @@
       },
       "messages": {
         "noLogs": "Không tìm thấy nhật ký nào.",
-        "loadFailed": "Không thể tải nhật ký hệ thống"
-      },
-      "pagination": {
-        "previous": "Trước",
-        "next": "Sau",
-        "page": "Trang"
-      }
-    }
-  },
-  "system": {
-    "title": "Thiết lập hệ thống",
-    "subtitle": "Quản lý tham số, ngày nghỉ và nhật ký hoạt động",
-    "tabs": {
-      "holidays": "Ngày nghỉ lễ",
-      "logs": "Nhật ký hệ thống",
-      "config": "Tham số hệ thống"
-    },
-    "holidays": {
-      "addNew": "Thêm ngày nghỉ lễ mới",
-      "name": "Tên ngày lễ",
-      "namePlaceholder": "Ví dụ: Nghỉ mát công ty",
-      "startDate": "Từ ngày",
-      "endDate": "Đến ngày",
-      "recurring": "Lặp lại hàng năm",
-      "applyTo": "Áp dụng cho cơ sở",
-      "applyToAll": "Để trống nếu áp dụng tất cả",
-      "addButton": "Thêm ngày lễ",
-      "adding": "Đang thêm...",
-      "allClinics": "Tất cả",
-      "yes": "Có",
-      "no": "Không",
-      "days": "ngày",
-      "to": "đến",
-      "deleteConfirm": "Bạn có chắc muốn xóa ngày lễ này?",
-      "table": {
-        "time": "Thời gian",
-        "name": "Tên ngày lễ",
-        "clinic": "Cơ sở",
-        "recurring": "Lặp lại",
-        "actions": "Thao tác"
-      },
-      "messages": {
-        "loadFailed": "Không thể tải danh sách ngày lễ",
-        "addSuccess": "Đã thêm ngày lễ",
-        "addFailed": "Thêm thất bại",
-        "deleteSuccess": "Đã xóa",
-        "deleteFailed": "Xóa thất bại",
-        "noData": "Chưa có ngày nghỉ lễ nào được thiết lập",
-        "startDateFuture": "Ngày bắt đầu phải là ngày trong tương lai",
-        "endDateAfterStart": "Ngày kết thúc phải sau ngày bắt đầu"
-      }
-    },
-    "logs": {
-      "searchAction": "Tìm theo hành động...",
-      "searchTable": "Tìm theo bảng...",
-      "userId": "User ID",
-      "clearFilters": "Xóa bộ lọc",
-      "table": {
-        "time": "Thời gian",
-        "user": "Người dùng",
-        "action": "Hành động",
-        "details": "Chi tiết",
-        "ip": "IP"
-      },
-      "pagination": {
-        "previous": "Trước",
-        "next": "Sau",
-        "page": "Trang"
-      },
-      "messages": {
-        "loadFailed": "Không thể tải nhật ký hệ thống",
         "noData": "Không tìm thấy nhật ký nào",
+        "loadFailed": "Không thể tải nhật ký hệ thống",
         "loading": "Đang tải..."
+      },
+      "pagination": {
+        "previous": "Trước",
+        "next": "Sau",
+        "page": "Trang"
       }
     },
     "config": {
@@ -471,7 +428,9 @@
       "department": "Phòng ban",
       "role": "Vai trò",
       "allDepartments": "Tất cả phòng ban",
-      "allRoles": "Tất cả vai trò"
+      "allRoles": "Tất cả vai trò",
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động"
     },
     "actions": {
       "search": "Tìm kiếm",
@@ -490,14 +449,76 @@
       "noDepartment": "Chưa phân phòng ban",
       "noRole": "Chưa có vai trò",
       "noClinic": "Chưa phân cơ sở",
-      "active": "Đang hoạt động",
-      "inactive": "Ngừng hoạt động",
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
       "approvedResignation": "Đã duyệt nghỉ việc"
     },
     "messages": {
       "loading": "Đang tải danh sách nhân viên...",
       "noData": "Không tìm thấy nhân viên nào",
       "loadFailed": "Không thể tải danh sách nhân viên"
+    }
+  },
+  "customers": {
+    "pageDescription": "Quản lý tất cả khách hàng trong hệ thống, bao gồm thông tin liên hệ và lịch sử",
+    "filters": {
+      "search": "Tìm kiếm",
+      "searchPlaceholder": "Tìm theo tên, mã bệnh nhân, số điện thoại hoặc email..."
+    },
+    "actions": {
+      "search": "Tìm kiếm",
+      "clear": "Xóa",
+      "viewDetail": "Xem chi tiết",
+      "block": "Chặn khách hàng",
+      "unblock": "Bỏ chặn khách hàng",
+      "close": "Đóng",
+      "activate": "Kích hoạt",
+      "deactivate": "Vô hiệu hóa"
+    },
+    "table": {
+      "customer": "Khách hàng",
+      "contact": "Liên hệ",
+      "address": "Địa chỉ",
+      "status": "Trạng thái",
+      "createdAt": "Ngày tạo",
+      "actions": "Thao tác",
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
+      "listTitle": "Danh sách khách hàng",
+      "total": "Tổng",
+      "selectAll": "Chọn tất cả",
+      "code": "Mã",
+      "id": "ID",
+      "hasAccount": "Có tài khoản"
+    },
+    "bulkActions": {
+      "selected": "Đã chọn",
+      "customers": "khách hàng",
+      "customersPlural": "khách hàng"
+    },
+    "detail": {
+      "title": "Chi tiết khách hàng",
+      "fullName": "Họ và tên",
+      "patientCode": "Mã bệnh nhân",
+      "gender": "Giới tính",
+      "dateOfBirth": "Ngày sinh",
+      "phone": "Số điện thoại",
+      "email": "Email",
+      "address": "Địa chỉ",
+      "status": "Trạng thái",
+      "userId": "ID tài khoản",
+      "createdAt": "Ngày tạo",
+      "updatedAt": "Cập nhật lần cuối",
+      "noAccount": "Không có"
+    },
+    "messages": {
+      "loading": "Đang tải danh sách khách hàng...",
+      "noData": "Không tìm thấy khách hàng nào",
+      "loadFailed": "Không thể tải danh sách khách hàng",
+      "loadDetailFailed": "Không thể tải chi tiết khách hàng",
+      "updateFailed": "Không thể cập nhật trạng thái khách hàng",
+      "activated": "Khách hàng đã được kích hoạt",
+      "blocked": "Khách hàng đã bị chặn"
     }
   }
 }

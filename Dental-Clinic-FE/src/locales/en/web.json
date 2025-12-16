@@ -106,6 +106,7 @@
       "ON_TIME": "On Time",
       "LATE": "Late",
       "ABSENT": "Absent",
+      "PENDING": "Pending Check-in",
       "APPROVED_ABSENCE": "Approved Leave",
       "APPROVED_LATE": "Approved Late",
       "UNKNOWN": "Unknown"

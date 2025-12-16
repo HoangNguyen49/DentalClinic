@@ -122,7 +122,8 @@
     "appointmentList": "Appointment List",
     "clinicManagement": "Clinic Management",
     "attendanceManagement": "Attendance Management",
-    "staffManagement": "Staff Management"
+    "staffManagement": "Staff Management",
+    "customerManagement": "Customer Management"
   },
   "pageDescriptions": {
     "clinicManagement": "View and control the activity status of each clinic. Clinics marked as inactive will not appear in scheduling."
@@ -308,26 +309,51 @@
       "page": "Page"
     }
   },
+  "common": {
+    "showing": "Showing",
+    "of": "of",
+    "results": "results",
+    "previous": "Previous",
+    "next": "Next",
+    "all": "All",
+    "yes": "Yes",
+    "no": "No",
+    "filters": "Filters",
+    "advancedFilters": "Advanced Filters",
+    "closeFilters": "Close filters",
+    "reset": "Reset",
+    "apply": "Apply",
+    "enterFilter": "Enter {{label}}...",
+    "page": "Page"
+  },
   "system": {
     "title": "System Configuration",
     "subtitle": "Manage parameters, holidays and system logs",
     "tabs": {
       "holidays": "Holidays",
       "logs": "System Logs",
-      "configuration": "Configuration"
+      "config": "System Parameters"
     },
     "holidays": {
       "addTitle": "Add New Holiday",
+      "addNew": "Add New Holiday",
       "name": "Holiday Name",
       "namePlaceholder": "E.g.: Company Vacation",
       "startDate": "From Date",
       "endDate": "To Date",
       "recurring": "Repeat Annually",
       "applyToClinic": "Apply to Clinic",
+      "applyTo": "Apply to Clinic",
       "applyToClinicHint": "(Leave empty to apply to all)",
+      "applyToAll": "Leave empty to apply to all",
       "allClinics": "All",
       "addButton": "Add Holiday",
       "adding": "Adding...",
+      "yes": "Yes",
+      "no": "No",
+      "days": "days",
+      "to": "to",
+      "deleteConfirm": "Are you sure you want to delete this holiday?",
       "table": {
         "time": "Time",
         "name": "Holiday Name",
@@ -341,9 +367,12 @@
       },
       "messages": {
         "noHolidays": "No holidays configured yet.",
+        "noData": "No holidays configured yet",
         "confirmDelete": "Are you sure you want to delete this holiday?",
         "added": "Holiday added",
+        "addSuccess": "Holiday added",
         "deleted": "Deleted",
+        "deleteSuccess": "Deleted",
         "deleteFailed": "Delete failed",
         "addFailed": "Add failed",
         "loadFailed": "Unable to load holidays",
@@ -366,79 +395,14 @@
       },
       "messages": {
         "noLogs": "No logs found.",
-        "loadFailed": "Unable to load system logs"
-      },
-      "pagination": {
-        "previous": "Previous",
-        "next": "Next",
-        "page": "Page"
-      }
-    }
-  },
-  "system": {
-    "title": "System Configuration",
-    "subtitle": "Manage parameters, holidays and activity logs",
-    "tabs": {
-      "holidays": "Holidays",
-      "logs": "System Logs",
-      "config": "System Parameters"
-    },
-    "holidays": {
-      "addNew": "Add New Holiday",
-      "name": "Holiday Name",
-      "namePlaceholder": "E.g: Company retreat",
-      "startDate": "From Date",
-      "endDate": "To Date",
-      "recurring": "Recurring Annually",
-      "applyTo": "Apply to Clinic",
-      "applyToAll": "Leave empty to apply to all",
-      "addButton": "Add Holiday",
-      "adding": "Adding...",
-      "allClinics": "All",
-      "yes": "Yes",
-      "no": "No",
-      "days": "days",
-      "to": "to",
-      "deleteConfirm": "Are you sure you want to delete this holiday?",
-      "table": {
-        "time": "Time",
-        "name": "Holiday Name",
-        "clinic": "Clinic",
-        "recurring": "Recurring",
-        "actions": "Actions"
-      },
-      "messages": {
-        "loadFailed": "Unable to load holidays",
-        "addSuccess": "Holiday added",
-        "addFailed": "Failed to add",
-        "deleteSuccess": "Deleted",
-        "deleteFailed": "Failed to delete",
-        "noData": "No holidays configured yet",
-        "startDateFuture": "Start date must be in the future",
-        "endDateAfterStart": "End date must be after start date"
-      }
-    },
-    "logs": {
-      "searchAction": "Search by action...",
-      "searchTable": "Search by table...",
-      "userId": "User ID",
-      "clearFilters": "Clear Filters",
-      "table": {
-        "time": "Time",
-        "user": "User",
-        "action": "Action",
-        "details": "Details",
-        "ip": "IP"
-      },
-      "pagination": {
-        "previous": "Previous",
-        "next": "Next",
-        "page": "Page"
-      },
-      "messages": {
-        "loadFailed": "Unable to load system logs",
         "noData": "No logs found",
+        "loadFailed": "Unable to load system logs",
         "loading": "Loading..."
+      },
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page"
       }
     },
     "config": {
@@ -462,7 +426,9 @@
       "department": "Department",
       "role": "Role",
       "allDepartments": "All departments",
-      "allRoles": "All roles"
+      "allRoles": "All roles",
+      "active": "Active",
+      "inactive": "Inactive"
     },
     "actions": {
       "search": "Search",
@@ -489,6 +455,68 @@
       "loading": "Loading staff...",
       "noData": "No staff found",
       "loadFailed": "Unable to load staff"
+    }
+  },
+  "customers": {
+    "pageDescription": "Manage all customers in the system, including contact info and history",
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Search by name, patient code, phone or email..."
+    },
+    "actions": {
+      "search": "Search",
+      "clear": "Clear",
+      "viewDetail": "View Details",
+      "block": "Block Customer",
+      "unblock": "Unblock Customer",
+      "close": "Close",
+      "activate": "Activate",
+      "deactivate": "Deactivate"
+    },
+    "table": {
+      "customer": "Customer",
+      "contact": "Contact",
+      "address": "Address",
+      "status": "Status",
+      "createdAt": "Created",
+      "actions": "Actions",
+      "active": "Active",
+      "inactive": "Inactive",
+      "listTitle": "Customer List",
+      "total": "Total",
+      "selectAll": "Select all",
+      "code": "Code",
+      "id": "ID",
+      "hasAccount": "Has Account"
+    },
+    "bulkActions": {
+      "selected": "Selected",
+      "customers": "customer",
+      "customersPlural": "customers"
+    },
+    "detail": {
+      "title": "Customer Details",
+      "fullName": "Full Name",
+      "patientCode": "Patient Code",
+      "gender": "Gender",
+      "dateOfBirth": "Date of Birth",
+      "phone": "Phone Number",
+      "email": "Email",
+      "address": "Address",
+      "status": "Status",
+      "userId": "Account ID",
+      "createdAt": "Created",
+      "updatedAt": "Last Updated",
+      "noAccount": "None"
+    },
+    "messages": {
+      "loading": "Loading customers...",
+      "noData": "No customers found",
+      "loadFailed": "Unable to load customers",
+      "loadDetailFailed": "Unable to load customer details",
+      "updateFailed": "Unable to update customer status",
+      "activated": "Khách hàng đã được kích hoạt",
+      "blocked": "Khách hàng đã bị chặn"
     }
   }
 }

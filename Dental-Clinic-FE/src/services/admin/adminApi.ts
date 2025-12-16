@@ -153,15 +153,6 @@ export const adminApi = {
       return { data: response.data }
     }
   },
-  // Lịch hẹn
-  appointments: {
-    getAll: async (date: string, clinicId?: number) => {
-      const response = await axiosClient.get<AppointmentResponse[]>("/api/admin/appointments", {
-        params: { date, clinicId },
-      })
-      return { data: response.data }
-    }
-  },
   // Thống kê dashboard dành cho admin
   dashboard: {
     getStats: async () => {

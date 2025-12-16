@@ -93,14 +93,11 @@ export default function AdminReportsPage() {
     }
   }, [filters.startDate, filters.endDate, filters.currency]);
 
-  // Lấy thông tin tổng quan nhân viên, phòng khám, lịch hẹn hôm nay
+  // Lấy thông tin tổng quan nhân viên, phòng khám
   const fetchAdditionalStats = useCallback(async () => {
-    const today = new Date().toISOString().split("T")[0];
-
-    const [staffData, clinicsData, appointmentsData] = await Promise.all([
+    const [staffData, clinicsData] = await Promise.all([
       executeStats(() => adminApi.staff.getAll({}), { showErrorToast: false }),
       executeStats(() => adminApi.clinics.getAll(), { showErrorToast: false }),
-      executeStats(() => adminApi.appointments.getAll(today), { showErrorToast: false }),
     ]);
 
     // Hàm lấy số lượng phần tử cho các kiểu response khác nhau
@@ -116,7 +113,7 @@ export default function AdminReportsPage() {
     setStats({
       totalStaff: getLength(staffData),
       totalClinics: Array.isArray(clinicsData) ? clinicsData.length : 0,
-      todayAppointments: Array.isArray(appointmentsData) ? appointmentsData.length : 0,
+      todayAppointments: 0, // Appointment đã bị xóa khỏi admin
     });
   }, [executeStats]);
 

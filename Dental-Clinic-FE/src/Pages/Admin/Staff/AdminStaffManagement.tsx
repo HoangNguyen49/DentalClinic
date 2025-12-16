@@ -9,7 +9,8 @@ import { useDebounce } from "../../../hooks/useDebounce";
 import { useAdminApi } from "../../../hooks/useAdminApi";
 import { useTableSort } from "../../../hooks/useTableSort";
 import TableSortHeader from "../../../components/admin/TableSortHeader";
-import AdvancedFilters, { type FilterOption } from "../../../components/admin/AdvancedFilters";
+import { Filter } from "lucide-react";
+import { type FilterOption } from "../../../components/admin/AdvancedFilters";
 
 export default function AdminStaffManagement() {
   const { t } = useTranslation("admin");
@@ -75,6 +76,15 @@ export default function AdminStaffManagement() {
 
     return sortData(filtered);
   }, [staff, filters, sortData]);
+
+  // Đếm số bộ lọc đang được áp dụng
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (filters.active !== null) count++;
+    if (filters.department && filters.department !== "all") count++;
+    if (filters.role && filters.role !== "all") count++;
+    return count;
+  }, [filters]);
 
   // Lấy danh sách phòng ban và vai trò unique phục vụ bộ lọc động
   const filterOptions = useMemo(() => {
@@ -144,8 +154,9 @@ export default function AdminStaffManagement() {
       </section>
 
       {/* Thanh tìm kiếm và bộ lọc nâng cao */}
-      <section className="bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 shadow-xl space-y-4">
-        <div className="flex flex-col gap-6 md:flex-row md:items-end">
+      <section className="bg-white/90 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-6 shadow-xl space-y-6">
+        {/* Search bar */}
+        <div className="flex flex-col gap-4 md:flex-row md:items-end">
           <div className="flex-1">
             <label className="block text-sm font-medium text-slate-700 mb-2">
               {t("staff.filters.search", "Search")}
@@ -158,13 +169,13 @@ export default function AdminStaffManagement() {
                 if (e.key === "Enter") handleSearch();
               }}
               placeholder={t("staff.filters.searchPlaceholder", "Search by name, email, phone, or code")}
-              className="w-full border border-slate-300 rounded-lg px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full border-2 border-slate-200 rounded-xl px-4 py-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-gradient-to-br from-white to-slate-50/50 hover:border-blue-300"
             />
           </div>
           <div className="flex gap-3">
             <button
               onClick={handleSearch}
-              className="px-6 py-3 text-base font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 shadow-sm hover:shadow transition-all"
+              className="px-6 py-3 text-base font-medium bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-xl hover:from-blue-600 hover:to-indigo-700 shadow-md hover:shadow-lg transition-all"
             >
               {t("staff.actions.search", "Search")}
             </button>
@@ -175,21 +186,89 @@ export default function AdminStaffManagement() {
                 resetSort();
                 fetchStaff();
               }}
-              className="px-6 py-3 text-base font-medium border border-slate-300 rounded-lg text-gray-700 hover:bg-slate-50 transition-all"
+              className="px-6 py-3 text-base font-medium border-2 border-slate-300 rounded-xl text-gray-700 hover:bg-slate-50 hover:border-slate-400 transition-all"
             >
               {t("staff.actions.clear", "Clear")}
             </button>
-            <AdvancedFilters
-              filters={filterOptions}
-              values={filters}
-              onChange={setFilters}
-              onReset={() => {
-                setFilters({ active: null, department: "all", role: "all" });
-              }}
-            />
           </div>
         </div>
 
+        {/* Inline Filters */}
+        <div className="flex flex-wrap items-center gap-4 pt-4 border-t border-slate-200">
+          <span className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+            <Filter className="w-4 h-4" />
+            {t("common.filters", "Filters")}:
+          </span>
+          
+          {/* Status Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-slate-600 whitespace-nowrap">
+              {t("staff.filters.status", "Status")}:
+            </label>
+            <select
+              value={filters.active === null ? "all" : filters.active ? "true" : "false"}
+              onChange={(e) => {
+                const val = e.target.value === "all" ? null : e.target.value === "true";
+                setFilters({ ...filters, active: val });
+              }}
+              className="px-4 py-2 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-blue-300 font-medium text-slate-700 min-w-[120px]"
+              aria-label={t("staff.filters.status", "Status")}
+            >
+              <option value="all">{t("common.all", "All")}</option>
+              <option value="true">{t("staff.table.active", "Active")}</option>
+              <option value="false">{t("staff.table.inactive", "Inactive")}</option>
+            </select>
+          </div>
+
+          {/* Department Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-slate-600 whitespace-nowrap">
+              {t("staff.filters.department", "Department")}:
+            </label>
+            <select
+              value={filters.department || "all"}
+              onChange={(e) => setFilters({ ...filters, department: e.target.value })}
+              className="px-4 py-2 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-blue-300 font-medium text-slate-700 min-w-[180px]"
+              aria-label={t("staff.filters.department", "Department")}
+            >
+              <option value="all">{t("staff.filters.allDepartments", "All departments")}</option>
+              {filterOptions.find(f => f.key === "department")?.options?.slice(1).map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Role Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-slate-600 whitespace-nowrap">
+              {t("staff.filters.role", "Role")}:
+            </label>
+            <select
+              value={filters.role || "all"}
+              onChange={(e) => setFilters({ ...filters, role: e.target.value })}
+              className="px-4 py-2 border-2 border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white hover:border-blue-300 font-medium text-slate-700 min-w-[150px]"
+              aria-label={t("staff.filters.role", "Role")}
+            >
+              <option value="all">{t("staff.filters.allRoles", "All roles")}</option>
+              {filterOptions.find(f => f.key === "role")?.options?.slice(1).map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Active filters indicator */}
+          {activeFiltersCount > 0 && (
+            <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
+              <span className="text-xs font-semibold text-blue-700">
+                {activeFiltersCount} {activeFiltersCount === 1 ? 'filter' : 'filters'} active
+              </span>
+            </div>
+          )}
+        </div>
       </section>
 
       {/* Bảng danh sách nhân viên */}
@@ -332,7 +411,7 @@ export default function AdminStaffManagement() {
                   <td className="px-6 py-5 text-sm">
                     {/* Trạng thái hoạt động */}
                     <span
-                      className={`inline-flex px-3 py-1.5 rounded-full text-xs font-bold shadow-lg ${
+                      className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold shadow-lg whitespace-nowrap ${
                         person.active
                           ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-green-200/50"
                           : "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-red-200/50"
