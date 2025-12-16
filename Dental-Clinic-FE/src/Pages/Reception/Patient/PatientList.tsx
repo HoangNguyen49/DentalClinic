@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { toast } from 'react-toastify';
 import { FaSearch, FaUserPlus, FaEdit, FaHistory, FaPhone, FaEnvelope, FaMapMarkerAlt } from 'react-icons/fa';
+// 👇 1. IMPORT MODAL (Bạn nhớ đảm bảo file đã tồn tại cùng thư mục)
+import PatientDetailModal from './PatientDetailModal';
+import PatientHistoryModal from './PatientHistoryModal';
 
 // ==========================================
 // 1. CẤU HÌNH & TYPES
@@ -13,24 +16,21 @@ export interface PatientResponse {
   patientCode: string;
   fullName: string;
   gender?: string;
-  dateOfBirth?: string; // ISO Date (YYYY-MM-DD)
+  dateOfBirth?: string; 
   phone: string;
   email?: string;
   address?: string;
   isActive: boolean;
 }
 
-export interface PageResponse<T> {
+interface PageResponse<T> {
   content: T[];
   totalPages: number;
   totalElements: number;
-  number: number; // Current page index
+  number: number;
   size: number;
 }
 
-// ==========================================
-// 2. HELPER FUNCTIONS
-// ==========================================
 const formatDate = (dateString?: string) => {
     if (!dateString) return "--/--/----";
     return new Date(dateString).toLocaleDateString('vi-VN');
@@ -40,13 +40,19 @@ const formatDate = (dateString?: string) => {
 // 3. MAIN COMPONENT
 // ==========================================
 export default function PatientList() {
-  // --- STATE ---
+  // --- STATE LIST ---
   const [patients, setPatients] = useState<PatientResponse[]>([]);
   const [keyword, setKeyword] = useState('');
-  const [page, setPage] = useState(0); // Page index bắt đầu từ 0
+  const [page, setPage] = useState(0); 
   const [totalPages, setTotalPages] = useState(0);
   const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(false);
+
+  // --- 👇 2. STATE CHO MODALS (Thêm mới) ---
+  const [selectedPatient, setSelectedPatient] = useState<PatientResponse | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [historyPatientId, setHistoryPatientId] = useState<number | null>(null);
 
   // --- API CALL ---
   const fetchData = async (currentPage: number, searchKeyword: string) => {
@@ -59,7 +65,7 @@ export default function PatientList() {
         params: {
             keyword: searchKeyword,
             page: currentPage,
-            size: 10 // Số lượng bản ghi mỗi trang
+            size: 10 
         },
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -76,30 +82,36 @@ export default function PatientList() {
     }
   };
 
-  // --- EFFECTS ---
-  // Debounce search: Chỉ gọi API khi ngừng gõ 500ms
   useEffect(() => {
     const timer = setTimeout(() => {
-        // Khi search đổi thì reset về trang 0
         setPage(0);
         fetchData(0, keyword);
     }, 500);
     return () => clearTimeout(timer);
   }, [keyword]);
 
-  // Khi đổi trang (không phải do search)
   useEffect(() => {
-      // Chỉ fetch nếu page > 0 hoặc (page=0 và keyword rỗng - load lần đầu)
-      // Để tránh conflict với useEffect search ở trên
-      if (page > 0) {
-          fetchData(page, keyword);
-      }
+      if (page > 0) fetchData(page, keyword);
   }, [page]);
 
+  // --- 👇 3. HANDLERS (Thêm mới) ---
+  const handleOpenDetail = (patient: PatientResponse) => {
+      setSelectedPatient(patient);
+      setIsDetailOpen(true);
+  };
+
+  const handleOpenHistory = (id: number) => {
+      setHistoryPatientId(id);
+      setIsHistoryOpen(true);
+  };
+
+  const handleUpdateSuccess = () => {
+      fetchData(page, keyword); // Reload lại dữ liệu sau khi edit thành công
+  };
 
   // --- RENDER ---
   return (
-    <div className="h-[calc(100vh-2rem)] flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-instrument">
+    <div className="h-[calc(100vh-2rem)] flex flex-col bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden font-instrument animate-fadeIn">
       
       {/* HEADER TOOLBAR */}
       <div className="p-5 border-b border-gray-200 bg-white flex justify-between items-center shadow-sm z-10">
@@ -109,7 +121,6 @@ export default function PatientList() {
          </div>
          
          <div className="flex gap-3">
-             {/* Search Box */}
              <div className="relative group">
                  <input 
                     type="text" 
@@ -148,14 +159,11 @@ export default function PatientList() {
                   ) : (
                       patients.map(p => (
                           <tr key={p.id} className="bg-white hover:bg-blue-50/50 transition-colors group">
-                              {/* Cột 1: Mã */}
                               <td className="px-6 py-4">
                                   <span className="font-mono font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded text-xs border border-blue-100">
                                     {p.patientCode}
                                   </span>
                               </td>
-
-                              {/* Cột 2: Tên & Địa chỉ */}
                               <td className="px-6 py-4">
                                   <div className="font-bold text-gray-900 text-base mb-1">{p.fullName}</div>
                                   <div className="flex items-center gap-1.5 text-xs text-gray-500">
@@ -163,8 +171,6 @@ export default function PatientList() {
                                       <span className="truncate max-w-[200px]" title={p.address}>{p.address || 'Chưa cập nhật'}</span>
                                   </div>
                               </td>
-
-                              {/* Cột 3: Liên hệ */}
                               <td className="px-6 py-4">
                                   <div className="flex flex-col gap-1">
                                       <div className="flex items-center gap-2 text-gray-700 font-medium">
@@ -177,14 +183,10 @@ export default function PatientList() {
                                       </div>
                                   </div>
                               </td>
-
-                              {/* Cột 4: Thông tin cá nhân */}
                               <td className="px-6 py-4">
                                   <div className="text-gray-800">{p.gender || 'Unspecified'}</div>
                                   <div className="text-xs text-gray-500 mt-0.5">NS: {formatDate(p.dateOfBirth)}</div>
                               </td>
-
-                              {/* Cột 5: Trạng thái */}
                               <td className="px-6 py-4 text-center">
                                   {p.isActive ? (
                                       <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -196,14 +198,21 @@ export default function PatientList() {
                                       </span>
                                   )}
                               </td>
-
-                              {/* Cột 6: Hành động */}
                               <td className="px-6 py-4 text-center">
                                   <div className="flex justify-center gap-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <button className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition tooltip" title="Chỉnh sửa">
+                                      {/* 👇 4. GẮN SỰ KIỆN VÀO NÚT BẤM */}
+                                      <button 
+                                        onClick={() => handleOpenDetail(p)}
+                                        className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-100 rounded-lg transition tooltip" 
+                                        title="Chỉnh sửa / Chi tiết"
+                                      >
                                           <FaEdit />
                                       </button>
-                                      <button className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-100 rounded-lg transition tooltip" title="Lịch sử khám">
+                                      <button 
+                                        onClick={() => handleOpenHistory(p.id)}
+                                        className="p-2 text-gray-500 hover:text-purple-600 hover:bg-purple-100 rounded-lg transition tooltip" 
+                                        title="Lịch sử khám"
+                                      >
                                           <FaHistory />
                                       </button>
                                   </div>
@@ -238,6 +247,20 @@ export default function PatientList() {
               </button>
           </div>
       </div>
+
+      {/* 👇 5. RENDER MODALS (Quan trọng) */}
+      <PatientDetailModal 
+        isOpen={isDetailOpen}
+        onClose={() => setIsDetailOpen(false)}
+        patient={selectedPatient}
+        onUpdateSuccess={handleUpdateSuccess}
+      />
+
+      <PatientHistoryModal 
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        patientId={historyPatientId}
+      />
     </div>
   );
 }

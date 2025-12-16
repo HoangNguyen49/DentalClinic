@@ -24,6 +24,7 @@ export default function BookingPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [bookingData, setBookingData] = useState({
+    appointmentId: null as number | null, // Lưu ID lịch hẹn sau khi tạo
     appointmentType: 'STANDARD', // 'STANDARD' | 'VIP'
     bookingFee: 0,
     sessionLabel: '',
@@ -97,9 +98,12 @@ export default function BookingPage() {
   }, [searchParams]);
   // --- [AI ADDITION] END ---
 
-  // --- 1. KHÔI PHỤC DỮ LIỆU SAU LOGIN (CODE GỐC) ---
+  // --- 1. KHÔI PHỤC DỮ LIỆU SAU LOGIN HOẶC QUAY LẠI TỪ THANH TOÁN ---
   useEffect(() => {
       const pending = sessionStorage.getItem("pendingBooking");
+      const retryData = sessionStorage.getItem("bookingRetryData");
+
+      // Trường hợp 1: Quay lại sau khi Login
       if (pending) {
           try {
             const parsed = JSON.parse(pending);
@@ -108,10 +112,26 @@ export default function BookingPage() {
             const summaryStep = parsed.appointmentType === 'STANDARD' ? 3 : 4;
             setCurrentStep(summaryStep); 
             
-            sessionStorage.removeItem("pendingBooking");
-            toast.info("👋 Chào mừng quay lại! Vui lòng xác nhận đặt lịch.");
+            toast.warning("Giao dịch chưa hoàn tất. Vui lòng chọn phương thức thanh toán khác.");
           } catch (e) {
-            console.error("Lỗi khôi phục data:", e);
+            console.error("Lỗi khôi phục data pending:", e);
+          }
+      } 
+      // Trường hợp 2: Quay lại sau khi Hủy/Lỗi thanh toán (MỚI THÊM)
+      else if (retryData) {
+          try {
+            const parsed = JSON.parse(retryData);
+            setBookingData(parsed);
+            
+            // Vì chỉ VIP mới thanh toán nên thường là bước 4, 
+            // nhưng cứ để logic check type cho chắc chắn
+            const summaryStep = parsed.appointmentType === 'STANDARD' ? 3 : 4;
+            setCurrentStep(summaryStep); 
+            
+            sessionStorage.removeItem("bookingRetryData");
+            toast.warning("Giao dịch chưa hoàn tất. Vui lòng chọn phương thức thanh toán khác.");
+          } catch (e) {
+            console.error("Lỗi khôi phục data retry:", e);
           }
       }
   }, []);
@@ -132,7 +152,12 @@ export default function BookingPage() {
         sessionStorage.setItem("pendingBooking", JSON.stringify(bookingData));
         toast.info("🔒 Vui lòng Đăng nhập để hoàn tất!");
         navigate("/login", { state: { from: "/booking" } });
-        return;
+        return; // Dừng lại, không trả về gì
+    }
+
+    if (bookingData.appointmentId) {
+        console.log("♻️ Tái sử dụng lịch hẹn cũ:", bookingData.appointmentId);
+        return { id: bookingData.appointmentId }; 
     }
 
     const currentUser = JSON.parse(storedUser);
@@ -158,7 +183,8 @@ export default function BookingPage() {
         
         roomId: null, // Frontend chưa chọn phòng
         startDateTime: startDateTime.toISOString(),
-        status: "PENDING",
+        status: bookingData.appointmentType === 'VIP' ? "AWAITING_PAYMENT" : "PENDING",
+        paymentStatus: "UNPAID",
         channel: "WEB_BOOKING",
         note: `Booking Online (${bookingData.appointmentType})`,
         
@@ -171,21 +197,32 @@ export default function BookingPage() {
 
       console.log("Sending Payload:", payload);
 
-      // Gọi API tạo lịch hẹn (Đường dẫn tùy thuộc vào Controller của bạn)
-      // Giả sử API là: /api/booking/appointments hoặc /api/patient/appointments
-      await axios.post(`${API_BASE_URL}/api/booking/appointments`, payload, {
+      // 1. GỌI API TẠO LỊCH
+      const response = await axios.post(`${API_BASE_URL}/api/booking/appointments`, payload, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
       });
 
+      const resData = response.data as any; 
+      setBookingData((prev: any) => ({ ...prev, appointmentId: resData.id }));
+
+      // 2. PHÂN LUỒNG XỬ LÝ
+      // Nếu là VIP: Trả về data để StepSummary lo việc redirect thanh toán. KHÔNG hiện modal success.
+      if (bookingData.appointmentType === 'VIP') {
+          return response.data; 
+      }
+
+      // Nếu là STANDARD: Hiện modal thành công luôn (vì không cần thanh toán)
       setShowSuccessModal(true);
+      return response.data;
 
     } catch (error: any) {
       console.error("Booking Error:", error);
       const msg = error.response?.data?.message || "Đặt lịch thất bại. Vui lòng thử lại.";
       toast.error(msg);
+      throw error; // Ném lỗi để StepSummary biết mà dừng loading
     } finally {
       setIsSubmitting(false);
     }

@@ -3,6 +3,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 import QuickBookingModal from "./QuickBookingModal";
 import AppointmentEditModal from "./AppointmentEditModal";
+import RoomSelectionModal from "./RoomSelectionModal";
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 const START_HOUR = 8;
@@ -29,6 +30,8 @@ export interface AppointmentDTO {
   id: number;
   patient: { id: number; fullName: string; patientCode: string; phone: string };
   doctor: { id: number; fullName: string } | null;
+
+  room?: { id: number; roomName: string; isPrivate: boolean } | null;
 
   // Thêm các trường cho List View
   clinic?: { id: number; clinicName: string };
@@ -184,6 +187,30 @@ export default function ReceptionDashboard() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const gridRef = useRef<HTMLDivElement>(null);
   const [editingAppt, setEditingAppt] = useState<AppointmentDTO | null>(null);
+
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+  const [apptToAssignRoom, setApptToAssignRoom] =
+    useState<AppointmentDTO | null>(null);
+
+  // 2. HÀM MỞ MODAL (Dùng cho nút trong List View)
+  const handleOpenRoomModal = (appt: AppointmentDTO) => {
+    // Chặn nếu lịch đã huỷ
+    if (appt.status === "CANCELLED" || appt.status === "REJECTED") {
+      toast.warning("Không thể xếp phòng cho lịch đã hủy/từ chối!");
+      return;
+    }
+    setApptToAssignRoom(appt);
+    setIsRoomModalOpen(true);
+  };
+
+  // 3. HÀM UPDATE SAU KHI XẾP PHÒNG XONG
+  const handleRoomAssignSuccess = (updatedAppt: AppointmentDTO) => {
+    // Cập nhật ngay vào danh sách appointments (List View tự đổi màu)
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === updatedAppt.id ? updatedAppt : a))
+    );
+    toast.success("Đã cập nhật phòng thành công!");
+  };
 
   // =====================
   // API calls
@@ -686,6 +713,22 @@ export default function ReceptionDashboard() {
                                   <div className="text-[15px] font-semibold text-gray-900 truncate leading-tight">
                                     {appt.patient.fullName}
                                   </div>
+                                  {appt.room && (
+                                    <div className="mt-0.5">
+                                      <span
+                                        className={`text-[10px] font-bold px-1.5 py-0.5 rounded border inline-flex items-center gap-1 max-w-full truncate
+                                        ${
+                                          appt.room.isPrivate
+                                            ? "bg-purple-50 text-purple-700 border-purple-100"
+                                            : "bg-blue-50 text-blue-700 border-blue-100"
+                                        }
+                                      `}
+                                      >
+                                        {appt.room.isPrivate ? "👑" : ""}{" "}
+                                        {appt.room.roomName}
+                                      </span>
+                                    </div>
+                                  )}
                                   <div
                                     className="text-[13px] text-gray-700 mt-1 truncate"
                                     title={appt.services[0]?.serviceName}
@@ -723,6 +766,7 @@ export default function ReceptionDashboard() {
                       <tr>
                         <th className="px-6 py-3 font-bold">Thời gian</th>
                         <th className="px-6 py-3 font-bold">Trạng thái</th>
+                        <th className="px-6 py-3 font-bold">Phòng</th>
                         <th className="px-6 py-3 font-bold">Chi nhánh</th>
                         <th className="px-6 py-3 font-bold">Bác sĩ</th>
                         <th className="px-6 py-3 font-bold">Dịch vụ</th>
@@ -744,6 +788,34 @@ export default function ReceptionDashboard() {
                           </td>
                           <td className="px-6 py-4">
                             {getStatusBadge(appt.status)}
+                          </td>
+                          {/* 👇 Ô HIỂN THỊ NÚT CHỌN PHÒNG */}
+                          <td className="px-6 py-4 text-center">
+                            <button
+                              onClick={() => handleOpenRoomModal(appt)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1 mx-auto shadow-sm
+                                ${
+                                  appt.room
+                                    ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100" // Đã có phòng
+                                    : "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 animate-pulse"
+                                }
+                              `}
+                            >
+                              {appt.room ? (
+                                <>
+                                  {/* Icon phân biệt VIP */}
+                                  <span>
+                                    {appt.room.isPrivate ? "👑" : "🦷"}
+                                  </span>
+                                  {/* Tên phòng */}
+                                  <span>{appt.room.roomName}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>⚠️ Chọn phòng</span>
+                                </>
+                              )}
+                            </button>
                           </td>
                           <td className="px-6 py-4">
                             {appt.clinic?.clinicName || "Clinic Q1"}
@@ -899,6 +971,14 @@ export default function ReceptionDashboard() {
           }}
         />
       )}
+
+      {/* MODAL CHỌN PHÒNG */}
+      <RoomSelectionModal
+        isOpen={isRoomModalOpen}
+        onClose={() => setIsRoomModalOpen(false)}
+        appointment={apptToAssignRoom}
+        onSuccess={handleRoomAssignSuccess}
+      />
     </div>
   );
 }

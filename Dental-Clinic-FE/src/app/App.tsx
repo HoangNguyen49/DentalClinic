@@ -86,6 +86,7 @@ import AuthGuard from "./routes/AuthGuard";
 
 // --- PROVIDERS ---
 import { NotificationProvider } from "./providers/NotificationContext";
+import PaymentResult from "../Pages/Booking/DepositService/PaymentResult";
 
 function App() {
     return (
@@ -107,6 +108,7 @@ function App() {
                     <Route path="/oauth/success" element={<OAuthSuccessHandler />} />
                     <Route path="/reset-password" element={<ResetPassword />} /> {/* Của Tuấn */}
                     <Route path="/verify-account" element={<VerifyAccount />} /> {/* Của Tuấn */}
+                    <Route path="/booking/payment-result" element={<PaymentResult />} />
 
                     {/* --- PROTECTED ROUTES --- */}
                     <Route element={<AuthGuard />}>
