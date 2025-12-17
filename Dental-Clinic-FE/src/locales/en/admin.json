@@ -382,9 +382,12 @@
     },
     "logs": {
       "filterTitle": "Search Filters",
+      "search": "Search",
+      "searchPlaceholder": "Search by action or username...",
       "searchAction": "Search by action...",
-      "searchTable": "Search by table...",
-      "userId": "User ID",
+      "searchUsername": "Search by username...",
+      "filterRole": "Role",
+      "allRoles": "All Roles",
       "clearFilters": "Clear Filters",
       "table": {
         "time": "Time",

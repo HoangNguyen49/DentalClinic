@@ -70,6 +70,9 @@ import AppointmentSchedule from "../Pages/Patient/AppointmentSchedule";
 import PatientDashboardPage from "../Pages/Patient/Dashboard/PatientDashboardPage";
 import PatientProfilePage from "../Pages/Patient/Profile/PatientProfilePage";
 
+// --- NOTIFICATION PAGES ---
+import NotificationPage from "../Pages/Notifications/NotificationPage";
+
 // --- LAYOUTS ---
 import AdminLayout from "./layout/AdminLayouts";
 import HRLayout from "./layout/HrLayout";
@@ -119,6 +122,7 @@ function App() {
                         <Route path="/my-attendance" element={<EmployeeAttendanceView />} />
                         <Route path="/my-leave-requests" element={<LeaveRequestList />} />
                         <Route path="/booking" element={<BookingPage />} />
+                        <Route path="/notifications" element={<NotificationPage />} />
 
                         {/* PATIENT ROUTES [CỦA TUẤN] */}
                         <Route path="/my-appointments" element={<AppointmentSchedule />} />

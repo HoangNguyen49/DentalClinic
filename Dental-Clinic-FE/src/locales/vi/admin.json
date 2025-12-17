@@ -384,9 +384,12 @@
     },
     "logs": {
       "filterTitle": "Bộ lọc tìm kiếm",
+      "search": "Tìm kiếm",
+      "searchPlaceholder": "Tìm theo hành động hoặc tên người dùng...",
       "searchAction": "Tìm theo hành động...",
-      "searchTable": "Tìm theo bảng...",
-      "userId": "User ID",
+      "searchUsername": "Tìm theo tên người dùng...",
+      "filterRole": "Vai trò",
+      "allRoles": "Tất cả vai trò",
       "clearFilters": "Xóa bộ lọc",
       "table": {
         "time": "Thời gian",

@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Search, Loader2, Filter, FileText, User, X } from "lucide-react";
+import { useEffect, useState, useMemo } from "react";
+import { Search, Filter, FileText, User, X } from "lucide-react";
 import { type AuditLog, systemService } from "../../../../services/admin/systemService";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
@@ -7,19 +7,17 @@ import { useTranslation } from "react-i18next";
 
 export default function AuditLogsTab() {
     const { t } = useTranslation("admin");
-    const [logs, setLogs] = useState<AuditLog[]>([]);
+    const [allLogs, setAllLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [totalPages, setTotalPages] = useState(0);
 
-    // Bộ lọc tìm kiếm log (action, table, userId)
-    const [actionFilter, setActionFilter] = useState("");
-    const [tableFilter, setTableFilter] = useState("");
-    const [userIdFilter, setUserIdFilter] = useState<number | undefined>(undefined);
+    // Bộ lọc tìm kiếm log (gộp action và username)
+    const [searchFilter, setSearchFilter] = useState("");
 
     useEffect(() => {
         loadLogs();
-    }, [page, actionFilter, tableFilter, userIdFilter]);
+    }, [page]);
 
     // Lấy danh sách nhật ký từ server
     const loadLogs = async () => {
@@ -28,11 +26,8 @@ export default function AuditLogsTab() {
             const data = await systemService.getAuditLogs({
                 page,
                 size: 20,
-                action: actionFilter,
-                tableName: tableFilter,
-                userId: userIdFilter,
             });
-            setLogs(data?.content || []);
+            setAllLogs(data?.content || []);
             setTotalPages(data?.totalPages || 0);
         } catch (error) {
             toast.error(t("system.logs.messages.loadFailed"));
@@ -40,6 +35,24 @@ export default function AuditLogsTab() {
             setLoading(false);
         }
     };
+
+    // Filter logs theo action và username ở frontend
+    const logs = useMemo(() => {
+        if (!searchFilter.trim()) return allLogs;
+
+        const searchTerm = searchFilter.trim().toLowerCase();
+        return allLogs.filter(log => {
+            // Tìm trong action
+            const action = log.action?.toLowerCase() || "";
+            // Tìm trong username và fullName
+            const username = log.user?.username?.toLowerCase() || "";
+            const fullName = log.user?.fullName?.toLowerCase() || "";
+            
+            return action.includes(searchTerm) || 
+                   username.includes(searchTerm) || 
+                   fullName.includes(searchTerm);
+        });
+    }, [allLogs, searchFilter]);
 
     return (
         <div className="space-y-8">
@@ -52,57 +65,31 @@ export default function AuditLogsTab() {
                     <h3 className="text-lg font-bold text-slate-900">Filter Logs</h3>
                 </div>
                 <div className="flex flex-wrap gap-4">
-                <div className="flex-1 min-w-[200px]">
+                    <div className="flex-1 min-w-[200px]">
                         <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                            {t("system.logs.searchAction", "Action")}
+                            {t("system.logs.search", "Search")}
                         </label>
                         <div className="relative group">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
-                        <input
-                            type="text"
-                                placeholder={t("system.logs.searchAction", "Search by action...")}
-                            value={actionFilter}
-                            onChange={(e) => setActionFilter(e.target.value)}
+                            <input
+                                type="text"
+                                placeholder={t("system.logs.searchPlaceholder", "Search by action or username...")}
+                                value={searchFilter}
+                                onChange={(e) => setSearchFilter(e.target.value)}
                                 className="w-full pl-12 pr-4 py-3 border-2 border-slate-200 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-slate-100 focus:border-slate-500 transition-all bg-white"
-                        />
+                            />
+                        </div>
                     </div>
-                </div>
-                    <div className="w-56">
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                            {t("system.logs.searchTable", "Table")}
-                        </label>
-                    <input
-                        type="text"
-                            placeholder={t("system.logs.searchTable", "Table name...")}
-                        value={tableFilter}
-                        onChange={(e) => setTableFilter(e.target.value)}
-                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-slate-100 focus:border-slate-500 transition-all bg-white"
-                    />
-                </div>
-                    <div className="w-40">
-                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                            {t("system.logs.userId", "User ID")}
-                        </label>
-                    <input
-                        type="number"
-                            placeholder={t("system.logs.userId", "User ID...")}
-                        value={userIdFilter || ""}
-                        onChange={(e) => setUserIdFilter(e.target.value ? Number(e.target.value) : undefined)}
-                            className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-slate-100 focus:border-slate-500 transition-all bg-white"
-                    />
-                </div>
                     <div className="flex items-end">
-                <button
-                    onClick={() => {
-                        setActionFilter("");
-                        setTableFilter("");
-                        setUserIdFilter(undefined);
-                        setPage(0);
-                    }}
+                        <button
+                            onClick={() => {
+                                setSearchFilter("");
+                                setPage(0);
+                            }}
                             className="px-5 py-3 border-2 border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-medium text-base flex items-center gap-2"
-                >
+                        >
                             <X className="w-5 h-5" /> {t("system.logs.clearFilters", "Clear")}
-                </button>
+                        </button>
                     </div>
                 </div>
             </div>

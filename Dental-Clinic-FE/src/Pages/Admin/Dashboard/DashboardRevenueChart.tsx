@@ -162,7 +162,7 @@ export default function DashboardRevenueChart() {
                 )}
             </div>
 
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 w-full" style={{ minHeight: '200px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                         <defs>
