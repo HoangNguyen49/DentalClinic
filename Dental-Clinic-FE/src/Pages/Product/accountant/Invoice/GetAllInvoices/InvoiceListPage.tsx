@@ -92,10 +92,9 @@ const InvoiceListPage: React.FC = () => {
           <div className="space-y-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                <FileText className="w-7 h-7 text-blue-600" />
                 Invoices Management
               </h1>
-              <p className="text-sm text-gray-500 mt-1 ml-9">
+              <p className="text-sm text-gray-500 mt-1 ">
                 Manage orders, track payments and financial records.
               </p>
             </div>
@@ -124,7 +123,6 @@ const InvoiceListPage: React.FC = () => {
 
           {/* RIGHT: Search & Filter (Giữ nguyên logic cũ nhưng làm gọn UI) */}
           <div className="flex flex-col sm:flex-row gap-3">
-             {/* ... (Phần Input Search cũ giữ nguyên) ... */}
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -137,7 +135,6 @@ const InvoiceListPage: React.FC = () => {
                 onChange={(e) => handleSearch(e.target.value)}
               />
             </div>
-            {/* Đã có nút filter nhanh ở trên rồi nên có thể ẩn Select Dropdown Status nếu muốn, hoặc giữ lại làm backup */}
           </div>
         </div>
 
@@ -182,7 +179,6 @@ const InvoiceListPage: React.FC = () => {
                 ) : (
                   invoices.map((inv) => (
                     <tr key={inv.invoiceId} className="hover:bg-blue-50/30 transition-colors group">
-                       {/* ... (Các cột khác giữ nguyên) ... */}
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 flex items-center justify-center rounded-lg bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">

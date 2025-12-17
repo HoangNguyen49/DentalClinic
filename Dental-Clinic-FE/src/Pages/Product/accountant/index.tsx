@@ -14,6 +14,9 @@ import UpdateInventory from "./Inventory/sections/InventoryGetById/UpdateInvento
 import InvoiceListPage from "./Invoice/GetAllInvoices/InvoiceListPage";
 import InvoiceDetailPage from "./Invoice/GetInvoiceById/InvoiceDetailPage";
 import Report from "./Report/Report";
+import PayrollPage from "./Payroll/GetAllPayroll/PayrollPage";
+import SalaryConfigPage from "./Payroll/GetPayrollById/GetPayrollByIdPost/SalaryConfigPage";
+import GetPayrollByIdDetail from "./Payroll/GetPayrollById/GetPayrollByIdDetail/GetPayrollByIdDetail";
 
 function AccountantRoutes() {
   return (
@@ -51,6 +54,10 @@ function AccountantRoutes() {
 
         <Route path="reports" element={<Report />} />
 
+        {/* === [NEW] PAYROLL MODULE === */}
+        <Route path="payrolls" element={<PayrollPage />} />
+        <Route path="payroll/config" element={<SalaryConfigPage />} />
+        <Route path="payroll/payslips/:id" element={<GetPayrollByIdDetail />} />
       </Route>
     </Routes>
   );
