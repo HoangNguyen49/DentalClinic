@@ -28,7 +28,7 @@ const reportApi = {
   // Lấy báo cáo doanh thu dạng JSON
   getRevenueReport: async (startDate?: string, endDate?: string, currency: string = "VND") => {
     const params = { startDate, endDate, currency };
-    const response = await axiosClient.get<RevenueReportData>("/api/admin/reports/revenue", { params });
+    const response = await axiosClient.get<RevenueReportData>("/api/reports/revenue", { params });
     return response.data;
   },
 

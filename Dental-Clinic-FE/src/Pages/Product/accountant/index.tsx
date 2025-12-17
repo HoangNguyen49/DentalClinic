@@ -23,9 +23,11 @@ function AccountantRoutes() {
     <Routes>
       {/* Layout bọc ngoài (Sidebar + Navbar) */}
       <Route element={<MainDashboard />}>
-        
+
         {/* === HOME / DASHBOARD === */}
-        {/* Mặc định vào là danh sách sản phẩm (hoặc Dashboard nếu bạn có) */}
+        {/* Khi truy cập /accountant hoặc /accountant/dashboard, hiển thị danh sách sản phẩm */}
+        <Route index element={<GetAllProduct />} />
+        <Route path="dashboard" element={<GetAllProduct />} />
         <Route path="product" element={<GetAllProduct />} />
 
         {/* === PRODUCT ROUTES === */}
