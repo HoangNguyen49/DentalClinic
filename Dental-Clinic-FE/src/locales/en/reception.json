@@ -68,7 +68,8 @@
     "paidBadge": "PAID",
     "confirmSuccess": "Payment successful for {{name}}",
     "errorLoad": "Unable to load invoice details!",
-    "errorConfirm": "Payment confirmation error."
+    "errorConfirm": "Payment confirmation error.",
+    "confirmMsg": "Confirm payment received?"
   },
   "quickBooking": {
     "title": "Quick Booking",
@@ -236,6 +237,47 @@
       "validation": "Please enter Name and Phone!",
       "createError": "Error creating profile.",
       "searchError": "Unable to find customers."
+    }
+  },
+  "invoiceList": {
+    "title": "Invoice Management",
+    "filters": {
+      "searchLabel": "Search",
+      "searchPlaceholder": "Invoice Code, Name, Phone...",
+      "fromDate": "From Date",
+      "toDate": "To Date",
+      "statusLabel": "Status",
+      "statusOptions": {
+        "all": "All Status",
+        "paid": "Paid",
+        "unpaid": "Unpaid"
+      },
+      "btnResetTooltip": "Reset Filters",
+      "btnFilter": "Filter Results"
+    },
+    "table": {
+      "headers": {
+        "code": "INVOICE CODE",
+        "date": "ISSUE DATE",
+        "customer": "CUSTOMER",
+        "total": "TOTAL AMOUNT",
+        "status": "STATUS",
+        "action": ""
+      },
+      "statusDisplay": {
+        "paid": "Paid",
+        "unpaid": "Unpaid",
+        "refunded": "Refunded"
+      },
+      "loading": "Loading data...",
+      "empty": "No invoices found.",
+      "noCode": "---",
+      "viewTooltip": "View Details"
+    },
+    "pagination": {
+      "info": "Page {{page}} of {{total}}",
+      "prev": "Prev",
+      "next": "Next"
     }
   }
 }

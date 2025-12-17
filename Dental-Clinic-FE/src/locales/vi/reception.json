@@ -68,7 +68,8 @@
     "paidBadge": "Đã Thanh Toán",
     "confirmSuccess": "Thanh toán thành công cho {{name}}",
     "errorLoad": "Không thể tải chi tiết hóa đơn!",
-    "errorConfirm": "Lỗi xác nhận thanh toán."
+    "errorConfirm": "Lỗi xác nhận thanh toán.",
+    "confirmMsg": "Xác nhận đã thu đủ tiền từ khách hàng?"
   },
   "quickBooking": {
     "title": "Tạo Phiếu Hẹn Nhanh",
@@ -236,6 +237,47 @@
       "validation": "Vui lòng nhập Họ tên và SĐT!",
       "createError": "Lỗi tạo hồ sơ.",
       "searchError": "Không tìm được danh sách khách hàng."
+    }
+  },
+  "invoiceList": {
+    "title": "Danh Sách Hóa Đơn",
+    "filters": {
+      "searchLabel": "Tìm kiếm",
+      "searchPlaceholder": "Mã HĐ, Tên khách, SĐT...",
+      "fromDate": "Từ ngày",
+      "toDate": "Đến ngày",
+      "statusLabel": "Trạng thái",
+      "statusOptions": {
+        "all": "Tất cả trạng thái",
+        "paid": "Đã thanh toán",
+        "unpaid": "Chưa thanh toán"
+      },
+      "btnResetTooltip": "Làm mới bộ lọc",
+      "btnFilter": "Lọc kết quả"
+    },
+    "table": {
+      "headers": {
+        "code": "MÃ HÓA ĐƠN",
+        "date": "NGÀY XUẤT",
+        "customer": "KHÁCH HÀNG",
+        "total": "TỔNG TIỀN",
+        "status": "TRẠNG THÁI",
+        "action": ""
+      },
+      "statusDisplay": {
+        "paid": "Đã thanh toán",
+        "unpaid": "Chờ thanh toán",
+        "refunded": "Hoàn tiền"
+      },
+      "loading": "Đang tải dữ liệu...",
+      "empty": "Không tìm thấy hóa đơn nào phù hợp.",
+      "noCode": "---",
+      "viewTooltip": "Xem chi tiết"
+    },
+    "pagination": {
+      "info": "Trang {{page}} / {{total}}",
+      "prev": "Trước",
+      "next": "Sau"
     }
   }
 }

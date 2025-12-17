@@ -62,6 +62,7 @@ import ReceptionDashboard from "../Pages/Reception/Dashboard/ReceptionDashboard"
 import BookingOffline from "../Pages/Reception/BookingCRM/BookingOffline";
 import AppointmentListReception from "../Pages/Reception/Appointment/AppointmentList";
 import PatientList from "../Pages/Reception/Patient/PatientList";
+import InvoiceList from "../Pages/Reception/Invoice/InvoiceList";
 
 // --- ACCOUNTANT PAGES ---
 import AccountantRoutes from "../Pages/Product/accountant";
@@ -171,6 +172,7 @@ function App() {
                                 <Route path="walk-in" element={<BookingOffline />} />
                                 <Route path="appointments" element={<AppointmentListReception />} />
                                 <Route path="patients" element={<PatientList />} />
+                                <Route path="invoices" element={<InvoiceList />} />
                             </Route>
                         </Route>
 

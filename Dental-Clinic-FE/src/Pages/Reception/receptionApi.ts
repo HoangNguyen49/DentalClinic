@@ -1,4 +1,7 @@
 import axiosClient from "../../huybro_api/axiosClient";
+import axios from "axios";
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export interface Room {
     id: number;
@@ -129,4 +132,33 @@ export const getBillDetails = async (appointmentId: number) => {
 export const confirmPayment = async (appointmentId: number) => {
     const res = await axiosClient.post(`/api/reception/appointments/${appointmentId}/pay`);
     return res.data;
+};
+
+// 4. Lấy danh sách hóa đơn với phân trang và lọc
+export const getInvoiceList = async (
+  keyword: string,
+  fromDate: string | null,
+  toDate: string | null,
+  paymentStatus: string,
+  page: number,
+  size: number
+) => {
+  const token = localStorage.getItem("accessToken");
+  
+  // Tạo đối tượng params để tự động loại bỏ các giá trị null/undefined/rỗng
+  const params: Record<string, any> = {
+    page,
+    size,
+  };
+
+  if (keyword) params.keyword = keyword;
+  if (fromDate) params.fromDate = fromDate;
+  if (toDate) params.toDate = toDate;
+  if (paymentStatus) params.paymentStatus = paymentStatus;
+
+  const response = await axios.get(`${API_BASE_URL}/api/reception/invoices`, {
+    params,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
 };
