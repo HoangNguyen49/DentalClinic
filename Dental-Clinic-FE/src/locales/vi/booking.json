@@ -1,0 +1,130 @@
+{
+  "title": "Đặt Lịch Hẹn",
+  "breadcrumb": {
+    "home": "Trang Chủ",
+    "booking": "Đặt Lịch"
+  },
+  "common": {
+    "next": "Tiếp Theo",
+    "back": "Quay Lại",
+    "loading": "Đang tải...",
+    "error": "Có lỗi xảy ra",
+    "close": "Đóng",
+    "cancel": "Hủy"
+  },
+  "stepType": {
+    "title": "Chọn Loại Lịch Hẹn",
+    "standard": {
+      "title": "Tiêu Chuẩn (Standard)",
+      "badge": "PHỔ BIẾN",
+      "feature1": "Bác sĩ ngẫu nhiên (hoặc chỉ định sau)",
+      "feature2": "Chọn Buổi (Sáng/Chiều)",
+      "feature3": "Tiết kiệm chi phí",
+      "feature4": "Phù hợp khám tổng quát, lấy cao răng..."
+    },
+    "vip": {
+      "title": "Chuyên Gia (VIP)",
+      "badge": "CAO CẤP",
+      "feature1": "Chọn Bác sĩ Trưởng khoa/Chuyên gia",
+      "feature2": "Chọn Giờ chính xác từng phút",
+      "feature3": "Ưu tiên check-in không cần chờ"
+    },
+    "perVisit": "/lượt",
+    "selectBtn": "Chọn Ngay"
+  },
+  "stepService": {
+    "title": "Chọn Phòng Khám & Dịch Vụ",
+    "clinicLabel": "Chọn Cơ Sở (Clinic)",
+    "serviceLabel": "Chọn Dịch Vụ",
+    "searchPlaceholder": "Tìm kiếm dịch vụ...",
+    "updating": "Đang cập nhật gói dịch vụ...",
+    "validation": "Vui lòng chọn Phòng khám và ít nhất 1 Dịch vụ!"
+  },
+  "stepDoctor": {
+    "title": "Chọn Bác Sĩ (VIP)",
+    "loading": "Đang tải danh sách bác sĩ...",
+    "notFound": "Không tìm thấy bác sĩ phù hợp.",
+    "subNotFound": "Vui lòng quay lại chọn dịch vụ khác hoặc đổi cơ sở."
+  },
+  "stepDateStandard": {
+    "title": "Chọn Thời Gian (Tiêu Chuẩn)",
+    "subtitle": "Lễ tân sẽ liên hệ để chốt giờ cụ thể sau",
+    "dateLabel": "Chọn Ngày",
+    "sessionLabel": "Chọn Buổi Khám",
+    "morning": "Buổi Sáng",
+    "afternoon": "Buổi Chiều",
+    "full": "Full/Đóng"
+  },
+  "stepDateVIP": {
+    "title": "Chọn Ngày & Giờ (VIP)",
+    "slotsFor": "Lịch trống của",
+    "dateLabel": "Chọn Ngày",
+    "timeLabel": "Chọn Giờ Khám",
+    "legend": {
+      "available": "Trống",
+      "selected": "Đang chọn",
+      "busy": "Bận / Đã qua"
+    },
+    "errors": {  
+       "login": "Bạn chưa đăng nhập. Vui lòng đăng nhập để xem lịch.",
+       "session": "Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.",
+       "load": "Không thể tải lịch làm việc. Vui lòng kiểm tra kết nối."
+    },
+    "empty": { 
+       "title": "Bác sĩ không có lịch làm việc vào ngày này.",
+       "desc": "Vui lòng chọn ngày khác."
+    },
+    "selectDateFirst": "Vui lòng chọn ngày để xem giờ trống.",
+    "noSlots": "Không có lịch trống."
+  },
+  "stepSummary": {
+    "title": "Xác Nhận Thông Tin",
+    "subtitle": "Vui lòng kiểm tra kỹ thông tin trước khi hoàn tất",
+    "ticketTitle": "Phiếu Đặt Hẹn",
+    "duration": "{{min}} phút dự kiến",
+    "serviceDetails": "Chi tiết dịch vụ",
+    "paymentHeader": "Yêu cầu thanh toán cọc",
+    "depositMsg": "Để giữ lịch hẹn VIP, quý khách vui lòng thanh toán khoản cọc: {{amount}}.",
+    "total": "Tổng cộng",
+    "footerNote": "* Vui lòng đến trước 10 phút để làm thủ tục check-in.",
+    "labels": {
+      "doctor": "Bác sĩ phụ trách",
+      "bookingFee": "Phí đặt lịch",
+      "clinic": "Cơ sở / Địa điểm"
+    },
+    "timer": "Thời gian giữ chỗ",
+    "paymentWarning": "Vui lòng thanh toán trong vòng 10 phút.",
+    "processing": "Đang xử lý...",
+    "btnPayVNPay": "Thanh toán VNPay",
+    "btnPayPaypal": "Thanh toán PayPal",
+    "btnConfirm": "Xác Nhận Đặt Lịch",
+    "expiredModal": {
+      "title": "Hết thời gian giữ chỗ!",
+      "message": "Rất tiếc, đơn đặt lịch này đã quá hạn thanh toán (10 phút) và đã bị hủy tự động.",
+      "btnHome": "Đặt lại lịch mới"
+    }
+  },
+  "successModal": {
+    "title": "Đặt Lịch Thành Công!",
+    "message": "Cảm ơn bạn đã tin tưởng Sunshine Dental. Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.",
+    "btnHome": "Về Trang Chủ",
+    "redirectMsg": "Tự động chuyển sau {{seconds}} giây..."
+  },
+  "paymentResult": {
+    "loading": {
+      "title": "Đang xử lý giao dịch...",
+      "subtitle": "Vui lòng không tắt trình duyệt"
+    },
+    "success": {
+      "title": "Thanh toán thành công!",
+      "message": "Lịch hẹn đã được xác nhận. Dữ liệu đặt lịch cũ đã được xóa.",
+      "btnView": "Xem lịch hẹn của tôi",
+      "btnNew": "Đặt lịch hẹn mới"
+    },
+    "failed": {
+      "title": "Giao dịch thất bại",
+      "message": "Có lỗi xảy ra trong quá trình thanh toán. Vui lòng thử lại.",
+      "btnRetry": "Thử lại"
+    }
+  }
+}

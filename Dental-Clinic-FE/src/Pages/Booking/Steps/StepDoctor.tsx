@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useTranslation } from "react-i18next"; // 1. Import i18n
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -24,6 +25,7 @@ interface Doctor {
 }
 
 export default function StepDoctor({ data, updateData, onNext, onPrev }: StepProps) {
+  const { t } = useTranslation("booking"); // 2. Khởi tạo hook
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,7 +59,7 @@ export default function StepDoctor({ data, updateData, onNext, onPrev }: StepPro
       
     } catch (err) {
       console.error("Error fetching doctors:", err);
-      setError("Không thể tải danh sách bác sĩ. Vui lòng thử lại sau.");
+      setError(t("common.error")); // Dùng text lỗi chung
     } finally {
       setLoading(false);
     }
@@ -76,21 +78,20 @@ export default function StepDoctor({ data, updateData, onNext, onPrev }: StepPro
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="text-center mb-6">
-        <h3 className="text-xl font-bold text-gray-800">Chọn Bác Sĩ</h3>
+        <h3 className="text-xl font-bold text-gray-800">{t("stepDoctor.title")}</h3>
         <p className="text-sm text-gray-500">
-           Chuyên khoa: <span className="font-semibold text-[#3366FF]">{uniqueCategories.join(', ')}</span> 
-           {' '} tại {data.clinicName}
+           {uniqueCategories.join(', ')} @ {data.clinicName}
         </p>
       </div>
 
       {loading ? (
-         <div className="text-center py-10 text-gray-500">Đang tìm kiếm bác sĩ phù hợp...</div>
+         <div className="text-center py-10 text-gray-500">{t("stepDoctor.loading")}</div>
       ) : error ? (
          <div className="text-center py-10 text-red-500">{error}</div>
       ) : doctors.length === 0 ? (
         <div className="text-center p-8 bg-gray-50 rounded-xl border border-dashed border-gray-300">
-          <p className="text-gray-500 font-medium">Chưa có bác sĩ nào phụ trách (các) chuyên khoa này tại cơ sở đã chọn.</p>
-          <p className="text-sm text-gray-400 mt-2">Vui lòng quay lại và thử chọn cơ sở khác.</p>
+          <p className="text-gray-500 font-medium">{t("stepDoctor.notFound")}</p>
+          <p className="text-sm text-gray-400 mt-2">{t("stepDoctor.subNotFound")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -144,14 +145,14 @@ export default function StepDoctor({ data, updateData, onNext, onPrev }: StepPro
             onClick={onPrev} 
             className="px-6 py-2 text-gray-600 hover:bg-gray-100 rounded-full transition font-medium"
         >
-            Quay Lại
+            {t("common.back")}
         </button>
         <button
           onClick={onNext}
           disabled={!data.doctorId}
           className="px-8 py-3 rounded-full bg-gradient-to-r from-[#6699FF] to-[#3366FF] text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300"
         >
-          Tiếp Theo
+          {t("common.next")}
         </button>
       </div>
     </div>

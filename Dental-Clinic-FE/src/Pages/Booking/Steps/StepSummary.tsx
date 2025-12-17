@@ -2,8 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { Timer, XCircle } from 'lucide-react'; 
+import { useTranslation } from 'react-i18next'; // 1. Import i18n
 import { getVnpayUrl, createPaypalOrder } from '../DepositService/paymentApi';
-
 
 interface StepProps {
   data: any;
@@ -14,6 +14,7 @@ interface StepProps {
 
 // --- MODAL HẾT GIỜ THANH TOÁN ---
 const ExpiredModal = ({ isOpen, onRedirect }: { isOpen: boolean; onRedirect: () => void }) => {
+  const { t } = useTranslation("booking"); 
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-fadeIn">
@@ -21,15 +22,15 @@ const ExpiredModal = ({ isOpen, onRedirect }: { isOpen: boolean; onRedirect: () 
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
           <XCircle className="w-10 h-10 text-red-500" />
         </div>
-        <h3 className="text-xl font-bold text-gray-800 mb-2">Hết thời gian giữ chỗ!</h3>
+        <h3 className="text-xl font-bold text-gray-800 mb-2">{t("stepSummary.expiredModal.title")}</h3>
         <p className="text-gray-500 mb-6 text-sm">
-          Rất tiếc, đơn đặt lịch này đã quá hạn thanh toán (10 phút) và đã bị hủy tự động để nhường chỗ cho khách khác.
+           {t("stepSummary.expiredModal.message")}
         </p>
         <button
           onClick={onRedirect}
           className="w-full py-3 bg-red-500 hover:bg-red-600 text-white rounded-xl font-bold transition-colors shadow-lg shadow-red-200"
         >
-          Đặt lại lịch mới
+          {t("stepSummary.expiredModal.btnHome")}
         </button>
       </div>
     </div>
@@ -37,26 +38,22 @@ const ExpiredModal = ({ isOpen, onRedirect }: { isOpen: boolean; onRedirect: () 
 };
 
 export default function StepSummary({ data, onConfirm, onPrev, loading }: StepProps) {
+  const { t } = useTranslation("booking"); // 2. Khởi tạo hook
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
   const [showExpiredModal, setShowExpiredModal] = useState(false);
 
   // --- LOGIC ĐẾM NGƯỢC (10 PHÚT) ---
-  // Mặc định 600 giây (10 phút). Bạn có thể điều chỉnh theo Cron Job Backend (ví dụ 15 phút = 900s)
   const [timeLeft, setTimeLeft] = useState(0); 
 
   useEffect(() => {
-    // Chỉ đếm ngược nếu là VIP (cần thanh toán)
     if (data.appointmentType !== 'VIP') return;
 
     const calculateDeadline = () => {
       const storedDeadline = sessionStorage.getItem('bookingDeadline');
-      // Kiểm tra xem trong session đã lưu mốc thời gian chưa
       if (storedDeadline) {
         return parseInt(storedDeadline, 10);
-      }else {
-        // Nếu chưa có (lần đầu vào), set mốc là: Hiện tại + 10 phút
-        // (10 * 60 * 1000 = 600000ms)
+      } else {
         const newDeadline = Date.now() + 600000;
         sessionStorage.setItem('bookingDeadline', newDeadline.toString());
         return newDeadline;
@@ -71,7 +68,6 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
         clearInterval(timer);
         setTimeLeft(0);
         setShowExpiredModal(true);
-        // Xóa session lưu trữ mốc thời gian để lần đặt mới sẽ tính lại
         sessionStorage.removeItem('bookingDeadline');
       } else {
         setTimeLeft(secondsLeft);
@@ -112,35 +108,29 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
     try {
       setIsProcessing(true);
       
-      // 1. Lưu data thô vào session (đề phòng F5)
       sessionStorage.setItem('bookingRetryData', JSON.stringify(data));
 
-      // 2. Gọi hàm tạo lịch (hoặc lấy ID nếu đã có)
       const newAppointment = await onConfirm();
 
       if (!newAppointment || !newAppointment.id) {
-        throw new Error("Không lấy được ID lịch hẹn. Vui lòng thử lại.");
+        throw new Error(t("common.error"));
       }
 
-      // 3. Cập nhật ngay ID vào Session (QUAN TRỌNG: để logic Back lại hoạt động)
       const currentRetryData = JSON.parse(sessionStorage.getItem('bookingRetryData') || '{}');
       currentRetryData.appointmentId = newAppointment.id;
       sessionStorage.setItem('bookingRetryData', JSON.stringify(currentRetryData));
 
-      // 4. Chuyển hướng thanh toán
       if (method === 'VNPAY') {
         const paymentUrl = await getVnpayUrl(newAppointment.id);
         window.location.href = paymentUrl;
       }
       else if (method === 'PAYPAL') {
-        // Ép kiểu 'as any' để tránh lỗi TS nếu response chưa được định nghĩa interface
         const res = await createPaypalOrder(newAppointment.id) as any;
-        // Kiểm tra xem approveUrl có tồn tại không (tùy cấu trúc trả về của BE)
         const approveUrl = res.approveUrl || res.data?.approveUrl || res; 
         if (typeof approveUrl === 'string') {
              window.location.href = approveUrl;
         } else {
-             throw new Error("Không tìm thấy link thanh toán PayPal");
+             throw new Error("PayPal Error");
         }
       }
 
@@ -148,42 +138,36 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
       console.error("Payment Error:", error);
       setIsProcessing(false);
 
-      // 🔥 BẮT LỖI TỪ BACKEND (BOOKING_EXPIRED)
-      // Nếu dùng axios, lỗi thường nằm trong error.response?.data
       const errorData = error.response?.data;
       const errorMsg = typeof errorData === 'string' ? errorData : (errorData?.message || "");
 
-      // Nếu Backend trả về lỗi quá hạn hoặc trạng thái đã bị hủy
       if (errorMsg.includes("BOOKING_EXPIRED") || errorMsg.includes("hủy") || errorMsg.includes("cancelled")) {
-         setShowExpiredModal(true); // Bật Modal bắt đặt lại
+          setShowExpiredModal(true); 
       } else {
-         toast.error(errorMsg || "Lỗi khi khởi tạo thanh toán. Vui lòng thử lại.");
+          toast.error(errorMsg || "Payment Error");
       }
     }
   };
 
-  // Hàm xử lý khi khách bấm "Đặt lại lịch mới" trên Modal
   const handleRebook = () => {
-      // Xóa session cũ để tránh load lại đơn đã hủy
       sessionStorage.removeItem("bookingRetryData"); 
       sessionStorage.removeItem("pendingBooking");
-      // Redirect về trang chọn dịch vụ (hoặc reload trang booking)
       navigate("/booking"); 
-      window.location.reload(); // Reload để reset sạch state
+      window.location.reload(); 
   };
 
   return (
     <div className="space-y-8 animate-fadeIn relative">
 
-      {/* 🔔 MODAL HẾT GIỜ (Hiện khi hết giờ hoặc BE báo lỗi) */}
+      {/* 🔔 MODAL HẾT GIỜ */}
       <ExpiredModal isOpen={showExpiredModal} onRedirect={handleRebook} />
 
       <div className="text-center">
-        <h3 className="text-2xl font-bold text-gray-800">Xác Nhận Thông Tin</h3>
-        <p className="text-gray-500 mt-1">Vui lòng kiểm tra kỹ thông tin trước khi hoàn tất</p>
+        <h3 className="text-2xl font-bold text-gray-800">{t("stepSummary.title")}</h3>
+        <p className="text-gray-500 mt-1">{t("stepSummary.subtitle")}</p>
       </div>
 
-      {/* ⚠️ BANNER ĐẾM NGƯỢC (Chỉ hiện cho VIP và khi chưa hết giờ) */}
+      {/* ⚠️ BANNER ĐẾM NGƯỢC (VIP) */}
       {data.appointmentType === 'VIP' && !showExpiredModal && (
         <div className="max-w-md mx-auto bg-orange-50 border border-orange-200 rounded-xl p-4 flex items-center justify-between shadow-sm animate-pulse">
            <div className="flex items-center gap-3">
@@ -191,8 +175,8 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
                  <Timer className="w-5 h-5 text-orange-600" />
               </div>
               <div className="text-left">
-                 <p className="text-sm font-bold text-orange-800">Thời gian giữ chỗ</p>
-                 <p className="text-xs text-orange-600">Vui lòng thanh toán trong vòng 10 phút.</p>
+                 <p className="text-sm font-bold text-orange-800">{t("stepSummary.timer")}</p>
+                 <p className="text-xs text-orange-600">{t("stepSummary.paymentWarning")}</p>
               </div>
            </div>
            <div className="text-2xl font-mono font-bold text-orange-600 tracking-wider">
@@ -211,13 +195,13 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
 
             <div className="flex justify-between items-start relative z-10">
                 <div>
-                    <h4 className="text-lg font-bold opacity-90">Phiếu Đặt Hẹn</h4>
+                    <h4 className="text-lg font-bold opacity-90">{t("stepSummary.ticketTitle")}</h4>
                     <div className="text-blue-100 font-medium text-sm mt-1">{formatDate(data.date)}</div>
                 </div>
                 <div className="text-right">
                     <div className="text-4xl font-bold tracking-tight">{data.time?.substring(0,5)}</div>
                     <div className="text-xs bg-white/20 px-2 py-0.5 rounded inline-block mt-1 backdrop-blur-sm">
-                        {totalDuration} phút dự kiến
+                        {t("stepSummary.duration", { min: totalDuration })}
                     </div>
                 </div>
             </div>
@@ -240,7 +224,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
                             )}
                         </div>
                         <div className="text-left">
-                            <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Bác sĩ phụ trách</p>
+                            <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">{t("stepSummary.labels.doctor")}</p>
                             <p className="font-bold text-gray-800 text-lg">{data.doctorName}</p>
                             <div className="flex flex-wrap gap-1 mt-1">
                                 {uniqueCategories.map((cat: any, index) => (
@@ -259,7 +243,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
             <div>
                 <div className="flex justify-between items-center mb-3">
                     <p className="text-xs text-gray-400 uppercase font-bold tracking-wider flex items-center gap-2">
-                        <span>Chi tiết dịch vụ</span>
+                        <span>{t("stepSummary.serviceDetails")}</span>
                     </p>
                 </div>
 
@@ -283,13 +267,15 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
 
                     {/* Phí đặt lịch */}
                     <div className="flex justify-between items-center text-sm pt-2 border-t border-dashed border-gray-200 mt-2">
-                        <span className="text-gray-600">Phí đặt lịch ({data.appointmentType === 'VIP' ? 'VIP' : 'Tiêu chuẩn'})</span>
+                        <span className="text-gray-600">
+                            {t("stepSummary.labels.bookingFee")} ({data.appointmentType === 'VIP' ? t("stepType.vip.title") : t("stepType.standard.title")})
+                        </span>
                         <span className="font-bold text-gray-800">{formatCurrency(bookingFee)}</span>
                     </div>
 
                     {/* Tổng cộng */}
                     <div className="border-t border-gray-200 pt-3 mt-2 flex justify-between items-center">
-                        <span className="text-sm font-bold text-gray-600">Tổng cộng</span>
+                        <span className="text-sm font-bold text-gray-600">{t("stepSummary.total")}</span>
                         <span className="text-xl font-extrabold text-[#3366FF]">{formatCurrency(grandTotal)}</span>
                     </div>
                 </div>
@@ -299,9 +285,9 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
                   <div className="mt-4 bg-yellow-50 border border-yellow-200 rounded-xl p-3 flex gap-3 items-start text-left">
                     <div className="text-yellow-600 text-lg mt-0.5">⚠️</div>
                     <div>
-                      <p className="text-sm font-bold text-yellow-800">Yêu cầu thanh toán cọc</p>
+                      <p className="text-sm font-bold text-yellow-800">{t("stepSummary.paymentHeader")}</p>
                       <p className="text-xs text-yellow-700 mt-1">
-                        Để giữ lịch hẹn VIP, quý khách vui lòng thanh toán khoản cọc: <span className="font-bold">{formatCurrency(bookingFee)}</span>.
+                        {t("stepSummary.depositMsg", { amount: formatCurrency(bookingFee) })}
                       </p>
                     </div>
                   </div>
@@ -316,7 +302,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
                     📍
                 </div>
                 <div className="text-left">
-                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">Địa điểm</p>
+                    <p className="text-xs text-gray-400 uppercase font-bold tracking-wider">{t("stepSummary.labels.clinic")}</p>
                     <p className="font-bold text-gray-800">{data.clinicName}</p>
                     <p className="text-sm text-gray-500 mt-1 leading-relaxed">{data.clinicAddress}</p>
                 </div>
@@ -327,7 +313,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
         {/* Footer */}
         <div className="bg-gray-50 p-4 text-center border-t border-gray-100">
             <p className="text-xs text-gray-500 italic">
-                * Vui lòng đến trước 10 phút để làm thủ tục check-in.
+                {t("stepSummary.footerNote")}
             </p>
         </div>
       </div>
@@ -341,7 +327,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
               disabled={loading || isProcessing}
               className="px-6 py-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full transition font-medium text-sm"
           >
-              ← Quay lại bước trước
+              ← {t("common.back")}
           </button>
         </div>
 
@@ -352,8 +338,14 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
                 disabled={loading || isProcessing}
                 className="py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold shadow-lg shadow-blue-200 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                 {isProcessing ? <span className="animate-spin text-xl">↻</span> : <span className="font-extrabold italic">VNPAY</span>}
-                 {isProcessing ? ' Đang xử lý...' : ' Thanh toán'}
+                 {isProcessing ? (
+                    <>
+                       <span className="animate-spin text-xl">↻</span>
+                       {t("stepSummary.processing")}
+                    </>
+                 ) : (
+                    t("stepSummary.btnPayVNPay")
+                 )}
               </button>
 
               <button
@@ -361,8 +353,14 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
                 disabled={loading || isProcessing}
                 className="py-3 px-4 rounded-xl bg-[#003087] hover:bg-[#00256b] text-white font-bold shadow-lg shadow-indigo-200 transition-all active:scale-95 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                 {isProcessing ? <span className="animate-spin text-xl">↻</span> : <span className="font-extrabold italic">PayPal</span>}
-                 {isProcessing ? ' Đang xử lý...' : ' Checkout'}
+                 {isProcessing ? (
+                    <>
+                       <span className="animate-spin text-xl">↻</span>
+                       {t("stepSummary.processing")}
+                    </>
+                 ) : (
+                    t("stepSummary.btnPayPaypal")
+                 )}
               </button>
            </div>
         ) : (
@@ -374,10 +372,10 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
               {loading ? (
                   <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      Đang xử lý...
+                      {t("stepSummary.processing")}
                   </>
               ) : (
-                  "Xác Nhận Đặt Lịch"
+                  t("stepSummary.btnConfirm")
               )}
           </button>
         )}

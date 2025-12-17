@@ -1,6 +1,6 @@
 import {useEffect, useState } from 'react';
 import { X, Calendar, FileText, User, Stethoscope } from 'lucide-react';
-// 👇 Bạn nhớ kiểm tra đường dẫn import receptionApi cho đúng file bạn đang có
+import { useTranslation } from 'react-i18next'; // Import
 import { receptionApi, type PatientHistoryDTO } from '../receptionApi';
 
 interface Props {
@@ -10,6 +10,7 @@ interface Props {
 }
 
 export default function PatientHistoryModal({ isOpen, onClose, patientId }: Props) {
+    const { t } = useTranslation("reception"); // Hook
     const [history, setHistory] = useState<PatientHistoryDTO[]>([]);
     const [loading, setLoading] = useState(false);
 
@@ -19,13 +20,11 @@ export default function PatientHistoryModal({ isOpen, onClose, patientId }: Prop
 
     useEffect(() => {
         if (isOpen && patientId) {
-            // Định nghĩa hàm async để xử lý
             const fetchHistory = async () => {
                 setLoading(true);
                 try {
                     const res = await receptionApi.getPatientHistory(patientId);
                     const data = (res as any).data ? (res as any).data : res;
-                    
                     setHistory(Array.isArray(data) ? data : []);
                 } catch (err) {
                     console.error("Lỗi tải lịch sử:", err);
@@ -34,7 +33,6 @@ export default function PatientHistoryModal({ isOpen, onClose, patientId }: Prop
                     setLoading(false);
                 }
             };
-
             fetchHistory();
         }
     }, [isOpen, patientId]);
@@ -49,7 +47,7 @@ export default function PatientHistoryModal({ isOpen, onClose, patientId }: Prop
                 <div className="flex justify-between items-center p-5 border-b bg-gray-50">
                     <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                         <FileText className="text-purple-600" size={24}/> 
-                        Lịch Sử Khám Bệnh
+                        {t("patientHistory.title")}
                     </h2>
                     <button onClick={onClose} className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-full transition">
                         <X size={24} />
@@ -61,12 +59,12 @@ export default function PatientHistoryModal({ isOpen, onClose, patientId }: Prop
                     <table className="w-full text-sm text-left">
                         <thead className="text-xs text-gray-600 uppercase bg-gray-100 sticky top-0 shadow-sm z-10">
                             <tr>
-                                <th className="px-6 py-4 font-bold">Thời gian</th>
-                                <th className="px-6 py-4 font-bold">Bác sĩ phụ trách</th>
-                                <th className="px-6 py-4 font-bold">Dịch vụ sử dụng (Chi tiết)</th>
-                                <th className="px-6 py-4 font-bold">Ghi chú / Chẩn đoán</th>
-                                <th className="px-6 py-4 font-bold text-center">Trạng thái</th>
-                                <th className="px-6 py-4 font-bold text-right">Tổng tiền</th>
+                                <th className="px-6 py-4 font-bold">{t("patientHistory.table.time")}</th>
+                                <th className="px-6 py-4 font-bold">{t("patientHistory.table.doctor")}</th>
+                                <th className="px-6 py-4 font-bold">{t("patientHistory.table.service")}</th>
+                                <th className="px-6 py-4 font-bold">{t("patientHistory.table.note")}</th>
+                                <th className="px-6 py-4 font-bold text-center">{t("patientHistory.table.status")}</th>
+                                <th className="px-6 py-4 font-bold text-right">{t("patientHistory.table.total")}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-200 text-gray-700">
@@ -74,13 +72,13 @@ export default function PatientHistoryModal({ isOpen, onClose, patientId }: Prop
                                 <tr>
                                     <td colSpan={6} className="p-12 text-center text-gray-500">
                                         <div className="inline-block w-6 h-6 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
-                                        <p>Đang tải dữ liệu lịch sử...</p>
+                                        <p>{t("patientHistory.messages.loading")}</p>
                                     </td>
                                 </tr>
                             ) : history.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="p-12 text-center text-gray-400 italic bg-gray-50">
-                                        Bệnh nhân chưa có lịch sử khám nào tại phòng khám.
+                                        {t("patientHistory.messages.noData")}
                                     </td>
                                 </tr>
                             ) : (
@@ -116,7 +114,7 @@ export default function PatientHistoryModal({ isOpen, onClose, patientId }: Prop
                                                     ))}
                                                 </div>
                                             ) : (
-                                                <span className="text-gray-400 italic">Không có dịch vụ</span>
+                                                <span className="text-gray-400 italic">{t("patientHistory.noService")}</span>
                                             )}
                                         </td>
 
@@ -125,7 +123,7 @@ export default function PatientHistoryModal({ isOpen, onClose, patientId }: Prop
                                             <div className="flex items-start gap-2">
                                                 <Stethoscope size={16} className="text-gray-400 shrink-0 mt-0.5"/>
                                                 <span className="text-gray-600 line-clamp-2" title={item.diagnosis}>
-                                                    {item.diagnosis || 'Không có ghi chú'}
+                                                    {item.diagnosis || t("patientHistory.noNote")}
                                                 </span>
                                             </div>
                                         </td>
@@ -137,7 +135,7 @@ export default function PatientHistoryModal({ isOpen, onClose, patientId }: Prop
                                                 item.status === 'CANCELLED' ? 'bg-red-100 text-red-700 border border-red-200' :
                                                 'bg-gray-100 text-gray-600'
                                             }`}>
-                                                {item.status}
+                                                {t(`status.${item.status}`)}
                                             </span>
                                         </td>
 

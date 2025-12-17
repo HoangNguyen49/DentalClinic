@@ -2,8 +2,10 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { verifyVnpay, capturePaypalOrder } from '../DepositService/paymentApi'; 
 import { CheckCircle, XCircle, Loader } from 'lucide-react';
+import { useTranslation } from 'react-i18next'; // 1. Import i18n
 
 const PaymentResult = () => {
+  const { t } = useTranslation("booking"); // 2. Khởi tạo hook
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'LOADING' | 'SUCCESS' | 'FAILED'>('LOADING');
@@ -68,15 +70,15 @@ const PaymentResult = () => {
         {status === 'LOADING' && (
           <div className="space-y-4">
             <Loader className="w-16 h-16 text-blue-500 animate-spin mx-auto" />
-            <h2 className="text-xl font-semibold text-gray-700">Đang xử lý giao dịch...</h2>
+            <h2 className="text-xl font-semibold text-gray-700">{t("paymentResult.loading.title")}</h2>
           </div>
         )}
 
         {status === 'SUCCESS' && (
           <div className="space-y-4">
             <CheckCircle className="w-16 h-16 text-green-500 mx-auto" />
-            <h2 className="text-2xl font-bold text-gray-800">Thanh toán thành công!</h2>
-            <p className="text-gray-600">Lịch hẹn đã được xác nhận. Dữ liệu đặt lịch cũ đã được xóa.</p>
+            <h2 className="text-2xl font-bold text-gray-800">{t("paymentResult.success.title")}</h2>
+            <p className="text-gray-600">{t("paymentResult.success.message")}</p>
             
             <button 
               onClick={() => {
@@ -85,17 +87,17 @@ const PaymentResult = () => {
               }}
               className="mt-4 px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full"
             >
-              Xem lịch hẹn của tôi
+              {t("paymentResult.success.btnView")}
             </button>
             
             <button
                 onClick={() => {
-                    clearBookingSession(); // Xóa lần nữa cho chắc
-                    navigate('/booking'); // Về trang booking -> Sẽ thấy form trắng trơn (Step 0)
+                    clearBookingSession(); 
+                    navigate('/booking'); 
                 }}
                 className="mt-2 text-sm text-blue-600 hover:underline block w-full"
             >
-                Đặt lịch hẹn mới
+                {t("paymentResult.success.btnNew")}
             </button>
           </div>
         )}
@@ -103,14 +105,14 @@ const PaymentResult = () => {
         {status === 'FAILED' && (
            <div className="space-y-4">
             <XCircle className="w-16 h-16 text-red-500 mx-auto" />
-            <h2 className="text-2xl font-bold text-gray-800">Giao dịch thất bại</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{t("paymentResult.failed.title")}</h2>
             <button 
                 onClick={() => {
                     navigate('/booking'); 
                 }} 
                 className="mt-4 px-6 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 w-full"
             >
-                Quay lại thử lại
+                {t("paymentResult.failed.btnRetry")}
             </button>
            </div>
         )}

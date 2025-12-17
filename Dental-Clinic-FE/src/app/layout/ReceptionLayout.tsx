@@ -6,6 +6,7 @@ import {
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "../../widgets/NotificationBell";
+import ReceptionAiChat from "../../Pages/Reception/Dashboard/ReceptionAiChat";
 
 const ReceptionLayout = () => {
   const navigate = useNavigate();
@@ -98,6 +99,7 @@ const ReceptionLayout = () => {
         <main className="flex-1 overflow-hidden bg-gray-50 p-4">
           <Outlet />
         </main>
+        <ReceptionAiChat />
       </div>
     </div>
   );
