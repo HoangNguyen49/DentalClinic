@@ -23,10 +23,78 @@ export default function AppointmentEditModal({ appointment, onClose, onSuccess }
     setLoading(true);
     try {
         const token = localStorage.getItem("accessToken");
-        
+
+        // Client-side validations mirroring backend rules
+        const raw = (status || "").trim().toUpperCase();
+        let mapped = raw;
+        if (["IN-PROGRESS", "IN_PROGRESS"].includes(raw)) mapped = "PROCESSING";
+        if (["NO-SHOW", "NO_SHOW", "NO-SHOWING", "NO_SHOWING"].includes(raw)) mapped = "CANCELED";
+        if (raw === "CANCELLED") mapped = "CANCELED";
+
+        const now = new Date();
+        const start = new Date(appointment.startDateTime);
+
+        if (mapped === "PROCESSING") {
+          const startMinus5 = new Date(start.getTime() - 5 * 60 * 1000);
+          if (now < startMinus5) {
+            toast.error("Cannot set to PROCESSING: appointment can only start within 5 minutes of scheduled time");
+            setLoading(false);
+            return;
+          }
+          if (!["SCHEDULED", "CONFIRMED"].includes((appointment.status || "").toUpperCase())) {
+            toast.error("Cannot set to PROCESSING: only SCHEDULED appointments can be started");
+            setLoading(false);
+            return;
+          }
+        }
+
+        if (mapped === "COMPLETED") {
+          if ((appointment.status || "").toUpperCase() !== "PROCESSING") {
+            toast.error("Cannot set to COMPLETED: appointment must be PROCESSING");
+            setLoading(false);
+            return;
+          }
+
+          // Verify medical record exists if doctor is known
+          const doctorId = appointment.doctor?.id;
+          if (doctorId) {
+            try {
+              const recsRes = await axios.get(`${API_BASE_URL}/api/doctor/${doctorId}/medical-records`, {
+                params: { appointmentId: appointment.id },
+                headers: { Authorization: `Bearer ${token}` },
+              });
+              const records = recsRes.data || [];
+              if (!Array.isArray(records) || records.length === 0) {
+                toast.error("Cannot set to COMPLETED: medical record is required");
+                setLoading(false);
+                return;
+              }
+            } catch (err) {
+              console.error("Error checking medical records:", err);
+              toast.error("Cannot verify medical record existence. Try again later.");
+              setLoading(false);
+              return;
+            }
+          }
+        }
+
+        if (mapped === "CANCELED") {
+          if (!["SCHEDULED", "CONFIRMED"].includes((appointment.status || "").toUpperCase())) {
+            toast.error("Cannot set to CANCELED: only SCHEDULED appointments allowed");
+            setLoading(false);
+            return;
+          }
+          const startPlus20 = new Date(start.getTime() + 20 * 60 * 1000);
+          if (now < startPlus20) {
+            toast.error("Cannot set to CANCELED before 20 minutes after start");
+            setLoading(false);
+            return;
+          }
+        }
+
         // Gọi API cập nhật
         await axios.put(`${API_BASE_URL}/api/reception/appointments/${appointment.id}`, 
-            { status, note }, 
+            { status: mapped, note }, 
             { headers: { Authorization: `Bearer ${token}` } }
         );
 
@@ -82,7 +150,7 @@ export default function AppointmentEditModal({ appointment, onClose, onSuccess }
                     <span className="text-gray-500">{t("editModal.labelTime")}</span>
                     <span className="font-medium text-gray-900">
                         {new Date(appointment.startDateTime).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})} - 
-                        {new Date(appointment.endDateTime).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}
+                        {new Date(appointment.endDateTime ?? appointment.startDateTime).toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'})}
                     </span>
                 </div>
             </div>

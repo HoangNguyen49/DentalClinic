@@ -18,52 +18,7 @@ import ServiceVariantsModal from "./ServiceVariantsModal";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
-
-type ServiceVariantDTO = {
-  id: number;
-  variantName: string;
-  description?: string;
-  price?: number;
-};
-
-type ServiceDTO = {
-  id: number;
-  serviceName: string;
-  category?: string;
-  description?: string;
-  defaultDuration?: number;
-  isActive?: boolean;
-  variants?: ServiceVariantDTO[];
-};
-
-type DoctorAppointmentDTO = {
-  appointmentId: number;
-  clinic?: { id: number; clinicName: string; address?: string };
-  patient?: {
-    id: number;
-    patientCode: string;
-    fullName: string;
-    phone?: string;
-    email?: string;
-    dateOfBirth?: string;
-    gender?: string;
-  };
-  doctor?: { id: number; fullName: string };
-  room?: { id: number; roomName: string };
-  chair?: { id: number; chairNumber: string };
-  startDateTime: string;
-  endDateTime: string;
-  status: string;
-  channel?: string;
-  note?: string;
-  service?: ServiceDTO;
-  serviceDetails?: string[];
-  createdBy?: string;
-  createdAt?: string;
-  updatedAt?: string;
-  appointmentType?: string; // "VIP" hoặc "STANDARD"
-  bookingFee?: number; // Phí đặt lịch hẹn
-};
+import type { DoctorAppointmentDTO, ServiceDTO } from "../types/doctor";
 
 export default function AppointmentDetail() {
   const { appointmentId } = useParams<{ appointmentId: string }>();
@@ -79,6 +34,8 @@ export default function AppointmentDetail() {
   const [showMedicalRecordModal, setShowMedicalRecordModal] = useState(false);
   const [selectedService, setSelectedService] = useState<ServiceDTO | null>(null);
   const [showVariantsModal, setShowVariantsModal] = useState(false);
+  const [activeVariantId, setActiveVariantId] = useState<number | undefined>(undefined);
+  const [activeVariantName, setActiveVariantName] = useState<string | undefined>(undefined);
 
   useEffect(() => {
     if (!appointmentId || !doctorId) {
@@ -95,6 +52,9 @@ export default function AppointmentDetail() {
             headers: { Authorization: `Bearer ${accessToken}` },
           }
         );
+        console.log("Appointment response:", response.data);
+        console.log("Appointment service:", response.data.service);
+        console.log("Appointment appointmentServiceId:", response.data.appointmentServiceId);
         setAppointment(response.data);
       } catch (err: unknown) {
         console.error("Error fetching appointment:", err);
@@ -125,6 +85,28 @@ export default function AppointmentDetail() {
 
   const handleServiceClick = async () => {
     if (!appointment?.service) return;
+    // Determine the active variant from appointment data, prefer explicit variant if available
+    const svcVariantId = appointment.serviceVariant?.variantId ?? appointment.serviceVariant?.id;
+    let nameFromAppointment: string | undefined;
+    if (appointment.serviceVariant?.variantName) nameFromAppointment = appointment.serviceVariant?.variantName;
+    // If there are appointmentServices, prefer to find by appointmentServiceId
+    if (!svcVariantId && appointment.appointmentServices && appointment.appointmentServices.length > 0) {
+      const found = appointment.appointmentServices.find((s) => s.appointmentServiceId === appointment.appointmentServiceId) || appointment.appointmentServices[0];
+      if (found?.serviceVariant) {
+        const id = found.serviceVariant.variantId ?? found.serviceVariant.id;
+        if (id) {
+          setActiveVariantId(id);
+        }
+        if (found.serviceVariant.variantName) setActiveVariantName(found.serviceVariant.variantName);
+      }
+    } else {
+      if (svcVariantId) setActiveVariantId(svcVariantId);
+      if (nameFromAppointment) setActiveVariantName(nameFromAppointment);
+      if (!svcVariantId && !nameFromAppointment && appointment.serviceDetails && appointment.serviceDetails.length > 0) {
+        // Use the first detail string as name
+        setActiveVariantName(appointment.serviceDetails[0]);
+      }
+    }
     
     // If service already has variants, use it directly
     if (appointment.service.variants !== undefined) {
@@ -220,7 +202,7 @@ export default function AppointmentDetail() {
                     <div className="mt-1 flex items-center gap-2 text-gray-900">
                       <Clock className="w-4 h-4 text-gray-400" />
                       {format(new Date(appointment.startDateTime), "MMM dd, yyyy HH:mm")} -{" "}
-                      {format(new Date(appointment.endDateTime), "HH:mm")}
+                      {format(new Date(appointment.endDateTime ?? appointment.startDateTime), "HH:mm")}
                     </div>
                   </div>
                   <div>
@@ -246,6 +228,24 @@ export default function AppointmentDetail() {
                         </div>
                       )}
                     </div>
+                    {appointment.serviceVariant && (
+                      <div className="mt-1 text-sm text-gray-600">
+                        <div className="font-medium">{appointment.serviceVariant.variantName}</div>
+                        {appointment.serviceVariant.duration && (
+                          <div className="text-xs text-gray-500">
+                            Duration: {appointment.serviceVariant.duration} minutes
+                          </div>
+                        )}
+                        {appointment.serviceVariant.price !== undefined && appointment.serviceVariant.price !== null && (
+                          <div className="text-xs text-gray-500">
+                            Price: {new Intl.NumberFormat("vi-VN", {
+                              style: "currency",
+                              currency: appointment.serviceVariant.currency || "VND",
+                            }).format(appointment.serviceVariant.price)}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                   </div>
                   <div>
@@ -403,9 +403,14 @@ export default function AppointmentDetail() {
       <ServiceVariantsModal
         isOpen={showVariantsModal}
         service={selectedService}
+        activeVariantId={activeVariantId}
+        activeVariantName={activeVariantName}
+        onlyShowActiveVariant={true}
         onClose={() => {
           setShowVariantsModal(false);
           setSelectedService(null);
+          setActiveVariantId(undefined);
+          setActiveVariantName(undefined);
         }}
       />
     </>

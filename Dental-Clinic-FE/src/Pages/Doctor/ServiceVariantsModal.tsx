@@ -1,10 +1,15 @@
 import { X } from "lucide-react";
+import { useState } from "react";
 
 type ServiceVariantDTO = {
-  id: number;
+  variantId?: number;
+  id?: number; // Support both variantId and id for compatibility
   variantName: string;
   description?: string;
   price?: number;
+  duration?: number;
+  currency?: string;
+  isActive?: boolean;
 };
 
 type ServiceDTO = {
@@ -21,12 +26,20 @@ type Props = {
   isOpen: boolean;
   service: ServiceDTO | null;
   onClose: () => void;
+  // If provided, highlight a specific variant by id or name
+  activeVariantId?: number | null;
+  activeVariantName?: string | null;
+  // If true, limit the shown variants to only the active one (if provided)
+  onlyShowActiveVariant?: boolean;
 };
 
-export default function ServiceVariantsModal({ isOpen, service, onClose }: Props) {
+export default function ServiceVariantsModal({ isOpen, service, onClose, activeVariantId, activeVariantName, onlyShowActiveVariant }: Props) {
   if (!isOpen || !service) return null;
 
   const variants = service.variants || [];
+  const [showAllVariants, setShowAllVariants] = useState<boolean>(!onlyShowActiveVariant);
+  const activeName = activeVariantName;
+  const activeId = activeVariantId;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
@@ -81,10 +94,34 @@ export default function ServiceVariantsModal({ isOpen, service, onClose }: Props
               </div>
             ) : (
               <div className="space-y-3">
-                {variants.map((variant) => (
+                {onlyShowActiveVariant && !showAllVariants && (
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="text-xs text-gray-500">Showing selected variant only</div>
+                    <button
+                      className="text-sm text-blue-600 hover:underline"
+                      onClick={() => setShowAllVariants(true)}
+                    >
+                      View all variants
+                    </button>
+                  </div>
+                )}
+                {variants
+                  .filter((v) => v.isActive !== false) // Only show active variants
+                  .filter((v) => {
+                    if (!onlyShowActiveVariant) return true;
+                    if (showAllVariants) return true;
+                    const vid = v.variantId ?? v.id ?? null;
+                    if (activeId && vid === activeId) return true;
+                    if (!activeId && activeName && v.variantName === activeName) return true;
+                    return false;
+                  })
+                  .map((variant) => {
+                    const variantKey = variant.variantId ?? variant.id ?? 0;
+                    const isSelected = (activeVariantId && variantKey === activeVariantId) || (!activeVariantId && activeVariantName && variant.variantName === activeVariantName);
+                    return (
                   <div
-                    key={variant.id}
-                    className="rounded-xl border bg-white p-4 shadow-sm hover:shadow-md transition"
+                    key={variantKey}
+                    className={`rounded-xl border p-4 shadow-sm hover:shadow-md transition ${isSelected ? 'border-blue-300 bg-blue-50' : 'bg-white'}`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
@@ -94,20 +131,33 @@ export default function ServiceVariantsModal({ isOpen, service, onClose }: Props
                         {variant.description && (
                           <p className="mt-2 text-sm text-gray-600">{variant.description}</p>
                         )}
+                        <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
+                          {variant.duration && (
+                            <span>Duration: {variant.duration} min</span>
+                          )}
+                          {variant.currency && (
+                            <span>Currency: {variant.currency}</span>
+                          )}
+                        </div>
                       </div>
                       {variant.price !== undefined && variant.price !== null && (
                         <div className="ml-4 text-right">
                           <p className="text-lg font-bold text-blue-600">
                             {new Intl.NumberFormat("vi-VN", {
                               style: "currency",
-                              currency: "VND",
+                              currency: variant.currency || "VND",
                             }).format(variant.price)}
                           </p>
                         </div>
                       )}
+                      {isSelected && (
+                        <div className="ml-4 text-right flex items-center">
+                          <span className="px-2 py-1 rounded bg-blue-700 text-white text-xs font-semibold">Selected</span>
+                        </div>
+                      )}
                     </div>
                   </div>
-                ))}
+                );})}
               </div>
             )}
           </section>
