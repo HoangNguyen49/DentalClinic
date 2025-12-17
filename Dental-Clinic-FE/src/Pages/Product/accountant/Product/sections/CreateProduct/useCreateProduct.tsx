@@ -44,6 +44,7 @@ export interface UseCreateProductResult {
     handleSubmit: (e?: React.FormEvent<HTMLFormElement>) => Promise<void>;
     analyzeImagesWithAi: () => Promise<void>;
     resetForm: () => void;
+    successMessage: string | null;
 }
 
 const defaultImages: ProductImageFormState[] = [
@@ -135,6 +136,7 @@ export function useCreateProduct(): UseCreateProductResult {
 
     const [aiAnalyzing, setAiAnalyzing] = useState(false);
     const [aiWarning, setAiWarning] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
     
 
     useEffect(() => {
@@ -168,6 +170,8 @@ export function useCreateProduct(): UseCreateProductResult {
         setFieldErrors({});
         setGlobalErrors([]);
         setValidationDebugReason(undefined);
+        setAiWarning(null);
+        setSuccessMessage(null);
     };
 
     const handleChange = (
@@ -390,6 +394,7 @@ export function useCreateProduct(): UseCreateProductResult {
                 }
             }
 
+            setSuccessMessage("AI Analysis complete! Data has been auto-filled.");
             if (result.needBetterImages === true) {
                 setAiWarning('AI suggests better images for higher accuracy.');
             }
@@ -472,6 +477,7 @@ export function useCreateProduct(): UseCreateProductResult {
         try {
             await createProductForAccountant(payload);
             resetForm();
+            setSuccessMessage("Product created successfully!");
         } catch (err) {
             const parsed = extractValidationErrors(err);
             if (
@@ -521,5 +527,6 @@ export function useCreateProduct(): UseCreateProductResult {
         handleSubmit,
         analyzeImagesWithAi,
         resetForm,
+        successMessage,
     };
 }

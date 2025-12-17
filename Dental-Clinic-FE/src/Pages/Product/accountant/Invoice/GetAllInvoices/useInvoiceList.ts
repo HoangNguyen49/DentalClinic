@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom"; // [1] Import hook này
-import { invoiceApi, type ProductInvoiceListDto } from "../../../../../huybro_api/invoiceApi";
+import { invoiceApi, type ProductInvoiceListDto, type InvoiceStatisticDto } from "../../../../../huybro_api/invoiceApi";
 
 export const useInvoiceList = () => {
   const [searchParams, setSearchParams] = useSearchParams(); // [2] Sử dụng hook
 
   const [invoices, setInvoices] = useState<ProductInvoiceListDto[]>([]);
+  const [statistics, setStatistics] = useState<InvoiceStatisticDto[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [totalPages, setTotalPages] = useState<number>(0);
   const [totalElements, setTotalElements] = useState<number>(0);
@@ -25,16 +26,20 @@ export const useInvoiceList = () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await invoiceApi.getInvoices({
-        page: filters.page,
-        size: filters.size,
-        status: filters.status || undefined,
-        keyword: filters.keyword || undefined,
-      });
+      const [listData, statsData] = await Promise.all([
+        invoiceApi.getInvoices({
+          page: filters.page,
+          size: filters.size,
+          status: filters.status || undefined,
+          keyword: filters.keyword || undefined,
+        }),
+        invoiceApi.getInvoiceStatistics() // [NEW] Gọi API thống kê
+      ]);
 
-      setInvoices(data.content);
-      setTotalPages(data.totalPages);
-      setTotalElements(data.totalElements);
+      setInvoices(listData.content);
+      setTotalPages(listData.totalPages);
+      setTotalElements(listData.totalElements);
+      setStatistics(statsData);
     } catch (err: any) {
       setError(err.response?.data?.message || "Failed to load invoices.");
       setInvoices([]);
@@ -82,6 +87,7 @@ export const useInvoiceList = () => {
 
   return {
     invoices,
+    statistics,
     loading,
     error,
     totalPages,

@@ -8,7 +8,9 @@ import {
   BarChart4,
   LogOut,
   PackagePlus,
-  Warehouse
+  Warehouse,
+  Banknote,
+  FileCog
 } from "lucide-react";
 
 export type SidebarItem = {
@@ -31,7 +33,7 @@ function DashboardSidebar() {
     // 1. Xóa dữ liệu phiên đăng nhập
     localStorage.removeItem("user");
     localStorage.removeItem("accessToken");
-    
+
     // 2. Điều hướng về trang Login
     navigate("/login");
   };
@@ -55,7 +57,7 @@ function DashboardSidebar() {
       items: [
         {
           label: "List Products",
-          href: "/accountant",
+          href: "/accountant/product",
           icon: <Package className="w-4 h-4" />,
         },
         {
@@ -68,7 +70,7 @@ function DashboardSidebar() {
     {
       title: "Inventory Control",
       items: [
-          {
+        {
           label: "Inventory Overview",
           href: "/accountant/inventory",
           icon: <Warehouse className="w-4 h-4" />,
@@ -78,7 +80,7 @@ function DashboardSidebar() {
           href: "/accountant/inventory/import",
           icon: <PackagePlus className="w-4 h-4" />,
         },
-        
+
       ],
     },
     {
@@ -96,11 +98,24 @@ function DashboardSidebar() {
         },
       ],
     },
+    {
+      title: "Compensation", // Đổi tên Group cho chuẩn nghiệp vụ
+      items: [
+        {
+          label: "Salary Configuration", // 1. Cấu hình Hợp đồng lương
+          href: "/accountant/payroll/config",
+          icon: <FileCog className="w-4 h-4" />,
+        },
+        {
+          label: "Payroll Processing",   // 2. Tính toán & Bảng lương
+          href: "/accountant/payrolls",
+          icon: <Banknote className="w-4 h-4" />,
+        },
+      ],
+    }
   ];
 
   return (
-    // [FIX] Changed h-screen to h-full (or ensure parent is h-screen) and added sticky if needed
-    // Usually fixed h-screen on sidebar is good for dashboard layouts
     <aside className="w-64 bg-white shadow-xl border-r border-gray-100 hidden md:flex flex-col h-screen font-sans sticky top-0">
 
       {/* HEADER - Fixed at top */}
@@ -164,7 +179,7 @@ function DashboardSidebar() {
       {/* FOOTER / LOGOUT - Fixed at bottom */}
       <div className="p-4 border-t border-gray-100 bg-gray-50/50 shrink-0">
         <button
-          onClick={handleLogout} 
+          onClick={handleLogout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors text-sm font-medium"
         >
           <LogOut className="w-4 h-4" />

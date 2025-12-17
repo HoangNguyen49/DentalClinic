@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { useCreateProduct } from './useCreateProduct';
+import { CheckCircle2 } from "lucide-react";
 
 const CreateProduct: React.FC = () => {
   const {
@@ -17,6 +18,7 @@ const CreateProduct: React.FC = () => {
     handleImageFileChange,
     handleSubmit,
     analyzeImagesWithAi,
+    successMessage,
   } = useCreateProduct();
 
   const renderFieldErrors = (field: string) =>
@@ -416,13 +418,16 @@ const CreateProduct: React.FC = () => {
                 </ul>
               </div>
             )}
-
             {aiWarning && (
               <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 px-4 py-3 text-sm text-yellow-700">
                 {aiWarning}
               </div>
             )}
-
+            {successMessage && (
+              <div className="mt-4 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                 <CheckCircle2 className="w-5 h-5 flex-shrink-0" />{successMessage}
+              </div>
+            )}
             {validationDebugReason && (
               <div className="mt-4 text-xs text-orange-500">
                 Debug: {validationDebugReason}

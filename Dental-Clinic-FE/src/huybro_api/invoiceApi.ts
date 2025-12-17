@@ -77,6 +77,10 @@ export interface UpdateInvoiceStatusRequest {
   note?: string;
 }
 
+export interface InvoiceStatisticDto {
+  status: InvoiceStatus;
+  totalCount: number;
+}
 // --- API Implementation ---
 export const invoiceApi = {
   // GET List 
@@ -95,5 +99,11 @@ export const invoiceApi = {
   updateInvoiceStatus: async (id: number, request: UpdateInvoiceStatusRequest) => {
     const response = await axiosClient.put(`/api/invoices/${id}/status`, request);
     return response.data;
+  },
+
+  getInvoiceStatistics: async (): Promise<InvoiceStatisticDto[]> => {
+    const response = await axiosClient.get<InvoiceStatisticDto[]>("/api/invoices/statistics");
+    return response.data;
   }
+
 };
