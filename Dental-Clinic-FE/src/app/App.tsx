@@ -70,6 +70,7 @@ import AccountantRoutes from "../Pages/Product/accountant";
 import AppointmentSchedule from "../Pages/Patient/AppointmentSchedule";
 import PatientDashboardPage from "../Pages/Patient/Dashboard/PatientDashboardPage";
 import PatientProfilePage from "../Pages/Patient/Profile/PatientProfilePage";
+import PatientHistoryPage from '../Pages/Patient/History/PatientHistoryPage';
 
 // --- NOTIFICATION PAGES ---
 import NotificationPage from "../Pages/Notifications/NotificationPage";
@@ -129,6 +130,7 @@ function App() {
                         <Route path="/my-appointments" element={<AppointmentSchedule />} />
                         <Route path="/patient-dashboard" element={<PatientDashboardPage />} />
                         <Route path="/patient-profile" element={<PatientProfilePage />} />
+                        <Route path="/patient-history" element={<PatientHistoryPage />} />
 
                         {/* --- ADMIN --- */}
                         <Route path="/admin" element={<ProtectedRouteAdmin />}>
