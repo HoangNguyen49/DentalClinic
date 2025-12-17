@@ -47,7 +47,6 @@ import AdminReportsPage from "../Pages/Admin/Reports/AdminReportsPage";
 import AdminCustomerManagement from "../Pages/Admin/Customers/AdminCustomerManagement";
 import AdminInventoryManagement from "../Pages/Admin/Inventory/AdminInventoryManagement";
 import AdminDashboardPage from "../Pages/Admin/Dashboard/AdminDashboardPage";
-// import AppointmentList from "../Pages/Admin/Appointments/AppointmentList"; // Admin Appointment List
 
 // --- DOCTOR PAGES ---
 import DoctorDashboard from "../Pages/Doctor/DoctorDashboard";
@@ -56,6 +55,7 @@ import AppointmentDetail from "../Pages/Doctor/AppointmentDetail";
 import PatientMedicalRecords from "../Pages/Doctor/PatientMedicalRecords";
 import MedicalRecordDetail from "../Pages/Doctor/MedicalRecordDetail";
 import AppointmentListDoctor from "../Pages/Doctor/AppointmentListDoctor";
+import DoctorChatbotPage from "../Pages/Doctor/DoctorChatbotPage";
 
 // --- RECEPTION PAGES ---
 import ReceptionDashboard from "../Pages/Reception/Dashboard/ReceptionDashboard";
@@ -71,6 +71,9 @@ import AppointmentSchedule from "../Pages/Patient/AppointmentSchedule";
 import PatientDashboardPage from "../Pages/Patient/Dashboard/PatientDashboardPage";
 import PatientProfilePage from "../Pages/Patient/Profile/PatientProfilePage";
 import PatientHistoryPage from '../Pages/Patient/History/PatientHistoryPage';
+
+// --- NOTIFICATION PAGES ---
+import NotificationPage from "../Pages/Notifications/NotificationPage";
 
 // --- LAYOUTS ---
 import AdminLayout from "./layout/AdminLayouts";
@@ -88,6 +91,7 @@ import AuthGuard from "./routes/AuthGuard";
 
 // --- PROVIDERS ---
 import { NotificationProvider } from "./providers/NotificationContext";
+import PaymentResult from "../Pages/Booking/DepositService/PaymentResult";
 
 function App() {
     return (
@@ -109,6 +113,7 @@ function App() {
                     <Route path="/oauth/success" element={<OAuthSuccessHandler />} />
                     <Route path="/reset-password" element={<ResetPassword />} /> {/* Của Tuấn */}
                     <Route path="/verify-account" element={<VerifyAccount />} /> {/* Của Tuấn */}
+                    <Route path="/booking/payment-result" element={<PaymentResult />} />
 
                     {/* --- PROTECTED ROUTES --- */}
                     <Route element={<AuthGuard />}>
@@ -119,6 +124,7 @@ function App() {
                         <Route path="/my-attendance" element={<EmployeeAttendanceView />} />
                         <Route path="/my-leave-requests" element={<LeaveRequestList />} />
                         <Route path="/booking" element={<BookingPage />} />
+                        <Route path="/notifications" element={<NotificationPage />} />
 
                         {/* PATIENT ROUTES [CỦA TUẤN] */}
                         <Route path="/my-appointments" element={<AppointmentSchedule />} />
@@ -131,7 +137,6 @@ function App() {
                             <Route element={<AdminLayout />}>
                                 <Route index element={<AdminDashboardPage />} />
                                 <Route path="dashboard" element={<AdminDashboardPage />} />
-                                {/* <Route path="appointments" element={<AppointmentList />} /> */}
                                 <Route path="attendance" element={<AdminAttendanceManagement />} />
                                 <Route path="clinics" element={<ClinicManagement />} />
                                 <Route path="staff" element={<AdminStaffManagement />} />
@@ -179,6 +184,7 @@ function App() {
                                 <Route path="appointments/:appointmentId" element={<AppointmentDetail />} />
                                 <Route path="patients/:patientId/records" element={<PatientMedicalRecords />} />
                                 <Route path="patients/:patientId/records/:recordId" element={<MedicalRecordDetail />} />
+                                <Route path="chatbot" element={<DoctorChatbotPage/>} />
                             </Route>
                         </Route>
 

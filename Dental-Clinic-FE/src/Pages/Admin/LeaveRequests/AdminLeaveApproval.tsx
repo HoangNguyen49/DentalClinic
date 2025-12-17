@@ -1,12 +1,14 @@
 import { useState, useEffect, useRef } from "react";
 import { ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
-import { CheckCircle, XCircle, Clock, Search, Trash2 } from "lucide-react";
+import { Search, Trash2, Calendar, User, MapPin, AlertCircle, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useNotification } from "../../../app/providers/NotificationContext";
 import { adminApi } from "../../../services/admin/adminApi";
 import { useAdminApi } from "../../../hooks/useAdminApi";
-import { formatDate } from "../../../utils/adminUtils";
+import { formatDate } from "../../../utils/dateUtils";
 import { toast } from "react-toastify";
+import { getStatusIcon, getStatusColor, getStatusLabel } from "../../../utils/statusUtils";
+import { getShiftTypeLabel } from "../../../utils/shiftUtils";
 
 // Kiểu dữ liệu cho đơn xin nghỉ phép
 type LeaveRequest = {
@@ -55,7 +57,7 @@ export default function AdminLeaveApproval() {
 
     useEffect(() => {
         // Mỗi khi page hoặc filter đổi thì load danh sách mới
-        if (statusFilter === "PENDING" || statusFilter === "PENDING_ADMIN") {
+        if (statusFilter === "PENDING_ADMIN") {
             fetchPendingRequests();
         } else {
             fetchLeaveRequests();
@@ -105,14 +107,10 @@ export default function AdminLeaveApproval() {
         );
     };
 
-    // Lấy đơn nghỉ phép trạng thái PENDING (cho HR hoặc Admin)
+    // Lấy đơn nghỉ phép trạng thái PENDING_ADMIN (chờ Admin duyệt)
     const fetchPendingRequests = async () => {
-        const apiCall = statusFilter === "PENDING_ADMIN"
-            ? () => adminApi.leaveRequests.getPendingAdmin()
-            : () => adminApi.leaveRequests.getPending();
-
         await executePending(
-            apiCall,
+            () => adminApi.leaveRequests.getPendingAdmin(),
             {
                 showErrorToast: true,
                 errorMessage: t("leaveRequest.messages.loadFailed", "Không thể tải danh sách đơn xin nghỉ"),
@@ -163,36 +161,7 @@ export default function AdminLeaveApproval() {
         );
     };
 
-    // Trả về icon phù hợp theo status đơn
-    const getStatusIcon = (status: string) => {
-        switch (status.toUpperCase()) {
-            case "APPROVED":
-                return <CheckCircle className="w-5 h-5 text-green-600" />;
-            case "REJECTED":
-                return <XCircle className="w-5 h-5 text-red-600" />;
-            case "PENDING":
-                return <Clock className="w-5 h-5 text-yellow-600" />;
-            case "PENDING_ADMIN":
-                return <Clock className="w-5 h-5 text-purple-600" />;
-            default:
-                return null;
-        }
-    };
-
-    // Hiển thị nhãn loại ca làm việc
-    const getShiftTypeLabel = (shiftType?: string) => {
-        if (!shiftType || shiftType === "FULL_DAY") {
-            return t("leaveRequest.shiftTypes.fullDay", "Cả ngày");
-        }
-        switch (shiftType.toUpperCase()) {
-            case "MORNING":
-                return t("leaveRequest.shiftTypes.morning", "Ca sáng");
-            case "AFTERNOON":
-                return t("leaveRequest.shiftTypes.afternoon", "Ca chiều");
-            default:
-                return shiftType;
-        }
-    };
+    // Helper functions moved to shared utils - no duplicate code!
 
     // Lọc danh sách theo từ khóa search và loại đơn (nghỉ việc...)
     const filteredRequests = leaveRequests.filter((req) => {
@@ -212,56 +181,73 @@ export default function AdminLeaveApproval() {
     // Hiển thị loading khi fetch dữ liệu
     if ((loading || loadingPending) && leaveRequests.length === 0) {
         return (
-            <div className="flex justify-center items-center min-h-[400px]">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 flex justify-center items-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+                    <p className="text-slate-600 font-medium">Loading...</p>
+                </div>
             </div>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 p-8">
             <ToastContainer position="top-right" autoClose={3000} />
-            <div className="flex justify-between items-center">
-                <h1 className="text-2xl font-bold text-gray-900">{t("leaveRequest.adminTitle", "Admin Leave Approval")}</h1>
+            <div className="max-w-7xl mx-auto space-y-8">
+                {/* Header */}
+                <section className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-lg ring-4 ring-purple-100">
+                        <Calendar className="w-7 h-7 text-white" />
+                    </div>
+                    <div>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                            {t("leaveRequest.adminTitle", "Leave Request Approval")}
+                        </h1>
+                        <p className="text-sm text-gray-600 font-medium mt-1">Review and process employee leave requests</p>
             </div>
-            <div className="bg-white rounded-lg shadow-md p-6">
-                <div className="flex flex-col md:flex-row gap-4 mb-4">
-                    <div className="flex-1 relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+                </section>
+
+                <section className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-6">
+                    <div className="flex flex-col md:flex-row gap-4 mb-6">
+                        <div className="flex-1 relative group">
+                            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-purple-500 transition-colors" />
                         <input
                             type="text"
-                            placeholder={t("leaveRequest.searchPlaceholder", "Tìm kiếm...")}
+                                placeholder={t("leaveRequest.searchPlaceholder", "Search by name, clinic, or reason...")}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                                className="w-full pl-12 pr-4 py-3.5 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all text-base bg-gradient-to-br from-white to-slate-50"
                         />
                     </div>
-                    <div className="flex gap-2">
+                    </div>
+
+                    <div className="flex flex-wrap gap-3">
                         {/* Tab lọc theo trạng thái đơn */}
                         <button
                             onClick={() => {
                                 setStatusFilter("");
                                 fetchLeaveRequests();
                             }}
-                            className={`px-4 py-2 rounded-lg transition ${statusFilter === ""
-                                ? "bg-blue-600 text-white"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 ${statusFilter === ""
+                                ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200/50"
+                                : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
                                 }`}
                         >
-                            {t("common.all", "Tất cả")}
+                            {t("common.all", "All")}
                         </button>
                         <button
                             onClick={() => {
                                 setStatusFilter("PENDING_ADMIN");
                             }}
-                            className={`px-4 py-2 rounded-lg transition ${statusFilter === "PENDING_ADMIN"
-                                ? "bg-purple-600 text-white"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center gap-2 ${statusFilter === "PENDING_ADMIN"
+                                ? "bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-200/50"
+                                : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
                                 }`}
                         >
-                            {t("leaveRequest.status.pendingAdmin", "Chờ Admin duyệt")}
+                            <Clock className="w-4 h-4" />
+                            {t("leaveRequest.status.pendingAdmin", "Pending Approval")}
                             {counts["PENDING_ADMIN"] > 0 && (
-                                <span className="ml-2 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
                                     {counts["PENDING_ADMIN"]}
                                 </span>
                             )}
@@ -271,256 +257,284 @@ export default function AdminLeaveApproval() {
                                 setStatusFilter("APPROVED");
                                 fetchLeaveRequests();
                             }}
-                            className={`px-4 py-2 rounded-lg transition ${statusFilter === "APPROVED"
-                                ? "bg-green-600 text-white"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center gap-2 ${statusFilter === "APPROVED"
+                                ? "bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg shadow-green-200/50"
+                                : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
                                 }`}
                         >
-                            {t("leaveRequest.status.approved", "Đã duyệt")}
+                            <CheckCircle className="w-4 h-4" />
+                            {t("leaveRequest.status.approved", "Approved")}
                         </button>
                         <button
                             onClick={() => {
                                 setStatusFilter("REJECTED");
                                 fetchLeaveRequests();
                             }}
-                            className={`px-4 py-2 rounded-lg transition ${statusFilter === "REJECTED"
-                                ? "bg-red-600 text-white"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                            className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 flex items-center gap-2 ${statusFilter === "REJECTED"
+                                ? "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg shadow-red-200/50"
+                                : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
                                 }`}
                         >
-                            {t("leaveRequest.status.rejected", "Đã từ chối")}
+                            <XCircle className="w-4 h-4" />
+                            {t("leaveRequest.status.rejected", "Rejected")}
                         </button>
                     </div>
-                </div>
+                </section>
                 {/* Tab phụ lọc loại đơn với tab đã duyệt */}
                 {statusFilter === "APPROVED" && (
-                    <div className="mt-4 flex gap-2">
+                    <section className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-4">
+                        <div className="flex gap-3">
                         <button
                             onClick={() => setTypeFilter("")}
-                            className={`px-4 py-2 rounded-lg transition text-sm ${typeFilter === ""
-                                ? "bg-blue-600 text-white"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                className={`px-5 py-2.5 rounded-xl font-semibold text-sm transition-all ${typeFilter === ""
+                                    ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-200/50"
+                                    : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
                                 }`}
                         >
-                            {t("leaveRequest.allApproved", "Tất cả đơn đã duyệt")}
+                                {t("leaveRequest.allApproved", "All Approved")}
                         </button>
                         <button
                             onClick={() => setTypeFilter("RESIGNATION")}
-                            className={`px-4 py-2 rounded-lg transition text-sm flex items-center gap-2 ${typeFilter === "RESIGNATION"
-                                ? "bg-red-600 text-white font-semibold"
-                                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                                className={`px-5 py-2.5 rounded-xl font-semibold text-sm flex items-center gap-2 transition-all ${typeFilter === "RESIGNATION"
+                                    ? "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-lg shadow-red-200/50"
+                                    : "bg-white text-slate-700 hover:bg-slate-50 border border-slate-200"
                                 }`}
                         >
                             <Trash2 className="w-4 h-4" />
-                            {t("leaveRequest.resignation.filter", "Đơn nghỉ việc (có thể xóa)")}
+                                {t("leaveRequest.resignation.filter", "Resignations")}
                             {leaveRequests.filter(r => r.type === "RESIGNATION" && r.status === "APPROVED").length > 0 && (
-                                <span className="ml-1 bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                                    <span className="bg-red-500 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow-md">
                                     {leaveRequests.filter(r => r.type === "RESIGNATION" && r.status === "APPROVED").length}
                                 </span>
                             )}
                         </button>
                     </div>
+                    </section>
                 )}
-            </div>
             {/* Nếu không có đơn nghỉ phép */}
             {filteredRequests.length === 0 ? (
-                <div className="bg-white rounded-lg shadow-md p-6">
-                    <div className="text-center py-12">
-                        <Clock className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                        <p className="text-gray-500 text-lg">
+                <section className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 p-12">
+                    <div className="text-center">
+                        <div className="inline-flex p-4 bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl mb-4">
+                            <Clock className="w-12 h-12 text-purple-600" />
+                        </div>
+                        <p className="text-slate-600 text-lg font-medium">
                             {typeFilter === "RESIGNATION"
-                                ? t("leaveRequest.resignation.noApproved", "Chưa có đơn nghỉ việc nào đã được duyệt")
-                                : t("leaveRequest.messages.noRequests", "Chưa có đơn xin nghỉ nào")
+                                ? t("leaveRequest.resignation.noApproved", "No approved resignations")
+                                : t("leaveRequest.messages.noRequests", "No leave requests found")
                             }
                         </p>
                         {statusFilter === "APPROVED" && typeFilter !== "RESIGNATION" && (
-                            <p className="text-sm text-gray-400 mt-2">
-                                {t("leaveRequest.resignation.tip", "Tip: Chọn tab 'Đơn nghỉ việc' để xem các đơn nghỉ việc đã được duyệt và có thể xóa vĩnh viễn")}
+                            <p className="text-sm text-slate-400 mt-2">
+                                {t("leaveRequest.resignation.tip", "Tip: Select 'Resignations' tab to view approved resignation requests")}
                             </p>
                         )}
                     </div>
-                </div>
+                </section>
             ) : (
-                <div className="space-y-4">
+                <div className="space-y-6">
                     {/* Danh sách đơn nghỉ phép */}
                     {filteredRequests.map((request) => (
                         <div
                             key={request.id}
-                            className={`rounded-lg border p-6 relative overflow-hidden transition-all duration-200 ${request.type === "RESIGNATION"
-                                ? "bg-white border-red-200 shadow-sm hover:shadow-md"
-                                : "bg-white border-gray-200 shadow-sm hover:shadow-md"
+                            className={`rounded-2xl border relative overflow-hidden transition-all duration-300 ${request.type === "RESIGNATION"
+                                ? "bg-white/90 backdrop-blur-sm border-red-300 shadow-xl hover:shadow-2xl hover:-translate-y-1"
+                                : "bg-white/90 backdrop-blur-sm border-slate-200/60 shadow-xl hover:shadow-2xl hover:-translate-y-1"
                                 }`}
                         >
                             {/* Banner đỏ nếu là đơn nghỉ việc */}
                             {request.type === "RESIGNATION" && (
-                                <div className="flex items-center gap-2 mb-4 text-red-600">
+                                <div className="absolute top-0 right-0 px-6 py-2 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-bl-2xl shadow-lg">
+                                    <div className="flex items-center gap-2">
                                     <Trash2 className="w-4 h-4" />
-                                    <span className="text-sm font-semibold uppercase tracking-wide">{t("leaveRequest.resignation.title", "Đơn nghỉ việc")}</span>
-                                    <span className="text-xs bg-red-50 text-red-600 px-2 py-0.5 rounded-full border border-red-100">
-                                        {t("leaveRequest.resignation.important", "Quan trọng")}
-                                    </span>
+                                        <span className="text-xs font-bold uppercase tracking-wider">{t("leaveRequest.resignation.title", "Resignation")}</span>
+                                    </div>
                                 </div>
                             )}
-                            <div>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                                    {/* Thông tin nhân viên + ca làm việc */}
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">{t("leaveRequest.employee", "Nhân viên")}</p>
-                                        <div className="flex items-start gap-3">
-                                            <div className="mt-0.5">{getStatusIcon(request.status)}</div>
-                                            <div>
-                                                <p className="text-base font-semibold text-gray-900 leading-tight">
+                            <div className="p-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                                    {/* Thông tin nhân viên */}
+                                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-xl border border-blue-100">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="p-1.5 bg-blue-100 rounded-lg">
+                                                <User className="w-3.5 h-3.5 text-blue-600" />
+                                            </div>
+                                            <p className="text-xs font-bold text-blue-700 uppercase tracking-wider">{t("leaveRequest.employee", "Employee")}</p>
+                                        </div>
+                                        <p className="text-base font-bold text-slate-900 mb-1">
                                                     {request.userFullName || request.userName}
                                                 </p>
                                                 {request.userRole && (
-                                                    <p className="text-xs text-gray-500 mt-0.5">
+                                            <p className="text-xs text-slate-600 font-medium">
                                                         {request.userRole}
                                                     </p>
                                                 )}
                                             </div>
+
+                                    {/* Cơ sở */}
+                                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-100">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="p-1.5 bg-purple-100 rounded-lg">
+                                                <MapPin className="w-3.5 h-3.5 text-purple-600" />
+                                            </div>
+                                            <p className="text-xs font-bold text-purple-700 uppercase tracking-wider">Clinic</p>
                                         </div>
-                                        <div className="mt-3 flex flex-wrap gap-2">
-                                            <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-50 text-gray-600 border border-gray-100">
+                                        <p className="text-base font-bold text-slate-900">
                                                 {request.clinicName}
-                                            </span>
+                                        </p>
                                             {request.shiftType && request.shiftType !== "FULL_DAY" && (
-                                                <span className="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-gray-50 text-gray-600 border border-gray-100">
-                                                    {getShiftTypeLabel(request.shiftType)}
+                                            <span className="inline-flex mt-2 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700">
+                                                    {getShiftTypeLabel(request.shiftType, t)}
                                                 </span>
                                             )}
                                         </div>
-                                    </div>
+
                                     {/* Thời gian nghỉ */}
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">{t("leaveRequest.time", "Thời gian")}</p>
-                                        <p className="text-base font-medium text-gray-900">
-                                            {formatDate(request.startDate)} - {formatDate(request.endDate)}
+                                    <div className="bg-gradient-to-br from-orange-50 to-amber-50 p-4 rounded-xl border border-orange-100">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="p-1.5 bg-orange-100 rounded-lg">
+                                                <Calendar className="w-3.5 h-3.5 text-orange-600" />
+                                            </div>
+                                            <p className="text-xs font-bold text-orange-700 uppercase tracking-wider">{t("leaveRequest.time", "Duration")}</p>
+                                    </div>
+                                        <p className="text-sm font-bold text-slate-900">
+                                            {formatDate(request.startDate)}
+                                        </p>
+                                        <p className="text-xs text-slate-600 mt-0.5">to</p>
+                                        <p className="text-sm font-bold text-slate-900">
+                                            {formatDate(request.endDate)}
                                         </p>
                                     </div>
+
                                     {/* Trạng thái đơn */}
-                                    <div>
-                                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">{t("leaveRequest.status.pending", "Trạng thái")}</p>
+                                    <div className="bg-gradient-to-br from-slate-50 to-gray-50 p-4 rounded-xl border border-slate-200">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <div className="p-1.5 bg-slate-100 rounded-lg">
+                                                {getStatusIcon(request.status)}
+                                            </div>
+                                            <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">Status</p>
+                                        </div>
                                         <span
-                                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${request.status === "APPROVED" ? "bg-green-50 text-green-700 border-green-100" :
-                                                request.status === "REJECTED" ? "bg-red-50 text-red-700 border-red-100" :
-                                                    request.status === "PENDING" ? "bg-yellow-50 text-yellow-700 border-yellow-100" :
-                                                        "bg-purple-50 text-purple-700 border-purple-100"
-                                                }`}
+                                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold shadow-md bg-gradient-to-r ${getStatusColor(request.status)} text-white`}
                                         >
-                                            {request.status === "PENDING" && t("leaveRequest.status.pending", "Chờ duyệt (HR)")}
-                                            {request.status === "PENDING_ADMIN" && t("leaveRequest.status.pendingAdmin", "Chờ duyệt (Admin)")}
-                                            {request.status === "APPROVED" && t("leaveRequest.status.approved", "Đã duyệt")}
-                                            {request.status === "REJECTED" && t("leaveRequest.status.rejected", "Đã từ chối")}
+                                            {getStatusIcon(request.status)}
+                                            {getStatusLabel(request.status, t)}
                                         </span>
                                     </div>
-                                    {/* Ngày phép còn lại (nếu có) */}
+                                </div>
+
+                                {/* Leave Balance & Replacement Info */}
+                                <div className="flex flex-wrap gap-4 mb-4">
                                     {request.leaveBalance !== undefined && (
-                                        <div>
-                                            <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">{t("leaveRequest.monthlyLeave", "Ngày nghỉ tháng này")}</p>
-                                            <span className={`font-medium text-sm ${(request.leaveBalance || 0) <= 0 ? "text-red-600" : "text-gray-900"}`}>
-                                                {request.leaveBalance ?? 0} ngày
+                                        <div className="flex items-center gap-2 px-4 py-3 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border-2 border-blue-200">
+                                            <Calendar className="w-4 h-4 text-blue-600" />
+                                            <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">{t("leaveRequest.monthlyLeave", "Days off this month")}:</span>
+                                            <span className="font-bold text-base text-blue-900">
+                                                {request.leaveBalance ?? 0} {t("leaveRequest.days", "days")}
                                             </span>
                                         </div>
                                     )}
-                                    {/* Người thay thế */}
-                                    <div className="col-span-1 md:col-span-2">
-                                        <p className="text-xs font-medium text-gray-400 uppercase tracking-wider mb-1">{t("leaveRequest.replacement", "Người thay thế")}</p>
-                                        {request.replacementAvailable ? (
-                                            <div className="flex flex-wrap gap-2">
-                                                {request.potentialReplacements?.map((name, idx) => (
-                                                    <span key={idx} className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                                                        {name}
+                                    {request.replacementAvailable && (
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-green-50 rounded-xl border border-green-200">
+                                            <CheckCircle className="w-4 h-4 text-green-600" />
+                                            <span className="text-xs font-bold text-green-700">
+                                                {request.potentialReplacements?.length || 0} replacements available
                                                     </span>
-                                                ))}
+                                        </div>
+                                    )}
+                                    {!request.replacementAvailable && (
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-red-50 rounded-xl border border-red-200">
+                                            <AlertCircle className="w-4 h-4 text-red-600" />
+                                            <span className="text-xs font-bold text-red-700">No replacement</span>
                                             </div>
-                                        ) : (
-                                            <span className="text-sm text-gray-400 italic">
-                                                {t("leaveRequest.none", "Không có")}
-                                            </span>
                                         )}
                                     </div>
-                                </div>
-                                <div className={`pt-4 ${request.type === "RESIGNATION" ? "border-t border-red-100" : "border-t border-gray-100"}`}>
+
+                                <div className={`pt-5 ${request.type === "RESIGNATION" ? "border-t-2 border-red-200" : "border-t border-slate-200"}`}>
                                     {/* Quy trình xóa vĩnh viễn cho đơn nghỉ việc */}
                                     {request.type === "RESIGNATION" && (
-                                        <div className="mb-4">
-                                            <div className="flex items-start gap-3 p-3 bg-red-50 rounded border border-red-100">
-                                                <div className="mt-0.5 text-red-500">
-                                                    <Trash2 className="w-4 h-4" />
+                                        <div className="mb-5">
+                                            <div className="flex items-start gap-3 p-4 bg-gradient-to-r from-red-50 to-rose-50 rounded-xl border-2 border-red-200">
+                                                <div className="p-2 bg-red-100 rounded-lg">
+                                                    <Trash2 className="w-4 h-4 text-red-600" />
                                                 </div>
                                                 <div className="flex-1">
-                                                    <p className="text-sm font-medium text-red-800 mb-1">{t("leaveRequest.resignation.processTitle", "Quy trình xóa vĩnh viễn")}</p>
-                                                    <div className="flex items-center gap-4 text-xs text-gray-600">
+                                                    <p className="text-sm font-bold text-red-800 mb-2">{t("leaveRequest.resignation.processTitle", "Deletion Process")}</p>
+                                                    <div className="flex items-center gap-3 text-xs">
                                                         <span className="flex items-center gap-1.5">
-                                                            <span className="w-4 h-4 flex items-center justify-center rounded-full bg-red-100 text-red-700 font-bold text-[10px]">1</span>
-                                                            {t("leaveRequest.resignation.step1", "HR duyệt")}
+                                                            <span className="w-5 h-5 flex items-center justify-center rounded-full bg-green-500 text-white font-bold text-[10px] shadow-md">✓</span>
+                                                            <span className="font-semibold text-green-700">{t("leaveRequest.resignation.step1", "HR")}</span>
                                                         </span>
-                                                        <span className="text-gray-300">→</span>
+                                                        <span className="text-slate-400 font-bold">→</span>
                                                         <span className="flex items-center gap-1.5">
-                                                            <span className="w-4 h-4 flex items-center justify-center rounded-full bg-white border border-gray-200 text-gray-500 font-bold text-[10px]">2</span>
-                                                            {t("leaveRequest.resignation.step2", "Admin xác nhận")}
+                                                            <span className="w-5 h-5 flex items-center justify-center rounded-full bg-purple-500 text-white font-bold text-[10px] shadow-md">2</span>
+                                                            <span className="font-semibold text-purple-700">{t("leaveRequest.resignation.step2", "Admin")}</span>
                                                         </span>
-                                                        <span className="text-gray-300">→</span>
+                                                        <span className="text-slate-400 font-bold">→</span>
                                                         <span className="flex items-center gap-1.5">
-                                                            <span className="w-4 h-4 flex items-center justify-center rounded-full bg-white border border-gray-200 text-gray-500 font-bold text-[10px]">3</span>
-                                                            {t("leaveRequest.resignation.step3", "Xóa dữ liệu")}
+                                                            <span className="w-5 h-5 flex items-center justify-center rounded-full bg-red-500 text-white font-bold text-[10px] shadow-md">3</span>
+                                                            <span className="font-semibold text-red-700">{t("leaveRequest.resignation.step3", "Delete")}</span>
                                                         </span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     )}
+
                                     {/* Lý do nghỉ phép */}
-                                    <p className="text-sm">
-                                        <span className="font-medium text-gray-700">
-                                            {t("leaveRequest.reason", "Lý do")}:
-                                        </span>{" "}
-                                        <span className="text-gray-600">{request.reason}</span>
-                                    </p>
+                                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                        <p className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">
+                                            {t("leaveRequest.reason", "Reason")}
+                                        </p>
+                                        <p className="text-sm text-slate-900 leading-relaxed">{request.reason}</p>
+                                    </div>
                                     {/* Tên người duyệt nếu có */}
                                     {request.approvedByName && (
-                                        <p className="text-sm">
-                                            <span className="font-medium text-gray-700">
-                                                {t("leaveRequest.approvedBy", "Duyệt bởi")}:
-                                            </span>{" "}
-                                            <span className="text-gray-600">{request.approvedByName}</span>
-                                        </p>
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-xl border border-blue-200">
+                                            <CheckCircle className="w-4 h-4 text-blue-600" />
+                                            <span className="text-xs font-bold text-blue-700">
+                                                {t("leaveRequest.approvedBy", "Approved by")}: {request.approvedByName}
+                                            </span>
+                                        </div>
                                     )}
-                                    <div className="flex justify-between items-center mt-4 pt-2 border-t">
-                                        <p className="text-xs text-gray-500">
-                                            {t("leaveRequest.createdAt", "Tạo lúc")}:{" "}
-                                            {new Date(request.createdAt).toLocaleString("vi-VN")}
+
+                                    <div className="flex justify-between items-center mt-5 pt-5 border-t border-slate-200">
+                                        <p className="text-xs text-slate-500 font-medium">
+                                            {t("leaveRequest.createdAt", "Created")}:{" "}
+                                            <span className="font-semibold">{new Date(request.createdAt).toLocaleString("vi-VN")}</span>
                                         </p>
-                                        <div className="flex gap-2">
-                                            {/* Nút duyệt/từ chối chỉ hiển thị khi trạng thái cần duyệt */}
-                                            {(request.status === "PENDING" || request.status === "PENDING_ADMIN") && (
+                                        <div className="flex gap-3">
+                                            {/* Nút duyệt/từ chối CHỈ cho PENDING_ADMIN (Admin xử lý) */}
+                                            {request.status === "PENDING_ADMIN" && (
                                                 <>
                                                     <button
                                                         onClick={() => {
                                                             setSelectedRequest(request);
                                                             setComment("");
                                                         }}
-                                                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition text-sm"
+                                                        className="px-5 py-2.5 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all text-sm font-bold shadow-md flex items-center gap-2"
                                                     >
-                                                        {t("leaveRequest.approve", "Duyệt")}
+                                                        <CheckCircle className="w-4 h-4" />
+                                                        {t("leaveRequest.approve", "Approve")}
                                                     </button>
                                                     <button
                                                         onClick={() => {
                                                             setSelectedRequest(request);
                                                             setComment("");
                                                         }}
-                                                        className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+                                                        className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:shadow-lg transition-all text-sm font-bold shadow-md flex items-center gap-2"
                                                     >
-                                                        {t("leaveRequest.reject", "Từ chối")}
+                                                        <XCircle className="w-4 h-4" />
+                                                        {t("leaveRequest.reject", "Reject")}
                                                     </button>
                                                 </>
                                             )}
                                             {/* Nếu đã duyệt đơn nghỉ việc thì hiển thị cảnh báo cho HR */}
                                             {request.status === "APPROVED" && request.type === "RESIGNATION" && (
-                                                <div className="px-4 py-2 bg-blue-100 border-2 border-blue-400 rounded-lg text-sm">
-                                                    <p className="text-blue-800 font-semibold flex items-center gap-2">
-                                                        <span>ℹ️</span>
-                                                        <span>{t("leaveRequest.resignation.adminConfirmed", "Đã xác nhận. HR sẽ thực hiện xóa vĩnh viễn trong trang Quản lý nhân viên.")}</span>
+                                                <div className="px-4 py-2.5 bg-gradient-to-r from-blue-100 to-indigo-100 border-2 border-blue-300 rounded-xl text-sm">
+                                                    <p className="text-blue-800 font-bold flex items-center gap-2">
+                                                        <AlertCircle className="w-4 h-4" />
+                                                        <span>{t("leaveRequest.resignation.adminConfirmed", "Confirmed. HR will process deletion.")}</span>
                                                     </p>
                                                 </div>
                                             )}
@@ -534,101 +548,109 @@ export default function AdminLeaveApproval() {
             )}
             {/* Phân trang nếu có nhiều trang */}
             {totalPages > 1 && (
-                <div className="flex justify-center gap-2 mt-6">
+                <section className="flex items-center justify-center gap-3 bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 px-6 py-4">
                     <button
                         onClick={() => setPage((p) => Math.max(0, p - 1))}
                         disabled={page === 0}
-                        className="px-4 py-2 border rounded-lg disabled:opacity-50"
+                        className="px-5 py-2.5 text-sm font-medium border border-slate-300 rounded-xl disabled:opacity-50 hover:bg-slate-50 transition-all"
                     >
-                        {t("common.previous", "Trước")}
+                        {t("common.previous", "Previous")}
                     </button>
-                    <span className="px-4 py-2">
-                        {t("common.page", "Trang")} {page + 1} / {totalPages}
+                    <span className="px-6 py-2.5 font-bold text-slate-700">
+                        {t("common.page", "Page")} <span className="text-purple-600">{page + 1}</span> / {totalPages}
                     </span>
                     <button
                         onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                         disabled={page >= totalPages - 1}
-                        className="px-4 py-2 border rounded-lg disabled:opacity-50"
+                        className="px-5 py-2.5 text-sm font-medium border border-slate-300 rounded-xl disabled:opacity-50 hover:bg-slate-50 transition-all"
                     >
-                        {t("common.next", "Sau")}
+                        {t("common.next", "Next")}
                     </button>
-                </div>
+                </section>
             )}
+
             {/* Dialog xác nhận duyệt/từ chối đơn nghỉ */}
             {selectedRequest && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6">
-                        <h3 className="text-xl font-bold mb-4">
-                            {t("leaveRequest.processTitle", "Xử lý đơn xin nghỉ")}
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 border border-slate-200">
+                        <div className="flex items-center gap-3 mb-6">
+                            <div className="p-3 bg-gradient-to-br from-purple-500 to-pink-600 rounded-2xl shadow-lg">
+                                <Calendar className="w-6 h-6 text-white" />
+                            </div>
+                            <h3 className="text-2xl font-bold text-slate-900">
+                                {t("leaveRequest.processTitle", "Process Leave Request")}
                         </h3>
-                        <p className="mb-4">
-                            {t("leaveRequest.processMessage", "Bạn có muốn")}{" "}
-                            {selectedRequest.status === "PENDING" ? (
-                                <>
-                                    {t("leaveRequest.approve", "duyệt")} hoặc{" "}
-                                    {t("leaveRequest.reject", "từ chối")} đơn này?
-                                </>
-                            ) : selectedRequest.status === "PENDING_ADMIN" ? (
-                                <>
-                                    {t("leaveRequest.approve", "duyệt")} hoặc{" "}
-                                    {t("leaveRequest.reject", "từ chối")} đơn này (Admin)?
-                                </>
-                            ) : (
-                                t("leaveRequest.process", "xử lý đơn này")
-                            )}
-                        </p>
+                        </div>
+
+                        <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border border-purple-200 mb-6">
+                            <p className="text-base text-slate-700 font-medium">
+                                Would you like to <span className="font-bold text-green-600">approve</span> or{" "}
+                                <span className="font-bold text-red-600">reject</span> this request?
+                            </p>
+                        </div>
+
                         {/* Thông tin phép còn lại và người thay thế */}
                         {(selectedRequest.status === "PENDING" || selectedRequest.status === "PENDING_ADMIN") && (
-                            <div className="mb-4 text-sm bg-gray-50 p-3 rounded">
-                                <p className="flex justify-between">
-                                    <span>{t("leaveRequest.remainingLeave", "Phép còn lại")}:</span>
-                                    <span className={(selectedRequest.leaveBalance || 0) <= 0 ? "text-red-600 font-bold" : "font-bold"}>
-                                        {selectedRequest.leaveBalance} ngày
+                            <div className="mb-6 space-y-3">
+                                <div className="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                                    <span className="text-sm font-bold text-blue-700">Leave Balance:</span>
+                                    <span className={`font-bold text-lg ${(selectedRequest.leaveBalance || 0) <= 0 ? "text-red-600" : "text-green-600"}`}>
+                                        {selectedRequest.leaveBalance} days
                                     </span>
-                                </p>
-                                <p className="mt-1">
-                                    <span>{t("leaveRequest.replacement", "Người thay thế")}: </span>
+                                </div>
+                                <div className={`flex items-center justify-between p-4 rounded-xl border ${selectedRequest.replacementAvailable ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-200" : "bg-gradient-to-r from-red-50 to-rose-50 border-red-200"}`}>
+                                    <span className={`text-sm font-bold ${selectedRequest.replacementAvailable ? "text-green-700" : "text-red-700"}`}>Replacement:</span>
                                     {selectedRequest.replacementAvailable ? (
-                                        <span className="text-green-600 font-medium">{t("leaveRequest.available", "Có")} ({selectedRequest.potentialReplacements?.length})</span>
+                                        <span className="font-bold text-lg text-green-600">{selectedRequest.potentialReplacements?.length || 0} available</span>
                                     ) : (
-                                        <span className="text-red-600 font-bold">{t("leaveRequest.none", "Không có")}</span>
+                                        <span className="font-bold text-lg text-red-600">None</span>
                                     )}
-                                </p>
+                                </div>
                             </div>
                         )}
+
+                        <div className="mb-6">
+                            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                                Comment (Optional)
+                            </label>
                         <textarea
                             value={comment}
                             onChange={(e) => setComment(e.target.value)}
-                            placeholder={t("leaveRequest.commentPlaceholder", "Nhập ghi chú (tùy chọn)...")}
-                            rows={3}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4"
+                                placeholder={t("leaveRequest.commentPlaceholder", "Add your comment here...")}
+                                rows={4}
+                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl focus:outline-none focus:ring-4 focus:ring-purple-100 focus:border-purple-500 transition-all text-base"
                         />
-                        <div className="flex gap-2">
+                        </div>
+
+                        <div className="flex gap-3">
                             <button
                                 onClick={() => {
                                     setSelectedRequest(null);
                                     setComment("");
                                 }}
-                                className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+                                className="flex-1 px-6 py-3 border-2 border-slate-300 rounded-xl hover:bg-slate-50 transition-all font-medium text-base"
                             >
-                                {t("common.cancel", "Hủy")}
+                                {t("common.cancel", "Cancel")}
                             </button>
                             <button
                                 onClick={() => handleProcess("APPROVE")}
-                                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                                className="flex-1 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-lg transition-all font-bold text-base shadow-md flex items-center justify-center gap-2"
                             >
-                                {t("leaveRequest.approve", "Duyệt")}
+                                <CheckCircle className="w-5 h-5" />
+                                {t("leaveRequest.approve", "Approve")}
                             </button>
                             <button
                                 onClick={() => handleProcess("REJECT")}
-                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                                className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:shadow-lg transition-all font-bold text-base shadow-md flex items-center justify-center gap-2"
                             >
-                                {t("leaveRequest.reject", "Từ chối")}
+                                <XCircle className="w-5 h-5" />
+                                {t("leaveRequest.reject", "Reject")}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
+        </div>
         </div>
     );
 }

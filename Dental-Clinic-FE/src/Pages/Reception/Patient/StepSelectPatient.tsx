@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next"; 
 import {
   FaSearch,
   FaUserPlus,
@@ -12,7 +13,6 @@ import {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-// --- TYPES ---
 export interface PatientDTO {
   id: number;
   fullName: string;
@@ -33,20 +33,21 @@ interface SuccessModalProps {
   open: boolean;
   patientCode: string;
   onConfirm: () => void;
+  t: any; // Truyen t() vao modal
 }
 
 // --- MINI SUCCESS MODAL ---
-function SuccessModal({ open, patientCode, onConfirm }: SuccessModalProps) {
+function SuccessModal({ open, patientCode, onConfirm, t }: SuccessModalProps) {
   if (!open) return null;
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm">
         <h2 className="text-xl font-bold text-gray-800 text-center">
-           Tạo hồ sơ thành công!
+           {t("stepSelectPatient.successModal.title")}
         </h2>
 
-        <p className="text-center text-gray-600 mt-3">Mã bệnh nhân:</p>
+        <p className="text-center text-gray-600 mt-3">{t("stepSelectPatient.successModal.codeLabel")}</p>
 
         <p className="text-center font-mono text-blue-600 text-2xl font-bold mt-1">
           {patientCode}
@@ -56,7 +57,7 @@ function SuccessModal({ open, patientCode, onConfirm }: SuccessModalProps) {
           onClick={onConfirm}
           className="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition"
         >
-          Tiếp tục
+          {t("stepSelectPatient.successModal.continue")}
         </button>
       </div>
     </div>
@@ -65,6 +66,7 @@ function SuccessModal({ open, patientCode, onConfirm }: SuccessModalProps) {
 
 // --- MAIN COMPONENT ---
 export default function StepSelectPatient({ updateData, onNext }: StepProps) {
+  const { t } = useTranslation("reception"); // Hook
   const [keyword, setKeyword] = useState("");
   const [patients, setPatients] = useState<PatientDTO[]>([]);
   const [loading, setLoading] = useState(false);
@@ -79,7 +81,6 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
     address: "",
   });
 
-  // State cho modal thành công
   const [successModalOpen, setSuccessModalOpen] = useState(false);
   const [createdPatient, setCreatedPatient] = useState<PatientDTO | null>(null);
 
@@ -93,7 +94,6 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
       }
     }, 500);
     return () => clearTimeout(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [keyword]);
 
   const handleSearch = async () => {
@@ -107,7 +107,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
       setPatients((response.data as any).content || []);
     } catch (err) {
       console.error(err);
-      toast.error("Không tìm được danh sách khách hàng.");
+      toast.error(t("stepSelectPatient.messages.searchError"));
     } finally {
       setLoading(false);
     }
@@ -126,14 +126,13 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
   // --- 2. TẠO MỚI ---
   const handleCreate = async () => {
     if (!newPatient.fullName || !newPatient.phone) {
-      return toast.warn("Vui lòng nhập Họ tên và SĐT!");
+      return toast.warn(t("stepSelectPatient.messages.validation"));
     }
 
     setLoading(true);
     try {
       const token = localStorage.getItem("accessToken");
 
-      // Chuẩn hóa payload một chút cho sạch
       const payload = {
         fullName: newPatient.fullName.trim(),
         phone: newPatient.phone.trim(),
@@ -152,27 +151,21 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
       );
 
       const created = response.data;
-
-      // Lưu lại để hiển thị modal + dùng cho step 2
       setCreatedPatient(created);
       setSuccessModalOpen(true);
     } catch (error: any) {
-      const msg = error?.response?.data?.message || "Lỗi tạo hồ sơ.";
+      const msg = error?.response?.data?.message || t("stepSelectPatient.messages.createError");
       toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
 
-  // Khi bấm "Tiếp tục" trên modal
   const handleSuccessConfirm = () => {
     if (createdPatient) {
-      handleSelect(createdPatient); // sang step 2
+      handleSelect(createdPatient); 
     }
     setSuccessModalOpen(false);
-    // có thể reset form nếu muốn
-    // setNewPatient({ fullName: "", phone: "", gender: "Nam", email: "", dateOfBirth: "", address: "" });
-    // setShowCreateForm(false); // nếu muốn quay về màn search sau khi chọn xong
   };
 
   return (
@@ -181,15 +174,15 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
         <>
           {/* SEARCH MODE */}
           <div className="text-center">
-            <h3 className="text-2xl font-bold text-gray-800">Xác định Khách hàng</h3>
-            <p className="text-gray-500">Tìm theo Tên, Số điện thoại hoặc Mã hồ sơ</p>
+            <h3 className="text-2xl font-bold text-gray-800">{t("stepSelectPatient.search.title")}</h3>
+            <p className="text-gray-500">{t("stepSelectPatient.search.subtitle")}</p>
           </div>
 
           <div className="relative max-w-lg mx-auto">
             <input
               type="text"
               className="w-full p-4 pl-12 border-2 border-gray-200 rounded-xl focus:border-blue-500 outline-none text-lg"
-              placeholder="Nhập từ khóa tìm kiếm..."
+              placeholder={t("stepSelectPatient.search.placeholder")}
               value={keyword}
               onChange={(e) => setKeyword(e.target.value)}
               autoFocus
@@ -224,12 +217,12 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
 
             {patients.length === 0 && keyword.length > 1 && !loading && (
               <div className="text-center p-4 bg-gray-50 rounded-lg border border-dashed border-gray-300">
-                <p className="text-gray-500 mb-3">Không tìm thấy khách hàng này.</p>
+                <p className="text-gray-500 mb-3">{t("stepSelectPatient.search.notFound")}</p>
                 <button
                   onClick={() => setShowCreateForm(true)}
                   className="text-white bg-[#3366FF] px-4 py-2 rounded-lg font-bold hover:bg-blue-700 transition flex items-center justify-center gap-2 mx-auto shadow-md"
                 >
-                  <FaUserPlus /> Tạo hồ sơ mới
+                  <FaUserPlus /> {t("stepSelectPatient.search.createNew")}
                 </button>
               </div>
             )}
@@ -240,7 +233,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
           {/* CREATE MODE (FORM ĐẦY ĐỦ) */}
           <div className="max-w-2xl mx-auto bg-white p-8 rounded-2xl border shadow-lg">
             <h3 className="text-xl font-bold text-gray-800 mb-6 text-center">
-              Tạo Hồ Sơ Mới
+              {t("stepSelectPatient.create.title")}
             </h3>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -248,7 +241,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Họ và Tên <span className="text-red-500">*</span>
+                    {t("patientDetail.labels.fullName")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -262,7 +255,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Số điện thoại <span className="text-red-500">*</span>
+                    {t("patientDetail.labels.phone")} <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="tel"
@@ -276,7 +269,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Giới tính
+                    {t("patientDetail.labels.gender")}
                   </label>
                   <select
                     className="w-full border p-3 rounded-lg outline-none focus:ring-2 focus:ring-blue-500 bg-white"
@@ -285,9 +278,9 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
                       setNewPatient({ ...newPatient, gender: e.target.value })
                     }
                   >
-                    <option value="Nam">Nam</option>
-                    <option value="Nữ">Nữ</option>
-                    <option value="Khác">Khác</option>
+                    <option value="Nam">{t("patientDetail.gender.male")}</option>
+                    <option value="Nữ">{t("patientDetail.gender.female")}</option>
+                    <option value="Khác">{t("patientDetail.gender.other")}</option>
                   </select>
                 </div>
               </div>
@@ -296,7 +289,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Ngày sinh
+                    {t("patientDetail.labels.dob")}
                   </label>
                   <div className="relative">
                     <input
@@ -315,7 +308,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Email (Tùy chọn)
+                    {t("patientDetail.labels.email")}
                   </label>
                   <div className="relative">
                     <input
@@ -332,7 +325,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
                 </div>
                 <div>
                   <label className="block text-sm font-bold text-gray-700 mb-1">
-                    Địa chỉ
+                    {t("patientDetail.labels.address")}
                   </label>
                   <div className="relative">
                     <input
@@ -359,7 +352,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
                 className="flex-1 py-3 bg-gray-100 rounded-xl text-gray-600 font-bold hover:bg-gray-200 transition"
                 disabled={loading}
               >
-                Hủy
+                {t("stepSelectPatient.create.cancel")}
               </button>
               <button
                 onClick={handleCreate}
@@ -369,7 +362,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
                 {loading && (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 )}
-                Tạo &amp; Chọn
+                {t("stepSelectPatient.create.submit")}
               </button>
             </div>
           </div>
@@ -381,6 +374,7 @@ export default function StepSelectPatient({ updateData, onNext }: StepProps) {
         open={successModalOpen}
         patientCode={createdPatient?.patientCode ?? ""}
         onConfirm={handleSuccessConfirm}
+        t={t}
       />
     </div>
   );

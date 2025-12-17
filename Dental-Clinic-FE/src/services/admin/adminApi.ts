@@ -1,5 +1,16 @@
 import axiosClient from "../../huybro_api/axiosClient"
 
+// Type cho response phân trang từ Spring Boot
+export interface PageResponse<T> {
+  content: T[]
+  totalPages: number
+  totalElements: number
+  size: number
+  number: number
+  first: boolean
+  last: boolean
+}
+
 // Các interface định nghĩa kiểu dữ liệu cho admin
 export interface AdminStaff {
   id: number
@@ -42,8 +53,6 @@ export interface AdminClinic {
   email?: string
   openingHours?: string
   active: boolean
-  activeDoctorsCount?: number
-  activeEmployeesCount?: number
   createdAt?: string
   updatedAt?: string
 }
@@ -84,7 +93,7 @@ export const adminApi = {
   // Nhân sự (Staff)
   staff: {
     getAll: async (params?: { search?: string; page?: number; size?: number }) => {
-      const response = await axiosClient.get<AdminStaff[] | { content: AdminStaff[]; totalPages: number; totalElements: number }>("/api/admin/staff", {
+      const response = await axiosClient.get<PageResponse<AdminStaff>>("/api/admin/staff", {
         params,
       })
       return { data: response.data }
@@ -93,7 +102,7 @@ export const adminApi = {
   // Khách hàng (Customer)
   customers: {
     getAll: async (params?: { search?: string; page?: number; size?: number }) => {
-      const response = await axiosClient.get<AdminCustomer[] | { content: AdminCustomer[]; totalPages: number; totalElements: number }>("/api/admin/customers", {
+      const response = await axiosClient.get<PageResponse<AdminCustomer>>("/api/admin/customers", {
         params,
       })
       return { data: response.data }
@@ -111,13 +120,6 @@ export const adminApi = {
   clinics: {
     getAll: async () => {
       const response = await axiosClient.get<AdminClinic[]>("/api/admin/clinics")
-      return { data: response.data }
-    },
-    // Lấy danh sách nhân sự trong phòng khám
-    getStaffDetails: async (clinicId: number, date?: string) => {
-      const response = await axiosClient.get<any[]>(`/api/admin/clinics/${clinicId}/staff`, {
-        params: date ? { date } : undefined,
-      })
       return { data: response.data }
     },
     // Bật/tắt trạng thái phòng khám
@@ -147,15 +149,6 @@ export const adminApi = {
     }) => {
       const response = await axiosClient.get<AttendanceResponse[]>("/api/admin/attendance", {
         params,
-      })
-      return { data: response.data }
-    }
-  },
-  // Lịch hẹn
-  appointments: {
-    getAll: async (date: string, clinicId?: number) => {
-      const response = await axiosClient.get<AppointmentResponse[]>("/api/admin/appointments", {
-        params: { date, clinicId },
       })
       return { data: response.data }
     }

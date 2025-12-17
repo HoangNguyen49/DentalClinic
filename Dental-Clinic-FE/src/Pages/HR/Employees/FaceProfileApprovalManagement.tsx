@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import { useTranslation } from "react-i18next";
-import { CheckCircle, XCircle, Clock, Search, User, Calendar, Eye } from "lucide-react";
+import { Search, User, Calendar, Eye, CheckCircle, XCircle, Clock } from "lucide-react";
 import "react-toastify/dist/ReactToastify.css";
+import { getStatusIcon, getStatusBgColor } from "../../../utils/statusUtils";
+import { formatDateTime } from "../../../utils/dateUtils";
 
 const apiBase = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
@@ -142,46 +144,7 @@ export default function FaceProfileApprovalManagement() {
     }
   };
 
-  // Trả về màu sắc badge trạng thái
-  const getStatusColor = (status: string) => {
-    switch (status.toUpperCase()) {
-      case "APPROVED":
-        return "bg-green-100 text-green-800";
-      case "REJECTED":
-        return "bg-red-100 text-red-800";
-      case "PENDING":
-        return "bg-yellow-100 text-yellow-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  // Icon trạng thái
-  const getStatusIcon = (status: string) => {
-    switch (status.toUpperCase()) {
-      case "APPROVED":
-        return <CheckCircle className="w-5 h-5 text-green-600" />;
-      case "REJECTED":
-        return <XCircle className="w-5 h-5 text-red-600" />;
-      case "PENDING":
-        return <Clock className="w-5 h-5 text-yellow-600" />;
-      default:
-        return null;
-    }
-  };
-
-  // Định dạng ngày
-  const formatDate = (dateString: string) => {
-    if (!dateString) return t("common.na");
-    const date = new Date(dateString);
-    return date.toLocaleString("vi-VN", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  // Helper functions moved to shared utils!
 
   // Lọc list request theo ô tìm kiếm
   const filteredRequests = Array.isArray(requests) ? requests.filter((req) => {
@@ -303,12 +266,12 @@ export default function FaceProfileApprovalManagement() {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center text-sm text-gray-500">
                             <Calendar className="w-4 h-4 mr-2" />
-                            {formatDate(request.requestedAt)}
+                            {formatDateTime(request.requestedAt) || t("common.na")}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                            className={`inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBgColor(
                               request.status
                             )}`}
                           >

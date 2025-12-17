@@ -47,9 +47,13 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
         return tableSchedules[doctorId]?.[dayKey] || {};
     };
 
-    // Get available clinics for a specific date (filter out clinics on holiday)
+    // Get available clinics for a specific date (filter out clinics on holiday and inactive clinics)
     const getAvailableClinics = (date: string) => {
-        return clinics.filter(clinic => !isClinicHoliday(clinic.id, date, holidays));
+        // First, filter out any clinics that don't have isActive === true
+        const activeClinics = clinics.filter(clinic => clinic.isActive === true);
+        
+        // Then filter out clinics on holiday
+        return activeClinics.filter(clinic => !isClinicHoliday(clinic.id, date, holidays));
     };
 
     return (

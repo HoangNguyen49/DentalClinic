@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import { FaTooth, FaShieldAlt, FaMagic, FaBaby, FaSyringe, FaScrewdriver } from 'react-icons/fa';
 import { GiBracers } from 'react-icons/gi';
+import { useTranslation } from 'react-i18next'; // 1. Import i18n
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
@@ -51,6 +52,7 @@ const formatCurrency = (amount: number) => {
 };
 
 export default function StepServiceClinic({ data, updateData, onNext, onPrev }: StepProps) {
+  const { t } = useTranslation("booking"); // 2. Khởi tạo hook
   
   const [clinics, setClinics] = useState<any[]>([]);
   const [services, setServices] = useState<Service[]>([]);
@@ -178,7 +180,7 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
     });
   };
 
-  if (loading) return <div className="p-10 text-center text-gray-500">Đang tải dữ liệu...</div>;
+  if (loading) return <div className="p-10 text-center text-gray-500">{t("common.loading")}</div>;
 
   return (
     <div className="space-y-10 animate-fadeIn">
@@ -187,7 +189,7 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
       <div>
         <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3">1</span>
-          Chọn Cơ Sở
+          {t("stepService.clinicLabel")}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 ml-0 md:ml-11">
           {clinics.map((clinic) => (
@@ -217,7 +219,7 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
       <div>
         <h3 className="text-xl font-bold text-gray-800 mb-6 flex items-center">
           <span className="bg-blue-100 text-blue-600 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold mr-3">2</span>
-          Chọn Dịch Vụ
+          {t("stepService.serviceLabel")}
         </h3>
 
         <div className="grid grid-cols-1 gap-4 ml-0 md:ml-11">
@@ -302,7 +304,7 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
                                 </div>
                             ) : (
                                 <div className="text-center py-4 text-gray-400 italic text-sm">
-                                    Đang cập nhật gói dịch vụ...
+                                    {t("stepService.updating")}
                                 </div>
                             )}
                         </div>
@@ -319,7 +321,7 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
           onClick={onPrev}
           className="px-8 py-3.5 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition-all duration-300"
         >
-          Quay Lại
+          {t("common.back")}
         </button>
 
         <button
@@ -327,7 +329,7 @@ export default function StepServiceClinic({ data, updateData, onNext, onPrev }: 
           disabled={!data.clinicId || (data.selectedServices || []).length === 0}
           className="px-10 py-3.5 rounded-full bg-gradient-to-r from-[#6699FF] to-[#3366FF] text-white font-bold shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all duration-300 flex items-center gap-2"
         >
-          Tiếp Theo
+          {t("common.next")}
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
           </svg>

@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import useGetProductById from "./useGetProductById.ts";
 import { getProductImageSrc } from "../../../../huybro_api/productApi.ts";
-import { addProductToCart } from "../../../../utils/cartSession";
+import { addProductToCart } from "../../../../utils/cartSession.ts";
 import { formatMoney } from "../../../../utils/format.ts";
 import { ArrowRight } from "lucide-react";
 

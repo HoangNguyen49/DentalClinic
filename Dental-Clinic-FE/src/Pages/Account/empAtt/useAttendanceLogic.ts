@@ -136,19 +136,19 @@ export const useEmployeeAttendance = (userId: number | undefined, isDoctor: bool
                 if (workDate === today && exp.explanationType === "MISSING_CHECK_OUT") {
                     // Nếu đang trong giờ làm việc (8:00 - 18:00) thì filter out
                     if (currentHour >= 8 && currentHour < 18) {
-                        console.log('[DEBUG] ❌ Filtered out MISSING_CHECK_OUT for today (still working hours: 8:00-18:00)');
+                        console.log('[DEBUG]  Filtered out MISSING_CHECK_OUT for today (still working hours: 8:00-18:00)');
                         return false;
                     } else {
-                        console.log('[DEBUG] ✅ Keeping MISSING_CHECK_OUT for today (outside working hours)');
+                        console.log('[DEBUG]  Keeping MISSING_CHECK_OUT for today (outside working hours)');
                     }
                 }
                 
                 if (exp.userId !== userId) {
-                    console.log('[DEBUG] ❌ Wrong userId');
+                    console.log('[DEBUG]  Wrong userId');
                     return false;
                 }
                 
-                console.log('[DEBUG] ✅ Passed filter');
+                console.log('[DEBUG]  Passed filter');
                 return true;
             });
             console.log('[DEBUG] Filtered explanations count:', filtered.length);
@@ -189,6 +189,7 @@ export const useEmployeeAttendance = (userId: number | undefined, isDoctor: bool
                         size: 100,
                     },
                     headers: { Authorization: `Bearer ${accessToken}` },
+                    timeout: 30000, // 30 seconds timeout
                 }
             );
 
@@ -197,7 +198,13 @@ export const useEmployeeAttendance = (userId: number | undefined, isDoctor: bool
             setMonthlyAttendances(filtered);
         } catch (error: any) {
             console.error("Failed to fetch monthly attendances:", error);
-            if (error.response?.status === 403) {
+            if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+                toast.error(t("attendance.loadFailed.timeout", "Request timeout. Please try again."));
+            } else if (error.response?.status === 403) {
+                toast.error(t("attendance.monthlyHistory.loadFailed", "Unable to load attendance history. Please contact HR."));
+            } else if (error.response?.status === 500) {
+                toast.error(t("attendance.loadFailed.server", "Server error. Please try again later."));
+            } else {
                 toast.error(t("attendance.monthlyHistory.loadFailed", "Unable to load attendance history. Please contact HR."));
             }
             setMonthlyAttendances([]);

@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Trash2, Plus, Loader2, Calendar as CalendarIcon } from "lucide-react";
+import { Trash2, Plus, Calendar as CalendarIcon } from "lucide-react";
 import { type Holiday, systemService } from "../../../../services/admin/systemService";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
+import { useTranslation } from "react-i18next";
 
 export default function HolidaysTab() {
+    const { t } = useTranslation("admin");
     const [holidays, setHolidays] = useState<Holiday[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -28,7 +30,7 @@ export default function HolidaysTab() {
             const data = await systemService.getAllHolidays();
             setHolidays(data);
         } catch (error) {
-            toast.error("Không thể tải danh sách ngày lễ");
+            toast.error(t("system.holidays.messages.loadFailed"));
         } finally {
             setLoading(false);
         }
@@ -40,7 +42,7 @@ export default function HolidaysTab() {
             const data = await systemService.getAllClinics();
             setClinics(data);
         } catch (error) {
-            console.error("Không thể tải danh sách cơ sở", error);
+            toast.error(t("system.holidays.messages.loadFailed"));
         }
     };
 
@@ -57,12 +59,12 @@ export default function HolidaysTab() {
 
         // Kiểm tra ngày bắt đầu không được là quá khứ hoặc hiện tại
         if (start <= today) {
-            toast.error("Ngày bắt đầu phải là ngày tương lai (sau ngày hôm nay)");
+            toast.error(t("system.holidays.messages.startDateFuture"));
             return;
         }
 
         if (end < start) {
-            toast.error("Ngày kết thúc phải sau hoặc bằng ngày bắt đầu");
+            toast.error(t("system.holidays.messages.endDateAfterStart"));
             return;
         }
 
@@ -82,13 +84,13 @@ export default function HolidaysTab() {
             setNewName("");
             setIsRecurring(false);
             setSelectedClinicId(null);
-            toast.success("Đã thêm ngày lễ");
+            toast.success(t("system.holidays.messages.addSuccess"));
         } catch (error: any) {
             // Hiển thị message từ backend nếu có
             const errorMessage = error?.response?.data?.message || 
                                 error?.response?.data?.error || 
                                 error?.message || 
-                                "Thêm thất bại";
+                                t("system.holidays.messages.addFailed");
             toast.error(errorMessage);
         } finally {
             setAdding(false);
@@ -97,13 +99,13 @@ export default function HolidaysTab() {
 
     // Xóa ngày lễ khỏi danh sách
     const handleDelete = async (id: number) => {
-        if (!window.confirm("Bạn có chắc muốn xóa ngày lễ này?")) return;
+        if (!window.confirm(t("system.holidays.deleteConfirm"))) return;
         try {
             await systemService.deleteHoliday(id);
             setHolidays(holidays.filter((h) => h.id !== id));
-            toast.success("Đã xóa");
+            toast.success(t("system.holidays.messages.deleteSuccess"));
         } catch (error) {
-            toast.error("Xóa thất bại");
+            toast.error(t("system.holidays.messages.deleteFailed"));
         }
     };
 
@@ -112,40 +114,50 @@ export default function HolidaysTab() {
         setSelectedClinicId(prev => prev === clinicId ? null : clinicId);
     };
 
-    if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-blue-600" /></div>;
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center p-16">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-600 mb-4"></div>
+            <p className="text-base font-medium text-slate-600">{t("system.logs.messages.loading", "Loading...")}</p>
+        </div>
+    );
 
     return (
         <div className="space-y-8">
             {/* Form nhập ngày nghỉ lễ mới */}
-            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
-                <h3 className="text-sm font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                    <Plus className="w-4 h-4" /> Thêm ngày nghỉ lễ mới
+            <div className="bg-gradient-to-br from-slate-50 to-gray-50 p-6 rounded-2xl border-2 border-slate-200 shadow-md">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="p-2 bg-gradient-to-br from-slate-600 to-gray-700 rounded-xl shadow-lg">
+                        <Plus className="w-5 h-5 text-white" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-900">
+                        {t("system.holidays.addNew", "Add New Holiday")}
                 </h3>
-                <form onSubmit={handleAdd} className="flex flex-col gap-4">
+                </div>
+                <form onSubmit={handleAdd} className="flex flex-col gap-6">
                     <div className="flex flex-wrap gap-4 items-end">
                         <div className="flex-1 min-w-[200px]">
                             <label 
                                 htmlFor="holiday-name"
-                                className="block text-xs font-medium text-slate-700 mb-1"
+                                className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2"
                             >
-                                Tên ngày lễ
+                                {t("system.holidays.name", "Holiday Name")}
                             </label>
                             <input
                                 id="holiday-name"
                                 type="text"
                                 value={newName}
                                 onChange={(e) => setNewName(e.target.value)}
-                                placeholder="Ví dụ: Nghỉ mát công ty"
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                placeholder={t("system.holidays.namePlaceholder", "Enter holiday name...")}
+                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-slate-100 focus:border-slate-500 transition-all bg-white"
                                 required
                             />
                         </div>
-                        <div className="w-40">
+                        <div className="w-48">
                             <label 
                                 htmlFor="holiday-start-date"
-                                className="block text-xs font-medium text-slate-700 mb-1"
+                                className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2"
                             >
-                                Từ ngày
+                                {t("system.holidays.startDate", "Start Date")}
                             </label>
                             <input
                                 id="holiday-start-date"
@@ -163,16 +175,16 @@ export default function HolidaysTab() {
                                     tomorrow.setDate(tomorrow.getDate() + 1);
                                     return tomorrow.toISOString().split('T')[0];
                                 })()}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-slate-100 focus:border-slate-500 transition-all bg-white"
                                 required
                             />
                         </div>
-                        <div className="w-40">
+                        <div className="w-48">
                             <label 
                                 htmlFor="holiday-end-date"
-                                className="block text-xs font-medium text-slate-700 mb-1"
+                                className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2"
                             >
-                                Đến ngày
+                                {t("system.holidays.endDate", "End Date")}
                             </label>
                             <input
                                 id="holiday-end-date"
@@ -180,33 +192,35 @@ export default function HolidaysTab() {
                                 value={endDate}
                                 min={startDate}
                                 onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-slate-100 focus:border-slate-500 transition-all bg-white"
                                 required
                             />
                         </div>
-                        <div className="flex items-center gap-2 pb-2">
+                        <div className="flex items-center gap-2 pb-3">
                             <input
                                 type="checkbox"
                                 id="recurring"
                                 checked={isRecurring}
                                 onChange={(e) => setIsRecurring(e.target.checked)}
-                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                className="w-4 h-4 rounded border-slate-300 text-slate-600 focus:ring-slate-500"
                             />
-                            <label htmlFor="recurring" className="text-sm text-slate-700">Lặp lại hàng năm</label>
+                            <label htmlFor="recurring" className="text-sm font-medium text-slate-700">{t("system.holidays.recurring", "Recurring")}</label>
                         </div>
                     </div>
                     {/* Chọn cơ sở áp dụng cho ngày lễ */}
                     <div>
-                        <label className="block text-xs font-medium text-slate-700 mb-2">Áp dụng cho cơ sở (Để trống nếu áp dụng tất cả)</label>
-                        <div className="flex flex-wrap gap-2">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">
+                            {t("system.holidays.applyTo", "Apply To")} <span className="text-slate-500 normal-case">({t("system.holidays.applyToAll", "Leave empty for all clinics")})</span>
+                        </label>
+                        <div className="flex flex-wrap gap-3">
                             {clinics.map(clinic => (
                                 <button
                                     key={clinic.id}
                                     type="button"
                                     onClick={() => selectClinic(clinic.id)}
-                                    className={`px-3 py-1 text-xs rounded-full border transition-colors ${selectedClinicId === clinic.id
-                                        ? "bg-blue-100 border-blue-200 text-blue-700"
-                                        : "bg-white border-slate-200 text-slate-600 hover:border-slate-300"
+                                    className={`px-4 py-2.5 text-sm font-semibold rounded-xl border-2 transition-all ${selectedClinicId === clinic.id
+                                        ? "bg-gradient-to-r from-slate-600 to-gray-700 border-slate-600 text-white shadow-lg shadow-slate-300/50"
+                                        : "bg-white border-slate-200 text-slate-700 hover:border-slate-400 hover:bg-slate-50"
                                         }`}
                                 >
                                     {clinic.clinicName}
@@ -215,28 +229,41 @@ export default function HolidaysTab() {
                         </div>
                     </div>
 
-                    <div className="flex justify-end">
+                    <div className="flex justify-end pt-4 border-t border-slate-200">
                         <button
                             type="submit"
                             disabled={adding}
-                            className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+                            className="px-6 py-3 bg-gradient-to-r from-slate-600 to-gray-700 text-white text-base font-bold rounded-xl hover:shadow-lg disabled:opacity-50 transition-all shadow-md flex items-center gap-2"
                         >
-                            {adding ? "Đang thêm..." : "Thêm ngày lễ"}
+                            <Plus className="w-5 h-5" />
+                            {adding ? t("system.holidays.adding", "Adding...") : t("system.holidays.addButton", "Add Holiday")}
                         </button>
                     </div>
                 </form>
             </div>
 
             {/* Bảng danh sách ngày nghỉ lễ */}
-            <div className="border rounded-lg overflow-hidden">
+            <div className="bg-white rounded-2xl shadow-xl border border-slate-200/60 overflow-hidden">
+                <div className="p-6 border-b border-slate-200 bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gradient-to-br from-slate-600 to-gray-700 rounded-xl shadow-lg">
+                            <CalendarIcon className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-900">Holidays List</h2>
+                            <p className="text-sm text-slate-600">Total: {holidays.length} holiday{holidays.length !== 1 ? 's' : ''}</p>
+                        </div>
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-200">
-                    <thead className="bg-slate-50">
+                        <thead className="bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50">
                         <tr>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Thời gian</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Tên ngày lễ</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Cơ sở</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">Lặp lại</th>
-                            <th className="px-6 py-3 text-right text-xs font-medium text-slate-500 uppercase tracking-wider">Thao tác</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">{t("system.holidays.table.time", "Time")}</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">{t("system.holidays.table.name", "Name")}</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">{t("system.holidays.table.clinic", "Clinic")}</th>
+                                <th className="px-6 py-4 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">{t("system.holidays.table.recurring", "Recurring")}</th>
+                                <th className="px-6 py-4 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">{t("system.holidays.table.actions", "Actions")}</th>
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-slate-200">
@@ -247,50 +274,51 @@ export default function HolidaysTab() {
                             end.setDate(start.getDate() + (holiday.duration - 1));
 
                             return (
-                                <tr key={holiday.id} className="hover:bg-slate-50">
+                                    <tr key={holiday.id} className="hover:bg-gradient-to-r hover:from-slate-50/30 hover:to-gray-50/20 transition-all duration-200">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900">
-                                        <div className="flex flex-col">
+                                            <div className="flex flex-col gap-1">
                                             <div className="flex items-center gap-2">
-                                                <CalendarIcon className="w-4 h-4 text-slate-400" />
-                                                <span className="font-medium">{format(start, "dd/MM/yyyy")}</span>
+                                                    <div className="p-1.5 bg-slate-100 rounded-lg">
+                                                        <CalendarIcon className="w-4 h-4 text-slate-600" />
+                                                    </div>
+                                                    <span className="font-bold text-base">{format(start, "dd/MM/yyyy")}</span>
                                             </div>
                                             {holiday.duration > 1 && (
-                                                <span className="text-xs text-slate-500 ml-6">
-                                                    đến {format(end, "dd/MM/yyyy")} ({holiday.duration} ngày)
+                                                    <span className="text-xs text-slate-500 ml-8 font-medium">
+                                                        {t("system.holidays.to", "to")} {format(end, "dd/MM/yyyy")} ({holiday.duration} {t("system.holidays.days", "days")})
                                                 </span>
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">
+                                        <td className="px-6 py-4 text-sm font-bold text-slate-900">
                                         {holiday.name}
                                     </td>
-                                    <td className="px-6 py-4 text-sm text-slate-500">
+                                        <td className="px-6 py-4 text-sm">
                                         {holiday.clinicId ? (
-                                            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800">
+                                                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-slate-500 to-gray-600 text-white shadow-md">
                                                 {clinics.find(c => c.id === holiday.clinicId)?.clinicName || `ID: ${holiday.clinicId}`}
                                             </span>
                                         ) : (
-                                            <span className="text-slate-400 italic">Tất cả</span>
+                                                <span className="text-slate-500 italic font-medium">{t("system.holidays.allClinics", "All Clinics")}</span>
                                         )}
                                     </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
                                         {holiday.isRecurring ? (
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                                Có
+                                                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-md shadow-green-200/50">
+                                                    {t("system.holidays.yes", "Yes")}
                                             </span>
                                         ) : (
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-800">
-                                                Không
+                                                <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-slate-400 to-gray-500 text-white shadow-md">
+                                                    {t("system.holidays.no", "No")}
                                             </span>
                                         )}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        {/* Nút xóa ngày lễ */}
                                         <button
                                             onClick={() => handleDelete(holiday.id)}
-                                            className="text-red-600 hover:text-red-900 transition-colors"
-                                            aria-label={`Xóa ngày lễ ${holiday.name}`}
-                                            title="Xóa ngày lễ"
+                                                className="p-2.5 text-red-600 hover:bg-red-50 rounded-lg transition-all hover:shadow-md"
+                                                aria-label={`Delete ${holiday.name}`}
+                                                title="Delete"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -300,13 +328,19 @@ export default function HolidaysTab() {
                         })}
                         {holidays.length === 0 && (
                             <tr>
-                                <td colSpan={6} className="px-6 py-8 text-center text-slate-500 text-sm">
-                                    Chưa có ngày nghỉ lễ nào được thiết lập.
+                                    <td colSpan={5} className="px-6 py-12 text-center">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="p-4 bg-slate-100 rounded-2xl">
+                                                <CalendarIcon className="w-12 h-12 text-slate-400" />
+                                            </div>
+                                            <p className="text-slate-600 font-medium text-lg">{t("system.holidays.messages.noData", "No holidays found")}</p>
+                                        </div>
                                 </td>
                             </tr>
                         )}
                     </tbody>
                 </table>
+                </div>
             </div>
         </div>
     );

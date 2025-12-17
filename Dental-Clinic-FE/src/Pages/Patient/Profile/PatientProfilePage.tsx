@@ -15,7 +15,7 @@ const PatientProfilePage: React.FC = () => {
     const navigate = useNavigate();
     
     // Form Hook
-    const { register, handleSubmit, reset, setValue } = useForm<PatientProfile>();
+    const { register, handleSubmit, reset } = useForm<PatientProfile>();
 
     useEffect(() => {
         const token = localStorage.getItem("accessToken");

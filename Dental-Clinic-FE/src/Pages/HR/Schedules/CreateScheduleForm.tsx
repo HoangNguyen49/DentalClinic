@@ -19,7 +19,7 @@ function CreateScheduleForm() {
   const [note, setNote] = useState<string>("");
   const [aiDescription, setAiDescription] = useState<string>("");
 
-  const { doctors, clinics, holidays, approvedLeaves } = useScheduleData(weekStart);
+  const { doctors, clinics, holidays, approvedLeaves, refreshClinics } = useScheduleData(weekStart);
   const daysOfWeek = getDaysOfWeek(weekStart, i18n.language === "vi" ? "vi-VN" : "en-GB");
 
   const {
@@ -63,7 +63,7 @@ function CreateScheduleForm() {
     }
   }, [weekStart]);
 
-  // Clear clinic assignments if clinic is on holiday
+  // Clear clinic assignments if clinic is on holiday or inactive
   useEffect(() => {
     if (holidays.length === 0 || clinics.length === 0) return;
 
@@ -73,6 +73,13 @@ function CreateScheduleForm() {
       const newSchedule = { ...prev };
       let hasChanges = false;
 
+      // Get active clinic IDs - strict filter: only explicitly active clinics
+      const activeClinicIds = new Set(
+        clinics
+          .filter(clinic => clinic.isActive === true) // Strict filter: only active clinics
+          .map(clinic => clinic.id)
+      );
+
       Object.entries(newSchedule).forEach(([doctorIdStr, daySchedule]) => {
         const doctorId = Number(doctorIdStr);
         Object.entries(daySchedule).forEach(([dayKey, scheduleData]: [string, any]) => {
@@ -81,23 +88,33 @@ function CreateScheduleForm() {
 
           const dayDate = dayInfo.dateStringISO || dayInfo.dateString;
           
-          // Check available clinics for this day (not on holiday)
+          // Check available clinics for this day (not on holiday and active)
           const availableClinicIds = clinics
-            .filter(clinic => !isClinicHoliday(clinic.id, dayDate, holidays))
+            .filter(clinic => {
+              // Strict filter: only explicitly active clinics
+              const isActive = clinic.isActive === true; // No default to true
+              return isActive && !isClinicHoliday(clinic.id, dayDate, holidays);
+            })
             .map(clinic => clinic.id);
 
-          // Clear morning shift if clinic is on holiday
-          if (scheduleData.morning?.clinicId && !availableClinicIds.includes(scheduleData.morning.clinicId)) {
-            const { morning, ...rest } = scheduleData;
-            newSchedule[doctorId][dayKey] = rest;
-            hasChanges = true;
+          // Clear morning shift if clinic is on holiday or inactive
+          if (scheduleData.morning?.clinicId) {
+            const clinicId = scheduleData.morning.clinicId;
+            if (!availableClinicIds.includes(clinicId) || !activeClinicIds.has(clinicId)) {
+              const { morning, ...rest } = scheduleData;
+              newSchedule[doctorId][dayKey] = rest;
+              hasChanges = true;
+            }
           }
 
-          // Clear afternoon shift if clinic is on holiday
-          if (scheduleData.afternoon?.clinicId && !availableClinicIds.includes(scheduleData.afternoon.clinicId)) {
-            const { afternoon, ...rest } = scheduleData;
-            newSchedule[doctorId][dayKey] = rest;
-            hasChanges = true;
+          // Clear afternoon shift if clinic is on holiday or inactive
+          if (scheduleData.afternoon?.clinicId) {
+            const clinicId = scheduleData.afternoon.clinicId;
+            if (!availableClinicIds.includes(clinicId) || !activeClinicIds.has(clinicId)) {
+              const { afternoon, ...rest } = scheduleData;
+              newSchedule[doctorId][dayKey] = rest;
+              hasChanges = true;
+            }
           }
 
           // Remove day if no shifts left
@@ -168,12 +185,23 @@ function CreateScheduleForm() {
                 {t("create.subtitle")}
               </p>
             </div>
-            <button
-              onClick={() => navigate("/hr/schedules")}
-              className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
-            >
-              {t("create.back")}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  await refreshClinics();
+                  toast.success(t("create.messages.clinicRefreshed", { defaultValue: "Clinics refreshed" }));
+                }}
+                className="px-4 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition border border-blue-200 text-sm"
+              >
+                {t("create.actions.refreshClinics", { defaultValue: "Refresh clinics" })}
+              </button>
+              <button
+                onClick={() => navigate("/hr/schedules")}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition"
+              >
+                {t("create.back")}
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl p-6 shadow-md border border-gray-200 mb-6">

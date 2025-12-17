@@ -44,13 +44,23 @@ export const useScheduleData = (weekStart: string) => {
     const refreshClinics = async () => {
         await executeApi(hrApi.schedules.getClinics, {
             onSuccess: (data: any) => {
-                const clinicsData = ((data as any[]) || [])
-                    .map((c: any) => ({
-                        id: c.id,
-                        name: c.clinicName || c.name,
-                        isActive: c.isActive !== undefined ? c.isActive : true,
-                    }))
-                    .filter((c: any) => c.isActive === true);
+                const rawClinics = (data as any[]) || [];
+                
+                // Backend should already filter active clinics, but we do double-check on frontend
+                const clinicsData = rawClinics
+                    .map((c: any) => {
+                        // Map clinic data - be very strict about isActive
+                        const isActiveValue = c.isActive ?? c.active;
+                        return {
+                            id: c.id,
+                            name: c.clinicName || c.name,
+                            isActive: isActiveValue === true || isActiveValue === 'true' || isActiveValue === 1 || isActiveValue === '1', // Only true values
+                        };
+                    })
+                    .filter((c: any) => {
+                        // Very strict filter: only keep clinics that are explicitly active (true)
+                        return c.isActive === true;
+                    });
                 setClinics(clinicsData);
             },
             showErrorToast: false,
@@ -58,6 +68,7 @@ export const useScheduleData = (weekStart: string) => {
     };
 
     // Lấy danh sách bác sĩ và cơ sở
+    // Pull doctors (active) and clinics (active only)
     const fetchDataFromAPI = async () => {
         await executeApi(() => hrApi.schedules.getEmployees({ size: 100, isActive: true }), {
             onSuccess: (data: any) => {

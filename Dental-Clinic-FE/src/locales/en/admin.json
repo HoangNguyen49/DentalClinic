@@ -25,42 +25,96 @@
       "manage": "Manage & monitor"
     },
     "sections": {
-      "appointments": {
-        "title": "Appointment Management",
-        "description": "Receive requests and manage appointment states."
-      },
-      "treatments": {
-        "title": "Treatment Plans",
-        "description": "Create and track treatment plans per patient."
-      },
-      "rooms": {
-        "title": "Rooms • Chairs • Doctors",
-        "description": "Control clinics, chairs, and doctor schedules."
-      },
-      "invoices": {
-        "title": "Billing & Payments",
-        "description": "Issue invoices and monitor payment history."
-      },
-      "medical": {
-        "title": "Medical Imaging",
-        "description": "Store and manage X-ray and treatment photos."
-      },
-      "inventory": {
-        "title": "Inventory",
-        "description": "Track supplies, consumables, and usage."
-      },
+      "overview": "Overview",
+      "appointments": "Appointments & Staff",
+      "alerts": "Alerts",
+      "financial": "Financial",
+      "patients": "Patients",
+      "details": "Details",
       "reports": {
         "title": "Reports & Analytics",
-        "description": "View revenue charts, appointments, new patients."
+        "description": "View revenue charts, appointments, new patients, rooms/chairs/doctors."
       },
       "staff": {
         "title": "Staff Management",
-        "description": "Attendance, permissions, and departments."
+        "description": "View employee list, attendance, leave requests, clinics."
       },
-      "crm": {
-        "title": "CRM & Customer Care",
-        "description": "Send reminders, birthday emails, and sales."
+      "customers": {
+        "title": "Customer Management",
+        "description": "View customer list, contact information and history."
+      },
+      "inventory": {
+        "title": "Product Inventory",
+        "description": "Track products sold by clinic, stock levels and low inventory items."
+      },
+      "system": {
+        "title": "System Configuration",
+        "description": "Set parameters, holidays and view system logs."
       }
+    },
+    "metrics": {
+      "totalPatients": "Total Patients",
+      "totalStaff": "Total Staff",
+      "totalClinics": "Total Clinics",
+      "activeClinics": "Active Clinics",
+      "retentionRate": "Retention Rate",
+      "todayAppointments": "Today's Appointments",
+      "weekAppointments": "Week Appointments",
+      "monthAppointments": "Month Appointments",
+      "todayAttendance": "Today's Attendance",
+      "pendingLeaveRequests": "Pending Leave Requests",
+      "todayCancelled": "Today's Cancellations",
+      "lowStockItems": "Low Stock Items",
+      "todayRevenue": "Today's Revenue",
+      "todaySales": "Today's Sales",
+      "weekRevenue": "Week Revenue",
+      "weekSales": "Week Sales",
+      "monthRevenue": "Month Revenue",
+      "monthSales": "Month Sales",
+      "previousMonthRevenue": "Previous Month Revenue",
+      "previousMonthSales": "Previous Month Sales",
+      "vsLastMonth": "vs last month",
+      "revenue": "Revenue",
+      "sales": "Sales",
+      "todayNewPatients": "Today's New Patients",
+      "weekNewPatients": "Week New Patients",
+      "monthNewPatients": "Month New Patients",
+      "returningPatients": "Returning Patients",
+      "patientsThisMonth": "Patients This Month",
+      "appointmentsByStatus": "Appointments by Status",
+      "inventorySummary": "Inventory Summary",
+      "topDoctorsList": "Top Doctors by Revenue",
+      "sourceBreakdown": "Customer Sources This Month",
+      "appointments": "appointments",
+      "patients": "patients",
+      "total": "Total",
+      "active": "Active",
+      "inactive": "Inactive",
+      "outOfStock": "Out of Stock",
+      "noAppointmentsStatus": "No data available",
+      "noSourceData": "No data available",
+      "onlySource": "Only source",
+      "items": "items",
+      "revenueLabel": "revenue",
+      "netProfit": "Net Profit (month)",
+      "expenses": "Expenses",
+      "momGrowth": "vs Last Month"
+    },
+    "sources": {
+      "WEB_BOOKING": "Online Booking",
+      "WALK_IN": "Walk-in",
+      "PHONE": "Phone Call",
+      "REFERRAL": "Referral",
+      "SOCIAL_MEDIA": "Social Media",
+      "OTHER": "Other"
+    },
+    "errors": {
+      "fetchFailed": "Unable to load dashboard metrics",
+      "fetchRevenueFailed": "Unable to load revenue data"
+    },
+    "charts": {
+      "revenueWeek": "Revenue Last 7 Days",
+      "notAvailable": "Revenue data not available"
     }
   },
   "pageTitles": {
@@ -68,7 +122,8 @@
     "appointmentList": "Appointment List",
     "clinicManagement": "Clinic Management",
     "attendanceManagement": "Attendance Management",
-    "staffManagement": "Staff Management"
+    "staffManagement": "Staff Management",
+    "customerManagement": "Customer Management"
   },
   "pageDescriptions": {
     "clinicManagement": "View and control the activity status of each clinic. Clinics marked as inactive will not appear in scheduling."
@@ -138,7 +193,7 @@
       "allStatus": "All statuses"
     },
     "summary": {
-      "total": "Total Records",
+      "total": "Total",
       "onTime": "On Time",
       "late": "Late",
       "absent": "Absent"
@@ -208,11 +263,175 @@
       "noPendingExplanations": "No pending explanations"
     }
   },
+  "inventory": {
+    "pageTitle": "Inventory Management",
+    "messages": {
+      "loadFailed": "Unable to load inventory statistics",
+      "noData": "No data available",
+      "noSalesData": "No sales data available",
+      "noTopProducts": "No top selling products",
+      "noProducts": "No products found",
+      "noLowStockProducts": "No low stock products"
+    },
+    "metrics": {
+      "totalProducts": "Total Products",
+      "active": "active",
+      "inactive": "inactive",
+      "totalStock": "Total Stock",
+      "lowStock": "Low Stock",
+      "outOfStock": "Out of Stock"
+    },
+    "sections": {
+      "statistics": "Overview Statistics",
+      "salesByClinicTable": "Sales Details by Clinic",
+      "topProductsTable": "Top Selling Products Details",
+      "allProducts": "All Products List",
+      "lowStock": "Low Stock Products"
+    },
+    "table": {
+      "clinic": "Clinic",
+      "itemsSold": "Items Sold",
+      "uniqueProducts": "Unique Products",
+      "revenue": "Revenue",
+      "product": "Product",
+      "quantitySold": "Sold",
+      "currentStock": "Stock",
+      "price": "Price",
+      "status": "Status"
+    },
+    "pagination": {
+      "showing": "Showing",
+      "to": "to",
+      "of": "of",
+      "results": "results",
+      "previous": "Previous",
+      "next": "Next",
+      "page": "Page"
+    }
+  },
+  "common": {
+    "showing": "Showing",
+    "of": "of",
+    "results": "results",
+    "previous": "Previous",
+    "next": "Next",
+    "all": "All",
+    "yes": "Yes",
+    "no": "No",
+    "filters": "Filters",
+    "advancedFilters": "Advanced Filters",
+    "closeFilters": "Close filters",
+    "reset": "Reset",
+    "apply": "Apply",
+    "enterFilter": "Enter {{label}}...",
+    "page": "Page"
+  },
+  "system": {
+    "title": "System Configuration",
+    "subtitle": "Manage parameters, holidays and system logs",
+    "tabs": {
+      "holidays": "Holidays",
+      "logs": "System Logs",
+      "config": "System Parameters"
+    },
+    "holidays": {
+      "addTitle": "Add New Holiday",
+      "addNew": "Add New Holiday",
+      "name": "Holiday Name",
+      "namePlaceholder": "E.g.: Company Vacation",
+      "startDate": "From Date",
+      "endDate": "To Date",
+      "recurring": "Repeat Annually",
+      "applyToClinic": "Apply to Clinic",
+      "applyTo": "Apply to Clinic",
+      "applyToClinicHint": "(Leave empty to apply to all)",
+      "applyToAll": "Leave empty to apply to all",
+      "allClinics": "All",
+      "addButton": "Add Holiday",
+      "adding": "Adding...",
+      "yes": "Yes",
+      "no": "No",
+      "days": "days",
+      "to": "to",
+      "deleteConfirm": "Are you sure you want to delete this holiday?",
+      "table": {
+        "time": "Time",
+        "name": "Holiday Name",
+        "clinic": "Clinic",
+        "recurring": "Recurring",
+        "actions": "Actions",
+        "to": "to",
+        "days": "days",
+        "yes": "Yes",
+        "no": "No"
+      },
+      "messages": {
+        "noHolidays": "No holidays configured yet.",
+        "noData": "No holidays configured yet",
+        "confirmDelete": "Are you sure you want to delete this holiday?",
+        "added": "Holiday added",
+        "addSuccess": "Holiday added",
+        "deleted": "Deleted",
+        "deleteSuccess": "Deleted",
+        "deleteFailed": "Delete failed",
+        "addFailed": "Add failed",
+        "loadFailed": "Unable to load holidays",
+        "startDateFuture": "Start date must be in the future (after today)",
+        "endDateAfterStart": "End date must be on or after start date"
+      }
+    },
+    "logs": {
+      "filterTitle": "Search Filters",
+      "search": "Search",
+      "searchPlaceholder": "Search by action or username...",
+      "searchAction": "Search by action...",
+      "searchUsername": "Search by username...",
+      "filterRole": "Role",
+      "allRoles": "All Roles",
+      "clearFilters": "Clear Filters",
+      "table": {
+        "time": "Time",
+        "user": "User",
+        "action": "Action",
+        "details": "Details",
+        "ip": "IP"
+      },
+      "messages": {
+        "noLogs": "No logs found.",
+        "noData": "No logs found",
+        "loadFailed": "Unable to load system logs",
+        "loading": "Loading..."
+      },
+      "pagination": {
+        "previous": "Previous",
+        "next": "Next",
+        "page": "Page"
+      }
+    },
+    "config": {
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "valuePlaceholder": "Enter value for",
+      "messages": {
+        "loadFailed": "Unable to load configuration",
+        "saveSuccess": "Configuration saved",
+        "saveFailed": "Failed to save",
+        "noData": "No configuration found"
+      }
+    }
+  },
   "staff": {
     "pageDescription": "Overview of all employees in the organization, including their roles, departments, and clinic assignments.",
     "filters": {
       "search": "Search",
-      "searchPlaceholder": "Search by name, email, phone, or code"
+      "searchPlaceholder": "Search by name, email, phone, or code",
+      "status": "Status",
+      "department": "Department",
+      "role": "Role",
+      "allDepartments": "All departments",
+      "allRoles": "All roles",
+      "active": "Active",
+      "inactive": "Inactive"
     },
     "actions": {
       "search": "Search",
@@ -225,18 +444,82 @@
       "clinics": "Clinics",
       "contact": "Contact",
       "status": "Status",
+      "resignation": "Resignation",
       "createdAt": "Created At",
       "lastLogin": "Last Login",
       "noDepartment": "Not assigned",
       "noRole": "N/A",
       "noClinic": "N/A",
       "active": "Active",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "approvedResignation": "Approved Resignation"
     },
     "messages": {
       "loading": "Loading staff...",
       "noData": "No staff found",
       "loadFailed": "Unable to load staff"
+    }
+  },
+  "customers": {
+    "pageDescription": "Manage all customers in the system, including contact info and history",
+    "filters": {
+      "search": "Search",
+      "searchPlaceholder": "Search by name, patient code, phone or email..."
+    },
+    "actions": {
+      "search": "Search",
+      "clear": "Clear",
+      "viewDetail": "View Details",
+      "block": "Block Customer",
+      "unblock": "Unblock Customer",
+      "close": "Close",
+      "activate": "Activate",
+      "deactivate": "Deactivate"
+    },
+    "table": {
+      "customer": "Customer",
+      "contact": "Contact",
+      "address": "Address",
+      "status": "Status",
+      "createdAt": "Created",
+      "actions": "Actions",
+      "active": "Active",
+      "inactive": "Inactive",
+      "listTitle": "Customer List",
+      "total": "Total",
+      "selectAll": "Select all",
+      "code": "Code",
+      "id": "ID",
+      "hasAccount": "Has Account"
+    },
+    "bulkActions": {
+      "selected": "Selected",
+      "customers": "customer",
+      "customersPlural": "customers"
+    },
+    "detail": {
+      "title": "Customer Details",
+      "fullName": "Full Name",
+      "patientCode": "Patient Code",
+      "gender": "Gender",
+      "dateOfBirth": "Date of Birth",
+      "phone": "Phone Number",
+      "email": "Email",
+      "address": "Address",
+      "status": "Status",
+      "userId": "Account ID",
+      "createdAt": "Created",
+      "updatedAt": "Last Updated",
+      "noAccount": "None"
+    },
+    "messages": {
+      "loading": "Loading customers...",
+      "noData": "No customers found",
+      "loadFailed": "Unable to load customers",
+      "loadDetailFailed": "Unable to load customer details",
+      "updateFailed": "Unable to update customer status",
+      "activated": "Khách hàng đã được kích hoạt",
+      "blocked": "Khách hàng đã bị chặn"
     }
   }
 }
