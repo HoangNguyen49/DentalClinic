@@ -48,28 +48,48 @@ export default function RoomSelectionModal({ isOpen, onClose, appointment, onSuc
     }
   };
 
-  const handleSave = async () => {
-    if (!selectedRoomId || !appointment) return;
+  const handleReset = async () => {
+  if (!appointment) return;
+  setLoading(true);
+  try {
+    const res = await receptionApi.assignRoom(appointment.id, null); 
     
-    setLoading(true);
-    try {
-      // Gọi API Lưu
-      const res = await receptionApi.assignRoom(appointment.id, selectedRoomId);
-      
-      toast.success(t("roomModal.success")); // Dịch thành công
-      
-      const updatedData = (res as any).data || res;
-      onSuccess(updatedData);
-      
-      onClose();
-    } catch (error: any) {
-      console.error(error);
-      const msg = error.response?.data?.message || t("roomModal.errorSave"); 
-      toast.error(msg);
-    } finally {
-      setLoading(false);
-    }
-  };
+    
+    toast.info("Room Reset", { toastId: "reset-room" }); 
+    
+    setSelectedRoomId(null);
+    const updatedData = (res as any).data || res;
+    
+    // Gọi onSuccess nhưng lưu ý: Kiểm tra ở component cha xem có toast nào trong đó không
+    onSuccess(updatedData); 
+    onClose();
+  } catch (error: any) {
+    const msg = error.response?.data?.message || "Không thể reset phòng";
+    toast.error(msg, { toastId: "error-reset" });
+  } finally {
+    setLoading(false);
+  }
+};
+
+  const handleSave = async () => {
+  if (!selectedRoomId || !appointment) return;
+  setLoading(true);
+  try {
+    const res = await receptionApi.assignRoom(appointment.id, selectedRoomId);
+    
+    // Thêm toastId để ngăn chặn việc spam toast 2 lần nếu render lại
+    toast.success(t("roomModal.success"), { toastId: "assign-room" }); 
+    
+    const updatedData = (res as any).data || res;
+    onSuccess(updatedData);
+    onClose();
+  } catch (error: any) {
+    const msg = error.response?.data?.message || t("roomModal.errorSave"); 
+    toast.error(msg, { toastId: "error-save" });
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!isOpen) return null;
 
@@ -115,9 +135,12 @@ export default function RoomSelectionModal({ isOpen, onClose, appointment, onSuc
                   >
                     <div className="flex items-center gap-3">
                       {/* Icon */}
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-sm ${isVip ? 'bg-purple-100' : 'bg-green-100'}`}>
-                        {isVip ? '👑' : '🦷'}
-                      </div>
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center text-[10px] font-black shadow-inner border
+                      ${isVip 
+                        ? 'bg-amber-50 text-amber-600 border-amber-200' 
+                        : 'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                      {isVip ? 'VIP' : 'STD'}
+                    </div>
                       
                       {/* Info */}
                       <div>
@@ -138,21 +161,55 @@ export default function RoomSelectionModal({ isOpen, onClose, appointment, onSuc
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3">
-          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-200 rounded font-medium">
-            {t("roomModal.cancel")}
-          </button>
-          <button 
-            onClick={handleSave}
-            disabled={!selectedRoomId || loading}
-            className={`px-5 py-2 rounded text-white font-bold shadow-sm transition-all ${
-                !selectedRoomId || loading ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 active:scale-95'
-            }`}
-          >
-            {loading ? t("roomModal.saving") : t("roomModal.confirm")}
-          </button>
-        </div>
+        <div className="px-6 py-4 bg-gray-50/80 border-t flex justify-between items-center backdrop-blur-sm">
+  
+  {/* Nút Reset - Thiết kế tinh tế, không quá gắt nhưng vẫn rõ ràng */}
+  <div className="flex-1">
+    {appointment?.room && (
+      <button 
+        onClick={handleReset}
+        disabled={loading}
+        className="group px-3 py-1.5 text-red-500 hover:bg-red-50 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all duration-200 active:scale-95 disabled:opacity-50"
+      >
+        <span className="text-sm group-hover:rotate-[-45deg] transition-transform duration-300">↺</span> 
+        <span className="uppercase tracking-widest">Reset</span>
+      </button>
+    )}
+  </div>
 
+  {/* Cụm nút Cancel/Confirm nằm bên phải */}
+  <div className="flex gap-3">
+    {/* Nút Cancel - Nhẹ nhàng, thanh lịch */}
+    <button 
+      onClick={onClose} 
+      className="px-5 py-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 rounded-xl text-sm font-semibold transition-all duration-200 active:scale-95"
+    >
+      {t("roomModal.cancel")}
+    </button>
+
+    {/* Nút Confirm - Nổi bật, có độ bóng và hiệu ứng đổ bóng */}
+    <button 
+      onClick={handleSave}
+      disabled={!selectedRoomId || loading}
+      className={`
+        px-7 py-2.5 rounded-xl text-sm font-bold text-white shadow-lg shadow-blue-200
+        transition-all duration-300 flex items-center gap-2
+        ${!selectedRoomId || loading 
+          ? 'bg-gray-300 shadow-none cursor-not-allowed' 
+          : 'bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-700 hover:to-blue-600 hover:shadow-blue-300 active:scale-95'
+        }
+      `}
+    >
+      {loading && (
+        <svg className="animate-spin h-4 w-4 text-white" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+        </svg>
+      )}
+      {loading ? t("roomModal.saving") : t("roomModal.confirm")}
+    </button>
+  </div>
+</div>
       </div>
     </div>
   );

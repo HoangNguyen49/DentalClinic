@@ -241,6 +241,12 @@
   },
   "invoiceList": {
     "title": "Invoice Management",
+    "stats": {
+      "revenue": "Total Revenue (Total)",
+      "invoiceCount": "Paid Invoices",
+      "averageValue": "Avg. Order Value",
+      "unit": "Inv"
+    },
     "filters": {
       "searchLabel": "Search",
       "searchPlaceholder": "Invoice Code, Name, Phone...",
@@ -266,7 +272,7 @@
       },
       "statusDisplay": {
         "paid": "Paid",
-        "unpaid": "Unpaid",
+        "unpaid": "Pending",
         "refunded": "Refunded"
       },
       "loading": "Loading data...",
@@ -279,5 +285,5 @@
       "prev": "Prev",
       "next": "Next"
     }
-  }
+}
 }
