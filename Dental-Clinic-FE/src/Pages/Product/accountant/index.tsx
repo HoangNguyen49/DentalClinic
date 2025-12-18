@@ -17,17 +17,17 @@ import Report from "./Report/Report";
 import PayrollPage from "./Payroll/GetAllPayroll/PayrollPage";
 import SalaryConfigPage from "./Payroll/GetPayrollById/GetPayrollByIdPost/SalaryConfigPage";
 import GetPayrollByIdDetail from "./Payroll/GetPayrollById/GetPayrollByIdDetail/GetPayrollByIdDetail";
-
+import DashboardOverview from "./Dashboard/DashboardOverview";
 function AccountantRoutes() {
   return (
     <Routes>
       {/* Layout bọc ngoài (Sidebar + Navbar) */}
       <Route element={<MainDashboard />}>
-
         {/* === HOME / DASHBOARD === */}
-        {/* Khi truy cập /accountant hoặc /accountant/dashboard, hiển thị danh sách sản phẩm */}
-        <Route index element={<GetAllProduct />} />
-        <Route path="dashboard" element={<GetAllProduct />} />
+        <Route index element={<DashboardOverview />} />
+        <Route path="dashboard" element={<DashboardOverview />} />
+        
+        {/* === PRODUCT ROUTES === */}
         <Route path="product" element={<GetAllProduct />} />
 
         {/* === PRODUCT ROUTES === */}

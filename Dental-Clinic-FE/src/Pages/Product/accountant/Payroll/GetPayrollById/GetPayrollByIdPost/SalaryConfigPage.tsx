@@ -100,7 +100,7 @@ const SalaryConfigPage: React.FC = () => {
                           <input type="number" value={formData.standardShifts} onChange={(e) => handleChange('standardShifts', parseInt(e.target.value))} className="block w-full px-3 py-2 border border-purple-200 bg-purple-50 rounded-lg" />
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-xs font-bold text-purple-700 uppercase">Over Shift Bonus</label>
+                          <label className="block text-xs font-bold text-purple-700 uppercase">Over Shift Bonus (VND/shift)</label>
                           <input type="number" value={formData.overShiftRate} onChange={(e) => handleChange('overShiftRate', parseFloat(e.target.value))} className="block w-full px-3 py-2 border border-purple-200 bg-purple-50 rounded-lg" />
                         </div>
                       </>
@@ -111,13 +111,13 @@ const SalaryConfigPage: React.FC = () => {
                           <input type="number" value={formData.standardWorkDays} onChange={(e) => handleChange('standardWorkDays', parseFloat(e.target.value))} className="block w-full px-3 py-2 border border-blue-200 bg-blue-50 rounded-lg" />
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-xs font-bold text-blue-700 uppercase">OT Multiplier</label>
+                          <label className="block text-xs font-bold text-blue-700 uppercase">OT Multiplier (n/100)</label>
                           <input type="number" step="0.1" value={formData.otRate} onChange={(e) => handleChange('otRate', parseFloat(e.target.value))} className="block w-full px-3 py-2 border border-blue-200 bg-blue-50 rounded-lg" />
                         </div>
                       </>
                     )}
                     <div className="space-y-2">
-                      <label className="block text-xs font-bold text-red-600 uppercase">Late Penalty (VND/min)</label>
+                      <label className="block text-xs font-bold text-red-600 uppercase">Late Penalty (VND/minute)</label>
                       <input type="number" value={formData.lateDeductionRate} onChange={(e) => handleChange('lateDeductionRate', parseFloat(e.target.value))} className="block w-full px-3 py-2 border border-red-200 bg-red-50 rounded-lg text-red-700" />
                     </div>
                   </div>
