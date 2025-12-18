@@ -96,9 +96,9 @@ export const receptionApi = {
     },
 
     // gán phòng cho lịch hẹn
-    assignRoom:(appointmentId: number, roomId: number) => {
+    assignRoom:(appointmentId: number, roomId: number | null) => {
         return axiosClient.put(`/api/reception/appointments/${appointmentId}/assign-room`, null, {
-            params: { roomId }
+            params: { roomId: roomId }
         });
     },
 

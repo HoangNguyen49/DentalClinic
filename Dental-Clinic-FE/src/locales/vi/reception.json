@@ -241,6 +241,12 @@
   },
   "invoiceList": {
     "title": "Danh Sách Hóa Đơn",
+    "stats": {
+      "revenue": "Doanh thu (Tổng)",
+      "invoiceCount": "Hóa đơn đã trả",
+      "averageValue": "Trung bình/Đơn",
+      "unit": "Đơn"
+    },
     "filters": {
       "searchLabel": "Tìm kiếm",
       "searchPlaceholder": "Mã HĐ, Tên khách, SĐT...",
@@ -279,5 +285,5 @@
       "prev": "Trước",
       "next": "Sau"
     }
-  }
+}
 }

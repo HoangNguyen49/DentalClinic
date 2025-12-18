@@ -43,6 +43,7 @@ export interface AppointmentDTO {
   status: string;
   services: { serviceName: string }[];
   note?: string;
+  appointmentType: string;
 }
 
 // =====================
@@ -116,7 +117,7 @@ type DragState = {
 
 export default function ReceptionDashboard() {
   const { t } = useTranslation("reception"); // 2. Khởi tạo hook translation
-  
+
   // VIEW MODE STATE
   const [viewMode, setViewMode] = useState<"TIMELINE" | "LIST">("TIMELINE");
   const [showQuickBooking, setShowQuickBooking] = useState(false);
@@ -198,8 +199,14 @@ export default function ReceptionDashboard() {
   // HÀM MỞ MODAL (Dùng cho nút trong List View)
   const handleOpenRoomModal = (appt: AppointmentDTO) => {
     // Chặn nếu lịch đã huỷ
-    if (appt.status === "CANCELLED" || appt.status === "REJECTED") {
-      toast.warning("Không thể xếp phòng cho lịch đã hủy/từ chối!");
+    const restrictedStatuses = ["COMPLETED", "CANCELLED", "IN_PROGRESS"];
+
+    if (restrictedStatuses.includes(appt.status)) {
+      toast.warning(
+        `Không thể xếp phòng cho lịch hẹn đang ở trạng thái ${t(
+          `status.${appt.status}`
+        )}`
+      );
       return;
     }
     setApptToAssignRoom(appt);
@@ -212,7 +219,7 @@ export default function ReceptionDashboard() {
     setAppointments((prev) =>
       prev.map((a) => (a.id === updatedAppt.id ? updatedAppt : a))
     );
-    toast.success(t("roomModal.success"));
+    
   };
 
   // =====================
@@ -389,6 +396,14 @@ export default function ReceptionDashboard() {
     appt: AppointmentDTO,
     sourceDoctorId: number | null
   ) => {
+    if (appt.status === "IN_PROGRESS" || appt.status === "COMPLETED") {
+      toast.info(
+        t("dashboard.cannotMoveStatus", {
+          status: t(`status.${appt.status}`),
+        }) || `Không thể dời lịch đang ở trạng thái ${appt.status}`
+      );
+      return;
+    }
     e.preventDefault();
     const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
     const baseState: DragState = {
@@ -411,9 +426,11 @@ export default function ReceptionDashboard() {
     const { appt, targetDoctorId, newStartDate } = pendingReschedule;
     try {
       const token = localStorage.getItem("accessToken");
+      const newStatus = appt.status === "PENDING" ? "SCHEDULED" : appt.status;
       const payload: any = {
         newStartDateTime: newStartDate.toISOString(),
         newDoctorId: targetDoctorId,
+        status: newStatus,
         reason: "Drag & Drop",
       };
       await axios.patch(
@@ -424,7 +441,14 @@ export default function ReceptionDashboard() {
       toast.success(t("dashboard.moveSuccess"));
       fetchData();
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || t("dashboard.moveError"));
+      const serverMessage = error?.response?.data?.message;
+
+      if (serverMessage) {
+        toast.error(serverMessage);
+      } else {
+        toast.error(t("dashboard.moveError"));
+      }
+      console.error("Reschedule Detail Error:", error.response?.data);
     } finally {
       setPendingReschedule(null);
     }
@@ -442,7 +466,9 @@ export default function ReceptionDashboard() {
       {/* HEADER */}
       <div className="p-4 bg-white border-b border-gray-200 flex justify-between items-center shadow-sm z-30">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-gray-800">{t("dashboard.title")}</h2>
+          <h2 className="text-xl font-bold text-gray-800">
+            {t("dashboard.title")}
+          </h2>
           <input
             type="date"
             value={selectedDate}
@@ -523,7 +549,9 @@ export default function ReceptionDashboard() {
       {/* BODY CONTAINER */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {loading ? (
-          <div className="p-20 text-center text-gray-500">{t("list.loading")}</div>
+          <div className="p-20 text-center text-gray-500">
+            {t("list.loading")}
+          </div>
         ) : (
           <>
             {/* === OPTION 1: TIMELINE VIEW === */}
@@ -691,12 +719,15 @@ export default function ReceptionDashboard() {
                               </div>
                             ))}
                             {docAppointments.map((appt) => {
-                              const isDraggingThis = dragState?.appt.id === appt.id;
-                              
+                              const isDraggingThis =
+                                dragState?.appt.id === appt.id;
+
                               return (
                                 <div
                                   key={`appt-${appt.id}`}
-                                  onMouseDown={(e) => startDrag(e, appt, doc.id)}
+                                  onMouseDown={(e) =>
+                                    startDrag(e, appt, doc.id)
+                                  }
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setEditingAppt(appt);
@@ -712,8 +743,35 @@ export default function ReceptionDashboard() {
                                   )}
                                 >
                                   {/* 1. Tên Bệnh Nhân (Đậm, tự cắt nếu dài) */}
-                                  <div className="font-bold text-gray-900 truncate">
-                                    {appt.patient.fullName}
+                                  <div className="flex justify-between items-start gap-1">
+                                    <div>
+                                      <div className="text-[13px] font-bold text-gray-900 truncate">
+                                        {appt.patient.fullName}
+                                      </div>
+                                      <div className="text-[13px] text-slate-700 font-bold tracking-tight">
+                                        {appt.patient.phone}
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-1">
+                                      <span
+                                        className={`shrink-0 text-[12px] px-1 rounded border font-bold ${
+                                          appt.appointmentType === "VIP"
+                                            ? "bg-amber-100..."
+                                            : "bg-slate-100..."
+                                        }`}
+                                      >
+                                        {appt.appointmentType}
+                                      </span>
+                                      {/* Hiện icon note nếu có dữ liệu */}
+                                      {appt.note && (
+                                        <span
+                                          title={appt.note}
+                                          className="text-gray-400 cursor-help"
+                                        >
+                                          📝
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
 
                                   {/* 2. Badge Phòng (Thu nhỏ hết cỡ) */}
@@ -728,7 +786,7 @@ export default function ReceptionDashboard() {
                                         }
                                       `}
                                       >
-                                        {appt.room.isPrivate ? "👑" : ""}{" "}
+                                        {appt.room.isPrivate ? "VIP" : "STD"}{" "}
                                         {appt.room.roomName}
                                       </span>
                                     </div>
@@ -743,11 +801,13 @@ export default function ReceptionDashboard() {
                                   </div>
 
                                   {/* 4. Thời gian (Luôn đẩy xuống đáy) */}
-                                  <div className="text-gray-500 font-mono font-semibold mt-auto pt-1 text-[10px]">
-                                    {new Date(appt.startDateTime).getHours()}:{pad(
+                                  <div className="text-gray-500 font-mono font-semibold mt-auto pt-1 text-[16px]">
+                                    {new Date(appt.startDateTime).getHours()}:
+                                    {pad(
                                       new Date(appt.startDateTime).getMinutes()
                                     )}{" "}
-                                    - {new Date(appt.endDateTime).getHours()}:{pad(
+                                    - {new Date(appt.endDateTime).getHours()}:
+                                    {pad(
                                       new Date(appt.endDateTime).getMinutes()
                                     )}
                                   </div>
@@ -770,13 +830,25 @@ export default function ReceptionDashboard() {
                   <table className="w-full text-sm text-left text-gray-500 border-collapse">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-10 border-b border-gray-200">
                       <tr>
-                        <th className="px-6 py-3 font-bold">{t("list.colTime")}</th>
-                        <th className="px-6 py-3 font-bold">{t("list.colStatus")}</th>
-                        <th className="px-6 py-3 font-bold">{t("roomModal.title")}</th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("list.colTime")}
+                        </th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("list.colStatus")}
+                        </th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("roomModal.title")}
+                        </th>
                         <th className="px-6 py-3 font-bold">Chi nhánh</th>
-                        <th className="px-6 py-3 font-bold">{t("list.colDoctor")}</th>
-                        <th className="px-6 py-3 font-bold">{t("editModal.labelService")}</th>
-                        <th className="px-6 py-3 font-bold">{t("list.colPatient")}</th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("list.colDoctor")}
+                        </th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("editModal.labelService")}
+                        </th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("list.colPatient")}
+                        </th>
                         <th className="px-6 py-3 font-bold">Người lập</th>
                         <th className="px-6 py-3 text-center font-bold">
                           {t("list.colAction")}
@@ -799,21 +871,31 @@ export default function ReceptionDashboard() {
                           <td className="px-6 py-4 text-center">
                             <button
                               onClick={() => handleOpenRoomModal(appt)}
+                              disabled={[
+                                "COMPLETED",
+                                "CANCELLED",
+                                "IN_PROGRESS",
+                              ].includes(appt.status)}
                               className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1 mx-auto shadow-sm
-                                ${
-                                  appt.room
-                                    ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100" // Đã có phòng
-                                    : "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 animate-pulse"
-                                }
-                              `}
+                              ${
+                                [
+                                  "COMPLETED",
+                                  "CANCELLED",
+                                  "IN_PROGRESS",
+                                ].includes(appt.status)
+                                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                  : appt.room
+                                  ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                                  : "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 animate-pulse"
+                              }
+                          `}
                             >
                               {appt.room ? (
                                 <>
-                                  {/* Icon phân biệt VIP */}
-                                  <span>
-                                    {appt.room.isPrivate ? "👑" : "🦷"}
+                                  <span className="text-[10px] uppercase tracking-tighter opacity-80">
+                                    {appt.room.isPrivate ? "Priv" : "Std"}
                                   </span>
-                                  {/* Tên phòng */}
+                                  <span className="w-[1px] h-3 bg-current opacity-20 mx-1"></span>
                                   <span>{appt.room.roomName}</span>
                                 </>
                               ) : (
@@ -931,11 +1013,13 @@ export default function ReceptionDashboard() {
               {t("dashboard.dragConfirmTitle")}
             </h3>
             <p className="text-sm text-gray-600">
-              <span dangerouslySetInnerHTML={{
-                __html: t("dashboard.dragConfirmDesc", {
-                  patient: pendingReschedule.appt.patient.fullName
-                })
-              }} />{" "}
+              <span
+                dangerouslySetInnerHTML={{
+                  __html: t("dashboard.dragConfirmDesc", {
+                    patient: pendingReschedule.appt.patient.fullName,
+                  }),
+                }}
+              />{" "}
               <span className="font-bold text-blue-600">
                 {pad(pendingReschedule.newStartDate.getHours())}:
                 {pad(pendingReschedule.newStartDate.getMinutes())}

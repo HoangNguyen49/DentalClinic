@@ -100,7 +100,7 @@ const ReceptionLayout = () => {
           </div>
         </header>
         
-        <main className="flex-1 overflow-hidden bg-gray-50 p-4 relative z-0">
+        <main className="flex-1 min-h-0 overflow-auto bg-gray-50 p-4 relative z-0 custom-scrollbar">
           <Outlet />
         </main>
         
