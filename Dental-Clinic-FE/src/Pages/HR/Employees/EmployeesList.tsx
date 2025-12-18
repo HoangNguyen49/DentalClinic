@@ -216,10 +216,11 @@ function EmployeesList() {
       if (statusFilter === "resignation") {
         employeesList = employeesList.filter((emp: HrEmployee) => emp.hasApprovedResignation === true);
       }
-      let totalElementsValue = response.totalElements;
+      let totalElementsValue = response.totalElements || 0;
+      let totalPagesValue = response.totalPages || 0;
 
       // Nếu BE trả về 0 nhưng vẫn có data thì lấy số lượng bằng API thống kê
-      if ((!totalElementsValue || totalElementsValue === 0) && employeesList.length > 0) {
+      if (totalElementsValue === 0 && employeesList.length > 0) {
         const statsParams: any = {};
         if (departmentId !== null && departmentId !== undefined) {
           statsParams.departmentId = departmentId;
@@ -236,9 +237,46 @@ function EmployeesList() {
         }
       }
 
+      // Nếu vẫn không có totalElements nhưng có content, ước tính từ content.length
+      if (totalElementsValue === 0 && employeesList.length > 0) {
+        // Nếu content.length = size, có thể còn trang tiếp theo
+        if (employeesList.length === size) {
+          // Ước tính totalElements để cho phép có trang tiếp theo
+          totalElementsValue = (page + 1) * size + 1; // Ước tính tối thiểu
+          totalPagesValue = Math.ceil(totalElementsValue / size);
+        } else {
+          // Đây là trang cuối
+          totalElementsValue = page * size + employeesList.length;
+          totalPagesValue = page + 1;
+        }
+      } else if (totalPagesValue === 0 && totalElementsValue > 0) {
+        // Tính totalPages từ totalElements
+        totalPagesValue = Math.ceil(totalElementsValue / size);
+      } else if (totalPagesValue === 0 && employeesList.length > 0) {
+        // Có content nhưng không có totalElements và totalPages
+        totalElementsValue = employeesList.length;
+        totalPagesValue = 1;
+      }
+
+      // Đảm bảo totalPages ít nhất là 1 nếu có dữ liệu
+      if (totalPagesValue === 0 && employeesList.length > 0) {
+        totalPagesValue = 1;
+        totalElementsValue = employeesList.length;
+      }
+
+      console.log('Employees List:', {
+        page,
+        size,
+        contentLength: employeesList.length,
+        totalElements: totalElementsValue,
+        totalPages: totalPagesValue,
+        backendTotalElements: response.totalElements,
+        backendTotalPages: response.totalPages
+      });
+
       setEmployees(employeesList);
-      setTotalPages(response.totalPages || 0);
-      setTotalElements(totalElementsValue ?? 0);
+      setTotalPages(totalPagesValue);
+      setTotalElements(totalElementsValue);
     } catch (err: any) {
       setEmployees([]);
       setTotalPages(0);
@@ -628,8 +666,12 @@ function EmployeesList() {
                       {t("list.pagination.page")} {page + 1} / {totalPages || 1}
                     </span>
                     <button
-                      onClick={() => setPage(page + 1)}
-                      disabled={page >= totalPages - 1}
+                      onClick={() => {
+                        if (totalPages > 0 && page < totalPages - 1) {
+                          setPage(page + 1);
+                        }
+                      }}
+                      disabled={totalPages <= 0 || page >= totalPages - 1}
                       className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
                       title={t("list.pagination.next")}
                       aria-label={t("list.pagination.next")}
@@ -637,8 +679,12 @@ function EmployeesList() {
                       <ChevronRight className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => setPage(totalPages - 1)}
-                      disabled={page >= totalPages - 1}
+                      onClick={() => {
+                        if (totalPages > 0) {
+                          setPage(totalPages - 1);
+                        }
+                      }}
+                      disabled={totalPages <= 0 || page >= totalPages - 1}
                       className="px-3 py-1 border rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
                       title={t("list.pagination.last")}
                       aria-label={t("list.pagination.last")}

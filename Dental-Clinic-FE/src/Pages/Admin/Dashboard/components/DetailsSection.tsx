@@ -47,16 +47,26 @@ export default function DetailsSection({
     OTHER: { label: "Khác", color: "#6b7280" }, // Gray
   };
 
+  // Helper function để convert giá trị sang number
+  const toNumber = (value: any): number => {
+    if (value === null || value === undefined) return 0;
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
+  };
+
   // 3 nguồn chính luôn hiển thị
   const mainSources = ['WEB_BOOKING', 'WALK_IN', 'PHONE'];
   
   // Tạo data với 3 nguồn chính, nếu không có thì để 0
-  const sourceData = mainSources.map(channel => ({
-    name: channel,
-    displayName: sourceLabels[channel].label,
-    value: sourceBreakdown?.[channel] || 0,
-    color: sourceLabels[channel].color,
-  }));
+  const sourceData = mainSources.map(channel => {
+    const value = toNumber(sourceBreakdown?.[channel]);
+    return {
+      name: channel,
+      displayName: sourceLabels[channel].label,
+      value: value,
+      color: sourceLabels[channel].color,
+    };
+  });
   
   // Thêm các nguồn khác nếu backend có trả về (REFERRAL, SOCIAL_MEDIA, OTHER)
   Object.entries(sourceBreakdown || {}).forEach(([channel, total]) => {
@@ -64,7 +74,7 @@ export default function DetailsSection({
       sourceData.push({
         name: channel,
         displayName: sourceLabels[channel]?.label || channel,
-    value: total,
+        value: toNumber(total),
         color: sourceLabels[channel]?.color || "#6b7280",
       });
     }
@@ -72,7 +82,6 @@ export default function DetailsSection({
   
   // Sort by value descending
   sourceData.sort((a, b) => b.value - a.value);
-
 
   return (
     <div className="bg-gradient-to-br from-slate-50 to-gray-50 rounded-2xl p-6 shadow-sm">
@@ -269,8 +278,8 @@ export default function DetailsSection({
           ) : (
             <div className="flex flex-col lg:flex-row items-center gap-8 py-6">
               {/* Pie Chart - Chỉ hiển thị nguồn có value > 0 */}
-              <div className="w-full lg:w-1/2 h-80">
-              <ResponsiveContainer width="100%" height="100%">
+              <div className="w-full lg:w-1/2" style={{ minHeight: '320px', height: '320px' }}>
+              <ResponsiveContainer width="100%" height={320}>
                 <PieChart>
                   <Pie
                       data={sourceData.filter(d => d.value > 0)}

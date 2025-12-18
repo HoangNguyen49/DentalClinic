@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -106,47 +106,90 @@ function DailyAttendanceView() {
     fetchDepartments();
   }, []);
 
+  // Tách riêng useEffect cho daily và monthly để tránh xung đột
   useEffect(() => {
-    // Tải dữ liệu theo viewMode, workDate, bộ lọc
-    const loadData = async () => {
-      setLoadingSummary(true);
-      try {
-        await fetchMonthlySummary();
-        if (viewMode === "daily") {
+    if (viewMode === "daily") {
+      const loadDailyData = async () => {
+        setLoadingSummary(true);
+        try {
           await fetchDailySummary();
           await fetchDailyList();
           // so sánh với dữ liệu ngày trước đó
           const prevDate = new Date(workDate);
           prevDate.setDate(prevDate.getDate() - 1);
           await fetchPreviousDailySummary(prevDate.toISOString().split("T")[0]);
-        } else {
-          await fetchMonthlyList();
+        } finally {
+          setLoadingSummary(false);
         }
-      } finally {
-        setLoadingSummary(false);
-      }
-    };
-
-    loadData();
-  }, [
-    viewMode,
-    workDate,
-    selectedYear,
-    selectedMonth,
-    selectedDepartment,
-    dailyPage,
-    dailySize,
-    monthlyPage,
-    monthlySize,
-  ]);
+      };
+      loadDailyData();
+    }
+  }, [viewMode, workDate, selectedDepartment, dailyPage, dailySize]);
 
   useEffect(() => {
-    setDailyPage(0);
-  }, [workDate, selectedDepartment]);
+    if (viewMode === "monthly") {
+      const loadMonthlyData = async () => {
+        setLoadingSummary(true);
+        try {
+          await fetchMonthlySummary();
+          await fetchMonthlyList();
+        } finally {
+          setLoadingSummary(false);
+        }
+      };
+      loadMonthlyData();
+    }
+  }, [viewMode, selectedYear, selectedMonth, selectedDepartment, monthlyPage, monthlySize]);
+
+  // Luôn fetch monthly summary để hiển thị chart
+  useEffect(() => {
+    fetchMonthlySummary();
+  }, [selectedYear, selectedMonth]);
+
+  // Reset page về 0 khi thay đổi filter (workDate, department) - chỉ reset khi thực sự thay đổi
+  const prevWorkDateRef = useRef(workDate);
+  const prevSelectedDepartmentRef = useRef(selectedDepartment);
+  
+  useEffect(() => {
+    if (viewMode === "daily" && 
+        (prevWorkDateRef.current !== workDate || prevSelectedDepartmentRef.current !== selectedDepartment)) {
+      setDailyPage(0);
+      prevWorkDateRef.current = workDate;
+      prevSelectedDepartmentRef.current = selectedDepartment;
+    }
+  }, [workDate, selectedDepartment, viewMode]);
+
+  const prevSelectedYearRef = useRef(selectedYear);
+  const prevSelectedMonthRef = useRef(selectedMonth);
+  
+  useEffect(() => {
+    if (viewMode === "monthly" && 
+        (prevSelectedYearRef.current !== selectedYear || 
+         prevSelectedMonthRef.current !== selectedMonth || 
+         prevSelectedDepartmentRef.current !== selectedDepartment)) {
+      setMonthlyPage(0);
+      prevSelectedYearRef.current = selectedYear;
+      prevSelectedMonthRef.current = selectedMonth;
+      prevSelectedDepartmentRef.current = selectedDepartment;
+    }
+  }, [selectedYear, selectedMonth, selectedDepartment, viewMode]);
+  
+  // Đảm bảo page không vượt quá totalPages khi totalPages thay đổi
+  useEffect(() => {
+    if (dailyTotalPages > 0 && dailyPage >= dailyTotalPages) {
+      setDailyPage(Math.max(0, dailyTotalPages - 1));
+    } else if (dailyTotalPages === 0 && dailyPage > 0) {
+      setDailyPage(0);
+    }
+  }, [dailyTotalPages]);
 
   useEffect(() => {
-    setMonthlyPage(0);
-  }, [selectedYear, selectedMonth, selectedDepartment]);
+    if (monthlyTotalPages > 0 && monthlyPage >= monthlyTotalPages) {
+      setMonthlyPage(Math.max(0, monthlyTotalPages - 1));
+    } else if (monthlyTotalPages === 0 && monthlyPage > 0) {
+      setMonthlyPage(0);
+    }
+  }, [monthlyTotalPages]);
 
   const fetchDepartments = async () => {
     try {
@@ -205,15 +248,60 @@ function DailyAttendanceView() {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      setDailyList(response.data.content || []);
-      setDailyTotalPages(response.data.totalPages || 0);
-      setDailyTotalElements(response.data.totalElements || 0);
+      const content = response.data.content || [];
+      setDailyList(content);
+        let totalElements = response.data.totalElements || 0;
+      let totalPages = response.data.totalPages || 0;
+      
+      // Nếu backend trả về totalElements = 0 nhưng có content, có thể là backend chưa tính đúng
+      // Trong trường hợp này, nếu content.length = size, có thể còn trang tiếp theo
+      // Nếu content.length < size, thì đây là trang cuối
+      if (totalElements === 0 && content.length > 0) {
+        // Nếu content.length = size, có thể còn nhiều trang hơn
+        // Ước tính totalElements = (page + 1) * size + 1 (ít nhất) để cho phép có trang tiếp theo
+        if (content.length === dailySize) {
+          // Có thể còn trang tiếp theo, ước tính totalElements
+          totalElements = (dailyPage + 1) * dailySize + 1; // Ước tính tối thiểu
+          totalPages = Math.ceil(totalElements / dailySize);
+        } else {
+          // Đây là trang cuối
+          totalElements = dailyPage * dailySize + content.length;
+          totalPages = dailyPage + 1;
+        }
+      } else if (totalPages === 0 && totalElements > 0) {
+        // Tính totalPages từ totalElements
+        totalPages = Math.ceil(totalElements / dailySize);
+      } else if (totalPages === 0 && content.length > 0) {
+        // Có content nhưng không có totalElements và totalPages
+        totalElements = content.length;
+        totalPages = 1;
+      }
+      
+      // Đảm bảo totalPages ít nhất là 1 nếu có dữ liệu
+      if (totalPages === 0 && content.length > 0) {
+        totalPages = 1;
+        totalElements = content.length;
+      }
+      
+      console.log('Daily Attendance List:', {
+        page: dailyPage,
+        size: dailySize,
+        contentLength: content.length,
+        totalElements,
+        totalPages,
+        backendTotalElements: response.data.totalElements,
+        backendTotalPages: response.data.totalPages
+      });
+      
+      setDailyTotalPages(totalPages);
+      setDailyTotalElements(totalElements);
     } catch (err: any) {
       toast.error(t("messages.failedToLoadDailyAttendanceList"));
       console.error(err);
       setDailyList([]);
       setDailyTotalPages(0);
       setDailyTotalElements(0);
+      setDailyPage(0);
     } finally {
       setLoading(false);
     }
@@ -261,15 +349,33 @@ function DailyAttendanceView() {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      setMonthlyList(response.data.content || []);
-      setMonthlyTotalPages(response.data.totalPages || 0);
-      setMonthlyTotalElements(response.data.totalElements || 0);
+      const content = response.data.content || [];
+      setMonthlyList(content);
+      const totalElements = response.data.totalElements || 0;
+      let totalPages = response.data.totalPages || 0;
+      
+      // Tính lại totalPages nếu backend trả về 0 hoặc không hợp lý nhưng có dữ liệu
+      if (totalPages === 0 && totalElements > 0) {
+        totalPages = Math.ceil(totalElements / monthlySize);
+      } else if (totalPages === 0 && content.length > 0) {
+        // Nếu có content nhưng không có totalElements, tính từ content.length
+        totalPages = Math.ceil(content.length / monthlySize);
+      }
+      
+      // Đảm bảo totalPages ít nhất là 1 nếu có dữ liệu
+      if (totalPages === 0 && (content.length > 0 || totalElements > 0)) {
+        totalPages = 1;
+      }
+      
+      setMonthlyTotalPages(totalPages);
+      setMonthlyTotalElements(totalElements || content.length);
     } catch (err: any) {
       toast.error(t("messages.failedToLoadMonthlyAttendanceList"));
       console.error(err);
       setMonthlyList([]);
       setMonthlyTotalPages(0);
       setMonthlyTotalElements(0);
+      setMonthlyPage(0);
     } finally {
       setLoading(false);
     }

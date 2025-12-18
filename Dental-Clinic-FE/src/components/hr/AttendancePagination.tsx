@@ -69,16 +69,24 @@ export default function Pagination({
         </span>
         <button
           // sang trang tiếp theo
-          onClick={() => onPageChange(page + 1)}
-          disabled={totalPages === 0 || page >= totalPages - 1}
+          onClick={() => {
+            if (totalPages > 0 && page < totalPages - 1) {
+              onPageChange(page + 1);
+            }
+          }}
+          disabled={totalPages <= 0 || page >= totalPages - 1}
           className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
         >
           {t("pagination.next")}
         </button>
         <button
           // tới trang cuối
-          onClick={() => onPageChange(totalPages - 1)}
-          disabled={totalPages === 0 || page >= totalPages - 1}
+          onClick={() => {
+            if (totalPages > 0) {
+              onPageChange(totalPages - 1);
+            }
+          }}
+          disabled={totalPages <= 0 || page >= totalPages - 1}
           className="px-3 py-1 border border-gray-300 rounded text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
         >
           {t("pagination.last")}
