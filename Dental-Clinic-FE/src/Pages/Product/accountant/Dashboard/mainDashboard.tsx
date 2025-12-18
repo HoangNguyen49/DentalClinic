@@ -5,8 +5,6 @@ import DashboardTopbar from "../widgets/DashboardTopbar";
 import AppToast from "../widgets/AppToast";
 
 function MainDashboard() {
-  // Sidebar bây giờ tự quản lý menu, không cần truyền props từ đây nữa
-  
   return (
     <>
       <AppToast />

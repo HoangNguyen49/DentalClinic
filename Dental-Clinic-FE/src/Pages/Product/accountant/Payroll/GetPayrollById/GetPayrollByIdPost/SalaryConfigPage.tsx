@@ -100,7 +100,7 @@ const SalaryConfigPage: React.FC = () => {
                           <input type="number" value={formData.standardShifts} onChange={(e) => handleChange('standardShifts', parseInt(e.target.value))} className="block w-full px-3 py-2 border border-purple-200 bg-purple-50 rounded-lg" />
                         </div>
                         <div className="space-y-2">
-                          <label className="block text-xs font-bold text-purple-700 uppercase">Over Shift Bonus (VND / shift)</label>
+                          <label className="block text-xs font-bold text-purple-700 uppercase">Over Shift Bonus (VND/shift)</label>
                           <input type="number" value={formData.overShiftRate} onChange={(e) => handleChange('overShiftRate', parseFloat(e.target.value))} className="block w-full px-3 py-2 border border-purple-200 bg-purple-50 rounded-lg" />
                         </div>
                       </>
