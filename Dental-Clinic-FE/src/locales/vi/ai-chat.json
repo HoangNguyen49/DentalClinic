@@ -1,0 +1,21 @@
+{
+  "header": {
+    "title": "Trợ lý Sunshine",
+    "clearHistory": "Xóa lịch sử"
+  },
+  "messages": {
+    "welcome": "Chào bạn! 👋 Mình là trợ lý ảo Sunshine. Mình giúp gì được cho bạn?",
+    "welcomeShort": "Chào bạn! 👋 Mình là trợ lý ảo Sunshine.",
+    "historyCleared": "Đã xóa lịch sử trò chuyện. Chào bạn lại nhé! 👋",
+    "error": "Có lỗi kết nối. Vui lòng thử lại!"
+  },
+  "suggestions": {
+    "services": "Dịch vụ phù hợp:",
+    "doctors": "Bác sĩ chuyên khoa (VIP):",
+    "bookNow": "Đặt ngay",
+    "selectVip": "Chọn (VIP)"
+  },
+  "input": {
+    "placeholder": "Nhập nội dung..."
+  }
+}

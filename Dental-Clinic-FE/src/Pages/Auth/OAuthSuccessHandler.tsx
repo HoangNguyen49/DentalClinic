@@ -2,6 +2,8 @@ import { useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
+// 1. Import hook
+import { useTranslation } from "react-i18next";
 
 type UserInfo = {
   userId: number;
@@ -15,6 +17,8 @@ type UserInfo = {
 };
 
 function OAuthSuccessHandler() {
+  // 2. Setup hook với namespace "login"
+  const { t } = useTranslation(["login"]);
   const navigate = useNavigate();
   const API = import.meta.env.VITE_API_URL;
   const ranRef = useRef(false);
@@ -28,7 +32,7 @@ function OAuthSuccessHandler() {
       const accessToken = params.get("access_token");
 
       if (!accessToken) {
-        toast.error("Đăng nhập thất bại (Không có token).");
+        toast.error(t("login:oauth.failed")); // Sử dụng key translation
         navigate("/login", { replace: true });
         return;
       }
@@ -64,14 +68,14 @@ function OAuthSuccessHandler() {
         if (hasContainer) {
           if (!toast.isActive("oauth-success")) {
             if (isMissingPhone) {
-                toast.info("Đăng nhập thành công! Vui lòng cập nhật số điện thoại.", {
+                toast.info(t("login:oauth.missingPhone"), { // Sử dụng key translation
                     toastId: "oauth-success",
                     autoClose: 2500,
                     closeOnClick: true,
                     onClose: () => navigate(targetPath, navOptions),
                 });
             } else {
-                toast.success("Đăng nhập thành công!", {
+                toast.success(t("login:oauth.success"), { // Sử dụng key translation
                     toastId: "oauth-success",
                     autoClose: 1200,
                     closeOnClick: true,
@@ -85,17 +89,17 @@ function OAuthSuccessHandler() {
 
       } catch (err) {
         console.error(err);
-        toast.error("Lỗi lấy thông tin người dùng.");
+        toast.error(t("login:errors.userInfoFailed")); // Sử dụng key translation
         navigate("/login", { replace: true });
       }
     })();
-  }, [navigate, API]);
+  }, [navigate, API, t]); // Thêm t vào dependency array
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-            <p className="text-gray-600 font-medium">Đang xử lý đăng nhập...</p>
+            <p className="text-gray-600 font-medium">{t("login:oauth.processing")}</p> {/* Sử dụng key translation */}
         </div>
     </div>
   );

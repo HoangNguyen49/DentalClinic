@@ -6,6 +6,7 @@ import Footer from "../../widgets/Footer/Footer";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+// 1. Import hook
 import { useTranslation } from "react-i18next";
 
 const defaultAvatars = [
@@ -23,6 +24,7 @@ type SignUpResponse = {
 };
 
 function SignUp() {
+  // 2. Setup translation hook với namespace "signup"
   const { t, i18n } = useTranslation(["signup", "web"]);
   const navigate = useNavigate();
 
@@ -70,7 +72,7 @@ function SignUp() {
         initialAvatarUrl = `${window.location.origin}${avatarUrl}`;
       }
 
-    
+      // API Call
       const res = await axios.post<SignUpResponse>(
         `${import.meta.env.VITE_API_URL}/api/auth/sign-up`,
         {
@@ -81,7 +83,7 @@ function SignUp() {
           password,
           avatarUrl: customAvatar ? undefined : initialAvatarUrl, 
           clinicId: undefined,                                    
-          locale: i18n?.language ?? "en",
+          locale: i18n?.language ?? "en", // Gửi ngôn ngữ hiện tại lên server để gửi mail đúng tiếng
         }
       );
 
@@ -90,7 +92,7 @@ function SignUp() {
         throw new Error(t("signup:errors.idMissing"));
       }
 
-    
+      // Upload Custom Avatar nếu có
       if (customAvatar) {
         const token = localStorage.getItem("accessToken"); 
         const formData = new FormData();
@@ -108,7 +110,7 @@ function SignUp() {
         );
       }
 
-      // Hiển thị mã bệnh nhân
+      // Hiển thị thông báo thành công
       if (patientCode) {
         toast.success(`${t("signup:success.registered")} — ${t("signup:labels.patientCode")}: ${patientCode}`);
       } else {
@@ -233,6 +235,7 @@ function SignUp() {
   );
 }
 
+// Components con giữ nguyên logic hiển thị
 function InputField({ label, value, setValue, type = "text" }: any) {
   return (
     <div>

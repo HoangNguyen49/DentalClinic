@@ -6,11 +6,16 @@ import { FiEye, FiEyeOff } from "react-icons/fi";
 import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
 import "react-toastify/dist/ReactToastify.css";
+// 1. Import hook
+import { useTranslation } from "react-i18next";
 
 // Regex mật khẩu: 8-100 ký tự, chữ hoa, thường, số, ký tự đặc biệt
 const PASSWORD_RULE = /^(?=\S+$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,100}$/;
 
 function ResetPassword() {
+  // 2. Sử dụng namespace "login"
+  const { t } = useTranslation(["login"]);
+  
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
@@ -25,27 +30,27 @@ function ResetPassword() {
   // Nếu không có token trên URL, báo lỗi ngay
   useEffect(() => {
     if (!token) {
-      toast.error("Đường dẫn không hợp lệ hoặc bị thiếu Token.");
+      toast.error(t("login:reset.errorToken"));
     }
-  }, [token]);
+  }, [token, t]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!token) {
-      toast.error("Token không hợp lệ. Vui lòng yêu cầu gửi lại mail.");
+      toast.error(t("login:reset.errorToken"));
       return;
     }
     if (!newPassword || !confirmPassword) {
-      toast.error("Vui lòng điền đầy đủ thông tin.");
+      toast.error(t("login:reset.errorEmpty"));
       return;
     }
     if (!PASSWORD_RULE.test(newPassword)) {
-      toast.error("Mật khẩu phải từ 8 ký tự, bao gồm chữ hoa, thường, số và ký tự đặc biệt.");
+      toast.error(t("login:reset.errorRule"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("Mật khẩu xác nhận không khớp.");
+      toast.error(t("login:reset.errorMatch"));
       return;
     }
 
@@ -58,14 +63,14 @@ function ResetPassword() {
         confirmPassword
       });
 
-      toast.success("Đổi mật khẩu thành công! Đang chuyển hướng về đăng nhập...");
+      toast.success(t("login:reset.success"));
       
       // Chờ 2s để user đọc thông báo rồi chuyển về Login
       setTimeout(() => navigate("/login"), 2000);
 
     } catch (err: any) {
       console.error(err);
-      const msg = err?.response?.data?.message || "Đổi mật khẩu thất bại. Token có thể đã hết hạn.";
+      const msg = err?.response?.data?.message || t("login:reset.failed");
       toast.error(msg);
     } finally {
       setLoading(false);
@@ -78,10 +83,10 @@ function ResetPassword() {
       <>
         <Header />
         <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 gap-4">
-            <h2 className="text-2xl font-bold text-red-600">Liên kết không hợp lệ</h2>
-            <p className="text-gray-600">Vui lòng kiểm tra lại email hoặc yêu cầu gửi lại link mới.</p>
+            <h2 className="text-2xl font-bold text-red-600">{t("login:reset.errorTokenTitle")}</h2>
+            <p className="text-gray-600">{t("login:reset.errorTokenMsg")}</p>
             <Link to="/login" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Quay về trang chủ
+                {t("login:reset.btnHome")}
             </Link>
         </div>
         <Footer />
@@ -98,15 +103,15 @@ function ResetPassword() {
         <div className="bg-white p-10 rounded-2xl shadow-xl max-w-md w-full space-y-6 border border-gray-200">
           
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-[#0D1B3E]">Đặt Lại Mật Khẩu</h2>
-            <p className="text-gray-500 mt-2">Vui lòng nhập mật khẩu mới cho tài khoản của bạn.</p>
+            <h2 className="text-3xl font-bold text-[#0D1B3E]">{t("login:reset.title")}</h2>
+            <p className="text-gray-500 mt-2">{t("login:reset.subtitle")}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             
             {/* Mật khẩu mới */}
             <div>
-              <label className="block mb-1 text-sm font-semibold text-gray-700">Mật khẩu mới</label>
+              <label className="block mb-1 text-sm font-semibold text-gray-700">{t("login:reset.newPass")}</label>
               <div className="relative">
                 <input
                     type={showPassword ? "text" : "password"}
@@ -126,7 +131,7 @@ function ResetPassword() {
 
             {/* Nhập lại mật khẩu */}
             <div>
-              <label className="block mb-1 text-sm font-semibold text-gray-700">Xác nhận mật khẩu</label>
+              <label className="block mb-1 text-sm font-semibold text-gray-700">{t("login:reset.confirmPass")}</label>
               <input
                 type={showPassword ? "text" : "password"}
                 value={confirmPassword}
@@ -144,15 +149,15 @@ function ResetPassword() {
               {loading ? (
                  <>
                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></span>
-                   Đang xử lý...
+                   {t("login:reset.processing")}
                  </>
-              ) : "Xác Nhận Đổi Mật Khẩu"}
+              ) : t("login:reset.btnSubmit")}
             </button>
           </form>
           
           <div className="text-center">
              <Link to="/login" className="text-sm text-gray-500 hover:text-[#3366FF] hover:underline">
-                Hủy bỏ
+                {t("login:reset.cancel")}
              </Link>
           </div>
 

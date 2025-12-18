@@ -1,0 +1,31 @@
+{
+  "title": "Hồ Sơ Bệnh Nhân",
+  "btnEdit": "Chỉnh sửa",
+  "btnCancel": "Hủy bỏ",
+  "btnSave": "Lưu Thay Đổi",
+  "patientCode": "Mã BN",
+  "loading": "Đang tải...",
+  "messages": {
+    "loadError": "Không thể tải hồ sơ.",
+    "updateSuccess": "Cập nhật hồ sơ thành công!",
+    "updateError": "Cập nhật thất bại. Vui lòng thử lại."
+  },
+  "fields": {
+    "fullName": "Họ và tên",
+    "phone": "Số điện thoại",
+    "gender": "Giới tính",
+    "dob": "Ngày sinh",
+    "address": "Địa chỉ liên hệ",
+    "addressPlaceholder": "Số nhà, tên đường, phường/xã...",
+    "note": "Ghi chú y tế / Tiền sử bệnh",
+    "noteHint": "(Thông tin này giúp bác sĩ hiểu rõ hơn về bạn)",
+    "notePlaceholder": "Ví dụ: Dị ứng thuốc kháng sinh, tiền sử bệnh tim mạch...",
+    "genderOptions": {
+      "default": "-- Chọn giới tính --",
+      "male": "Nam",
+      "female": "Nữ",
+      "other": "Khác"
+    },
+    "phoneHint": "*Liên hệ CSKH để đổi SĐT"
+  }
+}

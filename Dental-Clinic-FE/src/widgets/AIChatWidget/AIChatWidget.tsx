@@ -8,6 +8,8 @@ import {
   TrashIcon
 } from '@heroicons/react/24/solid';
 import dentalAiApi from './dentalAiApi';
+// 1. Import hook
+import { useTranslation } from 'react-i18next';
 
 interface ServiceSuggestion {
   id: number;
@@ -41,6 +43,9 @@ const STORAGE_KEY = 'sunshine_chat_history';
 const EXPIRE_TIME = 24 * 60 * 60 * 1000; // 24 giờ
 
 function AIChatWidget() {
+  // 2. Setup hook
+  const { t, i18n } = useTranslation(["ai-chat"]);
+  
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -48,6 +53,14 @@ function AIChatWidget() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   const navigate = useNavigate();
+
+  // Helper format tiền tệ
+  const formatCurrency = (amount: number) => {
+      return new Intl.NumberFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US', { 
+          style: 'currency', 
+          currency: 'VND' 
+      }).format(amount);
+  };
 
   // 1. Load History
   useEffect(() => {
@@ -58,17 +71,19 @@ function AIChatWidget() {
         const lastMsg = parsed[parsed.length - 1];
         if (lastMsg && (Date.now() - lastMsg.timestamp > EXPIRE_TIME)) {
           localStorage.removeItem(STORAGE_KEY);
-          setMessages([{ sender: 'ai', text: 'Chào bạn! 👋 Mình là trợ lý ảo Sunshine. Mình giúp gì được cho bạn?', timestamp: Date.now() }]);
+          // Sử dụng t() cho tin nhắn mặc định
+          setMessages([{ sender: 'ai', text: t('messages.welcome'), timestamp: Date.now() }]);
         } else {
           setMessages(parsed);
         }
       } catch (e) {
-        setMessages([{ sender: 'ai', text: 'Chào bạn! 👋 Mình là trợ lý ảo Sunshine.', timestamp: Date.now() }]);
+        setMessages([{ sender: 'ai', text: t('messages.welcomeShort'), timestamp: Date.now() }]);
       }
     } else {
-      setMessages([{ sender: 'ai', text: 'Chào bạn! 👋 Mình là trợ lý ảo Sunshine.', timestamp: Date.now() }]);
+      setMessages([{ sender: 'ai', text: t('messages.welcomeShort'), timestamp: Date.now() }]);
     }
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Chỉ chạy 1 lần khi mount, nhưng text welcome sẽ lấy theo ngôn ngữ LÚC ĐÓ
 
   // 2. Save History
   useEffect(() => {
@@ -84,7 +99,8 @@ function AIChatWidget() {
 
   const clearHistory = () => {
     localStorage.removeItem(STORAGE_KEY);
-    setMessages([{ sender: 'ai', text: 'Đã xóa lịch sử trò chuyện. Chào bạn lại nhé! 👋', timestamp: Date.now() }]);
+    // Sử dụng t() khi clear history
+    setMessages([{ sender: 'ai', text: t('messages.historyCleared'), timestamp: Date.now() }]);
   };
 
   const handleSend = async () => {
@@ -121,7 +137,7 @@ function AIChatWidget() {
 
     } catch (error) {
       console.error(error);
-      setMessages(prev => [...prev, { sender: 'ai', text: 'Có lỗi kết nối. Vui lòng thử lại!', timestamp: Date.now() }]);
+      setMessages(prev => [...prev, { sender: 'ai', text: t('messages.error'), timestamp: Date.now() }]);
     } finally {
       setIsLoading(false);
     }
@@ -134,7 +150,6 @@ function AIChatWidget() {
     navigate(`/booking?prefillService=${serviceId}`);
   };
 
-  // Cập nhật: Nhận thêm serviceId (nếu có) để gửi sang trang Booking
   const handleBookingDoctor = (doctorId: number, serviceId?: number) => {
     setIsOpen(false);
     const params = new URLSearchParams();
@@ -156,10 +171,10 @@ function AIChatWidget() {
           <div className="bg-gradient-to-r from-[#3366FF] to-[#6699FF] p-4 flex justify-between items-center text-white">
             <div className="flex items-center gap-2">
               <SparklesIcon className="w-5 h-5" />
-              <span className="font-bold text-lg">Trợ lý Sunshine</span>
+              <span className="font-bold text-lg">{t('header.title')}</span>
             </div>
             <div className="flex gap-2">
-              <button onClick={clearHistory} title="Xóa lịch sử" className="hover:bg-white/20 p-1 rounded-full transition">
+              <button onClick={clearHistory} title={t('header.clearHistory')} className="hover:bg-white/20 p-1 rounded-full transition">
                 <TrashIcon className="w-5 h-5" />
               </button>
               <button onClick={() => setIsOpen(false)} className="hover:bg-white/20 p-1 rounded-full transition">
@@ -173,11 +188,9 @@ function AIChatWidget() {
             {messages.map((msg, idx) => {
               
               // --- [AI FIX] LOGIC TỰ ĐỘNG TÌM SERVICE ID TỪ LỊCH SỬ CHAT ---
-              // Nếu tin nhắn hiện tại có bác sĩ nhưng không có dịch vụ, ta tìm ngược về quá khứ
               let contextServiceId = msg.services && msg.services.length > 0 ? msg.services[0].id : undefined;
               
               if (!contextServiceId) {
-                  // Lấy các tin nhắn trước đó (từ mới nhất trở về cũ)
                   const prevMsgWithService = messages.slice(0, idx).reverse().find(m => m.services && m.services.length > 0);
                   if (prevMsgWithService && prevMsgWithService.services) {
                       contextServiceId = prevMsgWithService.services[0].id;
@@ -198,7 +211,7 @@ function AIChatWidget() {
                   {/* Service Cards */}
                   {msg.services && msg.services.length > 0 && (
                     <div className="mt-2 space-y-2 w-full max-w-[90%]">
-                      <p className="text-xs text-gray-500 ml-2">Dịch vụ phù hợp:</p>
+                      <p className="text-xs text-gray-500 ml-2">{t('suggestions.services')}</p>
                       {msg.services.map((svc) => (
                         <div 
                           key={svc.id} 
@@ -207,10 +220,10 @@ function AIChatWidget() {
                         >
                           <div>
                             <p className="font-bold text-[#0D1B3E] text-sm group-hover:text-[#3366FF] transition">{svc.name}</p>
-                            <p className="text-xs text-gray-500">{svc.duration} • {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(svc.price)}</p>
+                            <p className="text-xs text-gray-500">{svc.duration} • {formatCurrency(svc.price)}</p>
                           </div>
                           <button className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-lg font-semibold group-hover:bg-blue-600 group-hover:text-white transition">
-                              Đặt ngay
+                              {t('suggestions.bookNow')}
                           </button>
                         </div>
                       ))}
@@ -220,11 +233,10 @@ function AIChatWidget() {
                   {/* Doctor Cards */}
                   {msg.doctors && msg.doctors.length > 0 && (
                     <div className="mt-2 space-y-2 w-full max-w-[90%]">
-                      <p className="text-xs text-gray-500 ml-2">Bác sĩ chuyên khoa (VIP):</p>
+                      <p className="text-xs text-gray-500 ml-2">{t('suggestions.doctors')}</p>
                       {msg.doctors.map((doc) => (
                         <div 
                           key={doc.id} 
-                          // Cập nhật: Sử dụng contextServiceId đã tìm được ở trên
                           onClick={() => handleBookingDoctor(doc.id, contextServiceId)}
                           className="bg-white p-2 rounded-xl border border-blue-100 shadow-sm flex items-center gap-3 hover:shadow-md transition cursor-pointer group"
                         >
@@ -234,7 +246,7 @@ function AIChatWidget() {
                             <p className="text-[10px] text-gray-500">{doc.specialty}</p>
                           </div>
                           <button className="text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded-md font-semibold group-hover:bg-amber-500 group-hover:text-white transition">
-                              Chọn (VIP)
+                              {t('suggestions.selectVip')}
                           </button>
                         </div>
                       ))}
@@ -263,7 +275,7 @@ function AIChatWidget() {
             <div className="relative flex items-center">
               <input
                 type="text"
-                placeholder="Nhập nội dung..."
+                placeholder={t('input.placeholder')}
                 className="w-full pl-4 pr-12 py-3 bg-gray-50 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-[#3366FF] border-transparent"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}

@@ -1,0 +1,33 @@
+{
+  "title": "Lịch Hẹn Của Tôi",
+  "subtitle": "Quản lý và theo dõi quá trình điều trị",
+  "btnNew": "Đặt Lịch Mới",
+  "tabs": {
+    "upcoming": "Sắp tới & Đang khám",
+    "history": "Lịch sử khám",
+    "cancelled": "Đã hủy / Vắng mặt"
+  },
+  "empty": {
+    "message": "Bạn không có lịch hẹn nào trong mục này.",
+    "action": "Đặt lịch ngay"
+  },
+  "card": {
+    "doctor": "Bác sĩ",
+    "note": "Ghi chú"
+  },
+  "status": {
+    "PENDING": "Chờ xác nhận",
+    "SCHEDULED": "Đã lên lịch",
+    "CONFIRMED": "Đã lên lịch",
+    "IN_PROGRESS": "Đang khám",
+    "PROCESSING": "Đang khám",
+    "COMPLETED": "Hoàn thành",
+    "CANCELLED": "Đã hủy",
+    "CANCELED": "Đã hủy",
+    "NOSHOW": "Vắng mặt",
+    "NO_SHOW": "Vắng mặt"
+  },
+  "messages": {
+    "loadError": "Không thể tải danh sách lịch hẹn."
+  }
+}

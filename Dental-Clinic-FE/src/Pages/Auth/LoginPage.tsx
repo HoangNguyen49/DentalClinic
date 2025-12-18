@@ -25,7 +25,6 @@ type LoginResponse = {
 function LoginPage() {
   const { t } = useTranslation(["login", "web"]);
   const navigate = useNavigate();
-  // Lấy API URL từ biến môi trường Vite
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
   // --- QUẢN LÝ TRẠNG THÁI TABS ---
@@ -66,9 +65,9 @@ function LoginPage() {
   const handleResendVerification = async (emailToResend: string) => {
       try {
           await axios.post(`${API_URL}/api/auth/resend-verification`, { email: emailToResend });
-          toast.success("Đã gửi lại email kích hoạt! Vui lòng kiểm tra hộp thư.");
+          toast.success(t("login:inactive.sent"));
       } catch (error) {
-          toast.error("Gửi lại thất bại. Vui lòng thử lại sau.");
+          toast.error(t("login:errors.resendFailed"));
       }
   };
 
@@ -85,7 +84,7 @@ function LoginPage() {
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("roles", JSON.stringify(normalizedRoles));
     
-    // Lưu User Info đầy đủ (Gộp logic của cả Tuấn và Long)
+    // Lưu User Info đầy đủ
     localStorage.setItem("user", JSON.stringify({
       userId: data.userId,
       fullName: data.fullName,
@@ -101,16 +100,14 @@ function LoginPage() {
     axios.defaults.headers.common["Authorization"] = `Bearer ${data.accessToken}`;
     toast.success(t("login:loginSuccess"));
 
-    // 4. ĐIỀU HƯỚNG (MERGE LOGIC CỦA LONG VÀO ĐÂY)
+    // 4. ĐIỀU HƯỚNG
     setTimeout(() => {
-      // Nếu chưa có SĐT -> Bắt buộc cập nhật (Logic của Tuấn)
       if (!data.phone || data.phone.trim() === "") {
         navigate("/my-account", { state: { forceUpdate: true } });
       } else {
-        // Phân quyền điều hướng (Đã thêm RECEPTION của Long)
         if (normalizedRoles.includes("ADMIN")) navigate("/admin/dashboard");
         else if (normalizedRoles.includes("HR")) navigate("/hr/dashboard");
-        else if (normalizedRoles.includes("RECEPTION")) navigate("/reception/dashboard"); // <-- MỚI THÊM CỦA LONG
+        else if (normalizedRoles.includes("RECEPTION")) navigate("/reception/dashboard");
         else if (normalizedRoles.includes("DOCTOR")) navigate("/doctor/schedule");
         else navigate("/"); // User thường về trang chủ
       }
@@ -127,13 +124,13 @@ function LoginPage() {
     if (typeof msg === 'string' && (msg.toLowerCase().includes("locked") || msg.toLowerCase().includes("khóa"))) {
         toast.error(
             <div className="flex flex-col">
-                <span className="font-bold text-base">⚠️ Tài khoản đã bị khóa!</span>
+                <span className="font-bold text-base">{t("login:locked.title")}</span>
                 <span className="text-sm mb-3 mt-1">{msg}</span>
                 <button 
                     onClick={() => setShowForgotModal(true)} 
                     className="bg-white text-red-600 px-4 py-2 rounded text-sm font-bold border border-red-200 hover:bg-red-50 transition shadow-sm self-start"
                 >
-                    👉 Mở khóa ngay (Quên mật khẩu)
+                    {t("login:locked.button")}
                 </button>
             </div>, 
             { autoClose: 10000, closeOnClick: false } 
@@ -145,13 +142,13 @@ function LoginPage() {
     if (typeof msg === 'string' && (msg.toLowerCase().includes("not active") || msg.toLowerCase().includes("chưa được kích hoạt"))) {
         toast.error(
             <div className="flex flex-col">
-                <span className="font-bold text-base">⚠️ Tài khoản chưa kích hoạt</span>
+                <span className="font-bold text-base">{t("login:inactive.title")}</span>
                 <span className="text-sm mb-3 mt-1">{msg}</span>
                 <button 
                     onClick={() => handleResendVerification(email)} 
                     className="bg-white text-blue-600 px-4 py-2 rounded text-sm font-bold border border-blue-200 hover:bg-blue-50 transition shadow-sm self-start"
                 >
-                    📧 Gửi lại email kích hoạt
+                    {t("login:inactive.button")}
                 </button>
             </div>, 
             { autoClose: 10000, closeOnClick: false } 
@@ -187,7 +184,7 @@ function LoginPage() {
   // =================================================================
   const handlePhonePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone || !password) return toast.error("Vui lòng nhập số điện thoại và mật khẩu");
+    if (!phone || !password) return toast.error(t("login:errors.fillPhonePass"));
 
     setLoading(true);
     try {
@@ -204,16 +201,16 @@ function LoginPage() {
   // 3. ĐĂNG NHẬP SĐT + OTP
   // =================================================================
   const handleSendOtp = async () => {
-    if (!phone) return toast.error("Vui lòng nhập số điện thoại");
+    if (!phone) return toast.error(t("login:errors.fillPhone"));
     
     setLoading(true);
     try {
       await axios.post(`${API_URL}/api/auth/login-phone/step1`, { phone });
       setOtpSent(true);
       setCountdown(60);
-      toast.info("Mã OTP đã được gửi!");
+      toast.info(t("login:otp.sent"));
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Gửi OTP thất bại");
+      toast.error(err?.response?.data?.message || t("login:errors.sendOtpFailed"));
     } finally {
       setLoading(false);
     }
@@ -221,7 +218,7 @@ function LoginPage() {
 
   const handleOtpLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phone || !otp) return toast.error("Vui lòng nhập mã OTP");
+    if (!phone || !otp) return toast.error(t("login:errors.fillOtp"));
 
     setLoading(true);
     try {
@@ -239,16 +236,16 @@ function LoginPage() {
   // =================================================================
   const handleSendResetLink = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!forgotEmail) return toast.error("Please enter your email.");
+    if (!forgotEmail) return toast.error(t("login:errors.emptyEmail"));
 
     setIsSendingLink(true);
     try {
       await axios.post(`${API_URL}/api/auth/forgot-password`, { email: forgotEmail });
-      toast.success("Link đặt lại mật khẩu đã được gửi! Vui lòng kiểm tra email.");
+      toast.success(t("login:forgot.success"));
       setShowForgotModal(false);
       setForgotEmail("");
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Gửi yêu cầu thất bại.");
+      toast.error(err?.response?.data?.message || t("login:errors.forgotFailed"));
     } finally {
       setIsSendingLink(false);
     }
@@ -277,7 +274,7 @@ function LoginPage() {
             <div className="w-full max-w-md space-y-6">
                 <div className="text-center">
                     <h2 className="text-3xl font-bold text-gray-800">{t("login:formTitle")}</h2>
-                    <p className="text-gray-500 mt-2">Welcome back! Please enter your details.</p>
+                    <p className="text-gray-500 mt-2">{t("login:welcome")}</p>
                 </div>
 
                 {/* TAB SWITCHER */}
@@ -288,7 +285,7 @@ function LoginPage() {
                             loginMethod === 'email' ? 'bg-white text-[#3366FF] shadow-sm' : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
-                        <FiMail className="mr-2" /> Email
+                        <FiMail className="mr-2" /> {t("login:tabs.email")}
                     </button>
                     <button
                         onClick={() => setLoginMethod('phone')}
@@ -296,7 +293,7 @@ function LoginPage() {
                             loginMethod === 'phone' ? 'bg-white text-[#3366FF] shadow-sm' : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
-                        <FiPhone className="mr-2" /> Phone Number
+                        <FiPhone className="mr-2" /> {t("login:tabs.phone")}
                     </button>
                 </div>
 
@@ -310,7 +307,7 @@ function LoginPage() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#3366FF] focus:border-transparent transition"
-                                placeholder="Enter your email"
+                                placeholder={t("login:Email")}
                             />
                         </div>
                         <div>
@@ -334,7 +331,7 @@ function LoginPage() {
 
                         <div className="flex justify-end">
                             <button type="button" onClick={() => setShowForgotModal(true)} className="text-sm font-medium text-[#3366FF] hover:underline">
-                                Forgot Password?
+                                {t("login:forgot.link")}
                             </button>
                         </div>
 
@@ -356,18 +353,18 @@ function LoginPage() {
                                 onClick={() => setPhoneMode('password')}
                                 className={`pb-1 border-b-2 font-medium transition ${phoneMode === 'password' ? 'border-[#3366FF] text-[#3366FF]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                             >
-                                Use Password
+                                {t("login:phone.usePassword")}
                             </button>
                             <button 
                                 onClick={() => setPhoneMode('otp')}
                                 className={`pb-1 border-b-2 font-medium transition ${phoneMode === 'otp' ? 'border-[#3366FF] text-[#3366FF]' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
                             >
-                                Use OTP Code
+                                {t("login:phone.useOtp")}
                             </button>
                         </div>
 
                         <div>
-                            <label className="block mb-1.5 text-sm font-medium text-gray-700">Phone Number</label>
+                            <label className="block mb-1.5 text-sm font-medium text-gray-700">{t("login:phone.label")}</label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">
                                     <FiPhone />
@@ -378,7 +375,7 @@ function LoginPage() {
                                     onChange={(e) => setPhone(e.target.value)}
                                     disabled={otpSent && phoneMode === 'otp'}
                                     className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#3366FF] focus:border-transparent transition disabled:bg-gray-100"
-                                    placeholder="0912345678"
+                                    placeholder={t("login:phone.placeholder")}
                                 />
                             </div>
                         </div>
@@ -386,7 +383,7 @@ function LoginPage() {
                         {phoneMode === 'password' && (
                             <form onSubmit={handlePhonePasswordLogin} className="space-y-5">
                                 <div>
-                                    <label className="block mb-1.5 text-sm font-medium text-gray-700">Password</label>
+                                    <label className="block mb-1.5 text-sm font-medium text-gray-700">{t("login:password")}</label>
                                     <div className="relative">
                                         <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">
                                             <FiLock />
@@ -411,7 +408,7 @@ function LoginPage() {
                                     disabled={loading}
                                     className="w-full bg-[#3366FF] text-white font-bold py-3.5 rounded-lg hover:bg-[#254EDB] transition shadow-lg shadow-blue-200 disabled:opacity-70"
                                 >
-                                    {loading ? "Logging In..." : "Login with Password"}
+                                    {loading ? t("login:loggingIn") : t("login:phone.loginWithPass")}
                                 </button>
                             </form>
                         )}
@@ -420,7 +417,7 @@ function LoginPage() {
                             <div className="space-y-5">
                                 {otpSent && (
                                     <div className="animate-fade-in-up">
-                                        <label className="block mb-1.5 text-sm font-medium text-gray-700">OTP Code</label>
+                                        <label className="block mb-1.5 text-sm font-medium text-gray-700">{t("login:otp.label")}</label>
                                         <div className="relative">
                                             <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">
                                                 <FiMessageSquare />
@@ -430,7 +427,7 @@ function LoginPage() {
                                                 value={otp}
                                                 onChange={(e) => setOtp(e.target.value)}
                                                 className="w-full border border-gray-300 rounded-lg pl-10 pr-4 py-3 focus:outline-none focus:ring-2 focus:ring-[#3366FF] focus:border-transparent transition tracking-widest font-bold text-center"
-                                                placeholder="123456"
+                                                placeholder={t("login:otp.placeholder")}
                                                 maxLength={6}
                                             />
                                         </div>
@@ -439,7 +436,7 @@ function LoginPage() {
                                                 onClick={() => { setOtpSent(false); setOtp(""); setCountdown(0); }}
                                                 className="text-xs text-[#3366FF] hover:underline"
                                             >
-                                                Change Phone Number?
+                                                {t("login:phone.change")}
                                             </button>
                                         </div>
                                     </div>
@@ -451,7 +448,7 @@ function LoginPage() {
                                         disabled={loading || !phone || countdown > 0}
                                         className="w-full bg-gray-800 text-white font-bold py-3.5 rounded-lg hover:bg-black transition shadow-lg disabled:opacity-70 flex justify-center items-center"
                                     >
-                                        {loading ? "Sending..." : (countdown > 0 ? `Resend OTP in ${countdown}s` : "Get OTP Code")}
+                                        {loading ? t("login:otp.sending") : (countdown > 0 ? t("login:otp.resendIn", {count: countdown}) : t("login:otp.get"))}
                                     </button>
                                 ) : (
                                     <div className="flex flex-col gap-3">
@@ -460,7 +457,7 @@ function LoginPage() {
                                             disabled={loading || !otp}
                                             className="w-full bg-[#3366FF] text-white font-bold py-3.5 rounded-lg hover:bg-[#254EDB] transition shadow-lg shadow-blue-200 disabled:opacity-70"
                                         >
-                                            {loading ? "Verifying..." : "Login with OTP"}
+                                            {loading ? t("login:otp.verifying") : t("login:otp.login")}
                                         </button>
                                         
                                         <button 
@@ -468,7 +465,7 @@ function LoginPage() {
                                             disabled={loading || countdown > 0}
                                             className="text-sm text-gray-500 hover:text-gray-800 disabled:text-gray-300"
                                         >
-                                            {countdown > 0 ? `Resend OTP in ${countdown}s` : "Resend OTP"}
+                                            {countdown > 0 ? t("login:otp.resendIn", {count: countdown}) : t("login:otp.resend")}
                                         </button>
                                     </div>
                                 )}
@@ -480,7 +477,7 @@ function LoginPage() {
                 {/* GOOGLE LOGIN */}
                 <div className="relative flex py-2 items-center">
                     <div className="flex-grow border-t border-gray-300"></div>
-                    <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">Or continue with</span>
+                    <span className="flex-shrink-0 mx-4 text-gray-400 text-sm">{t("login:divider")}</span>
                     <div className="flex-grow border-t border-gray-300"></div>
                 </div>
 
@@ -515,11 +512,11 @@ function LoginPage() {
             >
                 <FiX size={24} />
             </button>
-            <h3 className="text-2xl font-bold mb-2 text-[#0D1B3E]">Reset Password</h3>
-            <p className="text-gray-600 mb-6 text-sm">Enter your email address and we'll send you a link to unlock your account.</p>
+            <h3 className="text-2xl font-bold mb-2 text-[#0D1B3E]">{t("login:forgot.modalTitle")}</h3>
+            <p className="text-gray-600 mb-6 text-sm">{t("login:forgot.instruction")}</p>
             <form onSubmit={handleSendResetLink} className="space-y-4">
               <div>
-                <label className="block mb-1 text-sm font-medium text-gray-700">Email Address</label>
+                <label className="block mb-1 text-sm font-medium text-gray-700">{t("login:forgot.emailLabel")}</label>
                 <input
                   type="email"
                   value={forgotEmail}
@@ -530,8 +527,12 @@ function LoginPage() {
                 />
               </div>
               <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowForgotModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition font-medium">Cancel</button>
-                <button type="submit" disabled={isSendingLink} className="px-6 py-2 bg-[#3366FF] text-white rounded-lg hover:bg-[#254EDB] transition font-medium disabled:opacity-70">{isSendingLink ? "Sending..." : "Send Link"}</button>
+                <button type="button" onClick={() => setShowForgotModal(false)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition font-medium">
+                    {t("login:forgot.cancel")}
+                </button>
+                <button type="submit" disabled={isSendingLink} className="px-6 py-2 bg-[#3366FF] text-white rounded-lg hover:bg-[#254EDB] transition font-medium disabled:opacity-70">
+                    {isSendingLink ? t("login:forgot.sending") : t("login:forgot.send")}
+                </button>
               </div>
             </form>
           </div>

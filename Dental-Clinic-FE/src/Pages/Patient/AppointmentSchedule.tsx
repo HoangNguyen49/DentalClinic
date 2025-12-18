@@ -5,19 +5,25 @@ import { Link, useNavigate } from "react-router-dom";
 import { toast, ToastContainer } from "react-toastify";
 import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
+import { useTranslation } from "react-i18next";
+import { vi, enUS } from 'date-fns/locale';
+import { format } from 'date-fns';
 
 // --- HELPER FUNCTIONS ---
-const formatDate = (isoString: string) => {
+// Chuyển helper này vào trong component hoặc nhận tham số locale
+const formatDate = (isoString: string, language: string) => {
   const date = new Date(isoString);
+  const locale = language === 'vi' ? vi : enUS;
+  
   return {
     day: date.getDate(),
-    month: `THG ${date.getMonth() + 1}`,
+    month: language === 'vi' ? `THG ${date.getMonth() + 1}` : format(date, 'MMM', { locale }), // EN: Jan, Feb...
     time: date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    fullDate: date.toLocaleDateString('vi-VN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+    fullDate: format(date, "EEEE, dd/MM/yyyy", { locale })
   };
 };
 
-const StatusBadge = ({ status }: { status: string }) => {
+const StatusBadge = ({ status, t }: { status: string, t: any }) => {
   const normalized = status?.toUpperCase() || "";
 
   const styles: { [key: string]: string } = {
@@ -33,27 +39,18 @@ const StatusBadge = ({ status }: { status: string }) => {
     NO_SHOW: "bg-gray-200 text-gray-600 border-gray-300",
   };
   
-  const labels: { [key: string]: string } = {
-    PENDING: "Chờ xác nhận",
-    SCHEDULED: "Đã lên lịch",
-    CONFIRMED: "Đã lên lịch",
-    IN_PROGRESS: "Đang khám",
-    PROCESSING: "Đang khám",
-    COMPLETED: "Hoàn thành",
-    CANCELLED: "Đã hủy",
-    CANCELED: "Đã hủy",
-    NOSHOW: "Vắng mặt",
-    NO_SHOW: "Vắng mặt"
-  };
+  // Lấy text từ i18n
+  const label = t(`status.${normalized}`) || status;
 
   return (
     <span className={`px-3 py-1 rounded-full text-xs font-bold border ${styles[normalized] || styles.PENDING}`}>
-      {labels[normalized] || status}
+      {label}
     </span>
   );
 };
 
 function AppointmentSchedule() {
+  const { t, i18n } = useTranslation(["appointment-schedule"]);
   const [appointments, setAppointments] = useState<PatientAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'UPCOMING' | 'HISTORY' | 'CANCELLED'>('UPCOMING');
@@ -78,13 +75,12 @@ function AppointmentSchedule() {
       setAppointments(res.data);
     } catch (error) {
       console.error(error);
-      toast.error("Không thể tải danh sách lịch hẹn.");
+      toast.error(t('messages.loadError'));
     } finally {
       setLoading(false);
     }
   };
 
-  // --- LOGIC LỌC ---
   const filteredList = appointments.filter(apt => {
     const s = apt.status?.toUpperCase();
 
@@ -109,20 +105,20 @@ function AppointmentSchedule() {
           {/* Header Section */}
           <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-800">📅 Lịch Hẹn Của Tôi</h1>
-              <p className="text-gray-500 mt-1">Quản lý và theo dõi quá trình điều trị</p>
+              <h1 className="text-3xl font-bold text-gray-800">📅 {t('title')}</h1>
+              <p className="text-gray-500 mt-1">{t('subtitle')}</p>
             </div>
             <Link to="/booking" className="bg-[#3366FF] text-white px-6 py-2.5 rounded-full font-bold shadow hover:bg-blue-700 transition transform hover:scale-105">
-              + Đặt Lịch Mới
+              + {t('btnNew')}
             </Link>
           </div>
 
           {/* Filter Tabs */}
           <div className="flex gap-2 mb-6 border-b border-gray-200 overflow-x-auto">
             {[
-              { key: 'UPCOMING', label: 'Sắp tới & Đang khám' },
-              { key: 'HISTORY', label: 'Lịch sử khám' },
-              { key: 'CANCELLED', label: 'Đã hủy / Vắng mặt' }
+              { key: 'UPCOMING', label: t('tabs.upcoming') },
+              { key: 'HISTORY', label: t('tabs.history') },
+              { key: 'CANCELLED', label: t('tabs.cancelled') }
             ].map(tab => (
               <button
                 key={tab.key}
@@ -143,14 +139,14 @@ function AppointmentSchedule() {
             {filteredList.length === 0 ? (
               <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div className="text-5xl mb-4">📭</div>
-                <p className="text-gray-500 text-lg">Bạn không có lịch hẹn nào trong mục này.</p>
+                <p className="text-gray-500 text-lg">{t('empty.message')}</p>
                 {filter === 'UPCOMING' && (
-                  <Link to="/booking" className="text-[#3366FF] font-bold hover:underline mt-2 inline-block">Đặt lịch ngay &rarr;</Link>
+                  <Link to="/booking" className="text-[#3366FF] font-bold hover:underline mt-2 inline-block">{t('empty.action')} &rarr;</Link>
                 )}
               </div>
             ) : (
               filteredList.map((apt) => {
-                const dateInfo = formatDate(apt.startDateTime);
+                const dateInfo = formatDate(apt.startDateTime, i18n.language);
                 return (
                   <div key={apt.appointmentId} className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row gap-6 hover:shadow-md transition duration-300">
                     
@@ -170,13 +166,13 @@ function AppointmentSchedule() {
                           <h3 className="text-xl font-bold text-gray-800 line-clamp-1">{apt.serviceName}</h3>
                           {apt.variantName && <span className="text-sm text-gray-500 font-medium">{apt.variantName}</span>}
                         </div>
-                        <StatusBadge status={apt.status} />
+                        <StatusBadge status={apt.status} t={t} />
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm text-gray-600 mt-3">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">👨‍⚕️</span>
-                          <span>Bác sĩ: <strong className="text-gray-800">{apt.doctorName}</strong></span>
+                          <span>{t('card.doctor')}: <strong className="text-gray-800">{apt.doctorName}</strong></span>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className="text-lg">🏥</span>
@@ -187,10 +183,10 @@ function AppointmentSchedule() {
                           <span className="line-clamp-1">{apt.clinicAddress}</span>
                         </div>
                         {apt.note && (
-                           <div className="md:col-span-2 flex items-start gap-2 text-gray-500 italic">
-                             <span className="text-lg">📝</span>
-                             <span className="line-clamp-2">{apt.note}</span>
-                           </div>
+                            <div className="md:col-span-2 flex items-start gap-2 text-gray-500 italic">
+                              <span className="text-lg">📝</span>
+                              <span className="line-clamp-2">{apt.note}</span>
+                            </div>
                         )}
                       </div>
                     </div>

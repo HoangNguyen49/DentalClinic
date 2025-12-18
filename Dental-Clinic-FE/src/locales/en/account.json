@@ -1,0 +1,60 @@
+{
+  "title": "My Account",
+  "fullName": "Full Name",
+  "email": "Email",
+  "phone": "Phone Number",
+  "username": "Username",
+  "avatar": {
+    "choose": "Choose your avatar",
+    "confirm": "Confirm Upload",
+    "success": "Avatar updated successfully!",
+    "failed": "Failed to update avatar."
+  },
+  "buttons": {
+    "save": "Save Changes",
+    "complete": "Complete & Go Home",
+    "changePassword": "Change Password",
+    "setPassword": "Set Password",
+    "getQr": "Get Login QR Code"
+  },
+  "messages": {
+    "missingPhone": "Please enter your phone number to complete profile!",
+    "forceUpdate": "⚠️ You need to update your phone number to complete registration.",
+    "updateSuccess": "Profile updated successfully!",
+    "redirecting": "Complete! Redirecting to home...",
+    "qrError": "Could not generate QR code."
+  },
+  "qrModal": {
+    "title": "Login Mobile App",
+    "instruction": "Open the <strong>Sunshine Dental</strong> app on your phone and scan this code to login instantly.",
+    "expiry": "This code expires in 2 minutes"
+  },
+  "password": {
+    "titleChange": "Change Password",
+    "titleSet": "Set Password",
+    "current": "Current Password",
+    "new": "New Password",
+    "confirm": "Confirm Password",
+    "btnUpdate": "Update Password",
+    "btnSet": "Set Password",
+    "googleWarning": "You are using a Google account without a password. Please set a new password.",
+    "success": "Password updated successfully!",
+    "matchError": "Confirm password must match.",
+    "ruleError": "Password must be 8-100 chars, include upper, lower, digit, special char."
+  },
+  "menu": {
+    "myAccount": "Account Settings",
+    "healthOverview": "📊 Health Overview",
+    "myAppointments": "📅 My Appointments",
+    "medicalRecords": "📋 Medical Records",
+    "myAttendance": "My Attendance",
+    "leaveRequests": "My Leave Requests",
+    "dashboard": {
+      "hr": "HR Dashboard",
+      "admin": "Admin Dashboard",
+      "reception": "Reception Dashboard",
+      "doctor": "Doctor Dashboard",
+      "accountant": "Accountant Dashboard"
+    }
+  }
+}

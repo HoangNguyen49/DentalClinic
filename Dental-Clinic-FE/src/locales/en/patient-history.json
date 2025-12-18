@@ -1,0 +1,18 @@
+{
+  "title": "Medical History",
+  "subtitle": "View your treatment history in detail.",
+  "backToDashboard": "Back to Dashboard",
+  "totalRecords": "Total: {{count}} records",
+  "searchPlaceholder": "Search by doctor, diagnosis, treatment...",
+  "filter": {
+    "clear": "Clear Filter"
+  },
+  "empty": {
+    "title": "No results found.",
+    "action": "Clear filter to view all"
+  },
+  "pagination": {
+    "prev": "Prev",
+    "next": "Next"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "ranks": {
+    "diamond": "Kim Cương",
+    "gold": "Vàng",
+    "silver": "Bạc",
+    "member": "Thành viên"
+  },
+  "discount": "🎁 Ưu đãi thành viên: Giảm {{pct}}%",
+  "patientCode": "Mã BN",
+  "loading": "Đang tải dữ liệu...",
+  "empty": "Không có dữ liệu.",
+  "spending": {
+    "label": "Chi tiêu tích lũy",
+    "needMore": "Cần thêm <1>{{amount}}</1> để thăng hạng kế tiếp.",
+    "vipTitle": "Đẳng cấp thượng lưu 👑",
+    "vipSubtitle": "Cảm ơn bạn đã là khách hàng thân thiết nhất!"
+  },
+  "quickLinks": {
+    "title": "MENU NHANH",
+    "appointments": "Lịch hẹn",
+    "account": "Tài khoản",
+    "profile": "Hồ sơ",
+    "contact": "Liên hệ"
+  },
+  "aiTip": {
+    "title": "Lời khuyên AI",
+    "label": "AUTO"
+  },
+  "activities": {
+    "title": "HOẠT ĐỘNG GẦN ĐÂY"
+  },
+  "wellness": {
+    "excellent": "An toàn",
+    "warning": "Cần kiểm tra",
+    "overdue": "Quá hạn",
+    "new": "Thành viên mới",
+    "daysSuffix": "ngày chưa khám",
+    "btnBook": "Đặt lịch ngay"
+  },
+  "appointment": {
+    "empty": "Chưa có lịch hẹn",
+    "btnBook": "+ Đặt lịch mới",
+    "tag": "SẮP TỚI",
+    "room": "PHÒNG"
+  },
+  "history": {
+    "titleRecent": "Khám gần đây",
+    "titleAll": "Toàn bộ lịch sử khám",
+    "viewAll": "Xem tất cả",
+    "empty": "Chưa có hồ sơ bệnh án nào.",
+    "table": {
+      "date": "Ngày khám",
+      "doctor": "Bác sĩ",
+      "diagnosis": "Chẩn đoán",
+      "treatment": "Điều trị",
+      "btnView": "Xem"
+    },
+    "modal": {
+      "title": "Chi tiết hồ sơ",
+      "diagnosis": "Chẩn đoán",
+      "treatment": "Điều trị",
+      "advice": "💬 Lời dặn",
+      "prescription": "💊 Đơn thuốc",
+      "images": "Hình ảnh",
+      "btnClose": "Đóng lại"
+    }
+  }
+}
