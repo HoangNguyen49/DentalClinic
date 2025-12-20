@@ -12,13 +12,24 @@ import {
   FileText,
   Crown,
   DollarSign,
+  Play,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import CreateMedicalRecordModal from "./CreateMedicalRecordModal";
 import ServiceVariantsModal from "./ServiceVariantsModal";
+import AISummaryPanel from "../../components/Doctor/AISummaryPanel";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
 import type { DoctorAppointmentDTO, ServiceDTO } from "../types/doctor";
+
+interface AISummaryData {
+  overview: string;
+  alerts: string;
+  recentTreatments: string;
+  rawSummary?: string;
+}
 
 export default function AppointmentDetail() {
   const { appointmentId } = useParams<{ appointmentId: string }>();
@@ -36,6 +47,14 @@ export default function AppointmentDetail() {
   const [showVariantsModal, setShowVariantsModal] = useState(false);
   const [activeVariantId, setActiveVariantId] = useState<number | undefined>(undefined);
   const [activeVariantName, setActiveVariantName] = useState<string | undefined>(undefined);
+  
+  // AI Summary state
+  const [aiSummary, setAiSummary] = useState<AISummaryData | null>(null);
+  const [aiLoading, setAiLoading] = useState(true);
+  const [aiError, setAiError] = useState<string | null>(null);
+  
+  // Status change state
+  const [changingStatus, setChangingStatus] = useState(false);
 
   useEffect(() => {
     if (!appointmentId || !doctorId) {
@@ -44,6 +63,7 @@ export default function AppointmentDetail() {
       return;
     }
 
+    // Fetch appointment detail and AI summary in parallel
     const fetchAppointment = async () => {
       try {
         const response = await axios.get<DoctorAppointmentDTO>(
@@ -69,7 +89,43 @@ export default function AppointmentDetail() {
       }
     };
 
+    // Fetch AI summary (new)
+    const fetchAISummary = async () => {
+      if (!appointmentId || !accessToken) {
+        setAiLoading(false);
+        return;
+      }
+
+      setAiLoading(true);
+      setAiError(null);
+
+      try {
+        const response = await axios.get<AISummaryData>(
+          `${apiBase}/api/doctor/appointments/${appointmentId}/ai-summary`,
+          {
+            headers: { Authorization: `Bearer ${accessToken}` },
+          }
+        );
+        setAiSummary(response.data);
+      } catch (err: unknown) {
+        console.error("Error fetching AI summary:", err);
+        // Don't block the page if AI summary fails - just show error in panel
+        const resp = (err as { response?: { status?: number } })?.response;
+        if (resp?.status === 401) {
+          setAiError("Unauthorized. Please log in again.");
+        } else if (resp?.status === 404) {
+          setAiError("Appointment not found or you don't have access.");
+        } else {
+          setAiError("Unable to load AI summary. Please try refreshing the page.");
+        }
+      } finally {
+        setAiLoading(false);
+      }
+    };
+
+    // Call both APIs in parallel
     fetchAppointment();
+    fetchAISummary();
   }, [appointmentId, doctorId, apiBase, accessToken, navigate]);
 
 
@@ -78,9 +134,85 @@ export default function AppointmentDetail() {
     const s = status?.toLowerCase() || "";
     if (s === "pending") return "bg-yellow-100 text-yellow-800";
     if (s === "scheduled") return "bg-blue-100 text-blue-800";
+    if (s === "in_progress" || s === "in-progress") return "bg-purple-100 text-purple-800";
     if (s === "completed") return "bg-green-100 text-green-800";
     if (s === "canceled") return "bg-red-100 text-red-800";
     return "bg-gray-100 text-gray-800";
+  };
+
+  // Change appointment status
+  const changeStatus = async (newStatus: string) => {
+    if (!appointmentId || !accessToken || changingStatus) return;
+
+    const raw = (newStatus || "").trim().toUpperCase();
+    let mapped = raw;
+    // Normalize common aliases (send normalized values to backend)
+    if (["IN-PROGRESS", "IN_PROGRESS"].includes(raw)) mapped = "IN_PROGRESS";
+    if (["NO-SHOW", "NO_SHOW", "NO-SHOWING", "NO_SHOWING"].includes(raw)) mapped = "CANCELED";
+    if (raw === "CANCELLED") mapped = "CANCELED";
+
+    // Frontend only warns when completing — backend performs final validation
+    if (mapped === "COMPLETED") {
+      toast.warning("Please ensure you have created a medical record before completing.", { autoClose: 4000 });
+    }
+
+    setChangingStatus(true);
+    try {
+      await axios.post(
+        `${apiBase}/api/doctor/appointments/${appointmentId}/status?status=${mapped}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        }
+      );
+
+      toast.success(`Appointment status changed to ${mapped}`);
+      
+      // Refresh appointment data
+      if (appointmentId && doctorId) {
+        try {
+          const response = await axios.get<DoctorAppointmentDTO>(
+            `${apiBase}/api/doctor/appointments/${doctorId}/${appointmentId}`,
+            {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            }
+          );
+          setAppointment(response.data);
+        } catch (err) {
+          console.error("Error refreshing appointment:", err);
+        }
+      }
+    } catch (postErr: unknown) {
+      const resp = (postErr as { response?: { status?: number; data?: unknown } })?.response;
+
+      // Handle backend validation errors
+      if (resp && resp.status === 400) {
+        const payload = resp.data as { message?: unknown } | undefined;
+        const serverMsg = payload && typeof payload.message === "string" ? payload.message : undefined;
+
+        // Backend returns 400 with message "Cannot set to COMPLETED: medical record is required"
+        if (serverMsg && serverMsg.toLowerCase().includes("medical record is required")) {
+          console.error(`[DoctorAppointment] appointmentId=${appointmentId} missing medical record according to server:`, resp.data);
+          // Show modal prompting to create/view medical record
+          toast.error("Cannot complete appointment: medical record is required.");
+          setShowMedicalRecordModal(true);
+          return;
+        }
+
+        // Other validation messages from backend
+        toast.error(serverMsg ?? "Validation failed");
+        return;
+      }
+
+      console.error("Error changing status:", postErr);
+      if (postErr instanceof Error) {
+        toast.error(postErr.message);
+      } else {
+        toast.error("Failed to change appointment status");
+      }
+    } finally {
+      setChangingStatus(false);
+    }
   };
 
   const handleServiceClick = async () => {
@@ -170,8 +302,109 @@ export default function AppointmentDetail() {
               </button>
           </div>
 
+          {/* AI Summary Panel - Prominently displayed at the top */}
+          <AISummaryPanel 
+            summary={aiSummary}
+            loading={aiLoading}
+            error={aiError}
+          />
+
           <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-            <h1 className="text-2xl font-bold text-[#0D1B3E] mb-6">Appointment Details</h1>
+            <div className="flex items-center justify-between mb-6">
+              <h1 className="text-2xl font-bold text-[#0D1B3E]">Appointment Details</h1>
+              
+              {/* Status Change Actions - inline buttons */}
+              <div className="flex items-center gap-2">
+                {(() => {
+                  const now = new Date();
+                  const start = new Date(appointment.startDateTime);
+                  const startMinus5 = new Date(start.getTime() - 5 * 60 * 1000);
+                  const canStart = now >= startMinus5 && (appointment.status || "").toUpperCase() === "SCHEDULED";
+
+                  const startPlus20 = new Date(start.getTime() + 20 * 60 * 1000);
+                  const canCancel = ( (appointment.status || "").toUpperCase() === "SCHEDULED" || (appointment.status || "").toUpperCase() === "CONFIRMED") && now >= startPlus20;
+
+                  const statusUpper = (appointment.status || "").toUpperCase();
+                  const isProcessing = statusUpper === "PROCESSING" || statusUpper === "IN_PROGRESS" || statusUpper === "IN-PROGRESS";
+
+                  const exceeds20Min = now.getTime() - start.getTime() > 20 * 60 * 1000;
+
+                  return (
+                    <>
+                      {/* SCHEDULED -> Start */}
+                      {(appointment.status || "").toUpperCase() === "SCHEDULED" && (
+                        <button
+                          onClick={async () => {
+                            if (!canStart) {
+                              toast.error("Cannot start yet: appointments can only be started within 5 minutes of scheduled time");
+                              return;
+                            }
+                            await changeStatus("IN_PROGRESS");
+                          }}
+                          disabled={!canStart || changingStatus}
+                          className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 transition ${canStart ? "bg-purple-600 text-white hover:bg-purple-700" : "bg-gray-300 text-gray-500 cursor-not-allowed"} disabled:opacity-50`}
+                          title={!canStart ? "Cannot start yet" : "Start processing"}
+                        >
+                          <Play className="w-4 h-4" />
+                          Start
+                        </button>
+                      )}
+
+                      {/* PROCESSING -> Complete (+ Cancel if overdue) */}
+                      {isProcessing && (
+                        <>
+                          <button
+                            onClick={async () => {
+                              // Let backend validate medical record requirement — frontend only warns
+                              await changeStatus("COMPLETED");
+                            }}
+                            disabled={changingStatus}
+                            className="px-4 py-2 text-sm font-medium bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 transition disabled:opacity-50"
+                            title="Mark as Completed (requires medical record)"
+                          >
+                            <CheckCircle2 className="w-4 h-4" />
+                            Complete
+                          </button>
+
+                          {exceeds20Min && (
+                            <button
+                              onClick={async () => await changeStatus("CANCELED")}
+                              disabled={changingStatus}
+                              className="px-4 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 flex items-center gap-2 transition disabled:opacity-50 animate-pulse"
+                              title="Meeting exceeded 20 minutes - recommend canceling"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              Cancel
+                            </button>
+                          )}
+                        </>
+                      )}
+
+                      {/* Allow cancel from SCHEDULED/CONFIRMED after 20min */}
+                      {canCancel && ( (appointment.status || "").toUpperCase() !== "CANCELED") && (
+                        <button
+                          onClick={async () => await changeStatus("CANCELED")}
+                          disabled={changingStatus}
+                          className="px-3 py-2 text-sm font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
+
+                {/* Keep Create Medical Record button available */}
+                <button
+                  onClick={() => setShowMedicalRecordModal(true)}
+                  disabled={!appointment.patient?.id}
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                >
+                  <FileText className="w-4 h-4" />
+                  Create Medical Record
+                </button>
+              </div>
+            </div>
 
             <div className="space-y-6">
               {/* Appointment Information */}
@@ -378,8 +611,20 @@ export default function AppointmentDetail() {
         patientId={appointment.patient?.id}
         doctorId={doctorId}
         onClose={() => setShowMedicalRecordModal(false)}
-        onSuccess={() => {
-          // Could refetch appointment if needed
+        onSuccess={async () => {
+          // Refetch appointment detail after creating medical record
+          if (appointmentId && doctorId) {
+            try {
+              const response = await axios.get<DoctorAppointmentDTO>(
+                `${apiBase}/api/doctor/appointments/${doctorId}/${appointmentId}`,
+                { headers: { Authorization: `Bearer ${accessToken}` } }
+              );
+              setAppointment(response.data);
+              toast.success("Hồ sơ bệnh án đã được tạo. Bạn có thể hoàn tất lịch hẹn.");
+            } catch (err) {
+              console.error("Error refreshing appointment after creating medical record:", err);
+            }
+          }
         }}
       />
 

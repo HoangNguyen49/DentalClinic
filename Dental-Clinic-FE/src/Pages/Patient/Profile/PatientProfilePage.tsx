@@ -15,12 +15,13 @@ const PatientProfilePage: React.FC = () => {
     const navigate = useNavigate();
     
     // Form Hook
-    const { register, handleSubmit, reset, setValue } = useForm<PatientProfile>();
+    const { register, handleSubmit, reset } = useForm<PatientProfile>();
 
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
         if (!token) { navigate("/login"); return; }
         fetchProfile();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchProfile = async () => {
@@ -29,7 +30,7 @@ const PatientProfilePage: React.FC = () => {
             setProfile(data);
             // Set giá trị ban đầu cho form
             reset(data); 
-        } catch (error) {
+        } catch {
             toast.error("Không thể tải hồ sơ.");
         } finally {
             setLoading(false);
@@ -42,10 +43,11 @@ const PatientProfilePage: React.FC = () => {
             toast.success("Cập nhật hồ sơ thành công!");
             setProfile(data); // Cập nhật lại UI
             setIsEditing(false); // Tắt chế độ sửa
-        } catch (error) {
+        } catch (err) {
             toast.error("Cập nhật thất bại. Vui lòng thử lại.");
         }
     };
+
 
     if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#3366FF]"></div></div>;
 
@@ -194,6 +196,8 @@ const PatientProfilePage: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+
             </div>
             <Footer />
         </>
