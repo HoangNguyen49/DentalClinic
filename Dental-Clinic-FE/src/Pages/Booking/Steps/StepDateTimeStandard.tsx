@@ -54,8 +54,8 @@ export default function StepDateTimeStandard({ data, updateData, onNext, onPrev 
         if (selectedDate === todayStr) {
             const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
             
-            // 1. Mốc 10:30 (10 * 60 + 30 = 630 phút)
-            if (currentTotalMinutes >= 630) {
+            // 1. Mốc 10h (10 * 60 = 600 phút)
+            if (currentTotalMinutes >= 600) {
                 isMorningValid = false; 
             }
 
