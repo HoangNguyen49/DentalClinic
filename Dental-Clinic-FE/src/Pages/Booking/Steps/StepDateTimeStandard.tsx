@@ -32,32 +32,58 @@ export default function StepDateTimeStandard({ data, updateData, onNext, onPrev 
       if (!data.date || !data.clinicId) return;
 
       const checkDate = async () => {
-          setLoading(true);
-          updateData({ ...data, time: '' }); // Reset lựa chọn cũ
+    setLoading(true);
+    updateData({ ...data, time: '' }); // Reset lựa chọn cũ
 
-          try {
-              const token = localStorage.getItem("accessToken");
-              
-              const res = await axios.get<AvailabilityResponse>(`${API_BASE_URL}/api/booking/availability`, {
-                  params: { clinicId: data.clinicId, date: data.date },
-                  headers: { Authorization: `Bearer ${token}` }
-              });
+    try {
+        const token = localStorage.getItem("accessToken");
+        
+        const res = await axios.get<AvailabilityResponse>(`${API_BASE_URL}/api/booking/availability`, {
+            params: { clinicId: data.clinicId, date: data.date },
+            headers: { Authorization: `Bearer ${token}` }
+        });
 
-              setAvailability({
-                  morning: res.data.morningAvailable,
-                  afternoon: res.data.afternoonAvailable
-              });
-              
-              if (res.data.message) {
-                  toast.warn(res.data.message);
-              }
+        let isMorningValid = res.data.morningAvailable;
+        let isAfternoonValid = res.data.afternoonAvailable;
 
-          } catch (error) {
-              console.error(error);
-          } finally {
-              setLoading(false);
-          }
-      };
+        const now = new Date();
+        const selectedDate = data.date; 
+        const todayStr = now.toLocaleDateString('en-CA');
+
+        // Chỉ xử lý nếu ngày chọn là ngày hôm nay
+        if (selectedDate === todayStr) {
+            const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+            
+            // 1. Mốc 10:30 (10 * 60 + 30 = 630 phút)
+            if (currentTotalMinutes >= 630) {
+                isMorningValid = false; 
+            }
+
+            // 2. Mốc 16:30 (16 * 60 + 30 = 990 phút)
+            if (currentTotalMinutes >= 990) {
+                isAfternoonValid = false;
+            }
+        }
+
+        setAvailability({
+            morning: isMorningValid,
+            afternoon: isAfternoonValid
+        });
+        
+        if (res.data.message) {
+            toast.warn(res.data.message);
+        }
+
+        if (selectedDate === todayStr && !isMorningValid && !isAfternoonValid) {
+            toast.info("Hiện đã quá giờ đặt lịch cho hôm nay. Vui lòng chọn ngày tiếp theo!");
+        }
+
+    } catch (error) {
+        console.error(error);
+    } finally {
+        setLoading(false);
+    }
+};
 
       checkDate();
   }, [data.date, data.clinicId]);
@@ -65,8 +91,8 @@ export default function StepDateTimeStandard({ data, updateData, onNext, onPrev 
   const handleSelectSession = (session: 'MORNING' | 'AFTERNOON') => {
     const time = session === 'MORNING' ? '08:00' : '13:00';
     // Dùng text hiển thị cho user từ i18n
-    const morningLabel = `${t("stepDateStandard.morning")} (08:00 - 12:00)`;
-    const afternoonLabel = `${t("stepDateStandard.afternoon")} (13:00 - 17:00)`;
+    const morningLabel = `${t("stepDateStandard.morning")} (08:00 - 11:00)`;
+    const afternoonLabel = `${t("stepDateStandard.afternoon")} (13:00 - 18:00)`;
 
     updateData({ 
         ...data, 
@@ -123,7 +149,7 @@ export default function StepDateTimeStandard({ data, updateData, onNext, onPrev 
                        <span className={`font-bold block text-lg transition-colors ${data.time === '08:00' ? 'text-orange-700' : 'text-gray-700'}`}>
                            {t("stepDateStandard.morning")}
                        </span>
-                       <span className="text-xs font-medium text-gray-500">08:00 - 12:00</span>
+                       <span className="text-xs font-medium text-gray-500">08:00 - 11:00</span>
                    </div>
 
                    {data.time === '08:00' && (
@@ -164,7 +190,7 @@ export default function StepDateTimeStandard({ data, updateData, onNext, onPrev 
                         <span className={`font-bold block text-lg transition-colors ${data.time === '13:00' ? 'text-blue-700' : 'text-gray-700'}`}>
                             {t("stepDateStandard.afternoon")}
                         </span>
-                        <span className="text-xs font-medium text-gray-500">13:00 - 17:00</span>
+                        <span className="text-xs font-medium text-gray-500">13:00 - 18:00</span>
                    </div>
 
                    {data.time === '13:00' && (
