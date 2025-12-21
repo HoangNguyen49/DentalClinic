@@ -144,17 +144,19 @@ const AdvancePaymentModal: React.FC<Props> = ({
                         </div>
 
                         {/* Amount Input */}
-                        <div className="w-full sm:w-40 relative">
+                        <div className="w-full sm:w-48 relative">
                             <label className="block text-xs text-gray-500 mb-1">Amount</label>
                             <div className="relative">
-                                <DollarSign className="absolute left-2.5 top-2.5 text-gray-400 w-4 h-4" />
                                 <input
                                     type="number"
                                     value={newAmount}
                                     onChange={(e) => setNewAmount(e.target.value)}
                                     placeholder="0"
-                                    className="w-full pl-8 pr-3 py-2.5 border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
+                                    className="w-full px-4 pr-12 py-2.5 border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:ring-2 focus:ring-blue-500 outline-none"
                                 />
+                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                    <span className="text-gray-400 text-xs font-bold">VND</span>
+                                </div>
                             </div>
                         </div>
 

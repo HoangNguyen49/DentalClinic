@@ -118,8 +118,16 @@ export const useSalaryConfig = () => {
 
   // --- CÁC HÀM XỬ LÝ SỰ KIỆN KHÔNG THAY ĐỔI ---
   const handleChange = (field: keyof SalaryProfileRequest, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
+    setFormData(prev => {
+        const newData = { ...prev, [field]: value };
+
+        if (field === 'baseSalary') {
+            newData.insuranceAmount = value;
+        }
+
+        return newData;
+    });
+};
 
   const addAllowance = () => {
     setFormData(prev => ({
