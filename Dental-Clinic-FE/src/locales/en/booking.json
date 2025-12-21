@@ -77,6 +77,11 @@
     "selectDateFirst": "Please select a date to see available slots.",
     "noSlots": "No available slots."
   },
+  "stepDateTime": {
+    "errors": {
+      "slotTaken": "Sorry, this slot was just taken by someone else. Please select another time!"
+    }
+  },
   "stepSummary": {
     "title": "Confirm Booking",
     "subtitle": "Please review your information carefully before finishing",

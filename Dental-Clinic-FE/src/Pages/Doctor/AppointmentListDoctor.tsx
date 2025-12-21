@@ -109,7 +109,7 @@ export default function AppointmentList() {
       const raw = (newStatus || "").trim().toUpperCase();
       // Normalize common aliases
       let mapped = raw;
-      if (["IN-PROGRESS", "IN_PROGRESS"].includes(raw)) mapped = "PROCESSING";
+      if (["IN-PROGRESS", "IN_PROGRESS"].includes(raw)) mapped = "IN_PROGRESS";
       if (["NO-SHOW", "NO_SHOW", "NO-SHOWING", "NO_SHOWING"].includes(raw)) mapped = "CANCELED";
       if (raw === "CANCELLED") mapped = "CANCELED";
 
@@ -122,7 +122,7 @@ export default function AppointmentList() {
       }
 
       // THÊM: ĐÃ XÓA VALIDATION LOGIC Ở FRONTEND, CHỈ ĐỂ BACKEND XỬ LÝ VALIDATION
-      // ĐÃ XÓA: Các validation cho PROCESSING, COMPLETED, CANCELED ở frontend
+      // ĐÃ XÓA: Các validation cho IN_PROGRESS, COMPLETED, CANCELED ở frontend
 
       // All validations passed — send request with normalized status
       try {
@@ -183,7 +183,7 @@ export default function AppointmentList() {
   const getStatusBadgeClass = (status: string) => {
     const s = status?.toLowerCase() || "";
     if (s === "scheduled") return "bg-blue-100 text-blue-800";
-    if (s === "processing") return "bg-purple-100 text-purple-800";
+    if (s === "in_progress") return "bg-purple-100 text-purple-800";
     if (s === "completed") return "bg-green-100 text-green-800";
     if (s === "canceled") return "bg-red-100 text-red-800";
     return "bg-gray-100 text-gray-800";
@@ -292,7 +292,7 @@ export default function AppointmentList() {
                 >
                   <option value="">All Status</option>
                   <option value="SCHEDULED">Scheduled</option>
-                  <option value="PROCESSING">Processing</option>
+                  <option value="IN_PROGRESS">IN_PROGRESS</option>
                   <option value="COMPLETED">Completed</option>
                   <option value="CANCELED">Canceled</option>
                 </select>
@@ -485,17 +485,17 @@ export default function AppointmentList() {
                             {appointment.status === "SCHEDULED" && (
                               <>
                                 <button
-                                  onClick={() => changeStatus(appointment.appointmentId, "PROCESSING")}
+                                  onClick={() => changeStatus(appointment.appointmentId, "IN_PROGRESS")}
                                   disabled={!canStart}
                                   className={`text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded transition ${!canStart ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-200'}`}
-                                  title={!canStart ? 'Cannot start yet: appointments can only be started within 5 minutes of scheduled time' : 'Start processing - meeting in progress'}
+                                  title={!canStart ? 'Cannot start yet: appointments can only be started within 5 minutes of scheduled time' : 'Start IN_PROGRESS - meeting in progress'}
                                 >
                                   Start
                                 </button>
                               </>
                             )}
 
-                            {appointment.status === "PROCESSING" && (
+                            {appointment.status === "IN_PROGRESS" && (
                               <>
                                 {/* Check if appointment duration exceeded 20 minutes */}
                                 {(() => {

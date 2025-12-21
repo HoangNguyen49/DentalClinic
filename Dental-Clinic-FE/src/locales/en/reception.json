@@ -98,7 +98,8 @@
     "close": "Close",
     "save": "Save Changes",
     "success": "Updated successfully!",
-    "error": "Update failed."
+    "error": "Update failed.",
+    "statusLocked": "Status is managed by Doctor"
   },
   "roomModal": {
     "title": "Select Treatment Room",

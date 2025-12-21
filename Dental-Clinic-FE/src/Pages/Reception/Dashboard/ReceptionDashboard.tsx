@@ -5,6 +5,8 @@ import { useTranslation } from "react-i18next"; // 1. Import i18n
 import QuickBookingModal from "./QuickBookingModal";
 import AppointmentEditModal from "./AppointmentEditModal";
 import RoomSelectionModal from "./RoomSelectionModal";
+import SockJS from 'sockjs-client';
+import Stomp from 'stompjs';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 const START_HOUR = 8;
@@ -253,6 +255,35 @@ export default function ReceptionDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    const socket = new SockJS(`${API_BASE_URL}/ws`);
+    const stompClient = Stomp.over(socket);
+    stompClient.debug = () => {}; 
+
+    stompClient.connect({ Authorization: `Bearer ${token}` }, (frame?: Stomp.Frame) => {
+        console.log('Connected: ' + frame);
+        
+        // Khai báo kiểu Message để TS không báo lỗi
+        stompClient.subscribe('/topic/appointments', (message: Stomp.Message) => {
+            if (message.body === "REFRESH_DATA") {
+                fetchData(); 
+                toast.info("Có cập nhật mới về trạng thái lịch hẹn từ Bác sĩ!");
+            }
+        });
+    }, (error) => {
+        console.error("WebSocket error:", error);
+    });
+
+    return () => {
+        if (stompClient && stompClient.connected) {
+            stompClient.disconnect(() => {});
+        }
+    };
+}, []);
 
   useEffect(() => {
     fetchData();

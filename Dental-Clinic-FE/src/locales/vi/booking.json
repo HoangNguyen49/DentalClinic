@@ -77,6 +77,11 @@
     "selectDateFirst": "Vui lòng chọn ngày để xem giờ trống.",
     "noSlots": "Không có lịch trống."
   },
+  "stepDateTime": {
+    "errors": {
+      "slotTaken": "Rất tiếc, khung giờ này vừa có người đặt nhanh hơn bạn một chút. Vui lòng chọn khung giờ khác nhé!"
+    }
+  },
   "stepSummary": {
     "title": "Xác Nhận Thông Tin",
     "subtitle": "Vui lòng kiểm tra kỹ thông tin trước khi hoàn tất",

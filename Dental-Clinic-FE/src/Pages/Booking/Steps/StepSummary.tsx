@@ -78,7 +78,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
 
   // Format giây thành mm:ss
   const formatTime = (seconds: number) => {
-    const m = Math.floor(seconds / 60);
+const m = Math.floor(seconds / 60);
     const s = seconds % 60;
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
@@ -103,13 +103,15 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
   const totalDuration = (data.selectedServices || []).reduce((acc: number, s: any) => acc + (s.defaultDuration || 0), 0);
   const uniqueCategories = Array.from(new Set((data.selectedServices || []).map((s: any) => s.category)));
 
-  // --- XỬ LÝ THANH TOÁN ---
+
+  // --- XỬ LÝ THANH TOÁN ( ĐỒNG BỘ VỚI RACE CONDITION) ---
   const handlePayment = async (method: 'VNPAY' | 'PAYPAL') => {
     try {
       setIsProcessing(true);
       
       sessionStorage.setItem('bookingRetryData', JSON.stringify(data));
 
+      // 1. Gọi onConfirm (hàm này ở BookingPage sẽ check SLOT_ALREADY_BOOKED)
       const newAppointment = await onConfirm();
 
       if (!newAppointment || !newAppointment.id) {
@@ -120,6 +122,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
       currentRetryData.appointmentId = newAppointment.id;
       sessionStorage.setItem('bookingRetryData', JSON.stringify(currentRetryData));
 
+      // 2. Tiếp tục luồng thanh toán
       if (method === 'VNPAY') {
         const paymentUrl = await getVnpayUrl(newAppointment.id);
         window.location.href = paymentUrl;
@@ -141,9 +144,15 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
       const errorData = error.response?.data;
       const errorMsg = typeof errorData === 'string' ? errorData : (errorData?.message || "");
 
+      if (errorMsg === "SLOT_ALREADY_BOOKED") {
+          return; 
+      }
+
+      // Xử lý các lỗi đặc thù khác (Hết hạn, Hủy...)
       if (errorMsg.includes("BOOKING_EXPIRED") || errorMsg.includes("hủy") || errorMsg.includes("cancelled")) {
           setShowExpiredModal(true); 
       } else {
+          // Chỉ hiện Toast nếu lỗi đó chưa được xử lý ở BookingPage
           toast.error(errorMsg || "Payment Error");
       }
     }
@@ -160,7 +169,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
     <div className="space-y-8 animate-fadeIn relative">
 
       {/* 🔔 MODAL HẾT GIỜ */}
-      <ExpiredModal isOpen={showExpiredModal} onRedirect={handleRebook} />
+<ExpiredModal isOpen={showExpiredModal} onRedirect={handleRebook} />
 
       <div className="text-center">
         <h3 className="text-2xl font-bold text-gray-800">{t("stepSummary.title")}</h3>
@@ -217,7 +226,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
                         <div className="w-14 h-14 rounded-full bg-blue-50 flex items-center justify-center border-2 border-blue-100 shrink-0 overflow-hidden">
                             {data.doctorAvatar ? (
                                 <img src={data.doctorAvatar} alt={data.doctorName} className="w-full h-full object-cover" />
-                            ) : (
+) : (
                                 <svg className="h-8 w-8 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
                                     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                                 </svg>
@@ -266,7 +275,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
                     </div>
 
                     {/* Phí đặt lịch */}
-                    <div className="flex justify-between items-center text-sm pt-2 border-t border-dashed border-gray-200 mt-2">
+<div className="flex justify-between items-center text-sm pt-2 border-t border-dashed border-gray-200 mt-2">
                         <span className="text-gray-600">
                             {t("stepSummary.labels.bookingFee")} ({data.appointmentType === 'VIP' ? t("stepType.vip.title") : t("stepType.standard.title")})
                         </span>
@@ -325,7 +334,7 @@ export default function StepSummary({ data, onConfirm, onPrev, loading }: StepPr
            <button
               onClick={onPrev}
               disabled={loading || isProcessing}
-              className="px-6 py-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full transition font-medium text-sm"
+className="px-6 py-2 text-gray-500 hover:text-gray-800 hover:bg-gray-100 rounded-full transition font-medium text-sm"
           >
               ← {t("common.back")}
           </button>

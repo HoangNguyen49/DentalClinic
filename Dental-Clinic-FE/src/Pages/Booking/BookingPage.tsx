@@ -144,14 +144,14 @@ export default function BookingPage() {
     navigate("/");
   };
 
-  // --- 2. XỬ LÝ CONFIRM (CODE GỐC + SỬA LOGIC GỬI DỮ LIỆU) ---
+  // --- 2. XỬ LÝ CONFIRM (CHỐNG RACE CONDITION) ---
   const handleConfirmBooking = async () => {
     const storedUser = localStorage.getItem("user");
     const token = localStorage.getItem("accessToken");
 
     if (!storedUser || !token) {
         sessionStorage.setItem("pendingBooking", JSON.stringify(bookingData));
-        toast.info("🔒 " + t("stepDateVIP.errors.login")); // Dịch thông báo cần login
+        toast.info("🔒 " + t("stepDateVIP.errors.login")); 
         navigate("/login", { state: { from: "/booking" } });
         return; 
     }
@@ -174,22 +174,15 @@ export default function BookingPage() {
       const payload = {
         clinicId: bookingData.clinicId,
         patientId: patientId,
-        
-        // [AI FIXED] Gửi thêm 2 trường này để Backend lưu đúng
         appointmentType: bookingData.appointmentType,
         bookingFee: bookingData.bookingFee,
-
-        // Logic Doctor: VIP thì lấy doctorId, Standard thì null
         doctorId: bookingData.appointmentType === 'VIP' ? bookingData.doctorId : null,
-        
-        roomId: null, // Frontend chưa chọn phòng
+        roomId: null, 
         startDateTime: startDateTime.toISOString(),
         status: bookingData.appointmentType === 'VIP' ? "AWAITING_PAYMENT" : "PENDING",
         paymentStatus: "UNPAID",
         channel: "WEB_BOOKING",
         note: `Booking Online (${bookingData.appointmentType})`,
-        
-        // Map services đúng cấu trúc DTO Backend
         services: bookingData.selectedServices.map((s: any) => ({
             serviceId: s.id, 
             quantity: 1,
@@ -210,19 +203,34 @@ export default function BookingPage() {
       setBookingData((prev: any) => ({ ...prev, appointmentId: resData.id }));
 
       // 2. PHÂN LUỒNG XỬ LÝ
-      // Nếu là VIP: Trả về data để StepSummary lo việc redirect thanh toán. KHÔNG hiện modal success.
       if (bookingData.appointmentType === 'VIP') {
           return response.data; 
       }
 
-      // Nếu là STANDARD: Hiện modal thành công luôn (vì không cần thanh toán)
       setShowSuccessModal(true);
       return response.data;
 
     } catch (error: any) {
       console.error("Booking Error:", error);
-      const msg = error.response?.data?.message || t("common.error");
-      toast.error(msg);
+
+      // LẤY MESSAGE LỖI TỪ BACKEND
+      const errorData = error.response?.data;
+      const errorMsg = typeof errorData === 'string' ? errorData : (errorData?.message || "");
+
+      // XỬ LÝ LỖI TRÙNG LỊCH (SLOT_ALREADY_BOOKED)
+      if (errorMsg === "SLOT_ALREADY_BOOKED") {
+          // Hiện thông báo lỗi từ i18n
+          toast.error(t("stepDateTime.errors.slotTaken") || "Khung giờ này vừa có người khác đặt mất rồi, vui lòng chọn lại!");
+          
+          // Tự động đẩy khách về bước chọn giờ
+          // Standard: Case 2 | VIP: Case 3
+          const timeStep = bookingData.appointmentType === 'STANDARD' ? 2 : 3;
+          setCurrentStep(timeStep); 
+      } else {
+          const msg = errorMsg || t("common.error");
+          toast.error(msg);
+      }
+
       throw error; 
     } finally {
       setIsSubmitting(false);
