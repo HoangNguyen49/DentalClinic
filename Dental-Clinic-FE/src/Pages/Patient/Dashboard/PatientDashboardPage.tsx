@@ -8,11 +8,54 @@ import WellnessCard from './components/WellnessCard';
 import NextAppointmentCard from './components/NextAppointmentCard';
 import MedicalHistoryList from './components/MedicalHistoryList'; 
 import type { PatientDashboardDTO } from '../../types/patientDashboard';
-// Import i18n
 import { useTranslation, Trans } from 'react-i18next';
 
-// --- HELPER 1: HIỂN THỊ BADGE HẠNG (Có dịch) ---
-// Chúng ta chuyển logic text vào trong component hoặc truyền t function vào helper
+// --- COMPONENT MỚI: TOOLTIP HIỂN THỊ CÁC MỨC HẠNG ---
+const RankInfoTooltip = ({ t }: { t: any }) => {
+    const tiers = [
+        { code: 'MEMBER', label: t('ranks.member'), discount: 0, color: 'text-blue-600', bg: 'bg-blue-50' },
+        { code: 'SILVER', label: t('ranks.silver'), discount: 5, color: 'text-gray-600', bg: 'bg-gray-100' },
+        { code: 'GOLD', label: t('ranks.gold'), discount: 10, color: 'text-yellow-600', bg: 'bg-yellow-50' },
+        { code: 'DIAMOND', label: t('ranks.diamond'), discount: 15, color: 'text-purple-600', bg: 'bg-purple-50' },
+    ];
+
+    return (
+        <div className="relative group inline-block ml-2 align-middle z-50">
+            {/* Icon kích hoạt (Dấu chấm than tròn) */}
+            <div className="cursor-help text-gray-400 hover:text-blue-600 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+                    <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12zm8.706-1.442c1.146-.573 2.437.463 2.126 1.706l-.709 2.836.042-.02a.75.75 0 01.67 1.34l-.04.022c-1.147.573-2.438-.463-2.127-1.706l.71-2.836-.042.02a.75.75 0 11-.671-1.34l.041-.022zM12 9a.75.75 0 100-1.5.75.75 0 000 1.5z" clipRule="evenodd" />
+                </svg>
+            </div>
+
+            {/* Nội dung Tooltip (Hiện khi hover) */}
+            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 w-64 bg-white rounded-xl shadow-xl border border-gray-100 p-4 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-all duration-200 transform origin-top scale-95 group-hover:scale-100 z-50">
+                {/* Mũi tên trỏ lên */}
+                <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-t border-l border-gray-100 transform rotate-45"></div>
+                
+                <h4 className="text-xs font-bold text-gray-500 uppercase mb-3 text-center tracking-wide border-b border-gray-100 pb-2">
+                    {t('rankingSystem', 'Quyền lợi thành viên')}
+                </h4>
+                
+                <div className="space-y-2">
+                    {tiers.map((tier) => (
+                        <div key={tier.code} className={`flex justify-between items-center text-xs p-2 rounded-lg ${tier.bg}`}>
+                            <span className={`font-bold ${tier.color}`}>{tier.label}</span>
+                            <span className="font-bold text-gray-700 bg-white px-2 py-0.5 rounded shadow-sm border border-gray-100">
+                                -{tier.discount}%
+                            </span>
+                        </div>
+                    ))}
+                </div>
+                <p className="text-[10px] text-center text-gray-400 mt-3 italic">
+                    * {t('discountNote', 'Áp dụng trên tổng hóa đơn')}
+                </p>
+            </div>
+        </div>
+    );
+};
+
+// --- HELPER CŨ ---
 const RankBadge = ({ tier, t }: { tier: string, t: any }) => {
     switch(tier) {
         case 'DIAMOND': return <span className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-bold border border-purple-200 shadow-sm">💎 {t('ranks.diamond')}</span>;
@@ -22,7 +65,6 @@ const RankBadge = ({ tier, t }: { tier: string, t: any }) => {
     }
 };
 
-// --- HELPER 2: LẤY % GIẢM GIÁ ---
 const getDiscountInfo = (tier: string) => {
     switch(tier) {
         case 'DIAMOND': return { pct: 15, color: 'text-purple-600 bg-purple-50 border-purple-100' };
@@ -40,7 +82,7 @@ const QuickLink = ({ to, icon, label }: { to: string; icon: string; label: strin
 );
 
 const PatientDashboardPage: React.FC = () => {
-    const { t, i18n } = useTranslation(["patient-dashboard"]); // Sử dụng namespace
+    const { t, i18n } = useTranslation(["patient-dashboard"]);
     const [data, setData] = useState<PatientDashboardDTO | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const navigate = useNavigate();
@@ -64,10 +106,7 @@ const PatientDashboardPage: React.FC = () => {
         return Math.min(percent, 100);
     };
 
-    // Helper format tiền tệ theo ngôn ngữ
     const formatCurrency = (amount: number) => {
-        // Nếu là tiếng Việt thì VND, tiếng Anh có thể để USD hoặc vẫn VND tùy nghiệp vụ.
-        // Ở đây giả sử clinic ở VN nên luôn là VND nhưng format dấu phẩy/chấm khác nhau
         return new Intl.NumberFormat(i18n.language === 'vi' ? 'vi-VN' : 'en-US', { style: 'currency', currency: 'VND' }).format(amount);
     };
 
@@ -83,16 +122,27 @@ const PatientDashboardPage: React.FC = () => {
                 <div className="max-w-5xl mx-auto">
                     
                     {/* --- HEADER DASHBOARD --- */}
-                    <div className="mb-8 bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-6 relative overflow-hidden">
+                    {/* QUAN TRỌNG: Bỏ 'overflow-hidden' ở đây để Tooltip không bị cắt */}
+                    <div className="mb-8 bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-6 relative">
                         
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50 pointer-events-none"></div>
+                        {/* Background Blob: Đưa vào thẻ riêng và có overflow-hidden */}
+                        <div className="absolute inset-0 rounded-[2rem] overflow-hidden pointer-events-none">
+                            <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50 rounded-full blur-3xl -mr-16 -mt-16 opacity-50"></div>
+                        </div>
 
+                        {/* Nội dung Header */}
                         <div className="flex items-center gap-5 relative z-10 w-full md:w-auto">
                             <img src={data?.avatarUrl || "https://via.placeholder.com/150"} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-4 border-blue-50 shadow-md" />
                             <div>
-                                <div className="flex items-center gap-3 mb-1">
+                                <div className="flex items-center gap-2 mb-1">
                                     <h1 className="text-2xl font-bold text-gray-800">{data?.fullName}</h1>
-                                    {data && <RankBadge tier={data.memberTier} t={t} />}
+                                    {data && (
+                                        <div className="flex items-center">
+                                            <RankBadge tier={data.memberTier} t={t} />
+                                            {/* Thêm Tooltip ở đây */}
+                                            <RankInfoTooltip t={t} />
+                                        </div>
+                                    )}
                                 </div>
                                 <p className="text-gray-500 text-sm">{t('patientCode')}: <span className="font-mono font-bold text-gray-700">{data?.patientCode}</span></p>
                                 
@@ -118,7 +168,6 @@ const PatientDashboardPage: React.FC = () => {
                                     <div className="bg-gradient-to-r from-blue-500 to-indigo-600 h-2 rounded-full transition-all duration-1000 ease-out" style={{ width: `${calculateProgress()}%` }}></div>
                                 </div>
                                 <p className="text-[10px] text-gray-500 text-right">
-                                    {/* Sử dụng Trans để render component bên trong chuỗi dịch */}
                                     <Trans 
                                         i18nKey="spending.needMore" 
                                         ns="patient-dashboard"
@@ -146,7 +195,6 @@ const PatientDashboardPage: React.FC = () => {
                             
                             {/* LEFT COL (40%) */}
                             <div className="lg:col-span-5 flex flex-col gap-6">
-                                {/* Wellness */}
                                 <div className="h-80">
                                     <WellnessCard 
                                         status={data.healthStatus} 
@@ -154,7 +202,6 @@ const PatientDashboardPage: React.FC = () => {
                                         daysSince={data.daysSinceLastVisit} 
                                     />
                                 </div>
-                                {/* Menu */}
                                 <div className="bg-white p-5 rounded-[2rem] shadow-sm border border-gray-100">
                                     <h4 className="font-bold text-gray-700 mb-4 text-sm uppercase tracking-wide">{t('quickLinks.title')}</h4>
                                     <div className="grid grid-cols-2 gap-3">
@@ -168,11 +215,9 @@ const PatientDashboardPage: React.FC = () => {
 
                             {/* RIGHT COL (60%) */}
                             <div className="lg:col-span-7 flex flex-col gap-6">
-                                {/* Next Appointment */}
                                 <div className="h-64">
                                     <NextAppointmentCard appointment={data.nextAppointment} />
                                 </div>
-                                {/* AI Tip */}
                                 <div className="flex-1 bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 flex flex-col">
                                     <div className="flex gap-4 mb-6">
                                         <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex-shrink-0 flex items-center justify-center text-2xl">🤖</div>
@@ -181,7 +226,6 @@ const PatientDashboardPage: React.FC = () => {
                                                 <h3 className="font-bold text-gray-800 text-sm">{t('aiTip.title')}</h3>
                                                 <span className="bg-gray-100 text-gray-500 text-[10px] font-bold px-2 py-0.5 rounded-full">{t('aiTip.label')}</span>
                                             </div>
-                                            {/* AI Tip trả về từ backend, nếu muốn dịch phải dịch từ backend hoặc map key. Tạm thời hiển thị text gốc */}
                                             <p className="text-gray-600 text-sm italic leading-relaxed">"{data.latestAiTip}"</p>
                                         </div>
                                     </div>
