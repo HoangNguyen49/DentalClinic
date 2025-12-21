@@ -158,7 +158,7 @@ export default function AppointmentList() {
                     className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                     <option value="">{t("list.allStatus")}</option>
-                    <option value="SCHEDULED">{t("status.CONFIRMED")}</option>
+                    <option value="SCHEDULED">{t("status.SCHEDULED")}</option>
                     <option value="COMPLETED">{t("status.COMPLETED")}</option>
                     <option value="CANCELLED">{t("status.CANCELLED")}</option>
                 </select>

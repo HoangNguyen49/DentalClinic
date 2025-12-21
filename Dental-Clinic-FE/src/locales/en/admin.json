@@ -16,7 +16,10 @@
     "crm": "CRM",
     "attendance": "Attendance",
     "clinics": "Clinics",
+    "leaveRequests": "Leave Requests",
+    "customers": "Customers",
     "salaryContracts": "Salary Contracts",
+    "system": "System",
     "backToWebsite": "Back to Website"
   },
   "dashboard": {
@@ -430,7 +433,9 @@
       "allDepartments": "All departments",
       "allRoles": "All roles",
       "active": "Active",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "activeCount": "{{count}} filter active",
+      "activeCountPlural": "{{count}} filters active"
     },
     "actions": {
       "search": "Search",
@@ -451,7 +456,8 @@
       "noClinic": "N/A",
       "active": "Active",
       "inactive": "Inactive",
-      "approvedResignation": "Approved Resignation"
+      "approvedResignation": "Approved Resignation",
+      "staffDirectory": "Staff Directory"
     },
     "messages": {
       "loading": "Loading staff...",
@@ -479,13 +485,6 @@
         "noExtractedData": "CV has no extracted data",
         "loadFailed": "Unable to load CV"
       }
-    },
-    "table": {
-      "staffDirectory": "Staff Directory"
-    },
-    "filters": {
-      "activeCount": "{{count}} filter active",
-      "activeCountPlural": "{{count}} filters active"
     }
   },
   "customers": {
