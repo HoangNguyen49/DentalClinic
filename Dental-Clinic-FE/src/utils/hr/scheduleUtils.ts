@@ -144,6 +144,77 @@ export const convertTableToAPIFormat = (
     };
 };
 
+// holidayholiday
+export const isDateHoliday = (date: string, holidays: any[]): boolean => {
+    if (!date || holidays.length === 0) return false;
+
+    // Parse date string (expecting YYYY-MM-DD format)
+    let checkDate: Date;
+    try {
+        if (date.includes('-') && date.length >= 10) {
+            checkDate = new Date(date + 'T00:00:00');
+        } else {
+            checkDate = new Date(date);
+        }
+
+        if (isNaN(checkDate.getTime())) {
+            return false;
+        }
+    } catch (e) {
+        return false;
+    }
+
+    const checkYear = checkDate.getFullYear();
+    const checkMonth = checkDate.getMonth();
+    const checkDay = checkDate.getDate();
+    const checkDateNum = checkYear * 10000 + checkMonth * 100 + checkDay;
+
+    for (const holiday of holidays) {
+        if (!holiday.date) continue;
+
+        try {
+            const holidayDateStr = holiday.date.split('T')[0];
+            const holidayDate = new Date(holidayDateStr + 'T00:00:00');
+
+            if (isNaN(holidayDate.getTime())) {
+                continue;
+            }
+
+            let holidayStart = new Date(holidayDate);
+
+            // Handle recurring holidays
+            if (holiday.isRecurring) {
+                holidayStart.setFullYear(checkYear);
+                if (holidayStart.getMonth() !== holidayDate.getMonth() ||
+                    holidayStart.getDate() !== holidayDate.getDate()) {
+                    continue;
+                }
+            }
+
+            const holidayStartYear = holidayStart.getFullYear();
+            const holidayStartMonth = holidayStart.getMonth();
+            const holidayStartDay = holidayStart.getDate();
+
+            const holidayEnd = new Date(holidayStart);
+            holidayEnd.setDate(holidayEnd.getDate() + (holiday.duration || 1) - 1);
+            const holidayEndYear = holidayEnd.getFullYear();
+            const holidayEndMonth = holidayEnd.getMonth();
+            const holidayEndDay = holidayEnd.getDate();
+
+            const holidayStartNum = holidayStartYear * 10000 + holidayStartMonth * 100 + holidayStartDay;
+            const holidayEndNum = holidayEndYear * 10000 + holidayEndMonth * 100 + holidayEndDay;
+
+            // Check if date falls within holiday range
+            if (checkDateNum >= holidayStartNum && checkDateNum <= holidayEndNum) {
+                return true; // Có holiday (global hoặc clinic-specific)
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+    return false;
+};
+
 // Helper function to check if a clinic has holiday on a specific date
 export const isClinicHoliday = (clinicId: number, date: string, holidays: any[]): boolean => {
     if (!date || holidays.length === 0) return false;

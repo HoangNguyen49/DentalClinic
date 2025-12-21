@@ -181,9 +181,64 @@ export const useScheduleActions = (
         }
 
         setAiGenerating(true);
+        
+        // Show progress messages to keep user informed
+        const progressMessages: NodeJS.Timeout[] = [];
+        
+        // Initial message
+        toast.info(t("create.aiGeneration.messages.preparing", "Đang chuẩn bị dữ liệu..."), {
+            toastId: "ai-progress-0",
+            autoClose: false,
+        });
+        
+        // Show progress at 10 seconds
+        const msg1 = setTimeout(() => {
+            if (aiGenerating) {
+                toast.info(t("create.aiGeneration.messages.callingAi", "Đang gọi AI Gemini..."), {
+                    toastId: "ai-progress-1",
+                    autoClose: false,
+                });
+            }
+        }, 10000);
+        progressMessages.push(msg1);
+        
+        // Show progress at 30 seconds
+        const msg2 = setTimeout(() => {
+            if (aiGenerating) {
+                toast.info(t("create.aiGeneration.messages.processing", "AI đang xử lý, vui lòng đợi..."), {
+                    toastId: "ai-progress-2",
+                    autoClose: false,
+                });
+            }
+        }, 30000);
+        progressMessages.push(msg2);
+        
+        // Show progress at 60 seconds
+        const msg3 = setTimeout(() => {
+            if (aiGenerating) {
+                toast.info(t("create.aiGeneration.messages.almostDone", "Gần xong rồi..."), {
+                    toastId: "ai-progress-3",
+                    autoClose: false,
+                });
+            }
+        }, 60000);
+        progressMessages.push(msg3);
+        
+        // Cleanup function
+        const cleanupProgressMessages = () => {
+            progressMessages.forEach(timeout => clearTimeout(timeout));
+            // Dismiss all progress toasts
+            toast.dismiss("ai-progress-0");
+            toast.dismiss("ai-progress-1");
+            toast.dismiss("ai-progress-2");
+            toast.dismiss("ai-progress-3");
+        };
+        
         // Luôn sử dụng endpoint generate với template tự động
         await executeApi(() => hrApi.schedules.generateAi(weekStart, aiDescription.trim()), {
             onSuccess: (generatedRequest: any) => {
+            // Cleanup progress messages
+            cleanupProgressMessages();
 
             // Convert AI result về format tableSchedules
             const newTableSchedules: TableSchedule = {};
@@ -225,6 +280,9 @@ export const useScheduleActions = (
                 }, 5000);
             },
             onError: (err: any) => {
+                // Cleanup progress messages
+                cleanupProgressMessages();
+                
                 const errorMessage = err?.response?.data?.message || t("create.aiGeneration.error");
                 setAiResult({
                     success: false,

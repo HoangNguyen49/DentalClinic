@@ -1,11 +1,5 @@
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
-
-const bullets = [
-  "Strict hygiene and sterilization protocols",
-  "Experienced and caring dentists",
-  "State-of-the-art dental technology",
-  "Long-lasting and predictable results",
-];
+import { useTranslation } from "react-i18next";
 
 function Badge() {
   return (
@@ -16,6 +10,10 @@ function Badge() {
 }
 
 function WhyChooseUs() {
+  const { t } = useTranslation("services");
+
+  const bullets = t("whyChooseUs.bullets", { returnObjects: true }) as string[];
+
   return (
     <section aria-labelledby="why-choose-us" className="py-16">
       <div className="mx-auto max-w-5xl">
@@ -23,12 +21,12 @@ function WhyChooseUs() {
           id="why-choose-us"
           className="text-center text-4xl md:text-5xl font-semibold tracking-tight text-black"
         >
-          Why Choose Us
+          {t("whyChooseUs.title")}
         </h2>
 
         <div className="mt-10 grid grid-cols-1 md:grid-cols-2 gap-y-6 gap-x-28 px-6 md:px-[88px]">
-          {bullets.map((b) => (
-            <div key={b} className="flex items-start text-black">
+          {bullets.map((b, index) => (
+            <div key={index} className="flex items-start text-black">
               <Badge />
               <span className="text-lg leading-relaxed">{b}</span>
             </div>

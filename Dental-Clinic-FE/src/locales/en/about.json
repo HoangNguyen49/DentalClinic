@@ -1,0 +1,36 @@
+{
+  "mission": {
+    "title": "Our Mission",
+    "description": "Dedicated to providing high-quality dental care in a comfortable and friendly environment.",
+    "stats": {
+      "yearsExperience": "YEARS EXPERIENCE",
+      "happyPatients": "HAPPY PATIENTS",
+      "dentalProfessionals": "DENTAL PROFESSIONALS"
+    },
+    "history": {
+      "title": "Our History",
+      "founded": "Founded in Viet Nam",
+      "expanded": "Office Expanded",
+      "renovated": "Clinic Renovated"
+    },
+    "accreditations": {
+      "title": "Accreditations"
+    }
+  },
+  "featuredDoctor": {
+    "name": "Dr. Emily Johnson",
+    "title": "Head Dentist",
+    "description": "Overseeing all aspects of our clinic to ensure the best patient care"
+  },
+  "values": {
+    "title": "Our Values",
+    "personalized": "Personalized\nApproach",
+    "compassion": "Compassion",
+    "transparency": "Transparency"
+  },
+  "cta": {
+    "seeServices": "See Our Services",
+    "bookAppointment": "Book Appointment"
+  }
+}
+

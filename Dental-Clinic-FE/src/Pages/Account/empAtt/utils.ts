@@ -163,10 +163,10 @@ export const createAttendanceFromSchedule = (schedule: any, userId: number, user
     };
 };
 
+// CHỈ BẮT GIẢI TRÌNH CHO TRƯỜNG HỢP: QUÊN CHECK OUT (có check-in nhưng không có check-out)
 export const needsExplanation = (attendance: AttendanceResponse): { needs: boolean; explanationType?: string } => {
     if (!attendance) return { needs: false };
 
-    const status = (attendance.attendanceStatus || "").toUpperCase();
     const hasCheckIn = attendance.checkInTime != null;
     const hasCheckOut = attendance.checkOutTime != null;
 
@@ -178,23 +178,17 @@ export const needsExplanation = (attendance: AttendanceResponse): { needs: boole
 
     if (hasExplanation) return { needs: false };
 
-    if (status === "LATE") {
-        return { needs: true, explanationType: "LATE" };
-    }
-    if (status === "ABSENT") {
-        return { needs: true, explanationType: "ABSENT" };
-    }
-
     const today = new Date().toISOString().split("T")[0];
     const workDate = attendance.workDate ? new Date(attendance.workDate).toISOString().split("T")[0] : null;
+    
+    // Không bắt giải trình nếu là ngày hiện tại và đã checkin nhưng chưa checkout
     if (workDate === today && hasCheckIn && !hasCheckOut) {
         return { needs: false };
     }
+    
+    // CHỈ BẮT GIẢI TRÌNH CHO TRƯỜNG HỢP: có check-in nhưng không có check-out (quên check out)
     if (hasCheckIn && !hasCheckOut) {
         return { needs: true, explanationType: "MISSING_CHECK_OUT" };
-    }
-    if (!hasCheckIn && hasCheckOut) {
-        return { needs: true, explanationType: "MISSING_CHECK_IN" };
     }
 
     return { needs: false };

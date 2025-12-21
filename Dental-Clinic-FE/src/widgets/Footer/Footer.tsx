@@ -4,7 +4,7 @@ import { FiInstagram, FiFacebook, FiLinkedin } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 
 function Footer() {
-  const { t } = useTranslation();
+  const { t } = useTranslation("web");
 
   return (
     <footer className="bg-white py-12 font-instrument">
@@ -13,9 +13,9 @@ function Footer() {
         <div className="flex flex-col md:flex-row justify-between items-center text-sm text-gray-600">
           <p>📍 {t("footer.address")}</p>
           <div className="flex space-x-4 mt-4 md:mt-0 text-[#0F2154]">
-            <a href="#" className="hover:text-[#3366FF] text-2xl"><FiInstagram /></a>
-            <a href="#" className="hover:text-[#3366FF] text-2xl"><FiFacebook /></a>
-            <a href="#" className="hover:text-[#3366FF] text-2xl"><FiLinkedin /></a>
+            <a href="#" className="hover:text-[#3366FF] text-2xl" title="Instagram" aria-label="Instagram"><FiInstagram /></a>
+            <a href="#" className="hover:text-[#3366FF] text-2xl" title="Facebook" aria-label="Facebook"><FiFacebook /></a>
+            <a href="#" className="hover:text-[#3366FF] text-2xl" title="LinkedIn" aria-label="LinkedIn"><FiLinkedin /></a>
           </div>
         </div>
 
@@ -41,20 +41,19 @@ function Footer() {
               className="flex items-center justify-center rounded-full w-[90px] h-[90px] p-4 mb-2"
               style={{ background: "linear-gradient(180deg, #3366FF, #99BBFF)" }}
             >
-              <img src={toothlogo} alt="Logo" className="w-full h-full object-contain" />
+              <img src={toothlogo} alt="Sunshine Dental Care Logo" className="w-full h-full object-contain" />
             </div>
             <p className="text-[#0D1B3E] font-semibold">{t("footer.workingHours.title")}</p>
-            <p>{t("footer.workingHours.weekday")}</p>
-            <p>{t("footer.workingHours.weekend")}</p>
+            <p>{t("footer.workingHours.full")}</p>
           </div>
         </div>
 
         {/* Copyright */}
         <div className="border-t pt-4 text-center text-sm text-gray-500">
           <p>
-            {t("footer.copyright")} © Hoang Nguyen sv FPT Aptech 2025 | {t("footer.poweredBy")}{" "}
+            {t("footer.copyright")} © Group 3 sv FPT Aptech 2025 | {t("footer.poweredBy")}{" "}
             <a href="" target="_blank" rel="noopener noreferrer" className="text-[#3366FF] hover:underline">
-              Hoang Nguyen
+              group3
             </a>
           </p>
         </div>

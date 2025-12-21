@@ -19,6 +19,9 @@ export interface LeaveRequest {
     createdAt: string;
     updatedAt: string;
     leaveBalance?: number;
+    annualLeaveTotal?: number;
+    annualLeaveUsed?: number;
+    annualLeaveRemaining?: number;
     replacementAvailable?: boolean;
     potentialReplacements?: string[];
     userRole?: string;

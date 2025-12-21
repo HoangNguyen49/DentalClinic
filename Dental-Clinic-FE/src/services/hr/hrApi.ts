@@ -69,7 +69,10 @@ export interface HrLeaveRequest {
   approvedByName?: string
   createdAt: string
   updatedAt: string
-  leaveBalance?: number
+  leaveBalance?: number // Số ngày nghỉ trong tháng hiện tại
+  annualLeaveTotal?: number // Tổng số phép năm (12 ngày)
+  annualLeaveUsed?: number // Đã dùng bao nhiêu ngày trong năm
+  annualLeaveRemaining?: number // Còn lại bao nhiêu ngày
   replacementAvailable?: boolean
   potentialReplacements?: string[]
   userRole?: string
@@ -160,6 +163,54 @@ export const hrApi = {
       const response = await axiosClient.delete(`/api/hr/employees/${id}/hard-delete`, {
         params: { reason },
       })
+      return { data: response.data }
+    },
+    uploadCv: async (id: number | string, file: File) => {
+      const formData = new FormData()
+      formData.append("file", file)
+      const response = await axiosClient.post<{
+        id: number
+        userId: number
+        originalFileName: string
+        fileType: string
+        fileSize: number
+        cvFileUrl: string
+        extractedText: string
+        extractedImages: string[]
+        message: string
+      }>(`/api/hr/employees/${id}/upload-cv`, formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      })
+      return { data: response.data }
+    },
+    getCvData: async (id: number | string) => {
+      const response = await axiosClient.get<{
+        id: number
+        userId: number
+        originalFileName: string
+        fileType: string
+        fileSize: number
+        cvFileUrl: string
+        extractedText: string
+        extractedImages: string[]
+        createdAt: string
+        updatedAt: string
+      }>(`/api/hr/employees/${id}/cv`)
+      return { data: response.data }
+    },
+    updateCvText: async (id: number | string, extractedText: string) => {
+      const response = await axiosClient.put<{
+        id: number
+        userId: number
+        extractedText: string
+        message: string
+      }>(`/api/hr/employees/${id}/cv/text`, { extractedText })
+      return { data: response.data }
+    },
+    deleteCvData: async (id: number | string) => {
+      const response = await axiosClient.delete<{ message: string }>(`/api/hr/employees/${id}/cv`)
       return { data: response.data }
     },
     toggleStatus: async (id: number | string, isActive: boolean, reason: string) => {
@@ -253,10 +304,16 @@ export const hrApi = {
       return { data: response.data }
     },
     generateAi: async (weekStart: string, description: string) => {
-      const response = await axiosClient.post<CreateScheduleRequest>("/api/hr/schedules/ai/generate", {
-        weekStart,
-        description,
-      })
+      const response = await axiosClient.post<CreateScheduleRequest>(
+        "/api/hr/schedules/ai/generate", 
+        {
+          weekStart,
+          description,
+        },
+        {
+          timeout: 90000, // 90 seconds timeout for AI generation (longer than default 30s)
+        }
+      )
       return { data: response.data }
     },
     getByWeek: async (weekStart: string) => {

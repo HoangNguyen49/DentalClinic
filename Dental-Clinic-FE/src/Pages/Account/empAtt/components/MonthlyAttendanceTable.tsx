@@ -68,13 +68,61 @@ export const MonthlyAttendanceTable: React.FC<MonthlyAttendanceTableProps> = ({ 
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{attendance.clinicName || "-"}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                    {attendance.shiftType && attendance.shiftType !== "FULL_DAY" ? (
-                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                                            {getShiftTypeLabel(attendance.shiftType)}
-                                        </span>
-                                    ) : (
-                                        <span className="text-gray-400">-</span>
-                                    )}
+                                    {(() => {
+                                        // Ưu tiên hiển thị shift từ startTime và endTime nếu có
+                                        if (attendance.startTime && attendance.endTime) {
+                                            try {
+                                                // Parse startTime và endTime (format: HH:mm:ss hoặc HH:mm)
+                                                const formatShiftTime = (timeStr: string): string => {
+                                                    // Xử lý cả LocalTime format (HH:mm:ss) và string format
+                                                    let timeValue = timeStr;
+                                                    if (typeof timeStr === 'string') {
+                                                        const parts = timeStr.split(":");
+                                                        if (parts.length >= 2) {
+                                                            const hour = parseInt(parts[0], 10);
+                                                            const minute = parseInt(parts[1] || "0", 10);
+                                                            const period = hour >= 12 ? "pm" : "am";
+                                                            const displayHour = hour > 12 ? hour - 12 : hour === 0 ? 12 : hour;
+                                                            return `${displayHour}:${minute.toString().padStart(2, "0")}${period}`;
+                                                        }
+                                                    }
+                                                    return timeValue;
+                                                };
+                                                
+                                                const startDisplay = formatShiftTime(attendance.startTime);
+                                                const endDisplay = formatShiftTime(attendance.endTime);
+                                                return (
+                                                    <span className="text-gray-700">
+                                                        {startDisplay} - {endDisplay}
+                                                    </span>
+                                                );
+                                            } catch (e) {
+                                                console.warn("Error formatting shift time:", e);
+                                                // Nếu parse lỗi, fallback về logic cũ
+                                            }
+                                        }
+                                        
+                                        // Nếu không có startTime/endTime, hiển thị shiftType label
+                                        if (attendance.shiftType && attendance.shiftType !== "FULL_DAY") {
+                                            return (
+                                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                                    {getShiftTypeLabel(attendance.shiftType)}
+                                                </span>
+                                            );
+                                        }
+                                        
+                                        // Nếu là FULL_DAY và có check-in/check-out, hiển thị shift mặc định
+                                        if (attendance.shiftType === "FULL_DAY" && attendance.checkInTime) {
+                                            return (
+                                                <span className="text-gray-700">
+                                                    8:00am - 6:00pm
+                                                </span>
+                                            );
+                                        }
+                                        
+                                        // Nếu không có thông tin, hiển thị "-"
+                                        return <span className="text-gray-400">-</span>;
+                                    })()}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {formatTime(attendance.checkInTime)}

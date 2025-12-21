@@ -14,8 +14,8 @@ type DailyAttendanceItem = {
   statusColor: string;
   checkInTime: string | null;
   checkOutTime: string | null;
-  shiftDisplay: string;
-  shiftHours: string;
+  shiftDisplay?: string | null;
+  shiftHours?: string | null;
   workedHours: number;
   workedMinutes: number;
   workedDisplay: string;
@@ -215,12 +215,20 @@ export default function DailyAttendanceTable({
               </td>
               {hasShift && (
                 <td className="px-4 py-3 text-center">
-                  <div className="text-sm text-gray-700">
-                    {item.shiftDisplay || "-"}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {item.shiftHours || ""}
-                  </div>
+                  {item.shiftDisplay ? (
+                    <>
+                      <div className="text-sm text-gray-700">
+                        {item.shiftDisplay}
+                      </div>
+                      {item.shiftHours && (
+                        <div className="text-xs text-gray-500">
+                          {item.shiftHours}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className="text-sm text-gray-400">-</div>
+                  )}
                 </td>
               )}
               {hasWorked && (

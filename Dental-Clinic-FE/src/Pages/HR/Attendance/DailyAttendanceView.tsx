@@ -55,8 +55,8 @@ type DailyAttendanceItem = {
   statusColor: string;
   checkInTime: string | null;
   checkOutTime: string | null;
-  shiftDisplay: string;
-  shiftHours: string;
+  shiftDisplay?: string | null;
+  shiftHours?: string | null;
   workedHours: number;
   workedMinutes: number;
   workedDisplay: string;
@@ -417,8 +417,146 @@ function DailyAttendanceView() {
     }
   );
 
+  // Group và merge các bản ghi của cùng một nhân viên trong cùng một ngày thành một dòng
+  const groupedDailyList = useMemo(() => {
+    const grouped = new Map<string, DailyAttendanceItem[]>();
+    
+    dailyList.forEach((item) => {
+      // Key: userId + employeeName để group các bản ghi của cùng một nhân viên
+      const key = `${item.userId}-${item.employeeName}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(item);
+    });
+    
+    // Merge các bản ghi của cùng một nhân viên thành một item duy nhất
+    const result: DailyAttendanceItem[] = [];
+    grouped.forEach((items) => {
+      // Sắp xếp theo shiftDisplay hoặc id để có thứ tự nhất quán
+      items.sort((a, b) => {
+        if (a.shiftDisplay && b.shiftDisplay) {
+          return a.shiftDisplay.localeCompare(b.shiftDisplay);
+        }
+        if (a.id && b.id) {
+          return a.id - b.id;
+        }
+        return 0;
+      });
+      
+      // Nếu chỉ có 1 item, giữ nguyên
+      if (items.length === 1) {
+        result.push(items[0]);
+      } else {
+        // Merge nhiều items thành một
+        const firstItem = items[0];
+        
+        // Kiểm tra xem có ca nào nghỉ không (Approved Leave hoặc Absent)
+        const hasLeaveOrAbsent = items.some(item => 
+          item.status === "Approved Leave" || item.status === "Absent"
+        );
+        
+        // Xác định status chính (ưu tiên: Present > Late > Approved Leave > Absent)
+        const statusPriority: Record<string, number> = {
+          "Present": 1,
+          "Late": 2,
+          "Approved Leave": 3,
+          "Absent": 4,
+        };
+        const mainStatus = items.reduce((prev, curr) => {
+          const prevPriority = statusPriority[prev.status] || 99;
+          const currPriority = statusPriority[curr.status] || 99;
+          return currPriority < prevPriority ? curr : prev;
+        });
+        
+        // Nếu có ca nghỉ, hiển thị shift kèm status của từng ca
+        let shiftDisplay: string | null | undefined = "";
+        let shiftHours: string | null | undefined = "";
+        
+        if (hasLeaveOrAbsent) {
+          // Hiển thị từng ca kèm status: "8am-11am (Approved Leave) / 1pm-6pm (Present)"
+          const shiftParts = items
+            .map(item => {
+              const shift = item.shiftDisplay || "";
+              const status = item.status || "";
+              return shift ? `${shift} (${status})` : "";
+            })
+            .filter(Boolean);
+          shiftDisplay = shiftParts.join(" / ") || firstItem.shiftDisplay || null;
+          
+          const shiftHoursParts = items
+            .map(item => {
+              const hours = item.shiftHours || "";
+              const status = item.status || "";
+              return hours ? `${hours} (${status})` : "";
+            })
+            .filter(Boolean);
+          shiftHours = shiftHoursParts.join(" / ") || firstItem.shiftHours || null;
+        } else {
+          // Nếu không có ca nghỉ, chỉ hiển thị shift bình thường
+          shiftDisplay = items
+            .map(item => item.shiftDisplay)
+            .filter(Boolean)
+            .join(" / ") || firstItem.shiftDisplay || null;
+          shiftHours = items
+            .map(item => item.shiftHours)
+            .filter(Boolean)
+            .join(" / ") || firstItem.shiftHours || null;
+        }
+        
+        const mergedItem: DailyAttendanceItem = {
+          ...firstItem,
+          // Lấy id đầu tiên để có thể click xem chi tiết
+          id: items[0].id,
+          // Sử dụng status chính, nhưng nếu có ca nghỉ thì hiển thị "Mixed" hoặc status chính
+          status: hasLeaveOrAbsent && items.some(item => item.status !== mainStatus.status)
+            ? `Mixed (${items.map(i => i.status).filter((v, i, a) => a.indexOf(v) === i).join(", ")})`
+            : mainStatus.status,
+          statusColor: mainStatus.statusColor,
+          // Gộp shifts với format có status nếu có ca nghỉ
+          shiftDisplay: shiftDisplay,
+          shiftHours: shiftHours,
+          // Tính tổng worked hours
+          workedHours: items.reduce((sum, item) => sum + (item.workedHours || 0), 0),
+          workedMinutes: items.reduce((sum, item) => sum + (item.workedMinutes || 0), 0),
+          // Tính workedDisplay từ tổng hours và minutes
+          workedDisplay: (() => {
+            const totalMinutes = items.reduce((sum, item) => {
+              const hours = item.workedHours || 0;
+              const mins = item.workedMinutes || 0;
+              return sum + hours * 60 + mins;
+            }, 0);
+            const hours = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            return hours > 0 || mins > 0 ? `${hours} hr ${mins.toString().padStart(2, "0")} min` : "0 hr 00 min";
+          })(),
+          // Gộp check-in/check-out (lấy sớm nhất và muộn nhất)
+          checkInTime: items
+            .map(item => item.checkInTime)
+            .filter(Boolean)
+            .sort()
+            [0] || null,
+          checkOutTime: items
+            .map(item => item.checkOutTime)
+            .filter(Boolean)
+            .sort()
+            .reverse()
+            [0] || null,
+          // Gộp remarks
+          remarks: items
+            .map(item => item.remarks)
+            .filter(r => r && r !== "Fixed Attendance" && r.trim() !== "")
+            .join("; ") || firstItem.remarks,
+        };
+        result.push(mergedItem);
+      }
+    });
+    
+    return result;
+  }, [dailyList]);
+
   // lọc tìm kiếm tên nhân viên cho table
-  const filteredDailyList = dailyList.filter((item) =>
+  const filteredDailyList = groupedDailyList.filter((item) =>
     item.employeeName.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const filteredMonthlyList = monthlyList.filter((item) =>
@@ -550,7 +688,7 @@ function DailyAttendanceView() {
 
   // xác định table có column nào không trống ở chế độ daily không
   const hasShift = viewMode === "daily" && filteredDailyList.some(
-    (item) => item.shiftDisplay && item.shiftDisplay.trim() !== ""
+    (item) => item.shiftDisplay && item.shiftDisplay.trim() !== "" && item.shiftDisplay !== "-"
   );
   
   const hasWorked = viewMode === "daily" && filteredDailyList.some(

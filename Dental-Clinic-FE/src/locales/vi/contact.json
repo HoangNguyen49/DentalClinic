@@ -1,0 +1,41 @@
+{
+  "title": "Liên Hệ",
+  "subtitle": "Liên hệ với chúng tôi hoặc đến địa chỉ của chúng tôi.",
+  "info": {
+    "callUs": {
+      "title": "Gọi Cho Chúng Tôi",
+      "desc": "(123) 456-7880"
+    },
+    "emailUs": {
+      "title": "Email",
+      "desc": "info@example.com"
+    },
+    "location": {
+      "title": "Địa Chỉ",
+      "desc": "40 đường Sanguin, Oklahoma, Hoa Kỳ"
+    },
+    "officeHours": {
+      "title": "Giờ Làm Việc",
+      "desc": "Thứ 2 - Thứ 7: 08:00 - 18:00"
+    }
+  },
+  "form": {
+    "name": {
+      "label": "Họ và tên",
+      "placeholder": "Họ và tên"
+    },
+    "email": {
+      "label": "Email",
+      "placeholder": "Email"
+    },
+    "message": {
+      "label": "Tin nhắn",
+      "placeholder": "Tin nhắn"
+    },
+    "submit": "Gửi Tin Nhắn"
+  },
+  "cta": {
+    "bookAppointment": "Đặt Lịch Hẹn"
+  }
+}
+

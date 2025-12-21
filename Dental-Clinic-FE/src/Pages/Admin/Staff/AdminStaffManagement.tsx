@@ -1,8 +1,8 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { ToastContainer } from "react-toastify";
+import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
-import { Building2 } from "lucide-react";
+import { Building2, X, FileText, Image as ImageIcon } from "lucide-react";
 import { adminApi, type AdminStaff } from "../../../services/admin/adminApi";
 import { formatDate } from "../../../utils/adminUtils";
 import { useDebounce } from "../../../hooks/useDebounce";
@@ -30,6 +30,18 @@ export default function AdminStaffManagement() {
 
   // Sắp xếp dữ liệu bảng (dùng custom hook)
   const { sortState, handleSort, sortData, resetSort } = useTableSort<AdminStaff>();
+  
+  // CV Modal states
+  const [selectedStaffId, setSelectedStaffId] = useState<number | null>(null);
+  const [cvData, setCvData] = useState<{
+    id?: number
+    originalFileName?: string
+    fileType?: string
+    extractedText?: string
+    extractedImages?: string[]
+    cvFileUrl?: string
+  } | null>(null);
+  const [loadingCv, setLoadingCv] = useState(false);
 
   // Hàm lấy danh sách nhân viên từ API
   const fetchStaff = useCallback(async (keyword?: string, pageNum: number = 0) => {
@@ -86,6 +98,37 @@ export default function AdminStaffManagement() {
     return count;
   }, [filters]);
 
+  // Lấy CV data khi click vào nhân viên
+  const handleStaffClick = async (staffId: number) => {
+    setSelectedStaffId(staffId);
+    setLoadingCv(true);
+    try {
+      const response = await adminApi.staff.getCvData(staffId);
+      if (response.data) {
+        setCvData(response.data);
+      } else {
+        setCvData(null);
+        toast.info(t("staff.cv.messages.noCv"));
+      }
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        setCvData(null);
+        toast.info(t("staff.cv.messages.noCv"));
+      } else {
+        toast.error(t("staff.cv.messages.loadFailed"));
+        setCvData(null);
+      }
+    } finally {
+      setLoadingCv(false);
+    }
+  };
+  
+  // Đóng modal CV
+  const handleCloseCvModal = () => {
+    setSelectedStaffId(null);
+    setCvData(null);
+  };
+
   // Lấy danh sách phòng ban và vai trò unique phục vụ bộ lọc động
   const filterOptions = useMemo(() => {
     const departments = Array.from(new Set(staff.map((s) => s.departmentName).filter(Boolean))) as string[];
@@ -137,8 +180,8 @@ export default function AdminStaffManagement() {
 
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 p-8">
-      <ToastContainer position="top-right" autoClose={3000} />
       <div className="max-w-7xl mx-auto space-y-8">
 
       <section className="flex items-center gap-4">
@@ -264,7 +307,7 @@ export default function AdminStaffManagement() {
           {activeFiltersCount > 0 && (
             <div className="ml-auto flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg">
               <span className="text-xs font-semibold text-blue-700">
-                {activeFiltersCount} {activeFiltersCount === 1 ? 'filter' : 'filters'} active
+                {t("staff.filters.activeCountPlural", { count: activeFiltersCount })}
               </span>
             </div>
           )}
@@ -278,7 +321,7 @@ export default function AdminStaffManagement() {
             <div className="p-2.5 bg-gradient-to-br from-purple-100 to-pink-100 rounded-xl">
               <Building2 className="w-5 h-5 text-purple-600" />
             </div>
-            <h2 className="text-lg font-bold text-slate-900">Staff Directory</h2>
+            <h2 className="text-lg font-bold text-slate-900">{t("staff.table.staffDirectory")}</h2>
           </div>
         </div>
         <div className="overflow-x-auto">
@@ -355,7 +398,11 @@ export default function AdminStaffManagement() {
             ) : (
               // Hiển thị các dòng nhân viên
               filteredAndSortedStaff.map((person) => (
-                <tr key={person.id} className="hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-pink-50/20 transition-all duration-200">
+                <tr 
+                  key={person.id} 
+                  className="hover:bg-gradient-to-r hover:from-purple-50/30 hover:to-pink-50/20 transition-all duration-200 cursor-pointer"
+                  onClick={() => handleStaffClick(person.id)}
+                >
                   <td className="px-6 py-5">
                     {/* Hiển thị avatar và thông tin cơ bản */}
                     <div className="flex items-center gap-4">
@@ -495,7 +542,127 @@ export default function AdminStaffManagement() {
           </div>
         </section>
       )}
+
+      {/* Modal hiển thị CV */}
+      {selectedStaffId && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={handleCloseCvModal}
+        >
+          <div 
+            className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-500 to-pink-600 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <FileText className="w-6 h-6 text-white" />
+                <h3 className="text-xl font-bold text-white">{t("staff.cv.title")}</h3>
+              </div>
+              <button
+                onClick={handleCloseCvModal}
+                className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                aria-label={t("staff.cv.close")}
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {loadingCv ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+                  <span className="ml-3 text-gray-600">{t("staff.cv.loading")}</span>
+                </div>
+              ) : cvData ? (
+                <div className="space-y-6">
+                  {/* File icon */}
+                  <div className="pb-4 border-b">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                  </div>
+
+                  {/* Extracted Text */}
+                  {cvData.extractedText && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          {t("staff.cv.extractedText.label")}
+                        </label>
+                        <span className="text-xs text-gray-500">
+                          {cvData.extractedText.length} {t("staff.cv.extractedText.characters")}
+                        </span>
+                      </div>
+                      <textarea
+                        readOnly
+                        value={cvData.extractedText}
+                        className="w-full min-h-[400px] max-h-[600px] p-4 bg-gray-50 rounded-lg border border-gray-300 text-sm text-gray-700 font-mono resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 overflow-y-auto whitespace-pre-wrap break-words"
+                        title={t("staff.cv.extractedText.title")}
+                        aria-label={t("staff.cv.extractedText.ariaLabel")}
+                      />
+                    </div>
+                  )}
+
+                  {/* Extracted Images */}
+                  {cvData.extractedImages && cvData.extractedImages.length > 0 && (
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <label className="block text-sm font-medium text-gray-700">
+                          {t("staff.cv.extractedImages.label")}
+                        </label>
+                        <span className="text-xs text-gray-500">
+                          {cvData.extractedImages.length} {t("staff.cv.extractedImages.count")}
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {cvData.extractedImages.map((imageUrl, index) => (
+                          <div key={index} className="relative group">
+                            <img
+                              src={imageUrl}
+                              alt={`Extracted image ${index + 1}`}
+                              className="w-full h-48 object-cover rounded-lg border-2 border-gray-200 hover:border-blue-400 transition-colors shadow-sm"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af"%3EImage%3C/text%3E%3C/svg%3E';
+                              }}
+                            />
+                            <a
+                              href={imageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity rounded-lg cursor-pointer"
+                              title={t("staff.cv.extractedImages.viewImage", { index: index + 1 })}
+                              aria-label={t("staff.cv.extractedImages.viewImageLabel", { index: index + 1 })}
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <ImageIcon className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </a>
+                            <div className="absolute top-2 right-2 bg-black bg-opacity-60 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {!cvData.extractedText && (!cvData.extractedImages || cvData.extractedImages.length === 0) && (
+                    <div className="text-center py-12 text-gray-500">
+                      {t("staff.cv.messages.noExtractedData")}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  {t("staff.cv.messages.noCv")}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
+    <ToastContainer position="top-right" autoClose={3000} />
+    </>
   );
 }

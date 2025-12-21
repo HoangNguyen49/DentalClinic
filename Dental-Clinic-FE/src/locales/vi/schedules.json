@@ -146,7 +146,11 @@
       "resultMessage": "Đã tạo {{count}} phân công cho {{days}} ngày.",
       "error": "Lỗi khi tạo lịch",
       "messages": {
-        "pleaseInput": "Vui lòng nhập mô tả để tạo lịch bằng AI"
+        "pleaseInput": "Vui lòng nhập mô tả để tạo lịch bằng AI",
+        "preparing": "Đang chuẩn bị dữ liệu...",
+        "callingAi": "Đang gọi AI Gemini...",
+        "processing": "AI đang xử lý, vui lòng đợi...",
+        "almostDone": "Gần xong rồi..."
       }
     }
   },

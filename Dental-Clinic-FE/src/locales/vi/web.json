@@ -22,6 +22,7 @@
     "title": "Chấm công của tôi",
     "refresh": "Làm mới",
     "today": "Hôm nay",
+    "selectedDate": "Ngày đã chọn",
     "checkIn": "Giờ vào",
     "checkOut": "Giờ ra",
     "status": "Trạng thái",
@@ -46,7 +47,17 @@
       "submitSuccess": "Gửi giải trình thành công",
       "submitFailed": "Gửi giải trình thất bại",
       "enterReason": "Vui lòng nhập lý do giải trình",
-      "noExplanationsForDate": "Không có giải trình cần xử lý cho ngày này"
+      "noExplanationsForDate": "Không có giải trình cần xử lý cho ngày này",
+      "pending": "Đang chờ duyệt",
+      "processed": "Đã xử lý"
+    },
+    "dailyView": {
+      "title": "Xem chấm công theo ngày",
+      "selectDate": "Chọn ngày",
+      "noData": "Không có dữ liệu chấm công cho ngày này",
+      "missingCheckOutTitle": "Bạn quên chấm ra!",
+      "missingCheckOutMessage": "Bạn có 1 ca làm việc quên chấm ra. Vui lòng gửi giải trình.",
+      "missingCheckOutMessagePlural": "Bạn có {count} ca làm việc quên chấm ra. Vui lòng gửi giải trình."
     },
     "hrManagement": {
       "breadcrumb": "HR • Giải trình chấm công",
@@ -112,9 +123,6 @@
       "UNKNOWN": "Không xác định"
     },
     "explanationType": {
-      "LATE": "Đi trễ",
-      "ABSENT": "Vắng mặt",
-      "MISSING_CHECK_IN": "Quên chấm vào",
       "MISSING_CHECK_OUT": "Quên chấm ra"
     },
     "explanationStatus": {
@@ -160,6 +168,7 @@
     "createdAt": "Tạo lúc",
     "cancel": "Hủy đơn",
     "approve": "Duyệt",
+    "confirm": "Xác nhận",
     "reject": "Từ chối",
     "management": {
       "title": "Quản lý đơn xin nghỉ",
@@ -180,6 +189,7 @@
       "createSuccess": "Tạo đơn xin nghỉ thành công",
       "createFailed": "Không thể tạo đơn xin nghỉ",
       "approveSuccess": "Duyệt đơn thành công",
+      "confirmSuccess": "Xác nhận đơn thành công",
       "rejectSuccess": "Từ chối đơn thành công",
       "processFailed": "Không thể xử lý đơn",
       "noAccessToken": "Không có quyền truy cập",
@@ -193,6 +203,8 @@
     "employee": "Nhân viên",
     "time": "Thời gian",
     "monthlyLeave": "Đã nghỉ tháng này",
+    "annualLeave": "Nghỉ phép năm",
+    "remaining": "Còn lại",
     "days": "ngày",
     "replacement": "Người thay thế",
     "none": "Không có",
@@ -213,7 +225,7 @@
       "step2": "Admin xác nhận",
       "step3": "Xóa dữ liệu",
       "warningTitle": "CẢNH BÁO: XÓA VĨNH VIỄN",
-      "warningMessage": "Bạn đang xem xét đơn nghỉ việc. Nếu được duyệt, tài khoản nhân viên sẽ bị vô hiệu hóa. Sau đó, HR có thể thực hiện xóa vĩnh viễn dữ liệu.",
+      "warningDescription": "Bạn đang xem xét đơn nghỉ việc. Nếu được duyệt, tài khoản nhân viên sẽ bị vô hiệu hóa. Sau đó, HR có thể thực hiện xóa vĩnh viễn dữ liệu.",
       "hardDelete": {
         "button": "Xóa vĩnh viễn",
         "confirmTitle": "CẢNH BÁO: XÓA VĨNH VIỄN",
@@ -229,7 +241,7 @@
       "note": "Lưu ý: Đơn nghỉ việc cần được HR duyệt và Admin xác nhận. Sau khi được duyệt, bạn có thể bị xóa vĩnh viễn khỏi hệ thống.",
       "dateNote": "Ngày nghỉ việc: Bạn sẽ được nghỉ việc sau 1 tháng kể từ ngày nộp đơn ({{date}}).",
       "autoDateTitle": "Ngày nghỉ việc được tự động set là 1 tháng sau ngày nộp đơn",
-      "warning": " Đơn nghỉ việc: Sau khi được HR duyệt và Admin xác nhận, bạn có thể bị xóa vĩnh viễn khỏi hệ thống."
+      "warningMessage": " Đơn nghỉ việc: Sau khi được HR duyệt và Admin xác nhận, bạn có thể bị xóa vĩnh viễn khỏi hệ thống."
     }
   },
   "common": {
@@ -255,8 +267,7 @@
     "about": "Về chúng tôi",
     "workingHours": {
       "title": "Giờ làm việc",
-      "weekday": "Thứ 2 - Thứ 6: 09:00 - 18:00",
-      "weekend": "Thứ 7 - Chủ nhật: 09:00 - 16:00"
+      "full": "Thứ 2 - Thứ 7: 08:00 - 18:00"
     },
     "poweredBy": "Vận hành bởi",
     "copyright": "Bản quyền"
