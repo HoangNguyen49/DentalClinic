@@ -1,11 +1,9 @@
 {
-  "leftTitle": "Chọn ảnh đại diện",
-  "leftOrUpload": "Hoặc tải ảnh của bạn lên",
+  "createTitle": "Tạo tài khoản",
+  "leftTitle": "Tham gia cộng đồng",
+  "leftOrUpload": "Hoặc tải ảnh của bạn",
   "leftChooseFile": "Chọn tệp",
-  "previewAlt": "Xem trước",
-
-  "createTitle": "Tạo tài khoản của bạn",
-
+  "previewAlt": "Xem trước ảnh",
   "fields": {
     "fullName": "Họ và tên",
     "username": "Tên đăng nhập",
@@ -14,25 +12,24 @@
     "password": "Mật khẩu",
     "confirmPassword": "Xác nhận mật khẩu"
   },
-
   "buttons": {
     "signUp": "Đăng ký",
-    "signingUp": "Đang đăng ký..."
+    "signingUp": "Đang xử lý..."
   },
-
   "bottom": {
     "haveAccount": "Đã có tài khoản?",
     "login": "Đăng nhập"
   },
-
-  "errors": {
-    "fillAll": "Vui lòng nhập đầy đủ thông tin.",
-    "passwordMismatch": "Mật khẩu không khớp.",
-    "idMissing": "Máy chủ không trả về User ID.",
-    "failed": "Đăng ký thất bại."
-  },
-
   "success": {
-    "registered": "Đăng ký thành công, đang chuyển sang đăng nhập..."
+    "registered": "Đăng ký thành công!"
+  },
+  "labels": {
+    "patientCode": "Mã bệnh nhân"
+  },
+  "errors": {
+    "fillAll": "Vui lòng điền đầy đủ thông tin",
+    "passwordMismatch": "Mật khẩu không khớp",
+    "idMissing": "Không tìm thấy ID người dùng",
+    "failed": "Đăng ký thất bại"
   }
 }

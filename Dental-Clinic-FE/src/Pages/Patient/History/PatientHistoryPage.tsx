@@ -5,8 +5,13 @@ import Footer from '../../../widgets/Footer/Footer';
 import patientDashboardApi from '../../../patient_api/patientDashboardApi';
 import MedicalHistoryList from '../Dashboard/components/MedicalHistoryList'; 
 import type { MedicalRecordDTO } from '../../types/patientDashboard';
+// Import hook
+import { useTranslation } from 'react-i18next';
 
 const PatientHistoryPage: React.FC = () => {
+    // Setup hook
+    const { t } = useTranslation(["patient-history"]);
+    
     // 1. State dữ liệu gốc
     const [fullHistory, setFullHistory] = useState<MedicalRecordDTO[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
@@ -49,7 +54,6 @@ const PatientHistoryPage: React.FC = () => {
                 record.treatment.toLowerCase().includes(searchLower);
 
             // 2. Lọc theo ngày (Nếu có chọn ngày)
-            // Note: record.visitDate format là "dd/MM/yyyy", input date là "yyyy-MM-dd"
             let matchesDate = true;
             if (filterDate) {
                 const [year, month, day] = filterDate.split('-');
@@ -62,7 +66,6 @@ const PatientHistoryPage: React.FC = () => {
     }, [fullHistory, searchTerm, filterDate]);
 
     // --- LOGIC PHÂN TRANG (Dựa trên danh sách ĐÃ LỌC) ---
-    // Reset về trang 1 khi search thay đổi
     useEffect(() => {
         setCurrentPage(1);
     }, [searchTerm, filterDate]);
@@ -89,17 +92,17 @@ const PatientHistoryPage: React.FC = () => {
                     <div className="mb-8">
                         <button onClick={() => navigate('/patient-dashboard')} className="text-gray-500 hover:text-blue-600 text-sm mb-2 flex items-center gap-1 transition-colors">
                             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" /></svg>
-                            Quay lại Dashboard
+                            {t('backToDashboard')}
                         </button>
                         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
                             <div>
-                                <h1 className="text-3xl font-bold text-gray-800">Lịch sử khám chữa bệnh</h1>
-                                <p className="text-gray-500 mt-1">Tra cứu chi tiết quá trình điều trị của bạn.</p>
+                                <h1 className="text-3xl font-bold text-gray-800">{t('title')}</h1>
+                                <p className="text-gray-500 mt-1">{t('subtitle')}</p>
                             </div>
                             
                             {/* Thống kê nhỏ */}
                             <div className="bg-blue-50 px-4 py-2 rounded-xl text-blue-700 text-sm font-bold border border-blue-100">
-                                Tổng cộng: {fullHistory.length} hồ sơ
+                                {t('totalRecords', { count: fullHistory.length })}
                             </div>
                         </div>
                     </div>
@@ -114,7 +117,7 @@ const PatientHistoryPage: React.FC = () => {
                             </div>
                             <input 
                                 type="text"
-                                placeholder="Tìm theo tên bác sĩ, chẩn đoán, dịch vụ..." 
+                                placeholder={t('searchPlaceholder')} 
                                 className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all text-sm"
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -134,13 +137,13 @@ const PatientHistoryPage: React.FC = () => {
                             />
                         </div>
 
-                        {/* Nút Xóa lọc (Chỉ hiện khi đang lọc) */}
+                        {/* Nút Xóa lọc */}
                         {(searchTerm || filterDate) && (
                             <button 
                                 onClick={() => { setSearchTerm(''); setFilterDate(''); }}
                                 className="px-4 py-2.5 text-red-500 hover:bg-red-50 rounded-xl text-sm font-bold transition-colors whitespace-nowrap"
                             >
-                                Xóa lọc &times;
+                                {t('filter.clear')} &times;
                             </button>
                         )}
                     </div>
@@ -152,12 +155,12 @@ const PatientHistoryPage: React.FC = () => {
                         ) : (
                             <div className="text-center py-12 bg-white rounded-[2rem] border border-dashed border-gray-200">
                                 <span className="text-4xl">🔍</span>
-                                <p className="text-gray-500 mt-2 font-medium">Không tìm thấy kết quả phù hợp.</p>
+                                <p className="text-gray-500 mt-2 font-medium">{t('empty.title')}</p>
                                 <button 
                                     onClick={() => { setSearchTerm(''); setFilterDate(''); }}
                                     className="mt-4 text-blue-600 hover:underline text-sm"
                                 >
-                                    Xóa bộ lọc để xem tất cả
+                                    {t('empty.action')}
                                 </button>
                             </div>
                         )}
@@ -171,7 +174,7 @@ const PatientHistoryPage: React.FC = () => {
                                 disabled={currentPage === 1}
                                 className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
                             >
-                                &larr; Trước
+                                &larr; {t('pagination.prev')}
                             </button>
                             
                             <div className="flex gap-1">
@@ -195,7 +198,7 @@ const PatientHistoryPage: React.FC = () => {
                                 disabled={currentPage === totalPages}
                                 className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm transition-all"
                             >
-                                Sau &rarr;
+                                {t('pagination.next')} &rarr;
                             </button>
                         </div>
                     )}

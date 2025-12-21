@@ -1,15 +1,17 @@
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../../assets/images/logo.png";
 import { useEffect, useState } from "react";
+// Lưu ý: Đảm bảo import i18n đúng đường dẫn
 import i18n from "../../app/providers/i18n";
 import axios from "axios";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "../NotificationBell";
-import CartIconButton from "../../Pages/Product/sections/widgets/CartIconButton"; // Fix import path (xóa .tsx)
+import CartIconButton from "../../Pages/Product/sections/widgets/CartIconButton";
 
 function Header() {
   const navigate = useNavigate();
-  const { t } = useTranslation(["web"]);
+  // 1. Sử dụng thêm namespace "account"
+  const { t } = useTranslation(["web", "account"]);
   const [user, setUser] = useState<any>(null);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -86,8 +88,8 @@ function Header() {
   const isAdmin = checkRole("ADMIN");
   const isHR = checkRole("HR");
   const isReception = checkRole("RECEPTION");
-  const isDoctor = checkRole("DOCTOR"); // [CỦA LONG]
-  const isAccountant = checkRole("ACCOUNTANT"); // [CỦA LONG]
+  const isDoctor = checkRole("DOCTOR");
+  const isAccountant = checkRole("ACCOUNTANT");
   const isUser = checkRole("USER"); // Patient
 
   // Logic: Chỉ hiện link Patient nếu là User VÀ không phải là nhân viên
@@ -99,11 +101,13 @@ function Header() {
   const changeLang = async () => {
     const newLang = i18n.language === "en" ? "vi" : "en";
     try {
+        // Gọi API để lưu ngôn ngữ vào session/cookie phía backend (nếu có)
         await axios.get(`${import.meta.env.VITE_API_URL}/locale?lang=${newLang}`, {
             withCredentials: true,
         });
     } catch (e) { console.error(e); }
     
+    // Thay đổi ngôn ngữ phía Frontend
     await i18n.changeLanguage(newLang);
     localStorage.setItem("lang", newLang);
   };
@@ -119,19 +123,19 @@ function Header() {
         {/* Navbar */}
         <nav className="hidden md:flex space-x-8 text-primary font-bold">
           <Link to="/" className="hover:text-blue-600">
-            {t("nav.home")}
+            {t("web:nav.home")}
           </Link>
           <Link to="/service" className="hover:text-blue-600">
-            {t("nav.services")}
+            {t("web:nav.services")}
           </Link>
           <Link to="/products" className="hover:text-blue-600">
-            {t("nav.products")}
+            {t("web:nav.products")}
           </Link>
           <Link to="/about" className="hover:text-blue-600">
-            {t("nav.about")}
+            {t("web:nav.about")}
           </Link>
           <Link to="/contact" className="hover:text-blue-600">
-            {t("nav.contact")}
+            {t("web:nav.contact")}
           </Link>
         </nav>
 
@@ -153,7 +157,7 @@ function Header() {
           {!user ? (
             <Link to="/login">
               <button className="px-5 py-2 rounded-full border-2 border-[#3366FF] text-[#3366FF] font-bold transition hover:bg-[#3366FF] hover:text-white">
-                {t("auth.login")}
+                {t("web:auth.login")}
               </button>
             </Link>
           ) : (
@@ -179,7 +183,7 @@ function Header() {
                     to="/my-account"
                     className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
                   >
-                    {t("account.myAccount")}
+                    {t("account:menu.myAccount")}
                   </Link>
 
                   {/* --- MENU CHO BỆNH NHÂN (User thường) --- */}
@@ -189,19 +193,19 @@ function Header() {
                             to="/patient-dashboard"
                             className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
                         >
-                            📊 Tổng quan sức khỏe
+                            {t("account:menu.healthOverview")}
                         </Link>
                         <Link
                             to="/my-appointments"
                             className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
                         >
-                            📅 Lịch hẹn của tôi
+                            {t("account:menu.myAppointments")}
                         </Link>
                         <Link
                             to="/patient-profile"
                             className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition border-b border-gray-100"
                         >
-                            📋 Hồ sơ bệnh án
+                            {t("account:menu.medicalRecords")}
                         </Link>
                     </>
                   )}
@@ -212,7 +216,7 @@ function Header() {
                       to="/my-attendance"
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
                     >
-                      {t("account.myAttendance")}
+                      {t("account:menu.myAttendance")}
                     </Link>
                   )}
                   {!shouldHideMyAttendance && (
@@ -220,7 +224,7 @@ function Header() {
                       to="/my-leave-requests"
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition"
                     >
-                      {t("account.myLeaveRequests")}
+                      {t("account:menu.leaveRequests")}
                     </Link>
                   )}
                   
@@ -229,7 +233,7 @@ function Header() {
                       to="/hr/dashboard"
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition font-semibold"
                     >
-                      {t("attendance.hrDashboard", "HR Dashboard")}
+                      {t("account:menu.dashboard.hr")}
                     </Link>
                   )}
                   {isAdmin && (
@@ -237,7 +241,7 @@ function Header() {
                       to="/admin/dashboard"
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition font-semibold"
                     >
-                      {t("account.adminDashboard")}
+                      {t("account:menu.dashboard.admin")}
                     </Link>
                   )}
                   {isReception && (
@@ -245,7 +249,7 @@ function Header() {
                       to="/reception/dashboard"
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition font-semibold"
                     >
-                      {t("account.receptionDashboard", "Reception Dashboard")}
+                      {t("account:menu.dashboard.reception")}
                     </Link>
                   )}
                   {isDoctor && (
@@ -253,7 +257,7 @@ function Header() {
                       to="/doctor/dashboard"
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition font-semibold"
                     >
-                      {t("account.doctorDashboard", "Doctor Dashboard")}
+                      {t("account:menu.dashboard.doctor")}
                     </Link>
                   )}
                   {isAccountant && (
@@ -261,7 +265,7 @@ function Header() {
                       to="/accountant"
                       className="block px-5 py-3 text-sm text-gray-700 hover:bg-gray-100 hover:text-[#3366FF] transition font-semibold"
                     >
-                      {t("account.accountantDashboard", "Accountant Dashboard")}
+                      {t("account:menu.dashboard.accountant")}
                     </Link>
                   )}
 
@@ -270,7 +274,7 @@ function Header() {
                         onClick={handleLogout}
                         className="block w-full text-left px-5 py-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 transition font-bold"
                       >
-                        {t("auth.logout")}
+                        {t("web:auth.logout")}
                       </button>
                   </div>
                 </div>
@@ -284,7 +288,7 @@ function Header() {
           >
             <div className="absolute right-0 top-0 h-full w-0 bg-[#6699FF] opacity-0 transition-all duration-500 ease-in-out group-hover:w-full group-hover:opacity-80" />
             <span className="relative z-10 flex items-center gap-2">
-              {t("cta.getInTouch")}
+              {t("web:cta.getInTouch")}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 className="h-5 w-5 md:h-6 md:w-6"

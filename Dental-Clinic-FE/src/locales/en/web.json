@@ -3,19 +3,49 @@
     "home": "Home",
     "services": "Services",
     "products": "Products",
-    "about": "About",
+    "about": "About Us",
     "contact": "Contact"
   },
   "auth": {
-    "login": "Login",
-    "logout": "Logout",
+    "login": "Log In",
+    "logout": "Log Out",
     "sessionExpired": "Session expired"
+  },
+  "cta": {
+    "getInTouch": "Book Appointment"
   },
   "account": {
     "myAccount": "My Account",
     "adminDashboard": "Admin Dashboard",
     "myAttendance": "My Attendance",
     "myLeaveRequests": "My Leave Requests"
+  },
+  "common": {
+    "close": "Close",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "submitting": "Submitting...",
+    "confirm": "Confirm",
+    "retry": "Retry",
+    "all": "All",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page"
+  },
+  "footer": {
+    "address": "40 Sanguin St, Oklahoma, USA",
+    "slogan": "Brighten your smile, live better",
+    "doctors": "Doctors",
+    "license": "License",
+    "about": "About Us",
+    "workingHours": {
+      "title": "Working Hours",
+      "weekday": "Mon - Fri: 09:00 - 18:00",
+      "weekend": "Sat - Sun: 09:00 - 16:00",
+      "full": "Mon - Sat: 08:00 - 18:00"
+    },
+    "poweredBy": "Powered by",
+    "copyright": "Copyright"
   },
   "attendance": {
     "hrDashboard": "HR Dashboard",
@@ -242,33 +272,5 @@
       "autoDateTitle": "Resignation date is automatically set to 1 month after application date",
       "warningMessage": " Resignation Request: Once approved by HR and confirmed by Admin, you may be permanently deleted from the system."
     }
-  },
-  "common": {
-    "close": "Close",
-    "cancel": "Cancel",
-    "submit": "Submit",
-    "submitting": "Submitting...",
-    "confirm": "Confirm",
-    "retry": "Retry",
-    "all": "All",
-    "previous": "Previous",
-    "next": "Next",
-    "page": "Page"
-  },
-  "cta": {
-    "getInTouch": "Get In Touch"
-  },
-  "footer": {
-    "address": "40 Sanguin Street, Oklahoma, USA",
-    "slogan": "Smile Bright, Live Better",
-    "doctors": "Doctors",
-    "license": "License",
-    "about": "About Us",
-    "workingHours": {
-      "title": "Working Hours",
-      "full": "Mon - Sat: 08:00 - 18:00"
-    },
-    "poweredBy": "Powered by",
-    "copyright": "Copyright"
   }
 }

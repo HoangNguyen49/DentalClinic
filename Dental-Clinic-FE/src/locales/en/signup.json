@@ -1,38 +1,35 @@
 {
-  "leftTitle": "Choose your Avatar",
-  "leftOrUpload": "Or upload your own",
+  "createTitle": "Create Account",
+  "leftTitle": "Join our community",
+  "leftOrUpload": "Or upload your own photo",
   "leftChooseFile": "Choose File",
-  "previewAlt": "Preview",
-
-  "createTitle": "Create your account",
-
+  "previewAlt": "Avatar Preview",
   "fields": {
     "fullName": "Full Name",
     "username": "Username",
     "email": "Email",
-    "phone": "Phone",
+    "phone": "Phone Number",
     "password": "Password",
     "confirmPassword": "Confirm Password"
   },
-
   "buttons": {
     "signUp": "Sign Up",
-    "signingUp": "Signing up..."
+    "signingUp": "Signing Up..."
   },
-
   "bottom": {
     "haveAccount": "Already have an account?",
-    "login": "Login"
+    "login": "Log in"
   },
-
-  "errors": {
-    "fillAll": "Please fill in all fields.",
-    "passwordMismatch": "Passwords do not match.",
-    "idMissing": "User ID not returned from server.",
-    "failed": "Registration failed."
-  },
-
   "success": {
-    "registered": "Registration successful, redirecting to login..."
+    "registered": "Registration successful!"
+  },
+  "labels": {
+    "patientCode": "Patient Code"
+  },
+  "errors": {
+    "fillAll": "Please fill in all fields",
+    "passwordMismatch": "Passwords do not match",
+    "idMissing": "User ID not found in response",
+    "failed": "Registration failed"
   }
 }

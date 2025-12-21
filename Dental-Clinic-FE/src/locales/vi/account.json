@@ -1,0 +1,60 @@
+{
+  "title": "Tài khoản của tôi",
+  "fullName": "Họ và tên",
+  "email": "Email",
+  "phone": "Số điện thoại",
+  "username": "Tên đăng nhập",
+  "avatar": {
+    "choose": "Chọn ảnh đại diện",
+    "confirm": "Xác nhận tải lên",
+    "success": "Cập nhật ảnh đại diện thành công!",
+    "failed": "Cập nhật ảnh thất bại."
+  },
+  "buttons": {
+    "save": "Lưu thay đổi",
+    "complete": "Hoàn tất & Về trang chủ",
+    "changePassword": "Đổi mật khẩu",
+    "setPassword": "Tạo mật khẩu",
+    "getQr": "Lấy mã QR đăng nhập"
+  },
+  "messages": {
+    "missingPhone": "Vui lòng nhập số điện thoại để hoàn tất hồ sơ!",
+    "forceUpdate": "⚠️ Bạn cần cập nhật số điện thoại để hoàn tất đăng ký.",
+    "updateSuccess": "Cập nhật hồ sơ thành công!",
+    "redirecting": "Hoàn tất! Đang chuyển hướng về trang chủ...",
+    "qrError": "Không thể tạo mã QR đăng nhập."
+  },
+  "qrModal": {
+    "title": "Đăng nhập Mobile App",
+    "instruction": "Mở ứng dụng <strong>Sunshine Dental</strong> trên điện thoại và quét mã này để đăng nhập ngay lập tức.",
+    "expiry": "Mã này sẽ hết hạn trong 2 phút"
+  },
+  "password": {
+    "titleChange": "Đổi mật khẩu",
+    "titleSet": "Tạo mật khẩu",
+    "current": "Mật khẩu hiện tại",
+    "new": "Mật khẩu mới",
+    "confirm": "Xác nhận mật khẩu",
+    "btnUpdate": "Cập nhật mật khẩu",
+    "btnSet": "Tạo mật khẩu",
+    "googleWarning": "Bạn đang sử dụng tài khoản Google chưa có mật khẩu. Vui lòng thiết lập mật khẩu mới.",
+    "success": "Đổi mật khẩu thành công!",
+    "matchError": "Mật khẩu xác nhận không khớp.",
+    "ruleError": "Mật khẩu phải từ 8-100 ký tự, bao gồm chữ hoa, thường, số và ký tự đặc biệt."
+  },
+  "menu": {
+    "myAccount": "Cài đặt tài khoản",
+    "healthOverview": "📊 Tổng quan sức khỏe",
+    "myAppointments": "📅 Lịch hẹn của tôi",
+    "medicalRecords": "📋 Hồ sơ bệnh án",
+    "myAttendance": "Chấm công của tôi",
+    "leaveRequests": "Yêu cầu nghỉ phép",
+    "dashboard": {
+      "hr": "HR Dashboard",
+      "admin": "Admin Dashboard",
+      "reception": "Reception Dashboard",
+      "doctor": "Doctor Dashboard",
+      "accountant": "Kế toán Dashboard"
+    }
+  }
+}

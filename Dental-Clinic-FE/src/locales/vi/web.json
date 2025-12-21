@@ -11,11 +11,41 @@
     "logout": "Đăng xuất",
     "sessionExpired": "Phiên đăng nhập đã hết hạn"
   },
+  "cta": {
+    "getInTouch": "Liên hệ ngay"
+  },
   "account": {
     "myAccount": "Tài khoản của tôi",
     "adminDashboard": "Bảng quản trị",
     "myAttendance": "Chấm công của tôi",
     "myLeaveRequests": "Đơn xin nghỉ của tôi"
+  },
+  "common": {
+    "close": "Đóng",
+    "cancel": "Hủy",
+    "submit": "Gửi",
+    "submitting": "Đang gửi...",
+    "confirm": "Xác nhận",
+    "retry": "Thử lại",
+    "all": "Tất cả",
+    "previous": "Trước",
+    "next": "Sau",
+    "page": "Trang"
+  },
+  "footer": {
+    "address": "40 đường Sanguin, Oklahoma, Hoa Kỳ",
+    "slogan": "Tỏa sáng nụ cười, sống tốt hơn",
+    "doctors": "Bác sĩ",
+    "license": "Giấy phép",
+    "about": "Về chúng tôi",
+    "workingHours": {
+      "title": "Giờ làm việc",
+      "weekday": "Thứ 2 - Thứ 6: 09:00 - 18:00",
+      "weekend": "Thứ 7 - Chủ nhật: 09:00 - 16:00",
+      "full": "Thứ 2 - Thứ 7: 08:00 - 18:00"
+    },
+    "poweredBy": "Vận hành bởi",
+    "copyright": "Bản quyền"
   },
   "attendance": {
     "hrDashboard": "Bảng điều khiển HR",
@@ -241,35 +271,7 @@
       "note": "Lưu ý: Đơn nghỉ việc cần được HR duyệt và Admin xác nhận. Sau khi được duyệt, bạn có thể bị xóa vĩnh viễn khỏi hệ thống.",
       "dateNote": "Ngày nghỉ việc: Bạn sẽ được nghỉ việc sau 1 tháng kể từ ngày nộp đơn ({{date}}).",
       "autoDateTitle": "Ngày nghỉ việc được tự động set là 1 tháng sau ngày nộp đơn",
-      "warningMessage": " Đơn nghỉ việc: Sau khi được HR duyệt và Admin xác nhận, bạn có thể bị xóa vĩnh viễn khỏi hệ thống."
+      "warning": "⚠️ Đơn nghỉ việc: Sau khi được HR duyệt và Admin xác nhận, bạn có thể bị xóa vĩnh viễn khỏi hệ thống."
     }
-  },
-  "common": {
-    "close": "Đóng",
-    "cancel": "Hủy",
-    "submit": "Gửi",
-    "submitting": "Đang gửi...",
-    "confirm": "Xác nhận",
-    "retry": "Thử lại",
-    "all": "Tất cả",
-    "previous": "Trước",
-    "next": "Sau",
-    "page": "Trang"
-  },
-  "cta": {
-    "getInTouch": "Liên hệ ngay"
-  },
-  "footer": {
-    "address": "40 đường Sanguin, Oklahoma, Hoa Kỳ",
-    "slogan": "Tỏa sáng nụ cười, sống tốt hơn",
-    "doctors": "Bác sĩ",
-    "license": "Giấy phép",
-    "about": "Về chúng tôi",
-    "workingHours": {
-      "title": "Giờ làm việc",
-      "full": "Thứ 2 - Thứ 7: 08:00 - 18:00"
-    },
-    "poweredBy": "Vận hành bởi",
-    "copyright": "Bản quyền"
   }
 }

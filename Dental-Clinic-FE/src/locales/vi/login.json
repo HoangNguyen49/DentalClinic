@@ -1,18 +1,105 @@
 {
-  "pageTitle": "Trang đăng nhập",
-  "pageSubtitle": "Bắt đầu hành trình của bạn cùng chúng tôi",
-  "formTitle": "Đăng nhập tài khoản",
-  "username": "Tên đăng nhập",
+  "pageTitle": "Chào mừng đến với Sunshine Dental",
+  "pageSubtitle": "Nụ cười của bạn là ưu tiên của chúng tôi.",
+  "formTitle": "Đăng nhập",
+  "welcome": "Chào mừng trở lại! Vui lòng nhập thông tin của bạn.",
+  "Email": "Email",
   "password": "Mật khẩu",
-  "loginNow": "Đăng nhập",
+  "fillAll": "Vui lòng điền đầy đủ thông tin",
+  "loginSuccess": "Đăng nhập thành công!",
+  "loginFailed": "Đăng nhập thất bại",
   "loggingIn": "Đang đăng nhập...",
-  "loginSuccess": "Đăng nhập thành công! Đang chuyển trang...",
-  "loginFailed": "Đăng nhập thất bại.",
-  "fillAll": "Vui lòng nhập đầy đủ thông tin.",
-  "google": "Đăng nhập với Google",
+  "loginNow": "Đăng nhập ngay",
+  "google": "Tiếp tục với Google",
   "noAccount": "Chưa có tài khoản?",
   "signUp": "Đăng ký",
-  "logoutSuccess": "Đã đăng xuất.",
-  "switchToEn": "EN",
-  "switchToVi": "VN"
+  "tabs": {
+    "email": "Email",
+    "phone": "Số điện thoại"
+  },
+  "phone": {
+    "label": "Số điện thoại",
+    "placeholder": "0912345678",
+    "usePassword": "Dùng mật khẩu",
+    "useOtp": "Dùng mã OTP",
+    "change": "Đổi số điện thoại?",
+    "loginWithPass": "Đăng nhập bằng mật khẩu"
+  },
+  "otp": {
+    "label": "Mã OTP",
+    "placeholder": "123456",
+    "get": "Lấy mã OTP",
+    "sending": "Đang gửi...",
+    "resendIn": "Gửi lại sau {{count}}s",
+    "resend": "Gửi lại OTP",
+    "login": "Đăng nhập bằng OTP",
+    "verifying": "Đang xác thực...",
+    "sent": "Mã OTP đã được gửi!"
+  },
+  "errors": {
+    "fillPhonePass": "Vui lòng nhập số điện thoại và mật khẩu",
+    "fillPhone": "Vui lòng nhập số điện thoại",
+    "fillOtp": "Vui lòng nhập mã OTP",
+    "sendOtpFailed": "Gửi OTP thất bại",
+    "resendFailed": "Gửi lại thất bại. Vui lòng thử lại sau.",
+    "forgotFailed": "Gửi yêu cầu thất bại.",
+    "emptyEmail": "Vui lòng nhập email.",
+    "userInfoFailed": "Lỗi lấy thông tin người dùng."
+  },
+  "locked": {
+    "title": "⚠️ Tài khoản đã bị khóa!",
+    "button": "👉 Mở khóa ngay (Quên mật khẩu)"
+  },
+  "inactive": {
+    "title": "⚠️ Tài khoản chưa kích hoạt",
+    "button": "📧 Gửi lại email kích hoạt",
+    "sent": "Đã gửi lại email kích hoạt! Vui lòng kiểm tra hộp thư."
+  },
+  "forgot": {
+    "link": "Quên mật khẩu?",
+    "modalTitle": "Đặt lại mật khẩu",
+    "instruction": "Nhập địa chỉ email của bạn và chúng tôi sẽ gửi liên kết để mở khóa tài khoản.",
+    "emailLabel": "Địa chỉ Email",
+    "cancel": "Hủy bỏ",
+    "send": "Gửi liên kết",
+    "sending": "Đang gửi...",
+    "success": "Link đặt lại mật khẩu đã được gửi! Vui lòng kiểm tra email."
+  },
+  "oauth": {
+    "processing": "Đang xử lý đăng nhập...",
+    "success": "Đăng nhập thành công!",
+    "missingPhone": "Đăng nhập thành công! Vui lòng cập nhật số điện thoại.",
+    "failed": "Đăng nhập thất bại (Không có token)."
+  },
+  "reset": {
+    "title": "Đặt Lại Mật Khẩu",
+    "subtitle": "Vui lòng nhập mật khẩu mới cho tài khoản của bạn.",
+    "newPass": "Mật khẩu mới",
+    "confirmPass": "Xác nhận mật khẩu",
+    "btnSubmit": "Xác Nhận Đổi Mật Khẩu",
+    "btnHome": "Quay về trang chủ",
+    "cancel": "Hủy bỏ",
+    "processing": "Đang xử lý...",
+    "success": "Đổi mật khẩu thành công! Đang chuyển hướng về đăng nhập...",
+    "errorToken": "Đường dẫn không hợp lệ hoặc bị thiếu Token.",
+    "errorTokenTitle": "Liên kết không hợp lệ",
+    "errorTokenMsg": "Vui lòng kiểm tra lại email hoặc yêu cầu gửi lại link mới.",
+    "errorEmpty": "Vui lòng điền đầy đủ thông tin.",
+    "errorRule": "Mật khẩu phải từ 8 ký tự, bao gồm chữ hoa, thường, số và ký tự đặc biệt.",
+    "errorMatch": "Mật khẩu xác nhận không khớp.",
+    "failed": "Đổi mật khẩu thất bại. Token có thể đã hết hạn."
+  },
+  "verify": {
+    "loadingTitle": "Đang xử lý...",
+    "loadingMsg": "Đang xác thực tài khoản...",
+    "successTitle": "Thành công!",
+    "successMsg": "Kích hoạt tài khoản thành công!",
+    "redirect": "Bạn sẽ được chuyển đến trang đăng nhập trong giây lát...",
+    "btnLogin": "Đăng nhập ngay",
+    "errorTitle": "Thất bại",
+    "btnHome": "Về trang chủ",
+    "errorToken": "Đường dẫn không hợp lệ (Thiếu token).",
+    "errorDefault": "Kích hoạt thất bại. Token có thể đã hết hạn."
+  },
+  "divider": "Hoặc tiếp tục với"
 }

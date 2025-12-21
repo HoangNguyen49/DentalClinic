@@ -1,42 +1,51 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+// 1. Import hook
+import { useTranslation } from 'react-i18next';
 
 const VerifyAccount: React.FC = () => {
+    // 2. Setup hook với namespace "login"
+    const { t } = useTranslation(["login"]);
+    
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
+    const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
     
-    // Định nghĩa kiểu dữ liệu cho state để không bị lỗi TypeScript
     const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading');
-    const [message, setMessage] = useState<string>('Đang xác thực tài khoản...');
+    const [message, setMessage] = useState<string>('');
+
+    // Set message mặc định khi component mount (để tránh lỗi hydration hoặc text trắng)
+    useEffect(() => {
+        if (status === 'loading') {
+            setMessage(t('login:verify.loadingMsg'));
+        }
+    }, [t, status]);
 
     useEffect(() => {
         const token = searchParams.get('token');
 
         if (!token) {
             setStatus('error');
-            setMessage('Đường dẫn không hợp lệ (Thiếu token).');
+            setMessage(t('login:verify.errorToken'));
             return;
         }
 
-        // Thay localhost:8080 bằng URL Backend thực tế của bạn
-        axios.post(`http://localhost:8080/api/auth/verify-account?token=${token}`)
+        axios.post(`${API_URL}/api/auth/verify-account?token=${token}`)
             .then(() => {
                 setStatus('success');
-                setMessage('Kích hoạt tài khoản thành công!');
+                setMessage(t('login:verify.successMsg'));
                 
-                // Chuyển về login sau 3s
                 setTimeout(() => {
                     navigate('/login'); 
                 }, 3000);
             })
             .catch((error: any) => {
                 setStatus('error');
-                // TypeScript cần check an toàn khi truy cập error.response
-                const errorMsg = error.response?.data?.message || "Kích hoạt thất bại. Token có thể đã hết hạn.";
+                const errorMsg = error.response?.data?.message || t('login:verify.errorDefault');
                 setMessage(errorMsg);
             });
-    }, [searchParams, navigate]);
+    }, [searchParams, navigate, t, API_URL]);
 
     return (
         <div style={{ 
@@ -59,17 +68,17 @@ const VerifyAccount: React.FC = () => {
             }}>
                 {status === 'loading' && (
                     <>
-                        <h2 style={{color: '#6c757d', marginBottom: '10px'}}>⏳ Đang xử lý...</h2>
-                        <p>{message}</p>
+                        <h2 style={{color: '#6c757d', marginBottom: '10px'}}>⏳ {t('login:verify.loadingTitle')}</h2>
+                        <p>{message || t('login:verify.loadingMsg')}</p>
                     </>
                 )}
 
                 {status === 'success' && (
                     <>
-                        <h2 style={{color: '#28a745', marginBottom: '10px'}}>✅ Thành công!</h2>
+                        <h2 style={{color: '#28a745', marginBottom: '10px'}}>✅ {t('login:verify.successTitle')}</h2>
                         <p>{message}</p>
                         <p style={{fontSize: '0.9em', color: '#888', marginTop: '15px'}}>
-                            Bạn sẽ được chuyển đến trang đăng nhập trong giây lát...
+                            {t('login:verify.redirect')}
                         </p>
                         <button 
                             onClick={() => navigate('/login')}
@@ -84,14 +93,14 @@ const VerifyAccount: React.FC = () => {
                                 fontWeight: 'bold'
                             }}
                         >
-                            Đăng nhập ngay
+                            {t('login:verify.btnLogin')}
                         </button>
                     </>
                 )}
 
                 {status === 'error' && (
                     <>
-                        <h2 style={{color: '#dc3545', marginBottom: '10px'}}>❌ Thất bại</h2>
+                        <h2 style={{color: '#dc3545', marginBottom: '10px'}}>❌ {t('login:verify.errorTitle')}</h2>
                         <p>{message}</p>
                         <button 
                             onClick={() => navigate('/login')}
@@ -105,7 +114,7 @@ const VerifyAccount: React.FC = () => {
                                 borderRadius: '5px'
                             }}
                         >
-                            Về trang chủ
+                            {t('login:verify.btnHome')}
                         </button>
                     </>
                 )}
