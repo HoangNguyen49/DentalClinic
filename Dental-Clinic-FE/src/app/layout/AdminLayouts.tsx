@@ -10,6 +10,7 @@ import {
   FaCogs,
   FaUsers,
   FaBox,
+  FaFileContract,
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 
@@ -57,6 +58,7 @@ const AdminLayout = () => {
           <NavItem to="/admin/staff" label={t("nav.staff", "Staff")} icon={<FaUser />} />
           <NavItem to="/admin/customers" label={t("nav.customers", "Customers")} icon={<FaUsers />} />
           <NavItem to="/admin/inventory" label={t("nav.inventory", "Inventory")} icon={<FaBox />} />
+          <NavItem to="/admin/payroll/contract" label={t("nav.salaryContracts", "Salary Contracts")} icon={<FaFileContract />} />
           <NavItem to="/admin/system" label={t("nav.system", "System")} icon={<FaCogs />} />
         </nav>
         <div className="p-4 border-t">

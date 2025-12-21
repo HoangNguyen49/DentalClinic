@@ -1,11 +1,11 @@
-import { useState, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   payrollApi,
   type SalaryProfileRequest,
   type AllowanceRequestDto,
   type UserSnapshot
-} from "../../../../../../huybro_api/payrollApi";
-import { useNavigate } from "react-router-dom";
+} from "../../../huybro_api/payrollApi";
+import { useNavigate, useLocation } from "react-router-dom";
 
 // 1. Bộ khung chuẩn (Template) - Luôn hiện ra để người dùng điền số
 const MANDATORY_ITEMS: AllowanceRequestDto[] = [
@@ -35,6 +35,7 @@ type NotificationType = { type: 'success' | 'error', message: string } | null;
 
 export const useSalaryConfig = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   
   const [formData, setFormData] = useState<SalaryProfileRequest>(DEFAULT_FORM);
   const [loading, setLoading] = useState(false);
@@ -42,10 +43,18 @@ export const useSalaryConfig = () => {
   const [selectedUser, setSelectedUser] = useState<UserSnapshot | null>(null);
   const [notification, setNotification] = useState<NotificationType>(null);
 
-  const loadUserProfile = useCallback(async (userId: number) => {
+  const handleUserSelect = useCallback(async (user: UserSnapshot | null) => {
+    setSelectedUser(user);
+    setNotification(null);
+
+    if (!user) {
+      setFormData(DEFAULT_FORM);
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await payrollApi.getProfileByUser(userId);
+      const res = await payrollApi.getProfileByUser(user.id);
       
       if (res.data) {
         const apiData = res.data;
@@ -87,7 +96,7 @@ export const useSalaryConfig = () => {
         });
 
         setFormData({
-          userId: userId,
+          userId: user.id,
           calculationType: apiData.calculationType,
           baseSalary: apiData.baseSalary,
           standardWorkDays: apiData.standardWorkDays || 0,
@@ -101,23 +110,11 @@ export const useSalaryConfig = () => {
       }
     } catch (error: any) {
       // Nếu 404 hoặc lỗi (nhân viên mới toanh), hiện Template mặc định
-      setFormData({ ...DEFAULT_FORM, userId: userId });
+      setFormData({ ...DEFAULT_FORM, userId: user.id });
     } finally {
       setLoading(false);
     }
   }, []);
-
-  const handleUserSelect = useCallback(async (user: UserSnapshot | null) => {
-    setSelectedUser(user);
-    setNotification(null);
-
-    if (!user) {
-      setFormData(DEFAULT_FORM);
-      return;
-    }
-
-    await loadUserProfile(user.id);
-  }, [loadUserProfile]);
 
   // --- CÁC HÀM XỬ LÝ SỰ KIỆN KHÔNG THAY ĐỔI ---
   const handleChange = (field: keyof SalaryProfileRequest, value: any) => {
@@ -164,15 +161,9 @@ export const useSalaryConfig = () => {
     }
   };
 
-  const handleRefresh = useCallback(async () => {
-    if (selectedUser) {
-      await loadUserProfile(selectedUser.id);
-      setNotification({ type: 'success', message: "Data refreshed successfully!" });
-    }
-  }, [selectedUser, loadUserProfile]);
-
   return {
     formData, loading, isSaving, selectedUser, notification,
-    handleUserSelect, handleChange, addAllowance, removeAllowance, updateAllowance, handleSubmit, handleRefresh, handleCancel: () => navigate(-1)
+    handleUserSelect, handleChange, addAllowance, removeAllowance, updateAllowance, handleSubmit, handleCancel: () => navigate(-1)
   };
 };
+

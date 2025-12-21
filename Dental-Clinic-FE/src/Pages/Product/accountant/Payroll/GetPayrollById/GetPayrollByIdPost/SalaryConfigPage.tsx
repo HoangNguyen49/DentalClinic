@@ -2,15 +2,15 @@ import React from "react";
 import { useSalaryConfig } from "./useSalaryConfig";
 import UserSearchAutocomplete from "../../widgets/UserSearchAutocomplete";
 import {
-  Save, DollarSign, Calendar, Clock, Plus, Trash2, ShieldCheck, Briefcase,
-  CheckCircle2, AlertCircle, Users
+  Save, Calendar, Clock, Plus, Trash2, ShieldCheck, Briefcase,
+  CheckCircle2, AlertCircle, Users, RefreshCw
 } from "lucide-react";
 
 const SalaryConfigPage: React.FC = () => {
   const {
     formData, loading, isSaving, selectedUser, notification,
     handleUserSelect,
-    handleChange, addAllowance, removeAllowance, updateAllowance, handleSubmit, handleCancel
+    handleChange, addAllowance, removeAllowance, updateAllowance, handleSubmit, handleRefresh, handleCancel
   } = useSalaryConfig();
 
   // Logic lọc danh sách để hiển thị đúng khu vực
@@ -42,9 +42,22 @@ const SalaryConfigPage: React.FC = () => {
 
         {/* 1. SELECT EMPLOYEE */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center gap-3 border-b border-gray-100 pb-4 mb-6">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">1</div>
-            <h2 className="text-lg font-semibold text-gray-900">Select Employee</h2>
+          <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold text-sm">1</div>
+              <h2 className="text-lg font-semibold text-gray-900">Select Employee</h2>
+            </div>
+            {selectedUser && (
+              <button
+                onClick={handleRefresh}
+                disabled={loading}
+                className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-600 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50"
+                title="Refresh data from server"
+              >
+                <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+                Refresh
+              </button>
+            )}
           </div>
           <div className="max-w-md">
             <UserSearchAutocomplete

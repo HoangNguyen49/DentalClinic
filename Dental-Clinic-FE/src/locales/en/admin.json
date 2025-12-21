@@ -16,6 +16,7 @@
     "crm": "CRM",
     "attendance": "Attendance",
     "clinics": "Clinics",
+    "salaryContracts": "Salary Contracts",
     "backToWebsite": "Back to Website"
   },
   "dashboard": {
@@ -548,5 +549,38 @@
       "activated": "Khách hàng đã được kích hoạt",
       "blocked": "Khách hàng đã bị chặn"
     }
+  },
+  "salaryConfig": {
+    "title": "Salary Configuration",
+    "subtitle": "Create or update salary contract",
+    "selectEmployee": "Select Employee",
+    "calculationModel": "Calculation Model",
+    "contractType": "Contract Type",
+    "shiftBased": "Shift Based",
+    "monthlySalary": "Monthly Salary",
+    "autoAssigned": "Auto-assigned by Role",
+    "grossBaseSalary": "Gross Base Salary",
+    "workStandards": "Work Standards",
+    "standardShifts": "Standard Shifts",
+    "overShiftBonus": "Over Shift Bonus (VND/shift)",
+    "standardDays": "Standard Days",
+    "otMultiplier": "OT Multiplier (%)",
+    "latePenalty": "Late Penalty (VND/minute)",
+    "insuranceTaxRelief": "Insurance & Tax Relief",
+    "insuranceBase": "Insurance contribution salary base (VND)",
+    "insurancePlaceholder": "Default: same as base salary",
+    "dependent": "Dependent (Family allowances)",
+    "person": "Person",
+    "monthlyAllowances": "Monthly Allowances",
+    "add": "Add",
+    "allowanceNamePlaceholder": "Allowance name...",
+    "income": "INCOME",
+    "remove": "Remove",
+    "noAllowances": "No allowances configured yet.",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "save": "Save Configuration",
+    "startConfiguration": "Start Configuration",
+    "selectEmployeeHint": "Select an employee from the search bar above to begin."
   }
 }

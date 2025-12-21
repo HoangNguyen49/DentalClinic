@@ -47,6 +47,7 @@ import AdminReportsPage from "../Pages/Admin/Reports/AdminReportsPage";
 import AdminCustomerManagement from "../Pages/Admin/Customers/AdminCustomerManagement";
 import AdminInventoryManagement from "../Pages/Admin/Inventory/AdminInventoryManagement";
 import AdminDashboardPage from "../Pages/Admin/Dashboard/AdminDashboardPage";
+import AdminSalaryConfigPage from "../Pages/Admin/Payroll/SalaryConfigPage";
 
 // --- DOCTOR PAGES ---
 import DoctorDashboard from "../Pages/Doctor/DoctorDashboard";
@@ -146,6 +147,7 @@ function App() {
                                 <Route path="reports" element={<AdminReportsPage />} />
                                 <Route path="customers" element={<AdminCustomerManagement />} />
                                 <Route path="inventory" element={<AdminInventoryManagement />} />
+                                <Route path="payroll/contract" element={<AdminSalaryConfigPage />} />
                             </Route>
                         </Route>
 
