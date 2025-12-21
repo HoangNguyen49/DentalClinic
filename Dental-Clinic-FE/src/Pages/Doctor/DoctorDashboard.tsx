@@ -15,20 +15,13 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { format } from "date-fns";
 import type { DoctorAppointmentDTO } from "../types/doctor";
-import DoctorChatbotPanel from "./doc/DoctorChatbotPanel";
 
-type MedicalRecord = {
-  recordId: number;
-  recordDate: string;
-  diagnosis: string;
-  patient?: { fullName: string; patientCode: string };
-};
+
 
 type DashboardStats = {
   todayAppointments: number;
   weekAppointments: number;
-  monthPatients: number;
-  monthRecords: number;
+
 };
 
 export default function DoctorDashboard() {
@@ -41,12 +34,10 @@ export default function DoctorDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     todayAppointments: 0,
     weekAppointments: 0,
-    monthPatients: 0,
-    monthRecords: 0,
+
   });
   const [todayAppointments, setTodayAppointments] = useState<DoctorAppointmentDTO[]>([]);
   const [upcomingAppointments, setUpcomingAppointments] = useState<DoctorAppointmentDTO[]>([]);
-  const [recentRecords, setRecentRecords] = useState<MedicalRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,7 +55,6 @@ export default function DoctorDashboard() {
         tomorrow.setDate(tomorrow.getDate() + 1);
         const weekEnd = new Date(today);
         weekEnd.setDate(weekEnd.getDate() + 7);
-        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
         // Fetch today's appointments
         try {
@@ -126,34 +116,7 @@ export default function DoctorDashboard() {
           console.warn("Could not fetch upcoming appointments:", err);
         }
 
-        // Fetch recent medical records
-        try {
-          const recordsRes = await axios.get<MedicalRecord[]>(
-            `${apiBase}/api/doctor/${doctorId}/medical-records`,
-            {
-              params: {
-                startDate: monthStart.toISOString().split("T")[0],
-              },
-              headers: { Authorization: `Bearer ${accessToken}` },
-            }
-          );
-          const records = recordsRes.data || [];
-          setRecentRecords(
-            records
-              .sort((a, b) => new Date(b.recordDate).getTime() - new Date(a.recordDate).getTime())
-              .slice(0, 5)
-          );
-
-          // Count unique patients
-          const uniquePatients = new Set(records.map((r) => r.patient?.patientCode).filter(Boolean));
-          setStats((prev) => ({
-            ...prev,
-            monthPatients: uniquePatients.size,
-            monthRecords: records.length,
-          }));
-        } catch (err) {
-          console.warn("Could not fetch medical records:", err);
-        }
+      
       } catch (err: unknown) {
         console.error("Error fetching dashboard data:", err);
         toast.error("Failed to load dashboard data");
@@ -218,29 +181,9 @@ export default function DoctorDashboard() {
               </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Patients This Month</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.monthPatients}</p>
-                </div>
-                <div className="bg-purple-100 p-3 rounded-full">
-                  <Users className="w-8 h-8 text-purple-600" />
-                </div>
-              </div>
-            </div>
+         
 
-            <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Records This Month</p>
-                  <p className="text-3xl font-bold text-gray-900">{stats.monthRecords}</p>
-                </div>
-                <div className="bg-orange-100 p-3 rounded-full">
-                  <FileText className="w-8 h-8 text-orange-600" />
-                </div>
-              </div>
-            </div>
+          
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -405,46 +348,7 @@ export default function DoctorDashboard() {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-6">
-              {/* Recent Medical Records */}
-              <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-800">Recent Medical Records</h2>
-                  <button
-                    onClick={() => navigate("/doctor/patients")}
-                    className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-sm"
-                  >
-                    View All
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
-                {recentRecords.length === 0 ? (
-                  <div className="text-center text-gray-500 py-8">No recent medical records</div>
-                ) : (
-                  <div className="space-y-3">
-                    {recentRecords.map((record) => (
-                      <div
-                        key={record.recordId}
-                        className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 cursor-pointer"
-                        onClick={() => navigate(`/doctor/medical-records/${record.recordId}`)}
-                      >
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <FileText className="w-4 h-4 text-gray-400" />
-                            <span className="font-medium text-gray-900">
-                              {format(new Date(record.recordDate), "MMM dd, yyyy")}
-                            </span>
-                          </div>
-                          <div className="text-sm text-gray-600">
-                            {record.patient?.fullName || "Unknown"} ({record.patient?.patientCode || "N/A"})
-                          </div>
-                          <div className="text-xs text-gray-500 truncate max-w-2xl">{record.diagnosis}</div>
-                        </div>
-                        <ArrowRight className="w-5 h-5 text-gray-400" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              
 
               {/* Quick Actions */}
               <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
@@ -461,36 +365,20 @@ export default function DoctorDashboard() {
                     onClick={() => navigate("/doctor/medical-records/create")}
                     className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
                   >
-                    <FileText className="w-6 h-6 text-green-600" />
-                    <span className="font-medium">Create Medical Record</span>
-                  </button>
-                  <button
-                    onClick={() => navigate("/doctor/schedule")}
-                    className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
-                  >
+                    
                     <Clock className="w-6 h-6 text-purple-600" />
                     <span className="font-medium">View My Schedule</span>
                   </button>
-                  <button
-                    onClick={() => navigate("/doctor/chatbot")}
-                    className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
-                  >
-                    <FileText className="w-6 h-6 text-indigo-600" />
-                    <span className="font-medium">Doctor Chatbot</span>
-                  </button>
+
                 </div>
               </div>
             </div>
 
-            <div className="lg:col-span-1">
-              {/* Chatbot Panel */}
-              <div className="sticky top-6">
-                <DoctorChatbotPanel />
+           
               </div>
             </div>
           </div>
-        </div>
-      </div>
+    
     </>
   );
 }

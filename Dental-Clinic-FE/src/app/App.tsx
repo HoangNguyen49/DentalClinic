@@ -56,7 +56,6 @@ import AppointmentDetail from "../Pages/Doctor/AppointmentDetail";
 import PatientMedicalRecords from "../Pages/Doctor/PatientMedicalRecords";
 import MedicalRecordDetail from "../Pages/Doctor/MedicalRecordDetail";
 import AppointmentListDoctor from "../Pages/Doctor/AppointmentListDoctor";
-import DoctorChatbotPage from "../Pages/Doctor/DoctorChatbotPage";
 
 // --- RECEPTION PAGES ---
 import ReceptionDashboard from "../Pages/Reception/Dashboard/ReceptionDashboard";
@@ -178,7 +177,6 @@ function App() {
                                 <Route path="appointments/:appointmentId" element={<AppointmentDetail />} />
                                 <Route path="patients/:patientId/records" element={<PatientMedicalRecords />} />
                                 <Route path="patients/:patientId/records/:recordId" element={<MedicalRecordDetail />} />
-                                <Route path="chatbot" element={<DoctorChatbotPage/>} />
                             </Route>
                         </Route>
 
