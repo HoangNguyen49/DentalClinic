@@ -50,15 +50,20 @@ export const MonthlyAttendanceHistory: React.FC<MonthlyAttendanceHistoryProps> =
             hasLeave: boolean; // Để đếm số ngày có leave records
         }>();
 
+        // Kiểm tra xem có phải bác sĩ không (có shiftType MORNING hoặc AFTERNOON)
+        const isDoctor = monthlyAttendances.some(a => 
+            a.shiftType === "MORNING" || a.shiftType === "AFTERNOON"
+        );
+
         const stats = monthlyAttendances.reduce(
             (acc, attendance) => {
                 const workDate = attendance.workDate ? new Date(attendance.workDate).toISOString().split("T")[0] : "";
                 const status = (attendance.attendanceStatus || "").toUpperCase();
 
-                // Đếm số ngày unique (cho totalDays)
+                // Đếm số ngày unique (cho totalDays) - chỉ đếm lần đầu tiên gặp ngày này
                 if (workDate && !uniqueWorkDates.has(workDate)) {
                     uniqueWorkDates.add(workDate);
-                    acc.totalDays += 1;
+                    // Không tăng totalDays ở đây nữa, sẽ tính sau theo tỷ lệ ca
                     
                     // Khởi tạo trạng thái cho ngày mới (cho lateDays và presentDays)
                     const isPresent = status === "ON_TIME" || status === "APPROVED_PRESENT" || status === "APPROVED_LATE" || status === "APPROVED_EARLY_LEAVE";
@@ -142,15 +147,50 @@ export const MonthlyAttendanceHistory: React.FC<MonthlyAttendanceHistoryProps> =
             }
         );
 
-        // Đếm presentDays và approvedDays theo ngày unique (một ngày có ít nhất một ca present = 1 presentDay)
-        stats.presentDays = 0;
+        // Tính totalDays và presentDays theo tỷ lệ ca cho bác sĩ
+        if (isDoctor) {
+            // Bác sĩ: group theo workDate và đếm số ca (tất cả records, không chỉ có check-in)
+            const allShiftsByDate = new Map<string, number>();
+            monthlyAttendances.forEach(attendance => {
+                if (attendance.workDate) {
+                    const workDate = new Date(attendance.workDate).toISOString().split("T")[0];
+                    allShiftsByDate.set(workDate, (allShiftsByDate.get(workDate) || 0) + 1);
+                }
+            });
+            
+            // Tính totalDays: nếu có 2 ca = 1.0 ngày, 1 ca = 0.5 ngày
+            // totalDays = tổng số ngày có records (theo tỷ lệ ca)
+            stats.totalDays = Array.from(allShiftsByDate.values())
+                .reduce((sum, count) => sum + (count >= 2 ? 1.0 : 0.5), 0);
+            
+            // Tính presentDays: group theo workDate và đếm số ca present trên từng ngày
+            const presentShiftsByDate = new Map<string, number>();
+            monthlyAttendances.forEach(attendance => {
+                const status = (attendance.attendanceStatus || "").toUpperCase();
+                const isPresent = status === "ON_TIME" || status === "APPROVED_PRESENT" || 
+                                 status === "APPROVED_LATE" || status === "APPROVED_EARLY_LEAVE";
+                if (isPresent && attendance.workDate) {
+                    const workDate = new Date(attendance.workDate).toISOString().split("T")[0];
+                    presentShiftsByDate.set(workDate, (presentShiftsByDate.get(workDate) || 0) + 1);
+                }
+            });
+            
+            // Tính presentDays: nếu có 2 ca = 1.0 ngày, 1 ca = 0.5 ngày
+            stats.presentDays = Array.from(presentShiftsByDate.values())
+                .reduce((sum, count) => sum + (count >= 2 ? 1.0 : 0.5), 0);
+        } else {
+            // Nhân viên: đếm theo ngày unique
+            stats.totalDays = uniqueWorkDates.size;
+        }
+
+        // Đếm approvedDays theo ngày unique
         stats.approvedDays = 0;
         let absentDaysByDate = 0; // Số ngày có absent records (theo ngày unique)
         let leaveDaysByDate = 0; // Số ngày có leave records (theo ngày unique)
 
         workDateStatusMap.forEach((dayStatus) => {
-            // Một ngày được coi là "present day" nếu có ít nhất một ca present
-            if (dayStatus.hasPresent) {
+            // Một ngày được coi là "present day" nếu có ít nhất một ca present (chỉ cho nhân viên)
+            if (!isDoctor && dayStatus.hasPresent) {
                 stats.presentDays += 1;
             }
             
