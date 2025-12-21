@@ -6,10 +6,10 @@ import { type BillInvoice } from "../receptionApi";
 
 // --- CẤU HÌNH NGÂN HÀNG (DUMMY DATA CHO DEMO) ---
 const BANK_INFO = {
-  BANK_ID: "MB", // Mã ngân hàng (MB, VCB, TECHCOMBANK...)
-  ACCOUNT_NO: "0334808386", // Số tài khoản người nhận
-  TEMPLATE: "compact", // Giao diện QR (compact, print, qr_only)
-  ACCOUNT_NAME: "PHONG KHAM NHA KHOA", // Tên chủ tài khoản
+  BANK_ID: "MB",
+  ACCOUNT_NO: "0334808386",
+  TEMPLATE: "compact",
+  ACCOUNT_NAME: "Sunshine Dental Clinic",
 };
 
 interface InvoiceModalProps {
@@ -29,40 +29,37 @@ export default function InvoiceModal({
 }: InvoiceModalProps) {
   const { t } = useTranslation("reception");
 
-  // ✅ Return null nếu chưa mở hoặc chưa có data
-  if (!isOpen || !data) return null;
-
-  // ✅ Lock body scroll khi modal open
   useEffect(() => {
+    if (!isOpen) return;
+
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
     };
-  }, []);
+  }, [isOpen]);
 
-  // ✅ ESC đóng modal
+  // ESC to close
   useEffect(() => {
+    if (!isOpen) return;
+
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [onClose]);
+  }, [isOpen, onClose]);
 
-  // Hàm format tiền VND
+  // ✅ After hooks, it's safe to return early
+  if (!isOpen || !data) return null;
+
   const formatMoney = (amount: number) =>
     new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(amount);
 
-  // Xử lý in
-  const handlePrint = () => {
-    window.print();
-  };
+  const handlePrint = () => window.print();
 
-  // Kiểm tra xem đã thanh toán hết chưa (Dựa vào số tiền còn lại)
   const isFullyPaid = data.remainingBalance <= 0;
 
-  // Helper tô màu Rank
   const getRankColor = (rank: string) => {
     switch (rank?.toUpperCase()) {
       case "DIAMOND":
@@ -84,7 +81,6 @@ export default function InvoiceModal({
                  print:bg-white print:absolute print:inset-0"
       onMouseDown={onClose}
     >
-      {/* Container Modal */}
       <div
         className="bg-white rounded-xl shadow-2xl w-full max-w-4xl
                    flex flex-col overflow-hidden
@@ -94,7 +90,7 @@ export default function InvoiceModal({
                    animate-fadeInScale"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* --- HEADER MODAL (Ẩn khi in) --- */}
+        {/* HEADER (Ẩn khi in) */}
         <div className="flex justify-between items-center p-4 border-b bg-gray-50 print:hidden shrink-0">
           <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-blue-600" />
@@ -109,7 +105,7 @@ export default function InvoiceModal({
           </button>
         </div>
 
-        {/* --- NỘI DUNG HÓA ĐƠN (Phần sẽ được in) --- */}
+        {/* CONTENT */}
         <div
           className="flex-1 overflow-y-auto p-8 min-h-0
                      print:p-0 print:overflow-visible"
@@ -190,30 +186,23 @@ export default function InvoiceModal({
                 <tr key={index} className="border-b border-gray-100 last:border-0">
                   <td className="py-3 px-2 font-medium">{item.serviceName}</td>
                   <td className="text-center py-3 px-2">{item.quantity}</td>
-                  <td className="text-right py-3 px-2 text-gray-500">
-                    {formatMoney(item.unitPrice)}
-                  </td>
+                  <td className="text-right py-3 px-2 text-gray-500">{formatMoney(item.unitPrice)}</td>
                   <td className="text-right py-3 px-2 font-semibold">{formatMoney(item.total)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
 
-          {/* 4. Tổng Kết Tài Chính & QR CODE */}
+          {/* 4. Tổng Kết & QR */}
           <div className="flex flex-col md:flex-row gap-6 mt-6 pt-6 border-t border-gray-100">
-            {/* --- CỘT TRÁI: QR CODE (Chỉ hiện khi chưa thanh toán hết) --- */}
             {!isFullyPaid && (
               <div className="flex-1 flex flex-col items-center justify-center bg-blue-50 rounded-xl p-4 border border-blue-100 print:hidden">
-                <p className="text-sm font-bold text-blue-800 mb-2 uppercase">
-                  {t("invoice.scanQr")}
-                </p>
-
+                <p className="text-sm font-bold text-blue-800 mb-2 uppercase">{t("invoice.scanQr")}</p>
                 <img
                   src={`https://img.vietqr.io/image/${BANK_INFO.BANK_ID}-${BANK_INFO.ACCOUNT_NO}-${BANK_INFO.TEMPLATE}.png?amount=${data.remainingBalance}&addInfo=THANHTOAN ${data.invoiceId}&accountName=${BANK_INFO.ACCOUNT_NAME}`}
                   alt="Mã QR Thanh Toán"
                   className="w-48 h-48 object-contain border-4 border-white rounded-lg shadow-sm bg-white"
                 />
-
                 <div className="mt-3 text-center space-y-1">
                   <p className="text-xs text-gray-500">
                     {t("invoice.bank")}: <span className="font-bold text-gray-700">MB Bank</span>
@@ -224,15 +213,12 @@ export default function InvoiceModal({
                   </p>
                   <p className="text-xs text-gray-500">
                     {t("invoice.content")}:{" "}
-                    <span className="font-mono font-bold text-blue-600">
-                      THANHTOAN {data.invoiceId}
-                    </span>
+                    <span className="font-mono font-bold text-blue-600">THANHTOAN {data.invoiceId}</span>
                   </p>
                 </div>
               </div>
             )}
 
-            {/* --- CỘT PHẢI: CHI TIẾT SỐ TIỀN --- */}
             <div className="flex-1 bg-gray-50 p-6 rounded-lg print:bg-transparent print:p-0">
               <div className="flex justify-between mb-2 text-sm">
                 <span className="text-gray-600">{t("invoice.subTotal")}:</span>
@@ -247,17 +233,13 @@ export default function InvoiceModal({
               )}
 
               <div className="flex justify-between mb-2 text-sm border-b border-gray-200 pb-2">
-                <span className="text-gray-600">
-                  {t("invoice.bookingFee", { type: data.appointmentType })}:
-                </span>
+                <span className="text-gray-600">{t("invoice.bookingFee", { type: data.appointmentType })}:</span>
                 <span className="font-semibold text-gray-800">{formatMoney(data.bookingFee)}</span>
               </div>
 
               <div className="flex justify-between items-center mb-4">
                 <span className="text-base font-bold text-gray-800">{t("invoice.grandTotal")}:</span>
-                <span className="text-xl font-extrabold text-blue-700">
-                  {formatMoney(data.totalAmount)}
-                </span>
+                <span className="text-xl font-extrabold text-blue-700">{formatMoney(data.totalAmount)}</span>
               </div>
 
               <div className="flex justify-between mb-2 text-sm text-gray-500 italic">
@@ -278,7 +260,6 @@ export default function InvoiceModal({
             </div>
           </div>
 
-          {/* Footer in */}
           <div className="mt-16 text-center text-xs text-gray-400 hidden print:block">
             <p className="mb-1">{t("invoice.thankYou", { clinic: data.clinicName })}</p>
             <p>{t("invoice.footerNote")}</p>
@@ -287,7 +268,7 @@ export default function InvoiceModal({
           </div>
         </div>
 
-        {/* --- FOOTER ACTIONS (Ẩn khi in) --- */}
+        {/* FOOTER ACTIONS (Ẩn khi in) */}
         <div className="p-4 border-t bg-gray-50 flex justify-end gap-3 print:hidden shrink-0 sticky bottom-0 z-10">
           <button
             onClick={handlePrint}
@@ -316,6 +297,7 @@ export default function InvoiceModal({
           )}
         </div>
 
+        {/* CSS print */}
         <style>{`
           @media print {
             @page { margin: 0; size: auto; }
