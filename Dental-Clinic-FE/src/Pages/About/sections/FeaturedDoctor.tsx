@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import doc3 from "../../../assets/images/doctor.png"; 
 
 type Props = {
@@ -9,12 +10,17 @@ type Props = {
 };
 
 export default function FeaturedDoctor({
-  name = "Dr. Emily Johnson",
-  title = "Head Dentist",
-  description = "Overseeing all aspects of our clinic to ensure the best patient care",
+  name,
+  title,
+  description,
   photoSrc = doc3,
   objectPosition = "object-[50%_35%]",
 }: Props) {
+  const { t } = useTranslation("about");
+  
+  const defaultName = name || t("featuredDoctor.name");
+  const defaultTitle = title || t("featuredDoctor.title");
+  const defaultDescription = description || t("featuredDoctor.description");
   return (
     <section className="py-2">
       <div className="mx-auto max-w-5xl">
@@ -23,18 +29,18 @@ export default function FeaturedDoctor({
             <div className="shrink-0">
               <img
                 src={photoSrc}
-                alt={name}
+                alt={defaultName}
                 className={`h-20 w-20 md:h-60 md:w-60 rounded-full object-cover ${objectPosition} ring-2 ring-white shadow`}
                 loading="lazy"
               />
             </div>
             <div className="min-w-0">
               <h3 className="text-3xl md:text-4xl font-semibold text-black leading-tight">
-                {name}
+                {defaultName}
               </h3>
-              <p className="mt-1 text-lg md:text-xl text-slate-800">{title}</p>
+              <p className="mt-1 text-lg md:text-xl text-slate-800">{defaultTitle}</p>
               <p className="mt-1 text-lg md:text-xl leading-snug text-slate-800">
-                {description}
+                {defaultDescription}
               </p>
             </div>
           </div>

@@ -105,7 +105,7 @@ const NotificationPage = () => {
             console.log('[NotificationPage] Navigating to /admin/attendance');
             navigate('/admin/attendance');
           } else {
-            // ATTENDANCE_CHECKIN, ATTENDANCE_CHECKOUT, ATTENDANCE_ABSENT, EXPLANATION_APPROVED, EXPLANATION_REJECTED
+            // ATTENDANCE_CHECKIN, ATTENDANCE_CHECKOUT, ATTENDANCE_ABSENT, EXPLANATION_APPROVED (MISSING_CHECK_OUT), EXPLANATION_REJECTED
             console.log('[NotificationPage] Navigating to /my-attendance');
             navigate('/my-attendance');
           }

@@ -101,16 +101,17 @@ export default function LeaveRequestManagement() {
   };
 
   // Xử lý duyệt hoặc từ chối đơn (APPROVE hoặc REJECT)
-  const handleProcess = async (action: "APPROVE" | "REJECT") => {
-    if (!selectedRequest) return;
+  const handleProcess = async (action: "APPROVE" | "REJECT", request?: HrLeaveRequest) => {
+    const targetRequest = request || selectedRequest;
+    if (!targetRequest) return;
 
     await executeApi(
-      () => hrApi.leaveRequests.process(selectedRequest.id, action, comment || undefined),
+      () => hrApi.leaveRequests.process(targetRequest.id, action, comment || undefined),
       {
         onSuccess: () => {
           toast.success(
             action === "APPROVE"
-              ? t("leaveRequest.messages.approveSuccess")
+              ? t("leaveRequest.messages.confirmSuccess")
               : t("leaveRequest.messages.rejectSuccess")
           );
           setSelectedRequest(null);
@@ -401,10 +402,29 @@ export default function LeaveRequestManagement() {
                         <Calendar className="w-4 h-4" />
                         {t("leaveRequest.monthlyLeave", "Days off this month")}
                       </p>
-                      <span className="text-2xl font-bold text-blue-900">
-                        {request.leaveBalance ?? 0}
-                      </span>
-                      <span className="text-sm font-medium text-blue-700 ml-1">{t("leaveRequest.days", "days")}</span>
+                      <div className="text-blue-900 mb-3">
+                        <span className="text-2xl font-bold">
+                          {request.leaveBalance ?? 0}
+                        </span>
+                        <span className="text-sm font-medium ml-1">{t("leaveRequest.days", "days")}</span>
+                      </div>
+                      
+                      {/* Annual Leave */}
+                      {request.annualLeaveTotal !== undefined && (
+                        <div className="border-t border-blue-200 pt-3 mt-3">
+                          <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">
+                            {t("leaveRequest.annualLeave", "Annual Leave")}
+                          </p>
+                          <div className="text-blue-900">
+                            <div className="text-lg font-bold">
+                              {request.annualLeaveUsed ?? 0}/{request.annualLeaveTotal ?? 12} {t("leaveRequest.days", "days")}
+                            </div>
+                            <div className={`text-sm font-medium ${(request.annualLeaveRemaining ?? 0) <= 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                              {t("leaveRequest.remaining", "Remaining")}: {request.annualLeaveRemaining ?? request.annualLeaveTotal ?? 12} {t("leaveRequest.days", "days")}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -490,21 +510,17 @@ export default function LeaveRequestManagement() {
                   {request.status === "PENDING" && (
                     <div className="flex gap-3">
                       <button
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          setComment("");
-                        }}
-                        className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all font-bold text-sm shadow-lg flex items-center gap-2"
+                        onClick={() => handleProcess("APPROVE", request)}
+                        disabled={loading}
+                        className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all font-bold text-sm shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <CheckCircle className="w-4 h-4" />
-                        {t("leaveRequest.approve", "Approve")}
+                        {t("leaveRequest.confirm", "Confirm")}
                       </button>
                       <button
-                        onClick={() => {
-                          setSelectedRequest(request);
-                          setComment("");
-                        }}
-                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:shadow-xl transition-all font-bold text-sm shadow-lg flex items-center gap-2"
+                        onClick={() => handleProcess("REJECT", request)}
+                        disabled={loading}
+                        className="px-6 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:shadow-xl transition-all font-bold text-sm shadow-lg flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <XCircle className="w-4 h-4" />
                         {t("leaveRequest.reject", "Reject")}
@@ -572,7 +588,7 @@ export default function LeaveRequestManagement() {
                 {t("leaveRequest.processMessage", "Do you want to")}{" "}
                 {selectedRequest.status === "PENDING" ? (
                   <>
-                    {t("leaveRequest.approve", "approve")} hoặc{" "}
+                    {t("leaveRequest.confirm", "confirm")} hoặc{" "}
                     {t("leaveRequest.reject", "reject")} đơn này?
                   </>
                 ) : selectedRequest.status === "PENDING_ADMIN" ? (
@@ -594,10 +610,29 @@ export default function LeaveRequestManagement() {
                       <Calendar className="w-4 h-4" />
                       {t("leaveRequest.monthlyLeave", "Days off this month")}
                     </p>
-                    <div className="text-blue-900">
+                    <div className="text-blue-900 mb-3">
                       <span className="text-2xl font-bold">{selectedRequest.leaveBalance ?? 0}</span>
                       <span className="text-sm font-medium ml-1">{t("leaveRequest.days", "days")}</span>
                     </div>
+                    
+                    {/* Annual Leave */}
+                    {(selectedRequest.annualLeaveTotal !== undefined) && (
+                      <>
+                        <div className="border-t border-blue-200 pt-3 mt-3">
+                          <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">
+                            {t("leaveRequest.annualLeave", "Annual Leave")}
+                          </p>
+                          <div className="text-blue-900">
+                            <div className="text-lg font-bold">
+                              {selectedRequest.annualLeaveUsed ?? 0}/{selectedRequest.annualLeaveTotal ?? 12} {t("leaveRequest.days", "days")}
+                            </div>
+                            <div className={`text-sm font-medium ${(selectedRequest.annualLeaveRemaining ?? 0) <= 0 ? 'text-red-600' : 'text-blue-600'}`}>
+                              {t("leaveRequest.remaining", "Remaining")}: {selectedRequest.annualLeaveRemaining ?? selectedRequest.annualLeaveTotal ?? 12} {t("leaveRequest.days", "days")}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Replacement Card */}
@@ -651,14 +686,16 @@ export default function LeaveRequestManagement() {
                 </button>
                 <button
                   onClick={() => handleProcess("APPROVE")}
-                  className="flex-1 px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all font-bold text-base shadow-lg flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl hover:shadow-xl transition-all font-bold text-base shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <CheckCircle className="w-5 h-5" />
-                  {t("leaveRequest.approve", "Approve")}
+                  {t("leaveRequest.confirm", "Confirm")}
                 </button>
                 <button
                   onClick={() => handleProcess("REJECT")}
-                  className="flex-1 px-5 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:shadow-xl transition-all font-bold text-base shadow-lg flex items-center justify-center gap-2"
+                  disabled={loading}
+                  className="flex-1 px-5 py-3 bg-gradient-to-r from-red-500 to-rose-600 text-white rounded-xl hover:shadow-xl transition-all font-bold text-base shadow-lg flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <XCircle className="w-5 h-5" />
                   {t("leaveRequest.reject", "Reject")}

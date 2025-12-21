@@ -22,6 +22,7 @@
     "title": "My Attendance",
     "refresh": "Refresh",
     "today": "Today",
+    "selectedDate": "Selected Date",
     "checkIn": "Check-in Time",
     "checkOut": "Check-out Time",
     "status": "Status",
@@ -46,7 +47,17 @@
       "submitSuccess": "Explanation submitted successfully",
       "submitFailed": "Failed to submit explanation",
       "enterReason": "Please enter explanation reason",
-      "noExplanationsForDate": "No explanations needed for this date"
+      "noExplanationsForDate": "No explanations needed for this date",
+      "pending": "Pending approval",
+      "processed": "Processed"
+    },
+    "dailyView": {
+      "title": "View Attendance by Date",
+      "selectDate": "Select Date",
+      "noData": "No attendance data for this date",
+      "missingCheckOutTitle": "You forgot to check out!",
+      "missingCheckOutMessage": "You have 1 work shift missing check-out. Please submit an explanation.",
+      "missingCheckOutMessagePlural": "You have {count} work shifts missing check-out. Please submit an explanation."
     },
     "hrManagement": {
       "breadcrumb": "HR • Attendance Explanations",
@@ -112,9 +123,6 @@
       "UNKNOWN": "Unknown"
     },
     "explanationType": {
-      "LATE": "Late Arrival",
-      "ABSENT": "Absent",
-      "MISSING_CHECK_IN": "Missing Check-In",
       "MISSING_CHECK_OUT": "Missing Check-Out"
     },
     "explanationStatus": {
@@ -160,6 +168,7 @@
     "createdAt": "Created At",
     "cancel": "Cancel Request",
     "approve": "Approve",
+    "confirm": "Confirm",
     "reject": "Reject",
     "management": {
       "title": "Leave Request Management",
@@ -179,6 +188,7 @@
       "createSuccess": "Leave request created successfully",
       "createFailed": "Failed to create leave request",
       "approveSuccess": "Request approved successfully",
+      "confirmSuccess": "Request confirmed successfully",
       "rejectSuccess": "Request rejected successfully",
       "processFailed": "Failed to process request",
       "noAccessToken": "No access token",
@@ -192,6 +202,8 @@
     "employee": "Employee",
     "time": "Time",
     "monthlyLeave": "Days off this month",
+    "annualLeave": "Annual Leave",
+    "remaining": "Remaining",
     "days": "days",
     "replacement": "Replacement",
     "none": "None",
@@ -212,7 +224,7 @@
       "step2": "Admin Confirm",
       "step3": "Data Deletion",
       "warningTitle": "WARNING: PERMANENT DELETION",
-      "warningMessage": "You are reviewing a resignation request. If approved, the employee account will be deactivated. Then, HR can perform permanent data deletion.",
+      "warningDescription": "You are reviewing a resignation request. If approved, the employee account will be deactivated. Then, HR can perform permanent data deletion.",
       "hardDelete": {
         "button": "Hard Delete",
         "confirmTitle": "WARNING: PERMANENT DELETION",
@@ -228,7 +240,7 @@
       "note": "Note: Resignation requests need to be approved by HR and confirmed by Admin. Once approved, you may be permanently deleted from the system.",
       "dateNote": "Resignation Date: You will be resigned 1 month after the application date ({{date}}).",
       "autoDateTitle": "Resignation date is automatically set to 1 month after application date",
-      "warning": "⚠️ Resignation Request: Once approved by HR and confirmed by Admin, you may be permanently deleted from the system."
+      "warningMessage": " Resignation Request: Once approved by HR and confirmed by Admin, you may be permanently deleted from the system."
     }
   },
   "common": {
@@ -244,20 +256,19 @@
     "page": "Page"
   },
   "cta": {
-    "getInTouch": "Liên hệ ngay"
+    "getInTouch": "Get In Touch"
   },
   "footer": {
-    "address": "40 đường Sanguin, Oklahoma, Hoa Kỳ",
-    "slogan": "Tỏa sáng nụ cười, sống tốt hơn",
-    "doctors": "Bác sĩ",
-    "license": "Giấy phép",
-    "about": "Về chúng tôi",
+    "address": "40 Sanguin Street, Oklahoma, USA",
+    "slogan": "Smile Bright, Live Better",
+    "doctors": "Doctors",
+    "license": "License",
+    "about": "About Us",
     "workingHours": {
-      "title": "Giờ làm việc",
-      "weekday": "Thứ 2 - Thứ 6: 09:00 - 18:00",
-      "weekend": "Thứ 7 - Chủ nhật: 09:00 - 16:00"
+      "title": "Working Hours",
+      "full": "Mon - Sat: 08:00 - 18:00"
     },
-    "poweredBy": "Vận hành bởi",
-    "copyright": "Bản quyền"
+    "poweredBy": "Powered by",
+    "copyright": "Copyright"
   }
 }

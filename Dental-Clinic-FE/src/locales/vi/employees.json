@@ -199,6 +199,49 @@
       "employeeCode": "Mã Nhân Viên",
       "email": "E-mail",
       "phone": "Số điện thoại"
+    },
+    "cv": {
+      "title": "Hồ sơ CV",
+      "upload": {
+        "label": "Upload CV (PDF, DOC, DOCX)",
+        "selectFile": "Chọn file CV",
+        "button": "Upload & Extract",
+        "processing": "Đang xử lý...",
+        "fileInfo": "File: {{name}} ({{size}} MB)"
+      },
+      "validation": {
+        "invalidFileType": "Chỉ chấp nhận file PDF, DOC hoặc DOCX",
+        "fileTooLarge": "File không được vượt quá 10MB"
+      },
+      "messages": {
+        "uploadSuccess": "CV đã được upload và extract thành công!",
+        "uploadFailed": "Lỗi khi upload CV",
+        "saveSuccess": "Đã lưu text thành công!",
+        "saveFailed": "Lỗi khi lưu text",
+        "deleteConfirm": "Bạn có chắc muốn xóa CV này?",
+        "deleteSuccess": "Đã xóa CV thành công",
+        "deleteFailed": "Lỗi khi xóa CV"
+      },
+      "view": {
+        "show": "Xem",
+        "hide": "Ẩn",
+        "details": "chi tiết",
+        "delete": "Xóa CV",
+        "deleteTitle": "Xóa CV"
+      },
+      "extractedText": {
+        "label": "Text đã extract:",
+        "edit": "Chỉnh sửa",
+        "save": "Lưu",
+        "cancel": "Hủy",
+        "saving": "Đang lưu...",
+        "placeholder": "Nhập hoặc chỉnh sửa text đã extract..."
+      },
+      "extractedImages": {
+        "label": "Hình ảnh đã extract ({{count}}):",
+        "viewImage": "Xem hình ảnh {{index}} ở kích thước lớn",
+        "viewImageLabel": "Xem hình ảnh {{index}}"
+      }
     }
   },
   "delete": {

@@ -222,9 +222,6 @@
     "explanation": {
       "type": "Type",
       "reason": "Reason",
-      "typeLate": "Late Arrival",
-      "typeAbsent": "Absent",
-      "typeMissingCheckIn": "Missing Check-In",
       "typeMissingCheckOut": "Missing Check-Out",
       "status": {
         "pending": "Pending",
@@ -386,6 +383,7 @@
       "searchPlaceholder": "Search by action or username...",
       "searchAction": "Search by action...",
       "searchUsername": "Search by username...",
+      "selectDate": "Select Date",
       "filterRole": "Role",
       "allRoles": "All Roles",
       "clearFilters": "Clear Filters",
@@ -458,6 +456,35 @@
       "loading": "Loading staff...",
       "noData": "No staff found",
       "loadFailed": "Unable to load staff"
+    },
+    "cv": {
+      "title": "CV Profile",
+      "close": "Close",
+      "loading": "Loading CV...",
+      "extractedText": {
+        "label": "Extracted text:",
+        "characters": "characters",
+        "title": "Text extracted from CV",
+        "ariaLabel": "Text extracted from CV"
+      },
+      "extractedImages": {
+        "label": "Extracted images:",
+        "count": "images",
+        "viewImage": "View image {{index}} at full size",
+        "viewImageLabel": "View image {{index}}"
+      },
+      "messages": {
+        "noCv": "This employee does not have a CV",
+        "noExtractedData": "CV has no extracted data",
+        "loadFailed": "Unable to load CV"
+      }
+    },
+    "table": {
+      "staffDirectory": "Staff Directory"
+    },
+    "filters": {
+      "activeCount": "{{count}} filter active",
+      "activeCountPlural": "{{count}} filters active"
     }
   },
   "customers": {

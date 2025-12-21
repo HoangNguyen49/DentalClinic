@@ -182,7 +182,7 @@ const NotificationBell: React.FC = () => {
                             navigateWithDelay('/admin/attendance');
                         } else {
                             // Nhân viên xem bảng chấm công cá nhân
-                            // ATTENDANCE_CHECKIN, ATTENDANCE_CHECKOUT, ATTENDANCE_ABSENT, EXPLANATION_APPROVED, EXPLANATION_REJECTED
+                            // ATTENDANCE_CHECKIN, ATTENDANCE_CHECKOUT, ATTENDANCE_ABSENT, EXPLANATION_APPROVED (MISSING_CHECK_OUT), EXPLANATION_REJECTED
                             navigateWithDelay('/my-attendance');
                         }
                 } catch (error) {

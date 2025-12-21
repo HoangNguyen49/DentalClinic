@@ -1,0 +1,86 @@
+{
+  "title": "Our Services",
+  "services": {
+    "preventiveCare": {
+      "title": "Preventive Care",
+      "desc": "Regular exams, cleanings, and x rays to maintain optimal oral health"
+    },
+    "dentalImplants": {
+      "title": "Dental Implants",
+      "desc": "Permanent solution for missing teeth with natural look & bite"
+    },
+    "orthodontics": {
+      "title": "Orthodontics",
+      "desc": "Teeth straightening with braces and aligners for a healthier smile"
+    },
+    "cosmeticDentistry": {
+      "title": "Cosmetic Dentistry",
+      "desc": "Veneers, crowns, whitening for a brighter, balanced smile"
+    },
+    "oralSurgery": {
+      "title": "Oral Surgery",
+      "desc": "Extractions, wisdom tooth removal, and other surgical procedures"
+    },
+    "pediatricDentistry": {
+      "title": "Pediatric Dentistry",
+      "desc": "Dental care for children in a friendly, comfortable environment"
+    }
+  },
+  "whyChooseUs": {
+    "title": "Why Choose Us",
+    "bullets": [
+      "Strict hygiene and sterilization protocols",
+      "Experienced and caring dentists",
+      "State-of-the-art dental technology",
+      "Long-lasting and predictable results"
+    ]
+  },
+  "howItWorks": {
+    "title": "How It Works",
+    "steps": [
+      {
+        "title": "Examination",
+        "desc": "Comprehensive dental checkup & diagnosis"
+      },
+      {
+        "title": "Treatment Plan",
+        "desc": "Personalized solutions and options"
+      },
+      {
+        "title": "Follow-Up",
+        "desc": "Ongoing care, and monitoring of your oral health"
+      }
+    ]
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "questions": [
+      {
+        "q": "What are your office hours?",
+        "a": "Mon - Sat: 08:00 - 18:00. Sunday is our day off."
+      },
+      {
+        "q": "Do you accept my insurance?",
+        "a": "Yes, we support major insurers and provide detailed invoices."
+      },
+      {
+        "q": "How often should I visit for a checkup?",
+        "a": "Every 6 months, or as your dentist advises."
+      },
+      {
+        "q": "What services do you offer?",
+        "a": "General dentistry, orthodontics, cosmetic procedures, and more."
+      },
+      {
+        "q": "Do you offer emergency dental care?",
+        "a": "Yes, we provide urgent care during office hours."
+      },
+      {
+        "q": "How can I schedule an appointment?",
+        "a": "Call us or use our online booking system on the website."
+      }
+    ]
+  },
+  "bookNow": "Book Now"
+}
+

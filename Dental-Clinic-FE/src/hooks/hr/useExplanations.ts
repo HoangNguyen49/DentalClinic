@@ -202,18 +202,18 @@ export const useExplanations = () => {
                 }
             );
             // Thông báo kết quả xử lý
+            // CHỈ CÒN LOẠI: MISSING_CHECK_OUT (quên check out)
             const newStatus = response.data.attendanceStatus;
             if (action === "APPROVE") {
                 let statusMessage = "";
-                if (explanation.explanationType === "LATE") {
-                    statusMessage = `Status updated: LATE → ${newStatus || "APPROVED_LATE"}`;
-                } else if (explanation.explanationType === "ABSENT" || explanation.explanationType === "MISSING_CHECK_IN") {
-                    statusMessage = `Status updated: ${explanation.attendanceStatus} → ${newStatus || "APPROVED_ABSENCE"}`;
-                } else if (explanation.explanationType === "MISSING_CHECK_OUT") {
+                if (explanation.explanationType === "MISSING_CHECK_OUT") {
                     statusMessage = t(
                         "attendance.messages.missingCheckOutApproved",
                         "Explanation approved. Check-out time set to 18:00 and work hours recalculated automatically."
                     );
+                } else {
+                    // Fallback cho các loại khác (không nên xảy ra)
+                    statusMessage = `Status updated: ${explanation.attendanceStatus} → ${newStatus || "APPROVED"}`;
                 }
                 toast.success(
                     `${t("attendance.messages.explanationApproved", "Explanation approved successfully")}\n${statusMessage}`,

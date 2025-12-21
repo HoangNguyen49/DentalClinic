@@ -241,9 +241,6 @@
     "explanation": {
       "type": "Loại",
       "reason": "Lý do",
-      "typeLate": "Đi trễ",
-      "typeAbsent": "Vắng mặt",
-      "typeMissingCheckIn": "Quên chấm vào",
       "typeMissingCheckOut": "Quên chấm ra",
       "status": {
         "pending": "Chờ xử lý",
@@ -388,6 +385,7 @@
       "searchPlaceholder": "Tìm theo hành động hoặc tên người dùng...",
       "searchAction": "Tìm theo hành động...",
       "searchUsername": "Tìm theo tên người dùng...",
+      "selectDate": "Chọn ngày",
       "filterRole": "Vai trò",
       "allRoles": "Tất cả vai trò",
       "clearFilters": "Xóa bộ lọc",
@@ -460,6 +458,35 @@
       "loading": "Đang tải danh sách nhân viên...",
       "noData": "Không tìm thấy nhân viên nào",
       "loadFailed": "Không thể tải danh sách nhân viên"
+    },
+    "cv": {
+      "title": "Hồ sơ CV",
+      "close": "Đóng",
+      "loading": "Đang tải CV...",
+      "extractedText": {
+        "label": "Text đã extract:",
+        "characters": "ký tự",
+        "title": "Text đã extract từ CV",
+        "ariaLabel": "Text đã extract từ CV"
+      },
+      "extractedImages": {
+        "label": "Hình ảnh đã extract:",
+        "count": "hình ảnh",
+        "viewImage": "Xem hình ảnh {{index}} ở kích thước lớn",
+        "viewImageLabel": "Xem hình ảnh {{index}}"
+      },
+      "messages": {
+        "noCv": "Nhân viên này chưa có CV",
+        "noExtractedData": "CV chưa có dữ liệu extract",
+        "loadFailed": "Không thể tải CV"
+      }
+    },
+    "table": {
+      "staffDirectory": "Danh sách nhân viên"
+    },
+    "filters": {
+      "activeCount": "{{count}} bộ lọc đang hoạt động",
+      "activeCountPlural": "{{count}} bộ lọc đang hoạt động"
     }
   },
   "customers": {

@@ -25,8 +25,7 @@
     "about": "About Us",
     "workingHours": {
       "title": "Working Hours",
-      "weekday": "Mon - Fri: 09:00 AM - 18:00 PM",
-      "weekend": "Sat - Sun: 09:00 AM - 16:00 PM"
+      "full": "Mon - Sat: 08:00 - 18:00"
     },
     "poweredBy": "Powered by",
     "copyright": "Copyright"

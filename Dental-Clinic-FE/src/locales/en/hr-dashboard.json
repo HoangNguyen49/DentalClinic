@@ -110,6 +110,26 @@
       "rejectFailed": "Failed to reject request"
     },
     "menuLabel": "Face Profile Approvals"
+  },
+  "layout": {
+    "title": "HR Management",
+    "companyName": "Sunshine Dental Care",
+    "nav": {
+      "dashboard": "Dashboard",
+      "employeeList": "Employee List",
+      "addEmployee": "Add Employee",
+      "schedules": "Schedules",
+      "createSchedule": "Create Schedule",
+      "attendance": "Attendance",
+      "attendanceExplanations": "Attendance Explanations",
+      "leaveRequests": "Leave Requests"
+    },
+    "logout": "Logout",
+    "header": {
+      "title": "HR Dashboard",
+      "changeLanguage": "Change Language",
+      "backToHome": "Back to Home"
+    }
   }
 }
 
