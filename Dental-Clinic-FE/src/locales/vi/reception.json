@@ -98,7 +98,8 @@
     "close": "Đóng",
     "save": "Lưu Thay Đổi",
     "success": "Cập nhật thành công!",
-    "error": "Lỗi cập nhật."
+    "error": "Lỗi cập nhật.",
+    "statusLocked": "Trạng thái do Bác sĩ cập nhật"
   },
   "roomModal": {
     "title": "Chọn Phòng Điều Trị",
