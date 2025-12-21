@@ -9,7 +9,6 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useTranslation } from "react-i18next";
 
-// Định nghĩa kiểu dữ liệu phản hồi từ API Login
 type LoginResponse = {
   accessToken: string;
   tokenType: string;
@@ -23,34 +22,27 @@ type LoginResponse = {
 };
 
 function LoginPage() {
-  const { t } = useTranslation(["login", "web"]);
+  const { t, i18n } = useTranslation(["login", "web"]); // Lấy i18n để biết ngôn ngữ hiện tại
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
-  // --- QUẢN LÝ TRẠNG THÁI TABS ---
   const [loginMethod, setLoginMethod] = useState<'email' | 'phone'>('email');
   const [phoneMode, setPhoneMode] = useState<'password' | 'otp'>('password');
 
-  // --- DỮ LIỆU FORM ---
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
 
-  // --- TRẠNG THÁI UI ---
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [otpSent, setOtpSent] = useState(false);
-  
-  // --- ĐẾM NGƯỢC OTP ---
   const [countdown, setCountdown] = useState(0); 
 
-  // --- MODAL QUÊN MẬT KHẨU ---
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState("");
   const [isSendingLink, setIsSendingLink] = useState(false);
 
-  // --- EFFECT ĐẾM NGƯỢC THỜI GIAN ---
   useEffect(() => {
     let timer: any;
     if (countdown > 0) {
@@ -61,7 +53,6 @@ function LoginPage() {
     return () => clearInterval(timer);
   }, [countdown]);
 
-  // --- HÀM GỬI LẠI EMAIL KÍCH HOẠT ---
   const handleResendVerification = async (emailToResend: string) => {
       try {
           await axios.post(`${API_URL}/api/auth/resend-verification`, { email: emailToResend });
@@ -71,36 +62,28 @@ function LoginPage() {
       }
   };
 
-  // =================================================================
-  // HÀM XỬ LÝ KHI ĐĂNG NHẬP THÀNH CÔNG (CORE LOGIC)
-  // =================================================================
   const handleLoginSuccess = (data: LoginResponse) => {
-    // 1. Chuẩn hóa role (Bỏ chữ ROLE_ nếu có và viết hoa)
     const normalizedRoles = (data.roles ?? []).map((r) =>
       r?.toString().replace(/^ROLE_/i, "").toUpperCase()
     );
 
-    // 2. Lưu thông tin vào LocalStorage
     localStorage.setItem("accessToken", data.accessToken);
     localStorage.setItem("roles", JSON.stringify(normalizedRoles));
     
-    // Lưu User Info đầy đủ
     localStorage.setItem("user", JSON.stringify({
       userId: data.userId,
       fullName: data.fullName,
       email: data.email,
       avatarUrl: data.avatarUrl,
       phone: data.phone,
-      hasPassword: true, // Mặc định true khi login thường
+      hasPassword: true, 
       provider: "local",
       roles: normalizedRoles
     }));
 
-    // 3. Cập nhật header cho axios
     axios.defaults.headers.common["Authorization"] = `Bearer ${data.accessToken}`;
     toast.success(t("login:loginSuccess"));
 
-    // 4. ĐIỀU HƯỚNG
     setTimeout(() => {
       if (!data.phone || data.phone.trim() === "") {
         navigate("/my-account", { state: { forceUpdate: true } });
@@ -109,18 +92,14 @@ function LoginPage() {
         else if (normalizedRoles.includes("HR")) navigate("/hr/dashboard");
         else if (normalizedRoles.includes("RECEPTION")) navigate("/reception/dashboard");
         else if (normalizedRoles.includes("DOCTOR")) navigate("/doctor/schedule");
-        else navigate("/"); // User thường về trang chủ
+        else navigate("/"); 
       }
     }, 1500);
   };
 
-  // =================================================================
-  // HELPER XỬ LÝ LỖI
-  // =================================================================
   const handleLoginError = (err: any) => {
     const msg = err?.response?.data?.message || t("login:loginFailed");
     
-    // Kiểm tra lỗi KHÓA TÀI KHOẢN
     if (typeof msg === 'string' && (msg.toLowerCase().includes("locked") || msg.toLowerCase().includes("khóa"))) {
         toast.error(
             <div className="flex flex-col">
@@ -138,7 +117,6 @@ function LoginPage() {
         return;
     }
 
-    // Kiểm tra lỗi CHƯA KÍCH HOẠT EMAIL
     if (typeof msg === 'string' && (msg.toLowerCase().includes("not active") || msg.toLowerCase().includes("chưa được kích hoạt"))) {
         toast.error(
             <div className="flex flex-col">
@@ -156,13 +134,12 @@ function LoginPage() {
         return;
     }
 
-    // Lỗi thông thường
     if (Array.isArray(msg)) msg.forEach((m: string) => toast.error(m));
     else toast.error(msg);
   };
 
   // =================================================================
-  // 1. ĐĂNG NHẬP EMAIL
+  // 1. ĐĂNG NHẬP EMAIL (UPDATE LOCALE)
   // =================================================================
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -170,7 +147,12 @@ function LoginPage() {
     
     setLoading(true);
     try {
-      const { data } = await axios.post<LoginResponse>(`${API_URL}/api/auth/login`, { email, password });
+      // Gửi kèm locale hiện tại
+      const { data } = await axios.post<LoginResponse>(`${API_URL}/api/auth/login`, { 
+          email, 
+          password,
+          locale: i18n.language // <--- QUAN TRỌNG: Gửi "vi" hoặc "en"
+      });
       handleLoginSuccess(data);
     } catch (err: any) {
       handleLoginError(err);
@@ -180,7 +162,7 @@ function LoginPage() {
   };
 
   // =================================================================
-  // 2. ĐĂNG NHẬP SĐT + MẬT KHẨU
+  // 2. ĐĂNG NHẬP SĐT + MẬT KHẨU (UPDATE LOCALE)
   // =================================================================
   const handlePhonePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,7 +170,11 @@ function LoginPage() {
 
     setLoading(true);
     try {
-      const { data } = await axios.post<LoginResponse>(`${API_URL}/api/auth/login-phone/password`, { phone, password });
+      const { data } = await axios.post<LoginResponse>(`${API_URL}/api/auth/login-phone/password`, { 
+          phone, 
+          password,
+          locale: i18n.language // <--- Gửi locale
+      });
       handleLoginSuccess(data);
     } catch (err: any) {
       handleLoginError(err);
@@ -198,14 +184,17 @@ function LoginPage() {
   };
 
   // =================================================================
-  // 3. ĐĂNG NHẬP SĐT + OTP
+  // 3. ĐĂNG NHẬP SĐT + OTP (UPDATE LOCALE)
   // =================================================================
   const handleSendOtp = async () => {
     if (!phone) return toast.error(t("login:errors.fillPhone"));
     
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/api/auth/login-phone/step1`, { phone });
+      await axios.post(`${API_URL}/api/auth/login-phone/step1`, { 
+          phone,
+          locale: i18n.language // <--- Gửi locale để báo lỗi SĐT chưa đk bằng tiếng Anh
+      });
       setOtpSent(true);
       setCountdown(60);
       toast.info(t("login:otp.sent"));
@@ -222,7 +211,11 @@ function LoginPage() {
 
     setLoading(true);
     try {
-      const { data } = await axios.post<LoginResponse>(`${API_URL}/api/auth/login-phone/step2`, { phone, otp });
+      const { data } = await axios.post<LoginResponse>(`${API_URL}/api/auth/login-phone/step2`, { 
+          phone, 
+          otp,
+          locale: i18n.language // <--- Gửi locale
+      });
       handleLoginSuccess(data);
     } catch (err: any) {
       handleLoginError(err);
@@ -231,9 +224,6 @@ function LoginPage() {
     }
   };
 
-  // =================================================================
-  // 4. QUÊN MẬT KHẨU (GỬI MAIL)
-  // =================================================================
   const handleSendResetLink = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!forgotEmail) return toast.error(t("login:errors.emptyEmail"));
