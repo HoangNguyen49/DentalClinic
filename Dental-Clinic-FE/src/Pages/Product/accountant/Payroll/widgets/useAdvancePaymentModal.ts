@@ -9,7 +9,7 @@ interface ModalState {
   isOpen: boolean;
   payslipId: number | null;
   employeeName: string;
-  // Dữ liệu local để hiển thị ngay lập tức
+  // Danh sách các khoản biến động hiện có trong phiếu lương này
   items: PayslipAllowanceDto[]; 
 }
 
@@ -23,13 +23,13 @@ export const useAdvancePaymentModal = (onSuccess?: () => void) => {
 
   const [loading, setLoading] = useState(false);
 
-  // Mở modal và nạp dữ liệu từ dòng Payslip được chọn
+  // Mở modal: Nạp dữ liệu từ row được chọn trong bảng lương
   const openModal = (slip: PayslipSnapshotDto) => {
     setState({
       isOpen: true,
       payslipId: slip.id,
       employeeName: slip.userFullName,
-      items: slip.allowanceDetails || [] // Lấy list từ DTO
+      items: slip.allowanceDetails || [] 
     });
   };
 
@@ -37,58 +37,55 @@ export const useAdvancePaymentModal = (onSuccess?: () => void) => {
     setState(prev => ({ ...prev, isOpen: false, payslipId: null }));
   };
 
-  // Thêm item mới (Ứng lương, Thưởng...)
+  // THÊM BIẾN ĐỘNG (Ứng tiền, Thưởng dự án...)
   const handleAddItem = async (name: string, amount: number, type: 'INCOME' | 'DEDUCTION') => {
     if (!state.payslipId) return;
     setLoading(true);
     try {
       const res = await payrollApi.addManualItem(state.payslipId, {
-        name,
+        name: name.trim(),
         amount,
         type,
         note: "Manual Adjustment"
       });
       
-      // Cập nhật list local từ response BE trả về (đã bao gồm tính toán lại)
       setState(prev => ({ ...prev, items: res.data.allowanceDetails }));
       
-      // Callback để refresh bảng lương bên ngoài (Update Net Salary)
-      if (onSuccess) onSuccess(); 
-    } catch (error) {
-      console.error("Failed to add item", error);
-      alert("Failed to add item. Please try again.");
+      if (onSuccess) {
+        onSuccess();
+      }
+      
+    } catch (error: any) {
+      console.error("Failed to add adjustment:", error);
+      alert(error.response?.data?.message || "Lỗi khi thêm khoản biến động");
     } finally {
       setLoading(false);
     }
   };
 
-  // Xóa item
+  // XÓA BIẾN ĐỘNG
   const handleRemoveItem = async (itemId: number) => {
     if (!state.payslipId) return;
-    // Confirm đơn giản
-    if (!window.confirm("Are you sure you want to remove this item?")) return;
+    if (!window.confirm("Bạn có chắc chắn muốn xóa khoản điều chỉnh này không?")) return;
 
     setLoading(true);
     try {
       const res = await payrollApi.removeManualItem(state.payslipId, itemId);
       
-      // Cập nhật list local
       setState(prev => ({ ...prev, items: res.data.allowanceDetails }));
-      
-      if (onSuccess) onSuccess();
+
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: any) {
-        // Hiển thị lỗi từ BE (VD: Không cho xóa System Generated)
-        alert(error.response?.data?.message || "Failed to remove item");
+        alert(error.response?.data?.message || "Lỗi khi xóa khoản biến động");
     } finally {
       setLoading(false);
     }
   };
 
   return {
-    isOpen: state.isOpen,
-    payslipId: state.payslipId,
-    employeeName: state.employeeName,
-    items: state.items,
+    ...state, 
     loading,
     openModal,
     closeModal,

@@ -6,19 +6,17 @@ import {
 } from "lucide-react";
 import { formatMoney, formatVNDateTime } from "../../../../../../utils/format";
 import { exportToPDF } from "../../../../../../utils/PDFExport";
+
 const GetPayrollByIdDetail: React.FC = () => {
   const { payslip, loading, error, navigate } = useGetPayrollByIdDetail();
   const [showTaxDetail, setShowTaxDetail] = React.useState(false);
   const [isExporting, setIsExporting] = React.useState(false);
+
   const handleExportClick = async () => {
     if (!payslip) return;
     setIsExporting(true);
-    // Tên file: Payslip_Code_Month_Year
     const fileName = `Payslip_${payslip.userCode}_${payslip.month}_${payslip.year}`;
-
-    // Ẩn nút Print/Back tạm thời nếu chúng nằm trong vùng capture (ở đây vùng capture là bên dưới nên không sao)
     await exportToPDF('payslip-content', fileName);
-
     setIsExporting(false);
   };
 
@@ -40,18 +38,17 @@ const GetPayrollByIdDetail: React.FC = () => {
 
         {/* HEADER ACTIONS (Ẩn khi in) */}
         <div className="flex justify-between items-center print:hidden">
-
           <button
             onClick={handleExportClick}
             disabled={isExporting}
             className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-sm transition-colors disabled:opacity-70"
           >
-             {isExporting ? (
-                <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
-             ) : (
-                <Download size={18} /> 
-             )}
-             {isExporting ? " Generating PDF..." : " Download PDF"}
+            {isExporting ? (
+              <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+            ) : (
+              <Download size={18} />
+            )}
+            {isExporting ? " Generating PDF..." : " Download PDF"}
           </button>
           <button
             onClick={() => navigate(-1)}
@@ -81,7 +78,6 @@ const GetPayrollByIdDetail: React.FC = () => {
 
           {/* 2. EMPLOYEE & ATTENDANCE INFO */}
           <div className="p-8 border-b border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* Employee Info */}
             <div className="flex gap-5">
               <div className="h-16 w-16 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 print:hidden">
                 <User size={32} />
@@ -97,7 +93,6 @@ const GetPayrollByIdDetail: React.FC = () => {
               </div>
             </div>
 
-            {/* Work Info (Backend đã trả về text chuẩn, chỉ việc in) */}
             <div className="bg-gray-50 p-5 rounded-xl border border-gray-200 print:bg-transparent print:border-black">
               <h4 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
                 <Clock size={14} /> Work Summary ({payslip.workType})
@@ -110,15 +105,14 @@ const GetPayrollByIdDetail: React.FC = () => {
                 <span className="text-gray-600">Actual (Thực tế):</span>
                 <span className="font-bold text-blue-600 text-lg">{payslip.workActual}</span>
               </div>
-              <div className="text-xs text-gray-500 italic bg-white p-2 rounded border border-dashed border-gray-300">
+              <div className="text-xs text-gray-500  bg-white p-2 rounded border border-dashed border-gray-300">
                 <span className="font-semibold">Formula:</span> {payslip.workFormula}
               </div>
             </div>
           </div>
 
           <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-12">
-
-            {/* 3. INCOME SECTION (Mapping từ incomeItems) */}
+            {/* 3. INCOME SECTION */}
             <section>
               <div className="flex justify-between items-center border-b-2 border-green-500 pb-3 mb-5">
                 <h4 className="text-lg font-bold text-green-800 uppercase flex items-center gap-2">
@@ -127,26 +121,29 @@ const GetPayrollByIdDetail: React.FC = () => {
                 <span className="text-xl font-bold text-green-700">+ {formatMoney(payslip.totalIncome)}</span>
               </div>
 
-              <div className="space-y-0">
+              <div className="space-y-4">
                 {payslip.incomeItems.map((item, idx) => (
-                  <div key={idx} className={`flex justify-between items-start py-3 ${idx !== payslip.incomeItems.length - 1 ? 'border-b border-dashed border-gray-100' : ''}`}>
-                    <div className="pr-4">
-                      <span className={`block text-sm ${item.isHighlight ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
-                        {item.name}
+                  <div key={idx} className="border-b border-dashed border-gray-100 pb-3 last:border-0">
+                    <div className="flex justify-between items-start">
+                      <div className="pr-4">
+                        <span className={`block text-sm ${item.isHighlight ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
+                          {item.name}
+                        </span>
+                        {/* HIỂN THỊ CÔNG THỨC THƯỞNG CHI TIẾT TỪ BE */}
+                        {item.description && (
+                          <span className="text-xs text-gray-400 mt-1 block ">{item.description}</span>
+                        )}
+                      </div>
+                      <span className={`text-sm whitespace-nowrap ${item.isHighlight ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
+                        {formatMoney(item.amount)}
                       </span>
-                      {item.description && (
-                        <span className="text-xs text-gray-400 mt-0.5 block">{item.description}</span>
-                      )}
                     </div>
-                    <span className={`text-sm whitespace-nowrap ${item.isHighlight ? 'font-bold text-gray-900' : 'font-medium text-gray-600'}`}>
-                      {formatMoney(item.amount)}
-                    </span>
                   </div>
                 ))}
               </div>
             </section>
 
-            {/* 4. DEDUCTION SECTION (Mapping từ deductionItems) */}
+            {/* 4. DEDUCTION SECTION */}
             <section>
               <div className="flex justify-between items-center border-b-2 border-red-500 pb-3 mb-5">
                 <h4 className="text-lg font-bold text-red-800 uppercase flex items-center gap-2">
@@ -155,86 +152,71 @@ const GetPayrollByIdDetail: React.FC = () => {
                 <span className="text-xl font-bold text-red-600">- {formatMoney(payslip.totalDeduction)}</span>
               </div>
 
-              <div className="space-y-0 mb-6">
+              <div className="space-y-4 mb-6">
                 {payslip.deductionItems.map((item, idx) => (
-                  <div key={idx} className={`flex justify-between items-start py-3 ${idx !== payslip.deductionItems.length - 1 ? 'border-b border-dashed border-gray-100' : ''}`}>
-                    <div className="pr-4">
-                      <span className={`block text-sm ${item.isHighlight ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
-                        {item.name}
+                  <div key={idx} className="border-b border-dashed border-gray-100 pb-3 last:border-0">
+                    <div className="flex justify-between items-start">
+                      <div className="pr-4">
+                        <span className={`block text-sm ${item.isHighlight ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
+                          {item.name}
+                        </span>
+                        {/* HIỂN THỊ GIẢI TRÌNH BẢO HIỂM MINH BẠCH TỪ BE */}
+                        {item.description && (
+                          <span className="text-xs text-gray-400 mt-1 block ">{item.description}</span>
+                        )}
+                      </div>
+                      <span className={`text-sm whitespace-nowrap ${item.isHighlight ? 'font-bold text-red-600' : 'font-medium text-red-500'}`}>
+                        - {formatMoney(item.amount)}
                       </span>
-                      {item.description && (
-                        <span className="text-xs text-gray-400 mt-0.5 block">{item.description}</span>
-                      )}
                     </div>
-                    <span className={`text-sm whitespace-nowrap ${item.isHighlight ? 'font-bold text-red-600' : 'font-medium text-red-500'}`}>
-                      - {formatMoney(item.amount)}
-                    </span>
                   </div>
-
                 ))}
-
                 {payslip.deductionItems.length === 0 && (
-                  <div className="text-sm text-gray-400 italic py-2">No deductions.</div>
+                  <div className="text-sm text-gray-400  py-2">No deductions.</div>
                 )}
               </div>
 
-
-
-              {/* 5. TAX BREAKDOWN (Giải trình Thuế - Render từ Backend) */}
+              {/* 5. TAX BREAKDOWN (MINH BẠCH GIẢM TRỪ GIA CẢNH) */}
               <div className="bg-red-50 p-5 rounded-xl border border-red-100 print:border-black">
                 <div
                   onClick={() => setShowTaxDetail(prev => !prev)}
-                  className="font-bold text-red-900 border-b border-red-200 pb-2 mb-3 
-             flex items-center gap-2 text-sm uppercase 
-             cursor-pointer select-none hover:text-red-700"
+                  className="font-bold text-red-900 border-b border-red-200 pb-2 mb-3 flex items-center gap-2 text-sm uppercase cursor-pointer select-none hover:text-red-700"
                   title="Click để xem / ẩn chi tiết thuế"
                 >
-                  <AlertCircle
-                    size={14}
-                    className={`transition-transform ${showTaxDetail ? "rotate-180" : ""
-                      }`}
-                  />
+                  <AlertCircle size={14} className={`transition-transform ${showTaxDetail ? "rotate-180" : ""}`} />
                   Tax Calculation Detail
                 </div>
                 {showTaxDetail && (
                   <div className="space-y-2 text-xs text-gray-700">
-                    {/* 1. Tổng thu nhập */}
                     <div className="flex justify-between">
                       <span>Total Income (Gross):</span>
                       <span className="font-medium">{formatMoney(payslip.taxBreakdown.grossIncome)}</span>
                     </div>
-
-                    {/* 2. Trừ bảo hiểm */}
                     {payslip.taxBreakdown.insuranceDeduction > 0 && (
                       <div className="flex justify-between text-red-600">
                         <span>(-) Tax Exempt (Insurance):</span>
                         <span>- {formatMoney(payslip.taxBreakdown.insuranceDeduction)}</span>
                       </div>
                     )}
-
-                    {/* 3. Giảm trừ gia cảnh (Chỉ hiện nếu > 0) */}
-                    {payslip.taxBreakdown.selfRelief > 0 && (
-                      <div className="flex justify-between text-red-600">
-                        <span>(-) Personal Relief:</span>
-                        <span>- {formatMoney(payslip.taxBreakdown.selfRelief)}</span>
-                      </div>
-                    )}
-
-                    {/* 4. Thu nhập tính thuế */}
-                    <div className="border-t border-red-200 pt-2 mt-1 flex justify-between font-bold text-gray-900">
-                      <span>(=) Taxable Income:</span>
-                      <span>{formatMoney(payslip.taxBreakdown.taxableIncome)}</span>
-
+                    {/* GIẢI TRÌNH GIẢM TRỪ GIA CẢNH (LẤY TỪ NOTE BE) */}
+                    <div className="flex justify-between text-red-600 font-bold border-t border-red-100 pt-2 mt-1">
+                      <span>(-) Total Relief:</span>
+                      <span>- {formatMoney(payslip.taxBreakdown.selfRelief)}</span>
+                    </div>
+                    <div className="text-[10px] text-gray-400  mb-2">
+                      {payslip.note} {/* Hiển thị: Bản thân (11tr) + N người phụ thuộc... */}
                     </div>
 
-                    {/* 6. CHI TIẾT TỪNG BẬC THUẾ  === */}
+                    <div className="border-t-2 border-red-200 pt-2 flex justify-between font-bold text-gray-900 bg-white p-2 rounded">
+                      <span>(=) Taxable Income:</span>
+                      <span>{formatMoney(payslip.taxBreakdown.taxableIncome)}</span>
+                    </div>
+
                     {payslip.taxBreakdown.details && payslip.taxBreakdown.details.length > 0 && (
                       <div className="mt-3 pt-2 border-t border-dashed border-red-200">
-                        <p className="text-[10px] text-red-800 font-bold uppercase mb-1">
-                          Progressive Tax Breakdown:
-                        </p>
+                        <p className="text-[10px] text-red-800 font-bold uppercase mb-1">Progressive Tax Breakdown:</p>
                         {payslip.taxBreakdown.details.map((item, index) => (
-                          <div key={index} className="flex justify-between py-0.5 text-gray-500 hover:bg-red-50/50">
+                          <div key={index} className="flex justify-between py-0.5 text-gray-500">
                             <span>• {item.label}</span>
                             <span className="font-medium">{formatMoney(item.amount)}</span>
                           </div>
@@ -242,13 +224,10 @@ const GetPayrollByIdDetail: React.FC = () => {
                       </div>
                     )}
 
-                    {/* 5. Tổng thuế phải đóng */}
-                    <div className="flex justify-between items-center bg-white p-2 rounded border border-red-100 mt-2">
-                      <span className="font-bold text-red-700">Tax Payable:</span>
-                      <span className="font-bold text-red-700 text-sm">{formatMoney(payslip.taxBreakdown.taxAmount)}</span>
+                    <div className="flex justify-between items-center bg-red-600 p-2 rounded text-white mt-2">
+                      <span className="font-bold uppercase">Tax Payable:</span>
+                      <span className="font-bold text-sm">{formatMoney(payslip.taxBreakdown.taxAmount)}</span>
                     </div>
-
-
                   </div>
                 )}
               </div>
@@ -259,12 +238,10 @@ const GetPayrollByIdDetail: React.FC = () => {
           <div className="bg-gray-50 border-t border-gray-200 p-8 flex flex-col md:flex-row justify-between items-center print:bg-transparent print:border-t-2 print:border-black">
             <div className="mb-4 md:mb-0 w-full md:w-auto">
               <div className="text-sm font-bold uppercase text-gray-500 tracking-wider">Net Salary Transfer</div>
-              {payslip.note && (
-                <div className="mt-2 text-xs text-yellow-700 bg-yellow-50 px-3 py-2 rounded border border-yellow-200 flex gap-2 items-start max-w-md">
-                  <HelpCircle size={14} className="mt-0.5 flex-shrink-0" />
-                  <span>{payslip.note}</span>
-                </div>
-              )}
+              <div className="mt-2 text-[10px] text-blue-700 bg-blue-50 px-3 py-2 rounded border border-blue-100 flex gap-2 items-center">
+                <HelpCircle size={12} />
+                <span>The net amount of money received after taxes and insurance deductions</span>
+              </div>
             </div>
             <div className="text-right">
               <div className="text-5xl font-extrabold text-blue-700 print:text-black">
