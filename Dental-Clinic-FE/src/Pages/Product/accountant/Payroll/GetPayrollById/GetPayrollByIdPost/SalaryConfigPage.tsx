@@ -14,15 +14,15 @@ const SalaryConfigPage: React.FC = () => {
   } = useSalaryConfig();
 
   // Logic lọc danh sách để hiển thị đúng khu vực
-  const insuranceItems = formData.allowances.filter(a => 
+  const insuranceItems = formData.allowances.filter(a =>
     ['BHXH', 'BHYT', 'BHTN'].includes(a.allowanceName.toUpperCase())
   );
-  
-  const dependentItem = formData.allowances.find(a => 
+
+  const dependentItem = formData.allowances.find(a =>
     a.allowanceName.toUpperCase() === 'DEPENDENTS'
   );
 
-  const genericAllowances = formData.allowances.filter(a => 
+  const genericAllowances = formData.allowances.filter(a =>
     !['BHXH', 'BHYT', 'BHTN', 'DEPENDENTS'].includes(a.allowanceName.toUpperCase())
   );
 
@@ -57,7 +57,7 @@ const SalaryConfigPage: React.FC = () => {
 
         {selectedUser && !loading ? (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-            
+
             {/* --- Phần 2: Model --- */}
             <div className="p-6 border-b border-gray-100">
               <div className="flex items-center gap-3 mb-6">
@@ -140,9 +140,9 @@ const SalaryConfigPage: React.FC = () => {
                     <input
                       type="number"
                       value={formData.insuranceAmount}
-                      onChange={(e) => handleChange('insuranceAmount', parseFloat(e.target.value))}
+                      onChange={(e) => handleChange('insuranceAmount', parseFloat(e.target.value) || 0)}
                       className="block w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-blue-500 font-bold text-gray-700"
-                      placeholder="Để 0 nếu tính theo lương cơ bản"
+                      placeholder="Mặc định lấy theo lương cơ bản"
                     />
                     <span className="absolute inset-y-0 right-3 flex items-center text-gray-400 text-xs font-bold">VND</span>
                   </div>
@@ -252,9 +252,8 @@ const SalaryConfigPage: React.FC = () => {
             {/* --- FOOTER: ACTIONS --- */}
             <div className="p-6 bg-gray-50 border-t border-gray-100">
               {notification && (
-                <div className={`mb-4 flex items-center gap-2 rounded-lg px-4 py-3 text-sm border ${
-                  notification.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
-                }`}>
+                <div className={`mb-4 flex items-center gap-2 rounded-lg px-4 py-3 text-sm border ${notification.type === 'success' ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700'
+                  }`}>
                   {notification.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
                   {notification.message}
                 </div>
