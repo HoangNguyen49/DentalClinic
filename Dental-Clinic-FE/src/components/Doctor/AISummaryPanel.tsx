@@ -3,11 +3,6 @@ import {
   AlertTriangle, 
   Stethoscope, 
   Loader2, 
-  CheckCircle, 
-  AlertCircle,
-  FileWarning,
-  ShieldAlert,
-  ClipboardCheck,
   ChevronDown,
   ChevronRight,
   Printer,
@@ -16,63 +11,22 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
-interface DataQualityIssue {
-  issue: string;
-  severity: 'LOW' | 'MEDIUM' | 'HIGH';
-  suggestion: string;
-}
-
-interface RiskFactor {
-  factor: string;
-  evidence: string;
-  impact: 'MINOR' | 'MODERATE' | 'SIGNIFICANT';
-}
-
-// New interface with enhanced fields
-interface AISummaryData {
-  overview: string;
-  attentionLevel: 'LOW' | 'MEDIUM' | 'HIGH';
-  dataQualityIssues: DataQualityIssue[];
-  riskFactors: RiskFactor[];
-  advisoryNotes: string[];
-  summaryReport: string;
+// Legacy interface matching the old format from the image
+interface LegacyAISummaryData {
+  overview?: string;
+  alerts?: string;
+  recentTreatments?: string;
   rawSummary?: string;
   generatedAt?: string;
 }
 
-// Fallback interface for old API response (backward compatibility)
-interface LegacyAISummaryData {
-  overview: string;
-  alerts: string;
-  recentTreatments: string;
-  rawSummary?: string;
-}
 
 interface AISummaryPanelProps {
-  summary: AISummaryData | LegacyAISummaryData | null;
+  summary: LegacyAISummaryData | null;
   loading: boolean;
   error: string | null;
   onRefresh?: () => void;
 }
-
-// Type guard to check if data is in new format
-const isNewFormat = (data: any): data is AISummaryData => {
-  return data && 'attentionLevel' in data && 'dataQualityIssues' in data;
-};
-
-// Convert old format to new format for backward compatibility
-const convertLegacyToNewFormat = (legacyData: LegacyAISummaryData): AISummaryData => {
-  return {
-    overview: legacyData.overview,
-    attentionLevel: legacyData.alerts.toLowerCase().includes("no significant alerts") ? "LOW" : "MEDIUM",
-    dataQualityIssues: [],
-    riskFactors: [],
-    advisoryNotes: [],
-    summaryReport: `${legacyData.overview}\n\nAlerts: ${legacyData.alerts}\n\nRecent Treatments: ${legacyData.recentTreatments}`,
-    rawSummary: legacyData.rawSummary,
-    generatedAt: new Date().toISOString()
-  };
-};
 
 export default function AISummaryPanel({ 
   summary, 
@@ -81,25 +35,10 @@ export default function AISummaryPanel({
   onRefresh 
 }: AISummaryPanelProps) {
   const [expandedSections, setExpandedSections] = useState({
-    dataQuality: true,
-    riskFactors: true,
-    advisoryNotes: true,
-    fullReport: false
+    overview: true,
+    alerts: true,
+    recentTreatments: true
   });
-
-  // Convert data to new format if needed
-  const getFormattedSummary = (): AISummaryData | null => {
-    if (!summary) return null;
-    
-    if (isNewFormat(summary)) {
-      return summary;
-    } else {
-      return convertLegacyToNewFormat(summary);
-    }
-  };
-
-  const formattedSummary = getFormattedSummary();
-  const isLegacyFormat = summary && !isNewFormat(summary);
 
   const toggleSection = (section: keyof typeof expandedSections) => {
     setExpandedSections(prev => ({
@@ -108,61 +47,34 @@ export default function AISummaryPanel({
     }));
   };
 
-  // Helper functions for styling
-  const getAttentionLevelConfig = (level: string) => {
-    switch(level) {
-      case 'HIGH':
-        return {
-          bg: 'bg-red-50',
-          text: 'text-red-800',
-          border: 'border-red-200',
-          icon: AlertTriangle,
-          label: 'High Attention Required'
-        };
-      case 'MEDIUM':
-        return {
-          bg: 'bg-amber-50',
-          text: 'text-amber-800',
-          border: 'border-amber-200',
-          icon: AlertCircle,
-          label: 'Moderate Attention'
-        };
-      case 'LOW':
-        return {
-          bg: 'bg-green-50',
-          text: 'text-green-800',
-          border: 'border-green-200',
-          icon: CheckCircle,
-          label: 'Low Attention'
-        };
-      default:
-        return {
-          bg: 'bg-gray-50',
-          text: 'text-gray-800',
-          border: 'border-gray-200',
-          icon: CheckCircle,
-          label: 'Unknown'
-        };
-    }
-  };
+  const cleanText = (text?: string) =>
+  text
+    ?.replace(/\\n|\n|\r/g, " ")
+    ?.replace(/---/g, " ")
+    ?.replace(/\s{2,}/g, " ")
+    ?.trim() ?? "";
 
-  const getSeverityConfig = (severity: string) => {
-    switch(severity) {
-      case 'HIGH': return { bg: 'bg-red-100', text: 'text-red-800', label: 'High' };
-      case 'MEDIUM': return { bg: 'bg-amber-100', text: 'text-amber-800', label: 'Medium' };
-      case 'LOW': return { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Low' };
-      default: return { bg: 'bg-gray-100', text: 'text-gray-800', label: severity };
-    }
-  };
+  const formatTreatments = (text?: string): string[] => {
+  if (!text) return [];
 
-  const getImpactConfig = (impact: string) => {
-    switch(impact) {
-      case 'SIGNIFICANT': return { bg: 'bg-red-50', text: 'text-red-700', border: 'border-red-200', label: 'Significant' };
-      case 'MODERATE': return { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200', label: 'Moderate' };
-      case 'MINOR': return { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', label: 'Minor' };
-      default: return { bg: 'bg-gray-50', text: 'text-gray-700', border: 'border-gray-200', label: impact };
-    }
-  };
+  return text
+    .replace(/\\n|\n|\r/g, " ")
+    .split("*")
+    .map(t => t.trim())
+    .filter(t => t.length > 0);
+};
+
+const formatAlerts = (text?: string): string[] => {
+  if (!text) return [];
+
+  return text
+    .replace(/\\n|\n|\r/g, " ")
+    .split(". ")
+    .map(a => a.trim())
+    .filter(a => a.length > 10); // bỏ mấy câu rác quá ngắn
+};
+
+
 
   const handlePrint = () => {
     const printContent = document.getElementById('ai-summary-content');
@@ -217,7 +129,9 @@ export default function AISummaryPanel({
     );
   }
 
-  if (!formattedSummary) {
+  // Kiểm tra summary và các thuộc tính của nó
+ if (!summary || (!summary.overview && !summary.alerts && !summary.recentTreatments)) 
+  {
     return (
       <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
         <h2 className="text-xl font-bold text-[#0D1B3E] mb-4 flex items-center gap-2">
@@ -234,28 +148,25 @@ export default function AISummaryPanel({
     );
   }
 
-  const attentionConfig = getAttentionLevelConfig(formattedSummary.attentionLevel);
-  const AttentionIcon = attentionConfig.icon;
+  // Kiểm tra an toàn trước khi gọi toLowerCase
+  const hasAlerts = summary.alerts 
+    ? !summary.alerts.toLowerCase().includes("no significant alerts")
+    : false;
 
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6" id="ai-summary-content">
-      {/* Header with Actions */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h2 className="text-xl font-bold text-[#0D1B3E] flex items-center gap-2">
             <span className="text-blue-600">AI Support</span>
             <span className="text-gray-400">–</span>
             <span>Patient Summary</span>
-            {isLegacyFormat && (
-              <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">
-                Legacy Format
-              </span>
-            )}
           </h2>
-          {formattedSummary.generatedAt && (
+          {summary.generatedAt && (
             <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
               <Clock className="w-3 h-3" />
-              <span>Updated: {new Date(formattedSummary.generatedAt).toLocaleString()}</span>
+              <span>Updated: {new Date(summary.generatedAt).toLocaleString()}</span>
             </div>
           )}
         </div>
@@ -282,254 +193,98 @@ export default function AISummaryPanel({
         </div>
       </div>
 
-      {/* Attention Level Banner */}
-      <div className={`${attentionConfig.bg} ${attentionConfig.border} border rounded-lg p-4 mb-6`}>
-        <div className="flex items-center gap-3">
-          <AttentionIcon className={`w-6 h-6 ${attentionConfig.text}`} />
-          <div>
+      {/* Simple Sections Display */}
+      <div className="space-y-6">
+        {/* Overview Section */}
+        <section className="border-b border-gray-200 pb-4">
+          <button
+            onClick={() => toggleSection('overview')}
+            className="flex items-center justify-between w-full mb-3 hover:bg-gray-50 p-1 rounded-lg"
+          >
             <div className="flex items-center gap-2">
-              <h3 className={`font-bold ${attentionConfig.text}`}>Attention Level</h3>
-              <span className={`px-2 py-0.5 text-xs font-bold rounded-full ${attentionConfig.bg} ${attentionConfig.text} border ${attentionConfig.border}`}>
-                {attentionConfig.label}
-              </span>
-            </div>
-            <p className="text-sm text-gray-700 mt-1">
-              Based on analysis of treatment history and data quality
-            </p>
-          </div>
-        </div>
-      </div>
-
-
-      {/* Legacy Format Display (if using old API) */}
-      {isLegacyFormat && summary && (
-        <div className="space-y-6">
-          <section className="border-b border-gray-200 pb-4">
-            <div className="flex items-center gap-2 mb-3">
               <Info className="w-5 h-5 text-blue-600" />
               <h3 className="text-lg font-semibold text-gray-800">Overview</h3>
             </div>
-            <p className="text-gray-700 leading-relaxed pl-7">{summary.overview}</p>
-          </section>
+            {expandedSections.overview ? 
+              <ChevronDown className="w-5 h-5 text-gray-400" /> : 
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            }
+          </button>
+          
+          {expandedSections.overview && summary.overview && (
+            <p className="text-gray-700 leading-relaxed pl-7">{cleanText(summary.overview)}</p>
+          )}
+        </section>
 
-          <section className="border-b border-gray-200 pb-4">
-            <div className="flex items-center gap-2 mb-3">
+        {/* Alerts Section */}
+        <section className="border-b border-gray-200 pb-4">
+          <button
+            onClick={() => toggleSection('alerts')}
+            className="flex items-center justify-between w-full mb-3 hover:bg-gray-50 p-1 rounded-lg"
+          >
+            <div className="flex items-center gap-2">
               <AlertTriangle
                 className={`w-5 h-5 ${
-                  summary.alerts.toLowerCase().includes("no significant alerts")
-                    ? "text-gray-400"
-                    : "text-amber-600"
+                  hasAlerts ? "text-amber-600" : "text-gray-400"
                 }`}
               />
               <h3 className="text-lg font-semibold text-gray-800">Alerts</h3>
-              {!summary.alerts.toLowerCase().includes("no significant alerts") && (
+              {hasAlerts && (
                 <span className="ml-2 px-2 py-0.5 bg-amber-100 text-amber-800 text-xs font-medium rounded-full">
                   Important
                 </span>
               )}
             </div>
-            <p
-              className={`leading-relaxed pl-7 ${
-                summary.alerts.toLowerCase().includes("no significant alerts")
-                  ? "text-gray-600"
-                  : "text-gray-700"
-              }`}
-            >
-              {summary.alerts}
-            </p>
-          </section>
+            {expandedSections.alerts ? 
+              <ChevronDown className="w-5 h-5 text-gray-400" /> : 
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            }
+          </button>
+          
+          {expandedSections.alerts && summary.alerts && (
+  <ul className="pl-10 space-y-2 list-disc">
+    {formatAlerts(summary.alerts).map((alert, index) => (
+      <li
+        key={index}
+        className={`leading-relaxed ${
+          hasAlerts ? "text-gray-800" : "text-gray-600"
+        }`}
+      >
+        {alert.endsWith(".") ? alert : alert + "."}
+      </li>
+    ))}
+  </ul>
+)}
 
-          <section>
-            <div className="flex items-center gap-2 mb-3">
+        </section>
+
+        {/* Recent Treatments Section */}
+        <section>
+          <button
+            onClick={() => toggleSection('recentTreatments')}
+            className="flex items-center justify-between w-full mb-3 hover:bg-gray-50 p-1 rounded-lg"
+          >
+            <div className="flex items-center gap-2">
               <Stethoscope className="w-5 h-5 text-green-600" />
               <h3 className="text-lg font-semibold text-gray-800">Recent Treatments</h3>
             </div>
-            <p className="text-gray-700 leading-relaxed pl-7">{summary.recentTreatments}</p>
-          </section>
-        </div>
-      )}
-
-      {/* Enhanced Format Display (if using new API) */}
-      {!isLegacyFormat && formattedSummary && (
-        <div className="space-y-6">
-          {/* Overview Section */}
-          <section className="border-b border-gray-200 pb-5">
-            <div className="flex items-center gap-2 mb-3">
-              <Info className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-semibold text-gray-800">Overview</h3>
-            </div>
-            <p className="text-gray-700 leading-relaxed pl-7">{formattedSummary.overview}</p>
-          </section>
-
-          {/* Data Quality Issues */}
-          <section className="border-b border-gray-200 pb-5">
-            <button
-              onClick={() => toggleSection('dataQuality')}
-              className="flex items-center justify-between w-full mb-3 hover:bg-gray-50 p-1 rounded-lg"
-            >
-              <div className="flex items-center gap-2">
-                <FileWarning className="w-5 h-5 text-amber-600" />
-                <h3 className="text-lg font-semibold text-gray-800">Data Quality Issues</h3>
-                <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-                  {formattedSummary.dataQualityIssues.length}
-                </span>
-              </div>
-              {expandedSections.dataQuality ? 
-                <ChevronDown className="w-5 h-5 text-gray-400" /> : 
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              }
-            </button>
-            
-            {expandedSections.dataQuality && (
-              <div className="space-y-3 pl-7">
-                {formattedSummary.dataQualityIssues.length === 0 ? (
-                  <div className="text-center py-4 text-gray-500 text-sm">
-                    <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-400" />
-                    <p>No data quality issues detected</p>
-                  </div>
-                ) : (
-                  formattedSummary.dataQualityIssues.map((issue, index) => {
-                    const severityConfig = getSeverityConfig(issue.severity);
-                    return (
-                      <div key={index} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                        <div className="flex items-start justify-between mb-2">
-                          <p className="text-gray-800 font-medium">{issue.issue}</p>
-                          <span className={`px-2 py-1 text-xs font-bold rounded-full ${severityConfig.bg} ${severityConfig.text}`}>
-                            {severityConfig.label}
-                          </span>
-                        </div>
-                        <div className="bg-white rounded p-3 mt-2 border border-gray-100">
-                          <p className="text-sm text-gray-600 font-medium mb-1">Suggestion:</p>
-                          <p className="text-sm text-gray-700">{issue.suggestion}</p>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* Risk Factors */}
-          <section className="border-b border-gray-200 pb-5">
-            <button
-              onClick={() => toggleSection('riskFactors')}
-              className="flex items-center justify-between w-full mb-3 hover:bg-gray-50 p-1 rounded-lg"
-            >
-              <div className="flex items-center gap-2">
-                <ShieldAlert className="w-5 h-5 text-red-600" />
-                <h3 className="text-lg font-semibold text-gray-800">Risk Factors</h3>
-                <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-                  {formattedSummary.riskFactors.length}
-                </span>
-              </div>
-              {expandedSections.riskFactors ? 
-                <ChevronDown className="w-5 h-5 text-gray-400" /> : 
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              }
-            </button>
-            
-            {expandedSections.riskFactors && (
-              <div className="space-y-3 pl-7">
-                {formattedSummary.riskFactors.length === 0 ? (
-                  <div className="text-center py-4 text-gray-500 text-sm">
-                    <CheckCircle className="w-8 h-8 mx-auto mb-2 text-green-400" />
-                    <p>No significant risk factors detected</p>
-                  </div>
-                ) : (
-                  formattedSummary.riskFactors.map((risk, index) => {
-                    const impactConfig = getImpactConfig(risk.impact);
-                    return (
-                      <div key={index} className={`rounded-lg p-4 border ${impactConfig.border} ${impactConfig.bg}`}>
-                        <div className="flex items-start justify-between mb-2">
-                          <div>
-                            <p className="font-medium text-gray-800">{risk.factor}</p>
-                            <p className="text-sm text-gray-600 mt-1">{risk.evidence}</p>
-                          </div>
-                          <span className={`px-2 py-1 text-xs font-bold rounded-full ${impactConfig.bg} ${impactConfig.text} border ${impactConfig.border}`}>
-                            {impactConfig.label}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* Advisory Notes */}
-          <section className="border-b border-gray-200 pb-5">
-            <button
-              onClick={() => toggleSection('advisoryNotes')}
-              className="flex items-center justify-between w-full mb-3 hover:bg-gray-50 p-1 rounded-lg"
-            >
-              <div className="flex items-center gap-2">
-                <ClipboardCheck className="w-5 h-5 text-green-600" />
-                <h3 className="text-lg font-semibold text-gray-800">Advisory Notes</h3>
-                <span className="ml-2 px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">
-                  {formattedSummary.advisoryNotes.length}
-                </span>
-              </div>
-              {expandedSections.advisoryNotes ? 
-                <ChevronDown className="w-5 h-5 text-gray-400" /> : 
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              }
-            </button>
-            
-            {expandedSections.advisoryNotes && (
-              <div className="space-y-2 pl-7">
-                {formattedSummary.advisoryNotes.length === 0 ? (
-                  <div className="text-center py-4 text-gray-500 text-sm">
-                    <p>No advisory notes available</p>
-                  </div>
-                ) : (
-                  formattedSummary.advisoryNotes.map((note, index) => (
-                    <div key={index} className="flex items-start gap-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-                      <p className="text-sm text-gray-700">{note}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </section>
-
-          {/* Full Report Section */}
-          <section>
-            <button
-              onClick={() => toggleSection('fullReport')}
-              className="flex items-center justify-between w-full mb-3 hover:bg-gray-50 p-1 rounded-lg"
-            >
-              <div className="flex items-center gap-2">
-                <Stethoscope className="w-5 h-5 text-purple-600" />
-                <h3 className="text-lg font-semibold text-gray-800">Full Report</h3>
-              </div>
-              {expandedSections.fullReport ? 
-                <ChevronDown className="w-5 h-5 text-gray-400" /> : 
-                <ChevronRight className="w-5 h-5 text-gray-400" />
-              }
-            </button>
-            
-            {expandedSections.fullReport && (
-              <div className="pl-7">
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <p className="text-gray-700 whitespace-pre-line leading-relaxed">
-                    {formattedSummary.summaryReport}
-                  </p>
-                </div>
-              </div>
-            )}
-          </section>
-        </div>
-      )}
-
-      {!loading && !error && !summary && (
-        <div className="text-center py-8 text-gray-500 text-sm">
-          No summary available
-        </div>
-      )}
+            {expandedSections.recentTreatments ? 
+              <ChevronDown className="w-5 h-5 text-gray-400" /> : 
+              <ChevronRight className="w-5 h-5 text-gray-400" />
+            }
+          </button>
+          
+          {expandedSections.recentTreatments && (
+  <ul className="pl-10 space-y-2 list-disc text-gray-700">
+    {formatTreatments(summary.recentTreatments).map((item, index) => (
+      <li key={index} className="leading-relaxed">
+        {item}
+      </li>
+    ))}
+  </ul>
+)}
+        </section>
+      </div>
     </div>
   );
 }
-
