@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -55,8 +55,8 @@ type DailyAttendanceItem = {
   statusColor: string;
   checkInTime: string | null;
   checkOutTime: string | null;
-  shiftDisplay: string;
-  shiftHours: string;
+  shiftDisplay?: string | null;
+  shiftHours?: string | null;
   workedHours: number;
   workedMinutes: number;
   workedDisplay: string;
@@ -106,47 +106,90 @@ function DailyAttendanceView() {
     fetchDepartments();
   }, []);
 
+  // Tách riêng useEffect cho daily và monthly để tránh xung đột
   useEffect(() => {
-    // Tải dữ liệu theo viewMode, workDate, bộ lọc
-    const loadData = async () => {
-      setLoadingSummary(true);
-      try {
-        await fetchMonthlySummary();
-        if (viewMode === "daily") {
+    if (viewMode === "daily") {
+      const loadDailyData = async () => {
+        setLoadingSummary(true);
+        try {
           await fetchDailySummary();
           await fetchDailyList();
           // so sánh với dữ liệu ngày trước đó
           const prevDate = new Date(workDate);
           prevDate.setDate(prevDate.getDate() - 1);
           await fetchPreviousDailySummary(prevDate.toISOString().split("T")[0]);
-        } else {
-          await fetchMonthlyList();
+        } finally {
+          setLoadingSummary(false);
         }
-      } finally {
-        setLoadingSummary(false);
-      }
-    };
-
-    loadData();
-  }, [
-    viewMode,
-    workDate,
-    selectedYear,
-    selectedMonth,
-    selectedDepartment,
-    dailyPage,
-    dailySize,
-    monthlyPage,
-    monthlySize,
-  ]);
+      };
+      loadDailyData();
+    }
+  }, [viewMode, workDate, selectedDepartment, dailyPage, dailySize]);
 
   useEffect(() => {
-    setDailyPage(0);
-  }, [workDate, selectedDepartment]);
+    if (viewMode === "monthly") {
+      const loadMonthlyData = async () => {
+        setLoadingSummary(true);
+        try {
+          await fetchMonthlySummary();
+          await fetchMonthlyList();
+        } finally {
+          setLoadingSummary(false);
+        }
+      };
+      loadMonthlyData();
+    }
+  }, [viewMode, selectedYear, selectedMonth, selectedDepartment, monthlyPage, monthlySize]);
+
+  // Luôn fetch monthly summary để hiển thị chart
+  useEffect(() => {
+    fetchMonthlySummary();
+  }, [selectedYear, selectedMonth]);
+
+  // Reset page về 0 khi thay đổi filter (workDate, department) - chỉ reset khi thực sự thay đổi
+  const prevWorkDateRef = useRef(workDate);
+  const prevSelectedDepartmentRef = useRef(selectedDepartment);
+  
+  useEffect(() => {
+    if (viewMode === "daily" && 
+        (prevWorkDateRef.current !== workDate || prevSelectedDepartmentRef.current !== selectedDepartment)) {
+      setDailyPage(0);
+      prevWorkDateRef.current = workDate;
+      prevSelectedDepartmentRef.current = selectedDepartment;
+    }
+  }, [workDate, selectedDepartment, viewMode]);
+
+  const prevSelectedYearRef = useRef(selectedYear);
+  const prevSelectedMonthRef = useRef(selectedMonth);
+  
+  useEffect(() => {
+    if (viewMode === "monthly" && 
+        (prevSelectedYearRef.current !== selectedYear || 
+         prevSelectedMonthRef.current !== selectedMonth || 
+         prevSelectedDepartmentRef.current !== selectedDepartment)) {
+      setMonthlyPage(0);
+      prevSelectedYearRef.current = selectedYear;
+      prevSelectedMonthRef.current = selectedMonth;
+      prevSelectedDepartmentRef.current = selectedDepartment;
+    }
+  }, [selectedYear, selectedMonth, selectedDepartment, viewMode]);
+  
+  // Đảm bảo page không vượt quá totalPages khi totalPages thay đổi
+  useEffect(() => {
+    if (dailyTotalPages > 0 && dailyPage >= dailyTotalPages) {
+      setDailyPage(Math.max(0, dailyTotalPages - 1));
+    } else if (dailyTotalPages === 0 && dailyPage > 0) {
+      setDailyPage(0);
+    }
+  }, [dailyTotalPages]);
 
   useEffect(() => {
-    setMonthlyPage(0);
-  }, [selectedYear, selectedMonth, selectedDepartment]);
+    if (monthlyTotalPages > 0 && monthlyPage >= monthlyTotalPages) {
+      setMonthlyPage(Math.max(0, monthlyTotalPages - 1));
+    } else if (monthlyTotalPages === 0 && monthlyPage > 0) {
+      setMonthlyPage(0);
+    }
+  }, [monthlyTotalPages]);
 
   const fetchDepartments = async () => {
     try {
@@ -205,15 +248,60 @@ function DailyAttendanceView() {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      setDailyList(response.data.content || []);
-      setDailyTotalPages(response.data.totalPages || 0);
-      setDailyTotalElements(response.data.totalElements || 0);
+      const content = response.data.content || [];
+      setDailyList(content);
+        let totalElements = response.data.totalElements || 0;
+      let totalPages = response.data.totalPages || 0;
+      
+      // Nếu backend trả về totalElements = 0 nhưng có content, có thể là backend chưa tính đúng
+      // Trong trường hợp này, nếu content.length = size, có thể còn trang tiếp theo
+      // Nếu content.length < size, thì đây là trang cuối
+      if (totalElements === 0 && content.length > 0) {
+        // Nếu content.length = size, có thể còn nhiều trang hơn
+        // Ước tính totalElements = (page + 1) * size + 1 (ít nhất) để cho phép có trang tiếp theo
+        if (content.length === dailySize) {
+          // Có thể còn trang tiếp theo, ước tính totalElements
+          totalElements = (dailyPage + 1) * dailySize + 1; // Ước tính tối thiểu
+          totalPages = Math.ceil(totalElements / dailySize);
+        } else {
+          // Đây là trang cuối
+          totalElements = dailyPage * dailySize + content.length;
+          totalPages = dailyPage + 1;
+        }
+      } else if (totalPages === 0 && totalElements > 0) {
+        // Tính totalPages từ totalElements
+        totalPages = Math.ceil(totalElements / dailySize);
+      } else if (totalPages === 0 && content.length > 0) {
+        // Có content nhưng không có totalElements và totalPages
+        totalElements = content.length;
+        totalPages = 1;
+      }
+      
+      // Đảm bảo totalPages ít nhất là 1 nếu có dữ liệu
+      if (totalPages === 0 && content.length > 0) {
+        totalPages = 1;
+        totalElements = content.length;
+      }
+      
+      console.log('Daily Attendance List:', {
+        page: dailyPage,
+        size: dailySize,
+        contentLength: content.length,
+        totalElements,
+        totalPages,
+        backendTotalElements: response.data.totalElements,
+        backendTotalPages: response.data.totalPages
+      });
+      
+      setDailyTotalPages(totalPages);
+      setDailyTotalElements(totalElements);
     } catch (err: any) {
       toast.error(t("messages.failedToLoadDailyAttendanceList"));
       console.error(err);
       setDailyList([]);
       setDailyTotalPages(0);
       setDailyTotalElements(0);
+      setDailyPage(0);
     } finally {
       setLoading(false);
     }
@@ -261,15 +349,33 @@ function DailyAttendanceView() {
           headers: { Authorization: `Bearer ${accessToken}` },
         }
       );
-      setMonthlyList(response.data.content || []);
-      setMonthlyTotalPages(response.data.totalPages || 0);
-      setMonthlyTotalElements(response.data.totalElements || 0);
+      const content = response.data.content || [];
+      setMonthlyList(content);
+      const totalElements = response.data.totalElements || 0;
+      let totalPages = response.data.totalPages || 0;
+      
+      // Tính lại totalPages nếu backend trả về 0 hoặc không hợp lý nhưng có dữ liệu
+      if (totalPages === 0 && totalElements > 0) {
+        totalPages = Math.ceil(totalElements / monthlySize);
+      } else if (totalPages === 0 && content.length > 0) {
+        // Nếu có content nhưng không có totalElements, tính từ content.length
+        totalPages = Math.ceil(content.length / monthlySize);
+      }
+      
+      // Đảm bảo totalPages ít nhất là 1 nếu có dữ liệu
+      if (totalPages === 0 && (content.length > 0 || totalElements > 0)) {
+        totalPages = 1;
+      }
+      
+      setMonthlyTotalPages(totalPages);
+      setMonthlyTotalElements(totalElements || content.length);
     } catch (err: any) {
       toast.error(t("messages.failedToLoadMonthlyAttendanceList"));
       console.error(err);
       setMonthlyList([]);
       setMonthlyTotalPages(0);
       setMonthlyTotalElements(0);
+      setMonthlyPage(0);
     } finally {
       setLoading(false);
     }
@@ -311,8 +417,146 @@ function DailyAttendanceView() {
     }
   );
 
+  // Group và merge các bản ghi của cùng một nhân viên trong cùng một ngày thành một dòng
+  const groupedDailyList = useMemo(() => {
+    const grouped = new Map<string, DailyAttendanceItem[]>();
+    
+    dailyList.forEach((item) => {
+      // Key: userId + employeeName để group các bản ghi của cùng một nhân viên
+      const key = `${item.userId}-${item.employeeName}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(item);
+    });
+    
+    // Merge các bản ghi của cùng một nhân viên thành một item duy nhất
+    const result: DailyAttendanceItem[] = [];
+    grouped.forEach((items) => {
+      // Sắp xếp theo shiftDisplay hoặc id để có thứ tự nhất quán
+      items.sort((a, b) => {
+        if (a.shiftDisplay && b.shiftDisplay) {
+          return a.shiftDisplay.localeCompare(b.shiftDisplay);
+        }
+        if (a.id && b.id) {
+          return a.id - b.id;
+        }
+        return 0;
+      });
+      
+      // Nếu chỉ có 1 item, giữ nguyên
+      if (items.length === 1) {
+        result.push(items[0]);
+      } else {
+        // Merge nhiều items thành một
+        const firstItem = items[0];
+        
+        // Kiểm tra xem có ca nào nghỉ không (Approved Leave hoặc Absent)
+        const hasLeaveOrAbsent = items.some(item => 
+          item.status === "Approved Leave" || item.status === "Absent"
+        );
+        
+        // Xác định status chính (ưu tiên: Present > Late > Approved Leave > Absent)
+        const statusPriority: Record<string, number> = {
+          "Present": 1,
+          "Late": 2,
+          "Approved Leave": 3,
+          "Absent": 4,
+        };
+        const mainStatus = items.reduce((prev, curr) => {
+          const prevPriority = statusPriority[prev.status] || 99;
+          const currPriority = statusPriority[curr.status] || 99;
+          return currPriority < prevPriority ? curr : prev;
+        });
+        
+        // Nếu có ca nghỉ, hiển thị shift kèm status của từng ca
+        let shiftDisplay: string | null | undefined = "";
+        let shiftHours: string | null | undefined = "";
+        
+        if (hasLeaveOrAbsent) {
+          // Hiển thị từng ca kèm status: "8am-11am (Approved Leave) / 1pm-6pm (Present)"
+          const shiftParts = items
+            .map(item => {
+              const shift = item.shiftDisplay || "";
+              const status = item.status || "";
+              return shift ? `${shift} (${status})` : "";
+            })
+            .filter(Boolean);
+          shiftDisplay = shiftParts.join(" / ") || firstItem.shiftDisplay || null;
+          
+          const shiftHoursParts = items
+            .map(item => {
+              const hours = item.shiftHours || "";
+              const status = item.status || "";
+              return hours ? `${hours} (${status})` : "";
+            })
+            .filter(Boolean);
+          shiftHours = shiftHoursParts.join(" / ") || firstItem.shiftHours || null;
+        } else {
+          // Nếu không có ca nghỉ, chỉ hiển thị shift bình thường
+          shiftDisplay = items
+            .map(item => item.shiftDisplay)
+            .filter(Boolean)
+            .join(" / ") || firstItem.shiftDisplay || null;
+          shiftHours = items
+            .map(item => item.shiftHours)
+            .filter(Boolean)
+            .join(" / ") || firstItem.shiftHours || null;
+        }
+        
+        const mergedItem: DailyAttendanceItem = {
+          ...firstItem,
+          // Lấy id đầu tiên để có thể click xem chi tiết
+          id: items[0].id,
+          // Sử dụng status chính, nhưng nếu có ca nghỉ thì hiển thị "Mixed" hoặc status chính
+          status: hasLeaveOrAbsent && items.some(item => item.status !== mainStatus.status)
+            ? `Mixed (${items.map(i => i.status).filter((v, i, a) => a.indexOf(v) === i).join(", ")})`
+            : mainStatus.status,
+          statusColor: mainStatus.statusColor,
+          // Gộp shifts với format có status nếu có ca nghỉ
+          shiftDisplay: shiftDisplay,
+          shiftHours: shiftHours,
+          // Tính tổng worked hours
+          workedHours: items.reduce((sum, item) => sum + (item.workedHours || 0), 0),
+          workedMinutes: items.reduce((sum, item) => sum + (item.workedMinutes || 0), 0),
+          // Tính workedDisplay từ tổng hours và minutes
+          workedDisplay: (() => {
+            const totalMinutes = items.reduce((sum, item) => {
+              const hours = item.workedHours || 0;
+              const mins = item.workedMinutes || 0;
+              return sum + hours * 60 + mins;
+            }, 0);
+            const hours = Math.floor(totalMinutes / 60);
+            const mins = totalMinutes % 60;
+            return hours > 0 || mins > 0 ? `${hours} hr ${mins.toString().padStart(2, "0")} min` : "0 hr 00 min";
+          })(),
+          // Gộp check-in/check-out (lấy sớm nhất và muộn nhất)
+          checkInTime: items
+            .map(item => item.checkInTime)
+            .filter(Boolean)
+            .sort()
+            [0] || null,
+          checkOutTime: items
+            .map(item => item.checkOutTime)
+            .filter(Boolean)
+            .sort()
+            .reverse()
+            [0] || null,
+          // Gộp remarks
+          remarks: items
+            .map(item => item.remarks)
+            .filter(r => r && r !== "Fixed Attendance" && r.trim() !== "")
+            .join("; ") || firstItem.remarks,
+        };
+        result.push(mergedItem);
+      }
+    });
+    
+    return result;
+  }, [dailyList]);
+
   // lọc tìm kiếm tên nhân viên cho table
-  const filteredDailyList = dailyList.filter((item) =>
+  const filteredDailyList = groupedDailyList.filter((item) =>
     item.employeeName.toLowerCase().includes(searchTerm.toLowerCase())
   );
   const filteredMonthlyList = monthlyList.filter((item) =>
@@ -444,7 +688,7 @@ function DailyAttendanceView() {
 
   // xác định table có column nào không trống ở chế độ daily không
   const hasShift = viewMode === "daily" && filteredDailyList.some(
-    (item) => item.shiftDisplay && item.shiftDisplay.trim() !== ""
+    (item) => item.shiftDisplay && item.shiftDisplay.trim() !== "" && item.shiftDisplay !== "-"
   );
   
   const hasWorked = viewMode === "daily" && filteredDailyList.some(

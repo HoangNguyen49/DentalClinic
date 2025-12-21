@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import doctorImg from "../../../assets/images/doctor.png";
 import { useTranslation } from "react-i18next";
 
@@ -38,9 +39,12 @@ function TeamSection() {
                 </div>
               </div>
             </div>
-            <button className="mt-6 bg-gradient-to-r from-[#66CCFF] to-[#3366FF] text-white font-bold px-6 py-2 rounded-full shadow border-2 border-white hover:scale-105 hover:shadow-lg transition-transform duration-300 w-max">
+            <Link 
+              to="/booking"
+              className="mt-6 bg-gradient-to-r from-[#66CCFF] to-[#3366FF] text-white font-bold px-6 py-2 rounded-full shadow border-2 border-white hover:scale-105 hover:shadow-lg transition-transform duration-300 w-max inline-block text-center"
+            >
               {t("team.button")}
-            </button>
+            </Link>
           </div>
         </div>
       </div>

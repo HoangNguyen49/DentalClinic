@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { vi } from "date-fns/locale";
 import { Activity, Loader2 } from "lucide-react";
@@ -7,6 +8,7 @@ import { systemService, type AuditLog } from "../../../services/admin/systemServ
 
 export default function DashboardActivityFeed() {
     const { t } = useTranslation("admin");
+    const navigate = useNavigate();
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -46,7 +48,10 @@ export default function DashboardActivityFeed() {
                     <Activity className="w-5 h-5 text-orange-500" />
                     {t("dashboard.activity.title", "Hoạt động gần đây")}
                 </h3>
-                <button className="text-sm text-blue-600 hover:text-blue-700 font-medium">
+                <button 
+                    onClick={() => navigate("/admin/system?tab=logs")}
+                    className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors"
+                >
                     {t("actions.viewAll", "Xem tất cả")}
                 </button>
             </div>

@@ -1,67 +1,105 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Calendar, FileText } from "lucide-react";
+import { Calendar, FileText, Settings } from "lucide-react";
+import { ToastContainer } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
 import HolidaysTab from "./Tabs/HolidaysTab";
 import AuditLogsTab from "./Tabs/AuditLogsTab";
+import ConfigurationTab from "./Tabs/ConfigurationTab";
 
 export default function AdminSystemPage() {
     const { t } = useTranslation("admin");
+    const [searchParams, setSearchParams] = useSearchParams();
+    
+    // Đọc tab từ URL query param, mặc định là "holidays"
+    const tabFromUrl = searchParams.get("tab");
+    const initialTab = (tabFromUrl === "logs" ? "logs" : "holidays") as "holidays" | "logs" | "configs"; 
+    
     // State cho tab đang chọn
-    const [activeTab, setActiveTab] = useState<"holidays" | "logs">("holidays");
+    const [activeTab, setActiveTab] = useState<"holidays" | "logs" | "configs">(initialTab);
+    
+    // Cập nhật tab khi URL query param thay đổi
+    useEffect(() => {
+        const tabFromUrl = searchParams.get("tab");
+        if (tabFromUrl === "logs") {
+            setActiveTab("logs");
+        } else if (tabFromUrl === "configs") {
+            setActiveTab("configs"); // <--- 2. XỬ LÝ URL CHO CONFIGS
+        } else if (tabFromUrl === "holidays" || !tabFromUrl) {
+            setActiveTab("holidays");
+        }
+    }, [searchParams]);
 
     // Danh sách tabs của hệ thống
     const tabs = [
         {
+            id: "configs", 
+            label: t("system.tabs.config", "Cấu hình chung"),
+            icon: Settings, 
+            component: <ConfigurationTab />,
+        },
+        {
             id: "holidays",
-            label: "Ngày nghỉ lễ",
+            label: t("system.tabs.holidays", "Ngày nghỉ lễ"),
             icon: Calendar,
             component: <HolidaysTab />,
         },
         {
             id: "logs",
-            label: "Nhật ký hệ thống",
+            label: t("system.tabs.logs", "Nhật ký hệ thống"),
             icon: FileText,
             component: <AuditLogsTab />,
         },
     ] as const;
 
     return (
-        <div className="p-6 min-h-screen bg-slate-50">
-            <div className="max-w-7xl mx-auto space-y-6">
-                <div>
-                    <h1 className="text-2xl font-bold text-slate-900">
-                        {t("system.title", "Thiết lập hệ thống")}
-                    </h1>
-                    <p className="text-slate-500 mt-1">
-                        {t("system.subtitle", "Quản lý tham số, ngày nghỉ và nhật ký hoạt động")}
-                    </p>
-                </div>
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gray-50 to-slate-100 p-8">
+            <ToastContainer position="top-right" autoClose={3000} />
+            <div className="max-w-7xl mx-auto space-y-8">
+                {/* Header */}
+                <section className="flex items-center gap-4">
+                    <div className="p-3 bg-gradient-to-br from-slate-500 to-gray-600 rounded-2xl shadow-lg ring-4 ring-slate-200">
+                        <Settings className="w-7 h-7 text-white" />
+                        </div>
+                        <div>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                            {t("system.title", "System Settings")}
+                            </h1>
+                        <p className="text-sm text-gray-600 font-medium mt-1">
+                            {t("system.subtitle", "Manage system parameters, holidays and activity logs")}
+                            </p>
+                        </div>
+                </section>
+
                 {/* Khung giao diện có tabs và nội dung tab */}
-                <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div className="border-b border-slate-200">
+                <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-slate-200/60 overflow-hidden">
+                    <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-gray-50 to-slate-50">
                         {/* Thanh tab menu */}
-                        <nav className="flex gap-1 p-1" aria-label="Tabs">
+                        <nav className="flex gap-2 p-4" aria-label="Tabs">
                             {tabs.map((tab) => (
                                 <button
                                     key={tab.id}
-                                    // Bấm để chuyển tab
-                                    onClick={() => setActiveTab(tab.id)}
+                                    onClick={() => {
+                                        setActiveTab(tab.id);
+                                        setSearchParams({ tab: tab.id });
+                                    }}
                                     className={`
-                                        flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors
+                                        flex items-center gap-2 px-6 py-3 text-sm font-bold rounded-xl transition-all duration-200
                                         ${activeTab === tab.id
-                                            ? "bg-blue-50 text-blue-700"
-                                            : "text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                                            ? "bg-gradient-to-r from-slate-600 to-gray-700 text-white shadow-lg shadow-slate-300/50"
+                                            : "text-slate-600 hover:text-slate-900 hover:bg-white border border-slate-200"
                                         }
                                     `}
                                 >
-                                    <tab.icon className="w-4 h-4" />
+                                    <tab.icon className="w-5 h-5" />
                                     {tab.label}
                                 </button>
                             ))}
                         </nav>
                     </div>
                     {/* Hiển thị nội dung của tab đang được chọn */}
-                    <div className="p-6">
+                    <div className="p-8">
                         {tabs.find((t) => t.id === activeTab)?.component}
                     </div>
                 </div>

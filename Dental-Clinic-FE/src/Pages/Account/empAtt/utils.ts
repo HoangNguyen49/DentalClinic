@@ -27,6 +27,47 @@ export function formatTime(value?: string | null): string {
     }
 }
 
+
+export function getStatusDisplay(
+    status?: string | null,
+    startTime?: string | null,
+    checkInTime?: string | null
+): { color: string; displayStatus: string } {
+    // Nếu status = ABSENT và chưa check-in, kiểm tra thời gian
+    if (
+        (status?.toUpperCase() === "ABSENT" || status?.toUpperCase() === "APPROVED_ABSENCE") &&
+        !checkInTime &&
+        startTime
+    ) {
+        try {
+            // Parse startTime (format: HH:mm:ss hoặc HH:mm)
+            const timeParts = startTime.split(":");
+            if (timeParts.length >= 2) {
+                const hour = parseInt(timeParts[0]);
+                const minute = parseInt(timeParts[1]);
+                const now = new Date();
+                const shiftStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour, minute);
+
+                // Nếu chưa tới giờ bắt đầu ca → hiển thị "Chờ check-in"
+                if (now < shiftStart) {
+                    return {
+                        color: "bg-blue-100 text-blue-800",
+                        displayStatus: "PENDING",
+                    };
+                }
+            }
+        } catch (e) {
+            // Nếu parse lỗi thì vẫn hiển thị status như cũ
+        }
+    }
+
+    // Trả về status gốc nếu không cần override
+    return {
+        color: getStatusColor(status),
+        displayStatus: status || "UNKNOWN",
+    };
+}
+
 export function getStatusColor(status?: string | null): string {
     if (!status) return "bg-gray-100 text-gray-800";
     switch (status.toUpperCase()) {
@@ -38,6 +79,8 @@ export function getStatusColor(status?: string | null): string {
             return "bg-yellow-100 text-yellow-800";
         case "ABSENT":
             return "bg-red-100 text-red-800";
+        case "PENDING":
+            return "bg-blue-100 text-blue-800";
         default:
             return "bg-gray-100 text-gray-800";
     }
@@ -62,8 +105,31 @@ export function calculateWorkedHours(attendance: AttendanceResponse): number {
     const start = new Date(attendance.checkInTime).getTime();
     const end = new Date(attendance.checkOutTime).getTime();
     if (Number.isNaN(start) || Number.isNaN(end) || end <= start) return 0;
+    
+    // Tính tổng số giờ làm việc
     const diffMs = end - start;
-    return diffMs / (1000 * 60 * 60);
+    const totalHours = diffMs / (1000 * 60 * 60);
+    
+    // Trừ lunch break nếu là nhân viên (không phải bác sĩ)
+    // Bác sĩ: shiftType là MORNING hoặc AFTERNOON
+    // Nhân viên: shiftType là FULL_DAY hoặc null
+    const isDoctor = attendance.shiftType === "MORNING" || attendance.shiftType === "AFTERNOON";
+    
+    if (!isDoctor) {
+        // Nhân viên: trừ 120 phút (2 giờ) nếu check-in trước 11h và check-out sau 13h
+        const checkInDate = new Date(attendance.checkInTime);
+        const checkOutDate = new Date(attendance.checkOutTime);
+        const checkInHour = checkInDate.getHours();
+        const checkOutHour = checkOutDate.getHours();
+        
+        if (checkInHour < 11 && checkOutHour > 13) {
+            // Trừ 2 giờ nghỉ trưa
+            return Math.max(0, totalHours - 2);
+        }
+    }
+    
+    // Bác sĩ hoặc nhân viên không làm qua giờ nghỉ trưa: không trừ
+    return totalHours;
 }
 
 export function formatHourValue(value: number): string {
@@ -97,10 +163,10 @@ export const createAttendanceFromSchedule = (schedule: any, userId: number, user
     };
 };
 
+// CHỈ BẮT GIẢI TRÌNH CHO TRƯỜNG HỢP: QUÊN CHECK OUT (có check-in nhưng không có check-out)
 export const needsExplanation = (attendance: AttendanceResponse): { needs: boolean; explanationType?: string } => {
     if (!attendance) return { needs: false };
 
-    const status = (attendance.attendanceStatus || "").toUpperCase();
     const hasCheckIn = attendance.checkInTime != null;
     const hasCheckOut = attendance.checkOutTime != null;
 
@@ -112,23 +178,17 @@ export const needsExplanation = (attendance: AttendanceResponse): { needs: boole
 
     if (hasExplanation) return { needs: false };
 
-    if (status === "LATE") {
-        return { needs: true, explanationType: "LATE" };
-    }
-    if (status === "ABSENT") {
-        return { needs: true, explanationType: "ABSENT" };
-    }
-
     const today = new Date().toISOString().split("T")[0];
     const workDate = attendance.workDate ? new Date(attendance.workDate).toISOString().split("T")[0] : null;
+    
+    // Không bắt giải trình nếu là ngày hiện tại và đã checkin nhưng chưa checkout
     if (workDate === today && hasCheckIn && !hasCheckOut) {
         return { needs: false };
     }
+    
+    // CHỈ BẮT GIẢI TRÌNH CHO TRƯỜNG HỢP: có check-in nhưng không có check-out (quên check out)
     if (hasCheckIn && !hasCheckOut) {
         return { needs: true, explanationType: "MISSING_CHECK_OUT" };
-    }
-    if (!hasCheckIn && hasCheckOut) {
-        return { needs: true, explanationType: "MISSING_CHECK_IN" };
     }
 
     return { needs: false };

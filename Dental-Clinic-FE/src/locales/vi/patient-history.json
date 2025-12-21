@@ -1,0 +1,18 @@
+{
+  "title": "Lịch sử khám chữa bệnh",
+  "subtitle": "Tra cứu chi tiết quá trình điều trị của bạn.",
+  "backToDashboard": "Quay lại Dashboard",
+  "totalRecords": "Tổng cộng: {{count}} hồ sơ",
+  "searchPlaceholder": "Tìm theo tên bác sĩ, chẩn đoán, dịch vụ...",
+  "filter": {
+    "clear": "Xóa lọc"
+  },
+  "empty": {
+    "title": "Không tìm thấy kết quả phù hợp.",
+    "action": "Xóa bộ lọc để xem tất cả"
+  },
+  "pagination": {
+    "prev": "Trước",
+    "next": "Sau"
+  }
+}

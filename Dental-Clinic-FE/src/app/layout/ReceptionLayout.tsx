@@ -2,10 +2,11 @@ import { useState } from "react";
 import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
   FaChartBar, FaCalendarCheck, FaUserClock, FaUsers, FaSignOutAlt, FaHome,
-  FaChevronLeft, FaChevronRight // Icon mới
+  FaChevronLeft, FaChevronRight, FaFileInvoiceDollar // Đã import icon Invoice
 } from "react-icons/fa";
 import { useTranslation } from "react-i18next";
 import NotificationBell from "../../widgets/NotificationBell";
+import ReceptionAiChat from "../../Pages/Reception/Dashboard/ReceptionAiChat";
 
 const ReceptionLayout = () => {
   const navigate = useNavigate();
@@ -29,15 +30,16 @@ const ReceptionLayout = () => {
   return (
     <div className="flex h-screen bg-gray-100 font-instrument overflow-hidden">
       
-      {/* SIDEBAR: Width thay đổi theo state */}
+      {/* SIDEBAR: Tăng z-index lên z-[60] để nổi lên trên Header */}
       <aside 
-        className={`bg-white shadow-xl flex flex-col z-20 transition-all duration-300 ease-in-out relative
+        className={`bg-white shadow-xl flex flex-col z-[60] transition-all duration-300 ease-in-out relative
           ${isCollapsed ? "w-20" : "w-64"}`}
       >
-        {/* Toggle Button (Nằm ở mép sidebar) */}
+        {/* Toggle Button: Nằm ở mép sidebar */}
         <button 
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="absolute -right-3 top-8 bg-white border border-gray-200 rounded-full p-1 shadow-md text-blue-600 hover:bg-blue-50 z-50"
+            className="absolute -right-3 top-9 bg-white border border-gray-200 rounded-full p-1.5 shadow-md text-blue-600 hover:bg-blue-50 z-50 cursor-pointer flex items-center justify-center transition-transform hover:scale-110"
+            title={isCollapsed ? "Mở rộng" : "Thu gọn"}
         >
             {isCollapsed ? <FaChevronRight size={12}/> : <FaChevronLeft size={12}/>}
         </button>
@@ -54,10 +56,12 @@ const ReceptionLayout = () => {
           )}
         </div>
         
-        <nav className="flex flex-col gap-2 px-3 py-4 flex-1 overflow-y-auto overflow-x-hidden">
+        {/* MENU ITEMS */}
+        <nav className="flex flex-col gap-2 px-3 py-4 flex-1 overflow-y-auto overflow-x-hidden custom-scrollbar">
           <NavItem to="/reception/dashboard" label="Dashboard" icon={<FaChartBar />} collapsed={isCollapsed} />
           <NavItem to="/reception/walk-in" label="Walk-in Booking" icon={<FaUserClock />} collapsed={isCollapsed} />
           <NavItem to="/reception/appointments" label="Appointments" icon={<FaCalendarCheck />} collapsed={isCollapsed} />
+          <NavItem to="/reception/invoices" label="Invoices" icon={<FaFileInvoiceDollar />} collapsed={isCollapsed} />
           <NavItem to="/reception/patients" label="Patients" icon={<FaUsers />} collapsed={isCollapsed} />
         </nav>
 
@@ -75,7 +79,8 @@ const ReceptionLayout = () => {
 
       {/* MAIN CONTENT */}
       <div className="flex-1 flex flex-col min-w-0">
-        <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center z-10 h-16">
+        {/* Header: z-50 thấp hơn z-[60] của Sidebar */}
+        <header className="bg-white shadow-sm px-6 py-3 flex justify-between items-center z-50 h-16 relative">
           <h1 className="text-xl font-bold text-gray-800 truncate">Reception Workspace</h1>
           <div className="flex items-center gap-3 shrink-0">
             <NotificationBell />
@@ -95,15 +100,18 @@ const ReceptionLayout = () => {
           </div>
         </header>
         
-        <main className="flex-1 overflow-hidden bg-gray-50 p-4">
+        <main className="flex-1 min-h-0 overflow-auto bg-gray-50 p-4 relative z-0 custom-scrollbar">
           <Outlet />
         </main>
+        
+        {/* Chat Widget */}
+        <ReceptionAiChat />
       </div>
     </div>
   );
 };
 
-// Updated NavItem
+// NavItem Component
 const NavItem = ({ to, label, icon, collapsed }: any) => (
   <NavLink
     to={to}
@@ -121,7 +129,7 @@ const NavItem = ({ to, label, icon, collapsed }: any) => (
 
     {/* Tooltip khi collapsed */}
     {collapsed && (
-        <div className="absolute left-full ml-2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+        <div className="absolute left-full ml-3 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-[70] pointer-events-none shadow-lg">
             {label}
         </div>
     )}

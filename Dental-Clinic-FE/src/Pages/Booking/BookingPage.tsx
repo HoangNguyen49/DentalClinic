@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom'; // [AI ADDITION] Thêm useSearchParams
+import { useNavigate, useSearchParams } from 'react-router-dom'; 
 import axios from 'axios';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next'; // 1. Import i18n
+
 import StepSelectType from './Steps/StepSelectType';
 import StepServiceClinic from './Steps/StepServiceClinic';
 import StepDoctor from './Steps/StepDoctor';
@@ -15,8 +17,9 @@ import Footer from '../../widgets/Footer/Footer';
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 
 export default function BookingPage() {
+  const { t } = useTranslation("booking"); // 2. Khởi tạo hook
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams(); // [AI ADDITION] Hook lấy tham số
+  const [searchParams] = useSearchParams();
 
   // Bắt đầu từ bước 0 (Chọn Loại)
   const [currentStep, setCurrentStep] = useState(0);
@@ -24,6 +27,7 @@ export default function BookingPage() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const [bookingData, setBookingData] = useState({
+    appointmentId: null as number | null, // Lưu ID lịch hẹn sau khi tạo
     appointmentType: 'STANDARD', // 'STANDARD' | 'VIP'
     bookingFee: 0,
     sessionLabel: '',
@@ -97,9 +101,12 @@ export default function BookingPage() {
   }, [searchParams]);
   // --- [AI ADDITION] END ---
 
-  // --- 1. KHÔI PHỤC DỮ LIỆU SAU LOGIN (CODE GỐC) ---
+  // --- 1. KHÔI PHỤC DỮ LIỆU SAU LOGIN HOẶC QUAY LẠI TỪ THANH TOÁN ---
   useEffect(() => {
       const pending = sessionStorage.getItem("pendingBooking");
+      const retryData = sessionStorage.getItem("bookingRetryData");
+
+      // Trường hợp 1: Quay lại sau khi Login
       if (pending) {
           try {
             const parsed = JSON.parse(pending);
@@ -108,13 +115,27 @@ export default function BookingPage() {
             const summaryStep = parsed.appointmentType === 'STANDARD' ? 3 : 4;
             setCurrentStep(summaryStep); 
             
-            sessionStorage.removeItem("pendingBooking");
-            toast.info("👋 Chào mừng quay lại! Vui lòng xác nhận đặt lịch.");
+            toast.warning(t("stepSummary.expiredModal.message")); // Dùng message tạm hoặc tạo key mới
           } catch (e) {
-            console.error("Lỗi khôi phục data:", e);
+            console.error("Lỗi khôi phục data pending:", e);
+          }
+      } 
+      // Trường hợp 2: Quay lại sau khi Hủy/Lỗi thanh toán
+      else if (retryData) {
+          try {
+            const parsed = JSON.parse(retryData);
+            setBookingData(parsed);
+            
+            const summaryStep = parsed.appointmentType === 'STANDARD' ? 3 : 4;
+            setCurrentStep(summaryStep); 
+            
+            sessionStorage.removeItem("bookingRetryData");
+            toast.warning(t("paymentResult.failed.message")); // Dùng message lỗi thanh toán
+          } catch (e) {
+            console.error("Lỗi khôi phục data retry:", e);
           }
       }
-  }, []);
+  }, [t]);
 
   const nextStep = () => setCurrentStep((prev) => prev + 1);
   const prevStep = () => setCurrentStep((prev) => prev - 1);
@@ -123,16 +144,21 @@ export default function BookingPage() {
     navigate("/");
   };
 
-  // --- 2. XỬ LÝ CONFIRM (CODE GỐC + SỬA LOGIC GỬI DỮ LIỆU) ---
+  // --- 2. XỬ LÝ CONFIRM (CHỐNG RACE CONDITION) ---
   const handleConfirmBooking = async () => {
     const storedUser = localStorage.getItem("user");
     const token = localStorage.getItem("accessToken");
 
     if (!storedUser || !token) {
         sessionStorage.setItem("pendingBooking", JSON.stringify(bookingData));
-        toast.info("🔒 Vui lòng Đăng nhập để hoàn tất!");
+        toast.info("🔒 " + t("stepDateVIP.errors.login")); 
         navigate("/login", { state: { from: "/booking" } });
-        return;
+        return; 
+    }
+
+    if (bookingData.appointmentId) {
+        console.log("♻️ Tái sử dụng lịch hẹn cũ:", bookingData.appointmentId);
+        return { id: bookingData.appointmentId }; 
     }
 
     const currentUser = JSON.parse(storedUser);
@@ -148,55 +174,75 @@ export default function BookingPage() {
       const payload = {
         clinicId: bookingData.clinicId,
         patientId: patientId,
-        
-        // [AI FIXED] Gửi thêm 2 trường này để Backend lưu đúng
         appointmentType: bookingData.appointmentType,
         bookingFee: bookingData.bookingFee,
-
-        // Logic Doctor: VIP thì lấy doctorId, Standard thì null (hoặc xử lý tùy backend)
         doctorId: bookingData.appointmentType === 'VIP' ? bookingData.doctorId : null,
-        
-        roomId: null, // Frontend chưa chọn phòng
+        roomId: null, 
         startDateTime: startDateTime.toISOString(),
-        status: "PENDING",
+        status: bookingData.appointmentType === 'VIP' ? "AWAITING_PAYMENT" : "PENDING",
+        paymentStatus: "UNPAID",
         channel: "WEB_BOOKING",
         note: `Booking Online (${bookingData.appointmentType})`,
-        
-        // Map services đúng cấu trúc DTO Backend
         services: bookingData.selectedServices.map((s: any) => ({
-            serviceId: s.id, // Lưu ý: Backend dùng ServiceVariantId hay ServiceId? Kiểm tra lại DTO
+            serviceId: s.id, 
             quantity: 1,
         }))
       };
 
       console.log("Sending Payload:", payload);
 
-      // Gọi API tạo lịch hẹn (Đường dẫn tùy thuộc vào Controller của bạn)
-      // Giả sử API là: /api/booking/appointments hoặc /api/patient/appointments
-      await axios.post(`${API_BASE_URL}/api/booking/appointments`, payload, {
+      // 1. GỌI API TẠO LỊCH
+      const response = await axios.post(`${API_BASE_URL}/api/booking/appointments`, payload, {
           headers: { 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
           }
       });
 
+      const resData = response.data as any; 
+      setBookingData((prev: any) => ({ ...prev, appointmentId: resData.id }));
+
+      // 2. PHÂN LUỒNG XỬ LÝ
+      if (bookingData.appointmentType === 'VIP') {
+          return response.data; 
+      }
+
       setShowSuccessModal(true);
+      return response.data;
 
     } catch (error: any) {
       console.error("Booking Error:", error);
-      const msg = error.response?.data?.message || "Đặt lịch thất bại. Vui lòng thử lại.";
-      toast.error(msg);
+
+      // LẤY MESSAGE LỖI TỪ BACKEND
+      const errorData = error.response?.data;
+      const errorMsg = typeof errorData === 'string' ? errorData : (errorData?.message || "");
+
+      // XỬ LÝ LỖI TRÙNG LỊCH (SLOT_ALREADY_BOOKED)
+      if (errorMsg === "SLOT_ALREADY_BOOKED") {
+          // Hiện thông báo lỗi từ i18n
+          toast.error(t("stepDateTime.errors.slotTaken") || "Khung giờ này vừa có người khác đặt mất rồi, vui lòng chọn lại!");
+          
+          // Tự động đẩy khách về bước chọn giờ
+          // Standard: Case 2 | VIP: Case 3
+          const timeStep = bookingData.appointmentType === 'STANDARD' ? 2 : 3;
+          setCurrentStep(timeStep); 
+      } else {
+          const msg = errorMsg || t("common.error");
+          toast.error(msg);
+      }
+
+      throw error; 
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // --- 3. RENDER STEP CONTENT (CODE GỐC) ---
+  // --- 3. RENDER STEP CONTENT ---
   const renderStepContent = () => {
     switch (currentStep) {
       case 0: // Chọn Loại
         return <StepSelectType 
-                  currentType={bookingData.appointmentType} // Truyền xuống để highlight
+                  currentType={bookingData.appointmentType} 
                   updateData={(d: any) => setBookingData({...bookingData, ...d})} 
                   onNext={nextStep} 
                />;
@@ -224,7 +270,7 @@ export default function BookingPage() {
     }
   };
 
-  // --- 4. STEPPER DYNAMIC (CODE GỐC) ---
+  // --- 4. STEPPER DYNAMIC ---
   const maxStepIndex = bookingData.appointmentType === 'STANDARD' ? 3 : 4;
   const stepsArray = Array.from({ length: maxStepIndex + 1 }, (_, i) => i);
 
@@ -236,8 +282,8 @@ export default function BookingPage() {
           
           {/* HEADER */}
           <div className="bg-gradient-to-r from-[#AACCFF] via-[#6699FF] to-[#3366FF] p-8 text-center relative shrink-0">
-            <h2 className="text-3xl font-bold text-white mb-2">Đặt Lịch Khám</h2>
-            <p className="text-blue-100">Hoàn tất các bước để chăm sóc nụ cười của bạn</p>
+            <h2 className="text-3xl font-bold text-white mb-2">{t("title")}</h2>
+            <p className="text-blue-100">{t("stepType.title")}</p> {/* Có thể đổi key subtitle khác nếu muốn */}
   
             {/* STEPPER */}
              <div className="flex justify-center items-center mt-8 gap-2 sm:gap-4">

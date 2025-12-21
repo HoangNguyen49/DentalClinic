@@ -11,17 +11,48 @@
     "logout": "Đăng xuất",
     "sessionExpired": "Phiên đăng nhập đã hết hạn"
   },
+  "cta": {
+    "getInTouch": "Liên hệ ngay"
+  },
   "account": {
     "myAccount": "Tài khoản của tôi",
     "adminDashboard": "Bảng quản trị",
     "myAttendance": "Chấm công của tôi",
     "myLeaveRequests": "Đơn xin nghỉ của tôi"
   },
+  "common": {
+    "close": "Đóng",
+    "cancel": "Hủy",
+    "submit": "Gửi",
+    "submitting": "Đang gửi...",
+    "confirm": "Xác nhận",
+    "retry": "Thử lại",
+    "all": "Tất cả",
+    "previous": "Trước",
+    "next": "Sau",
+    "page": "Trang"
+  },
+  "footer": {
+    "address": "40 đường Sanguin, Oklahoma, Hoa Kỳ",
+    "slogan": "Tỏa sáng nụ cười, sống tốt hơn",
+    "doctors": "Bác sĩ",
+    "license": "Giấy phép",
+    "about": "Về chúng tôi",
+    "workingHours": {
+      "title": "Giờ làm việc",
+      "weekday": "Thứ 2 - Thứ 6: 09:00 - 18:00",
+      "weekend": "Thứ 7 - Chủ nhật: 09:00 - 16:00",
+      "full": "Thứ 2 - Thứ 7: 08:00 - 18:00"
+    },
+    "poweredBy": "Vận hành bởi",
+    "copyright": "Bản quyền"
+  },
   "attendance": {
     "hrDashboard": "Bảng điều khiển HR",
     "title": "Chấm công của tôi",
     "refresh": "Làm mới",
     "today": "Hôm nay",
+    "selectedDate": "Ngày đã chọn",
     "checkIn": "Giờ vào",
     "checkOut": "Giờ ra",
     "status": "Trạng thái",
@@ -46,7 +77,17 @@
       "submitSuccess": "Gửi giải trình thành công",
       "submitFailed": "Gửi giải trình thất bại",
       "enterReason": "Vui lòng nhập lý do giải trình",
-      "noExplanationsForDate": "Không có giải trình cần xử lý cho ngày này"
+      "noExplanationsForDate": "Không có giải trình cần xử lý cho ngày này",
+      "pending": "Đang chờ duyệt",
+      "processed": "Đã xử lý"
+    },
+    "dailyView": {
+      "title": "Xem chấm công theo ngày",
+      "selectDate": "Chọn ngày",
+      "noData": "Không có dữ liệu chấm công cho ngày này",
+      "missingCheckOutTitle": "Bạn quên chấm ra!",
+      "missingCheckOutMessage": "Bạn có 1 ca làm việc quên chấm ra. Vui lòng gửi giải trình.",
+      "missingCheckOutMessagePlural": "Bạn có {count} ca làm việc quên chấm ra. Vui lòng gửi giải trình."
     },
     "hrManagement": {
       "breadcrumb": "HR • Giải trình chấm công",
@@ -106,14 +147,12 @@
       "ON_TIME": "Đúng giờ",
       "LATE": "Đi trễ",
       "ABSENT": "Vắng mặt",
+      "PENDING": "Chờ check-in",
       "APPROVED_ABSENCE": "Nghỉ được duyệt",
       "APPROVED_LATE": "Đi trễ được duyệt",
       "UNKNOWN": "Không xác định"
     },
     "explanationType": {
-      "LATE": "Đi trễ",
-      "ABSENT": "Vắng mặt",
-      "MISSING_CHECK_IN": "Quên chấm vào",
       "MISSING_CHECK_OUT": "Quên chấm ra"
     },
     "explanationStatus": {
@@ -124,6 +163,7 @@
   },
   "leaveRequest": {
     "title": "Đơn xin nghỉ của tôi",
+    "subtitle": "Xem và quản lý các đơn xin nghỉ của bạn",
     "createTitle": "Tạo đơn xin nghỉ",
     "createNew": "Tạo đơn mới",
     "startDate": "Ngày bắt đầu",
@@ -133,12 +173,16 @@
       "vacation": "Nghỉ phép",
       "sick": "Nghỉ ốm",
       "personal": "Nghỉ cá nhân",
+      "resignation": "Nghỉ việc",
       "other": "Khác"
     },
     "status": {
+      "label": "Trạng thái",
       "approved": "Đã duyệt",
       "rejected": "Đã từ chối",
-      "pending": "Chờ duyệt"
+      "pending": "Chờ duyệt",
+      "pendingHR": "Chờ HR duyệt",
+      "pendingAdmin": "Chờ Admin duyệt"
     },
     "reason": "Lý do",
     "reasonPlaceholder": "Nhập lý do xin nghỉ...",
@@ -154,9 +198,11 @@
     "createdAt": "Tạo lúc",
     "cancel": "Hủy đơn",
     "approve": "Duyệt",
+    "confirm": "Xác nhận",
     "reject": "Từ chối",
     "management": {
-      "title": "Quản lý đơn xin nghỉ"
+      "title": "Quản lý đơn xin nghỉ",
+      "subtitle": "Xem xét và xử lý các đơn xin nghỉ của nhân viên"
     },
     "searchPlaceholder": "Tìm kiếm...",
     "processTitle": "Xử lý đơn xin nghỉ",
@@ -166,23 +212,30 @@
     "messages": {
       "loadFailed": "Không thể tải danh sách đơn xin nghỉ",
       "noRequests": "Chưa có đơn xin nghỉ nào",
+      "noRequestsDesc": "Bạn chưa gửi đơn xin nghỉ nào",
       "confirmCancel": "Bạn có chắc muốn hủy đơn này?",
       "cancelSuccess": "Hủy đơn thành công",
       "cancelFailed": "Không thể hủy đơn",
       "createSuccess": "Tạo đơn xin nghỉ thành công",
       "createFailed": "Không thể tạo đơn xin nghỉ",
       "approveSuccess": "Duyệt đơn thành công",
+      "confirmSuccess": "Xác nhận đơn thành công",
       "rejectSuccess": "Từ chối đơn thành công",
       "processFailed": "Không thể xử lý đơn",
       "noAccessToken": "Không có quyền truy cập",
       "noClinic": "Không thể xác định cơ sở. Vui lòng liên hệ quản trị viên.",
       "fillAllFields": "Vui lòng điền đầy đủ thông tin",
       "invalidDateRange": "Ngày bắt đầu phải trước ngày kết thúc",
-      "pastDate": "Không thể tạo đơn cho ngày trong quá khứ"
+      "pastDate": "Không thể tạo đơn cho ngày trong quá khứ",
+      "adminApprovalRequired": "Đơn này cần Admin phê duyệt",
+      "pendingHRApproval": "Đang chờ HR duyệt"
     },
     "employee": "Nhân viên",
     "time": "Thời gian",
-    "monthlyLeave": "Ngày nghỉ tháng này",
+    "monthlyLeave": "Đã nghỉ tháng này",
+    "annualLeave": "Nghỉ phép năm",
+    "remaining": "Còn lại",
+    "days": "ngày",
     "replacement": "Người thay thế",
     "none": "Không có",
     "remainingLeave": "Phép còn lại",
@@ -193,15 +246,16 @@
       "noApproved": "Chưa có đơn nghỉ việc nào đã được duyệt",
       "tip": "Tip: Chọn tab \"Đơn nghỉ việc\" để xem các đơn nghỉ việc đã được duyệt và có thể xóa vĩnh viễn",
       "adminConfirmed": "Đã xác nhận. HR sẽ thực hiện xóa vĩnh viễn trong trang Quản lý nhân viên.",
-      "title": "ĐƠN NGHỈ VIỆC",
+      "title": "Đơn nghỉ việc",
       "subtitle": "Yêu cầu xác nhận xóa vĩnh viễn",
-      "important": "QUAN TRỌNG",
+      "important": "Quan trọng",
+      "warning": "Đây là đơn nghỉ việc - cần phê duyệt từ admin",
       "processTitle": "Quy trình xóa vĩnh viễn",
       "step1": "HR duyệt",
       "step2": "Admin xác nhận",
       "step3": "Xóa dữ liệu",
       "warningTitle": "CẢNH BÁO: XÓA VĨNH VIỄN",
-      "warningMessage": "Bạn đang xem xét đơn nghỉ việc. Nếu được duyệt, tài khoản nhân viên sẽ bị vô hiệu hóa. Sau đó, HR có thể thực hiện xóa vĩnh viễn dữ liệu.",
+      "warningDescription": "Bạn đang xem xét đơn nghỉ việc. Nếu được duyệt, tài khoản nhân viên sẽ bị vô hiệu hóa. Sau đó, HR có thể thực hiện xóa vĩnh viễn dữ liệu.",
       "hardDelete": {
         "button": "Xóa vĩnh viễn",
         "confirmTitle": "CẢNH BÁO: XÓA VĨNH VIỄN",
@@ -217,36 +271,7 @@
       "note": "Lưu ý: Đơn nghỉ việc cần được HR duyệt và Admin xác nhận. Sau khi được duyệt, bạn có thể bị xóa vĩnh viễn khỏi hệ thống.",
       "dateNote": "Ngày nghỉ việc: Bạn sẽ được nghỉ việc sau 1 tháng kể từ ngày nộp đơn ({{date}}).",
       "autoDateTitle": "Ngày nghỉ việc được tự động set là 1 tháng sau ngày nộp đơn",
-      "warning": " Đơn nghỉ việc: Sau khi được HR duyệt và Admin xác nhận, bạn có thể bị xóa vĩnh viễn khỏi hệ thống."
+      "warning": "⚠️ Đơn nghỉ việc: Sau khi được HR duyệt và Admin xác nhận, bạn có thể bị xóa vĩnh viễn khỏi hệ thống."
     }
-  },
-  "common": {
-    "close": "Đóng",
-    "cancel": "Hủy",
-    "submit": "Gửi",
-    "submitting": "Đang gửi...",
-    "confirm": "Xác nhận",
-    "retry": "Thử lại",
-    "all": "Tất cả",
-    "previous": "Trước",
-    "next": "Sau",
-    "page": "Trang"
-  },
-  "cta": {
-    "getInTouch": "Liên hệ ngay"
-  },
-  "footer": {
-    "address": "40 đường Sanguin, Oklahoma, Hoa Kỳ",
-    "slogan": "Tỏa sáng nụ cười, sống tốt hơn",
-    "doctors": "Bác sĩ",
-    "license": "Giấy phép",
-    "about": "Về chúng tôi",
-    "workingHours": {
-      "title": "Giờ làm việc",
-      "weekday": "Thứ 2 - Thứ 6: 09:00 - 18:00",
-      "weekend": "Thứ 7 - Chủ nhật: 09:00 - 16:00"
-    },
-    "poweredBy": "Vận hành bởi",
-    "copyright": "Bản quyền"
   }
 }

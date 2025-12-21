@@ -432,11 +432,26 @@ export default function AppointmentDetail() {
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Service</label>
-                    <div 
-                      className={`mt-1 ${appointment.service ? 'text-blue-600 cursor-pointer hover:text-blue-800 hover:underline transition' : 'text-gray-900'}`}
-                      onClick={handleServiceClick}
-                    >
-                      {appointment.service?.serviceName || "N/A"}
+                    <div className="md:col-span-2">
+                    <div className="mt-2 bg-gray-50 rounded-lg p-3 border border-gray-200">
+                      {appointment.serviceDetails && appointment.serviceDetails.length > 0 ? (
+                        <ul className="space-y-1">
+                          {appointment.serviceDetails.map((name, index) => (
+                            <li key={index} className="flex items-start gap-2 text-gray-900 text-sm">
+                              <span className="mt-1.5 w-1.5 h-1.5 bg-blue-600 rounded-full shrink-0" />
+                              <span className="font-medium">{name}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : (
+                        // Fallback nếu chưa có list thì hiện logic cũ
+                        <div 
+                           className={`text-gray-900 ${appointment.service ? 'cursor-pointer hover:text-blue-600' : ''}`}
+                           onClick={handleServiceClick}
+                        >
+                           {appointment.service?.serviceName || "N/A"}
+                        </div>
+                      )}
                     </div>
                     {appointment.serviceVariant && (
                       <div className="mt-1 text-sm text-gray-600">
@@ -456,6 +471,7 @@ export default function AppointmentDetail() {
                         )}
                       </div>
                     )}
+                  </div>
                   </div>
                   <div>
                     <label className="text-sm font-medium text-gray-500">Appointment Type</label>

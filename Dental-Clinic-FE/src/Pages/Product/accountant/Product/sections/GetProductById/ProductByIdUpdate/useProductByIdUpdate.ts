@@ -13,7 +13,7 @@ import {
     validateProductImagesAi,
     fetchAllProductsForAccountant, 
 } from '../../../../../../../huybro_api/productApi';
-
+import { useNavigate } from 'react-router-dom';
 type FieldErrors = Record<string, string[]>;
 
 interface ProductUpdateFormImage extends ProductImageUpdateDto {
@@ -81,6 +81,8 @@ function mapProductToForm(product: Product): ProductUpdateForm {
 }
 
 export function useProductByIdUpdate(productId: number | string) {
+    const navigate = useNavigate();
+
     const [loading, setLoading] = useState(true);
     const [loadingError, setLoadingError] = useState<string | null>(null);
 
@@ -321,7 +323,7 @@ export function useProductByIdUpdate(productId: number | string) {
                 };
 
                 await updateProductForAccountant(productId, payload);
-                // Can add success notification here
+                navigate('/accountant/product');
             } catch (err) {
                 const parsed = extractValidationErrors(err);
                 setFieldErrors(parsed.fieldErrors);
@@ -331,7 +333,7 @@ export function useProductByIdUpdate(productId: number | string) {
                 setSubmitting(false);
             }
         },
-        [form, productId, resetErrors],
+        [form, productId, resetErrors, navigate],
     );
 
     const handleCancel = useCallback(() => {

@@ -1,8 +1,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next"; // 1. Import i18n
 import QuickBookingModal from "./QuickBookingModal";
 import AppointmentEditModal from "./AppointmentEditModal";
+import RoomSelectionModal from "./RoomSelectionModal";
+import SockJS from 'sockjs-client';
+import Stomp from 'stompjs';
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 const START_HOUR = 8;
@@ -30,6 +34,8 @@ export interface AppointmentDTO {
   patient: { id: number; fullName: string; patientCode: string; phone: string };
   doctor: { id: number; fullName: string } | null;
 
+  room?: { id: number; roomName: string; isPrivate: boolean } | null;
+
   // Thêm các trường cho List View
   clinic?: { id: number; clinicName: string };
   createdByUserName?: string;
@@ -39,6 +45,7 @@ export interface AppointmentDTO {
   status: string;
   services: { serviceName: string }[];
   note?: string;
+  appointmentType: string;
 }
 
 // =====================
@@ -97,48 +104,6 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// Badge cho List View
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case "CONFIRMED":
-      return (
-        <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200">
-          Đã xác nhận
-        </span>
-      );
-    case "PENDING":
-      return (
-        <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-700 text-xs font-bold border border-yellow-200">
-          Chờ duyệt
-        </span>
-      );
-    case "IN_PROGRESS":
-      return (
-        <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-bold border border-green-200">
-          Đang khám
-        </span>
-      );
-    case "COMPLETED":
-      return (
-        <span className="px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
-          Hoàn thành
-        </span>
-      );
-    case "CANCELLED":
-      return (
-        <span className="px-2 py-1 rounded bg-red-100 text-red-600 text-xs font-bold border border-red-200">
-          Đã hủy
-        </span>
-      );
-    default:
-      return (
-        <span className="px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs">
-          {status}
-        </span>
-      );
-  }
-};
-
 // =====================
 // Custom drag state
 // =====================
@@ -153,6 +118,8 @@ type DragState = {
 };
 
 export default function ReceptionDashboard() {
+  const { t } = useTranslation("reception"); // 2. Khởi tạo hook translation
+
   // VIEW MODE STATE
   const [viewMode, setViewMode] = useState<"TIMELINE" | "LIST">("TIMELINE");
   const [showQuickBooking, setShowQuickBooking] = useState(false);
@@ -185,6 +152,78 @@ export default function ReceptionDashboard() {
   const gridRef = useRef<HTMLDivElement>(null);
   const [editingAppt, setEditingAppt] = useState<AppointmentDTO | null>(null);
 
+  const [isRoomModalOpen, setIsRoomModalOpen] = useState(false);
+  const [apptToAssignRoom, setApptToAssignRoom] =
+    useState<AppointmentDTO | null>(null);
+
+  // 3. DI CHUYỂN HÀM getStatusBadge VÀO TRONG ĐỂ DÙNG t()
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "CONFIRMED":
+        return (
+          <span className="px-2 py-1 rounded bg-blue-100 text-blue-700 text-xs font-bold border border-blue-200">
+            {t("status.CONFIRMED")}
+          </span>
+        );
+      case "PENDING":
+        return (
+          <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-700 text-xs font-bold border border-yellow-200">
+            {t("status.PENDING")}
+          </span>
+        );
+      case "IN_PROGRESS":
+        return (
+          <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-bold border border-green-200">
+            {t("status.IN_PROGRESS")}
+          </span>
+        );
+      case "COMPLETED":
+        return (
+          <span className="px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs font-bold border border-gray-200">
+            {t("status.COMPLETED")}
+          </span>
+        );
+      case "CANCELLED":
+        return (
+          <span className="px-2 py-1 rounded bg-red-100 text-red-600 text-xs font-bold border border-red-200">
+            {t("status.CANCELLED")}
+          </span>
+        );
+      default:
+        return (
+          <span className="px-2 py-1 rounded bg-gray-100 text-gray-600 text-xs">
+            {status}
+          </span>
+        );
+    }
+  };
+
+  // HÀM MỞ MODAL (Dùng cho nút trong List View)
+  const handleOpenRoomModal = (appt: AppointmentDTO) => {
+    // Chặn nếu lịch đã huỷ
+    const restrictedStatuses = ["COMPLETED", "CANCELLED", "IN_PROGRESS"];
+
+    if (restrictedStatuses.includes(appt.status)) {
+      toast.warning(
+        `Không thể xếp phòng cho lịch hẹn đang ở trạng thái ${t(
+          `status.${appt.status}`
+        )}`
+      );
+      return;
+    }
+    setApptToAssignRoom(appt);
+    setIsRoomModalOpen(true);
+  };
+
+  // HÀM UPDATE SAU KHI XẾP PHÒNG XONG
+  const handleRoomAssignSuccess = (updatedAppt: AppointmentDTO) => {
+    // Cập nhật ngay vào danh sách appointments (List View tự đổi màu)
+    setAppointments((prev) =>
+      prev.map((a) => (a.id === updatedAppt.id ? updatedAppt : a))
+    );
+    
+  };
+
   // =====================
   // API calls
   // =====================
@@ -216,6 +255,35 @@ export default function ReceptionDashboard() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    if (!token) return;
+
+    const socket = new SockJS(`${API_BASE_URL}/ws`);
+    const stompClient = Stomp.over(socket);
+    stompClient.debug = () => {}; 
+
+    stompClient.connect({ Authorization: `Bearer ${token}` }, (frame?: Stomp.Frame) => {
+        console.log('Connected: ' + frame);
+        
+        // Khai báo kiểu Message để TS không báo lỗi
+        stompClient.subscribe('/topic/appointments', (message: Stomp.Message) => {
+            if (message.body === "REFRESH_DATA") {
+                fetchData(); 
+                toast.info("Có cập nhật mới về trạng thái lịch hẹn từ Bác sĩ!");
+            }
+        });
+    }, (error) => {
+        console.error("WebSocket error:", error);
+    });
+
+    return () => {
+        if (stompClient && stompClient.connected) {
+            stompClient.disconnect(() => {});
+        }
+    };
+}, []);
 
   useEffect(() => {
     fetchData();
@@ -359,6 +427,14 @@ export default function ReceptionDashboard() {
     appt: AppointmentDTO,
     sourceDoctorId: number | null
   ) => {
+    if (appt.status === "IN_PROGRESS" || appt.status === "COMPLETED") {
+      toast.info(
+        t("dashboard.cannotMoveStatus", {
+          status: t(`status.${appt.status}`),
+        }) || `Không thể dời lịch đang ở trạng thái ${appt.status}`
+      );
+      return;
+    }
     e.preventDefault();
     const rect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
     const baseState: DragState = {
@@ -381,9 +457,11 @@ export default function ReceptionDashboard() {
     const { appt, targetDoctorId, newStartDate } = pendingReschedule;
     try {
       const token = localStorage.getItem("accessToken");
+      const newStatus = appt.status === "PENDING" ? "SCHEDULED" : appt.status;
       const payload: any = {
         newStartDateTime: newStartDate.toISOString(),
         newDoctorId: targetDoctorId,
+        status: newStatus,
         reason: "Drag & Drop",
       };
       await axios.patch(
@@ -391,10 +469,17 @@ export default function ReceptionDashboard() {
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      toast.success("Dời lịch thành công! ✅");
+      toast.success(t("dashboard.moveSuccess"));
       fetchData();
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || "Không thể dời lịch.");
+      const serverMessage = error?.response?.data?.message;
+
+      if (serverMessage) {
+        toast.error(serverMessage);
+      } else {
+        toast.error(t("dashboard.moveError"));
+      }
+      console.error("Reschedule Detail Error:", error.response?.data);
     } finally {
       setPendingReschedule(null);
     }
@@ -412,7 +497,9 @@ export default function ReceptionDashboard() {
       {/* HEADER */}
       <div className="p-4 bg-white border-b border-gray-200 flex justify-between items-center shadow-sm z-30">
         <div className="flex items-center gap-4">
-          <h2 className="text-xl font-bold text-gray-800">Lịch Tổng Quát</h2>
+          <h2 className="text-xl font-bold text-gray-800">
+            {t("dashboard.title")}
+          </h2>
           <input
             type="date"
             value={selectedDate}
@@ -428,7 +515,7 @@ export default function ReceptionDashboard() {
             value={selectedClinicId || ""}
             className="border p-2 rounded-lg text-sm shadow-sm"
           >
-            <option value="">🏥 Phòng khám của tôi</option>
+            <option value="">🏥 {t("dashboard.myClinic")}</option>
             <option value="1">📍 Clinic Q1</option>
             <option value="2">📍 Clinic Q9</option>
           </select>
@@ -455,7 +542,7 @@ export default function ReceptionDashboard() {
                   clipRule="evenodd"
                 />
               </svg>
-              Lịch Biểu
+              {t("dashboard.timeline")}
             </button>
             <button
               onClick={() => setViewMode("LIST")}
@@ -477,7 +564,7 @@ export default function ReceptionDashboard() {
                   clipRule="evenodd"
                 />
               </svg>
-              Danh Sách
+              {t("dashboard.list")}
             </button>
           </div>
         </div>
@@ -486,14 +573,16 @@ export default function ReceptionDashboard() {
           onClick={() => setShowQuickBooking(true)}
           className="bg-[#3366FF] text-white px-4 py-2 rounded-lg font-bold shadow-md hover:bg-blue-700 transition"
         >
-          + Đặt Lịch
+          + {t("dashboard.addBooking")}
         </button>
       </div>
 
       {/* BODY CONTAINER */}
       <div className="flex-1 flex flex-col overflow-hidden relative">
         {loading ? (
-          <div className="p-20 text-center text-gray-500">Đang tải...</div>
+          <div className="p-20 text-center text-gray-500">
+            {t("list.loading")}
+          </div>
         ) : (
           <>
             {/* === OPTION 1: TIMELINE VIEW === */}
@@ -503,11 +592,11 @@ export default function ReceptionDashboard() {
                 <div className="bg-orange-50 border-b border-orange-200 p-3 flex items-center min-h-[90px] relative shadow-inner z-20 overflow-x-auto">
                   <div className="flex flex-col items-center justify-center px-4 shrink-0 border-r border-orange-200 mr-2 h-full">
                     <span className="font-bold text-orange-800 text-xs uppercase tracking-wider">
-                      Hàng Chờ
+                      {t("dashboard.queue")}
                     </span>
                     <div className="flex items-center gap-1 mt-1">
                       <span className="text-[10px] text-orange-600">
-                        Chưa xếp:
+                        {t("dashboard.unassigned")}:
                       </span>
                       <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow-sm">
                         {queueAppointments.length}
@@ -517,7 +606,7 @@ export default function ReceptionDashboard() {
                   <div className="flex gap-3 px-2 items-center">
                     {queueAppointments.length === 0 ? (
                       <span className="text-sm text-gray-400 italic ml-2">
-                        Hiện không có lịch hẹn nào cần xếp.
+                        {t("dashboard.emptyQueue")}
                       </span>
                     ) : (
                       queueAppointments.map((appt) => (
@@ -541,8 +630,8 @@ export default function ReceptionDashboard() {
                             </span>
                             <span className="text-[9px] font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
                               {new Date(appt.startDateTime).getHours() < 12
-                                ? "CA SÁNG"
-                                : "CA CHIỀU"}
+                                ? t("dashboard.morningShift")
+                                : t("dashboard.afternoonShift")}
                             </span>
                           </div>
                         </div>
@@ -663,6 +752,7 @@ export default function ReceptionDashboard() {
                             {docAppointments.map((appt) => {
                               const isDraggingThis =
                                 dragState?.appt.id === appt.id;
+
                               return (
                                 <div
                                   key={`appt-${appt.id}`}
@@ -673,26 +763,76 @@ export default function ReceptionDashboard() {
                                     e.stopPropagation();
                                     setEditingAppt(appt);
                                   }}
-                                  className={`absolute left-2 right-2 rounded-md shadow-sm cursor-grab hover:shadow-md hover:z-50 transition-all select-none flex flex-col p-3 bg-white border ${getStatusColor(
+                                  className={`absolute left-1 right-1 rounded shadow-sm cursor-grab hover:shadow-md hover:z-50 transition-all select-none flex flex-col justify-between p-1.5 border-l-4 bg-white ${getStatusColor(
                                     appt.status
                                   )} ${
                                     isDraggingThis ? "opacity-0" : "opacity-100"
-                                  }`}
+                                  } text-xs overflow-hidden leading-tight`}
                                   style={getVerticalStyle(
                                     appt.startDateTime,
                                     appt.endDateTime
                                   )}
                                 >
-                                  <div className="text-[15px] font-semibold text-gray-900 truncate leading-tight">
-                                    {appt.patient.fullName}
+                                  {/* 1. Tên Bệnh Nhân (Đậm, tự cắt nếu dài) */}
+                                  <div className="flex justify-between items-start gap-1">
+                                    <div>
+                                      <div className="text-[13px] font-bold text-gray-900 truncate">
+                                        {appt.patient.fullName}
+                                      </div>
+                                      <div className="text-[13px] text-slate-700 font-bold tracking-tight">
+                                        {appt.patient.phone}
+                                      </div>
+                                    </div>
+                                    <div className="flex flex-col items-end gap-1">
+                                      <span
+                                        className={`shrink-0 text-[12px] px-1 rounded border font-bold ${
+                                          appt.appointmentType === "VIP"
+                                            ? "bg-amber-100..."
+                                            : "bg-slate-100..."
+                                        }`}
+                                      >
+                                        {appt.appointmentType}
+                                      </span>
+                                      {/* Hiện icon note nếu có dữ liệu */}
+                                      {appt.note && (
+                                        <span
+                                          title={appt.note}
+                                          className="text-gray-400 cursor-help"
+                                        >
+                                          📝
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
+
+                                  {/* 2. Badge Phòng (Thu nhỏ hết cỡ) */}
+                                  {appt.room && (
+                                    <div className="mt-0.5 shrink-0">
+                                      <span
+                                        className={`px-1 rounded border inline-flex items-center gap-1 max-w-full truncate text-[10px]
+                                        ${
+                                          appt.room.isPrivate
+                                            ? "bg-purple-50 text-purple-700 border-purple-100"
+                                            : "bg-blue-50 text-blue-700 border-blue-100"
+                                        }
+                                      `}
+                                      >
+                                        {appt.room.isPrivate ? "VIP" : "STD"}{" "}
+                                        {appt.room.roomName}
+                                      </span>
+                                    </div>
+                                  )}
+
+                                  {/* 3. Tên Dịch Vụ (Màu xám, tự cắt) */}
                                   <div
-                                    className="text-[13px] text-gray-700 mt-1 truncate"
+                                    className="text-gray-600 truncate mt-0.5"
                                     title={appt.services[0]?.serviceName}
                                   >
                                     {appt.services[0]?.serviceName}
                                   </div>
-                                  <div className="text-[13px] text-gray-500 font-semibold mt-auto">
+
+                                  {/* 4. Thời gian (Luôn đẩy xuống đáy) */}
+                                  <div className="text-gray-500 font-mono font-semibold mt-auto pt-1 text-[16px]">
                                     {new Date(appt.startDateTime).getHours()}:
                                     {pad(
                                       new Date(appt.startDateTime).getMinutes()
@@ -721,15 +861,28 @@ export default function ReceptionDashboard() {
                   <table className="w-full text-sm text-left text-gray-500 border-collapse">
                     <thead className="text-xs text-gray-700 uppercase bg-gray-100 sticky top-0 z-10 border-b border-gray-200">
                       <tr>
-                        <th className="px-6 py-3 font-bold">Thời gian</th>
-                        <th className="px-6 py-3 font-bold">Trạng thái</th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("list.colTime")}
+                        </th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("list.colStatus")}
+                        </th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("roomModal.title")}
+                        </th>
                         <th className="px-6 py-3 font-bold">Chi nhánh</th>
-                        <th className="px-6 py-3 font-bold">Bác sĩ</th>
-                        <th className="px-6 py-3 font-bold">Dịch vụ</th>
-                        <th className="px-6 py-3 font-bold">Khách hàng</th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("list.colDoctor")}
+                        </th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("editModal.labelService")}
+                        </th>
+                        <th className="px-6 py-3 font-bold">
+                          {t("list.colPatient")}
+                        </th>
                         <th className="px-6 py-3 font-bold">Người lập</th>
                         <th className="px-6 py-3 text-center font-bold">
-                          Hành động
+                          {t("list.colAction")}
                         </th>
                       </tr>
                     </thead>
@@ -744,6 +897,44 @@ export default function ReceptionDashboard() {
                           </td>
                           <td className="px-6 py-4">
                             {getStatusBadge(appt.status)}
+                          </td>
+                          {/* 👇 Ô HIỂN THỊ NÚT CHỌN PHÒNG */}
+                          <td className="px-6 py-4 text-center">
+                            <button
+                              onClick={() => handleOpenRoomModal(appt)}
+                              disabled={[
+                                "COMPLETED",
+                                "CANCELLED",
+                                "IN_PROGRESS",
+                              ].includes(appt.status)}
+                              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border flex items-center gap-1 mx-auto shadow-sm
+                              ${
+                                [
+                                  "COMPLETED",
+                                  "CANCELLED",
+                                  "IN_PROGRESS",
+                                ].includes(appt.status)
+                                  ? "bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed"
+                                  : appt.room
+                                  ? "bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                                  : "bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 animate-pulse"
+                              }
+                          `}
+                            >
+                              {appt.room ? (
+                                <>
+                                  <span className="text-[10px] uppercase tracking-tighter opacity-80">
+                                    {appt.room.isPrivate ? "Priv" : "Std"}
+                                  </span>
+                                  <span className="w-[1px] h-3 bg-current opacity-20 mx-1"></span>
+                                  <span>{appt.room.roomName}</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span>⚠️ {t("list.selectRoom")}</span>
+                                </>
+                              )}
+                            </button>
                           </td>
                           <td className="px-6 py-4">
                             {appt.clinic?.clinicName || "Clinic Q1"}
@@ -760,7 +951,7 @@ export default function ReceptionDashboard() {
                               </div>
                             ) : (
                               <span className="text-orange-500 italic text-xs bg-orange-50 px-2 py-1 rounded border border-orange-100">
-                                Chưa xếp bác sĩ
+                                {t("list.unassignedDoc")}
                               </span>
                             )}
                           </td>
@@ -814,7 +1005,7 @@ export default function ReceptionDashboard() {
 
                   {sortedAppointments.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                      <p>Chưa có lịch hẹn nào.</p>
+                      <p>{t("list.noData")}</p>
                     </div>
                   )}
                 </div>
@@ -850,10 +1041,16 @@ export default function ReceptionDashboard() {
         <div className="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-fadeIn">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6 space-y-4">
             <h3 className="text-lg font-bold text-gray-800">
-              Xác nhận dời lịch
+              {t("dashboard.dragConfirmTitle")}
             </h3>
             <p className="text-sm text-gray-600">
-              Gán lịch cho <b>{pendingReschedule.appt.patient.fullName}</b> sang{" "}
+              <span
+                dangerouslySetInnerHTML={{
+                  __html: t("dashboard.dragConfirmDesc", {
+                    patient: pendingReschedule.appt.patient.fullName,
+                  }),
+                }}
+              />{" "}
               <span className="font-bold text-blue-600">
                 {pad(pendingReschedule.newStartDate.getHours())}:
                 {pad(pendingReschedule.newStartDate.getMinutes())}
@@ -865,13 +1062,13 @@ export default function ReceptionDashboard() {
                 onClick={handleCancelReschedule}
                 className="px-4 py-2 rounded-lg text-gray-600 bg-gray-100 hover:bg-gray-200"
               >
-                Hủy
+                {t("dashboard.cancel")}
               </button>
               <button
                 onClick={handleConfirmReschedule}
                 className="px-4 py-2 rounded-lg text-white bg-[#3366FF] hover:bg-blue-700 shadow-lg"
               >
-                Xác nhận
+                {t("dashboard.confirm")}
               </button>
             </div>
           </div>
@@ -899,6 +1096,14 @@ export default function ReceptionDashboard() {
           }}
         />
       )}
+
+      {/* MODAL CHỌN PHÒNG */}
+      <RoomSelectionModal
+        isOpen={isRoomModalOpen}
+        onClose={() => setIsRoomModalOpen(false)}
+        appointment={apptToAssignRoom}
+        onSuccess={handleRoomAssignSuccess}
+      />
     </div>
   );
 }

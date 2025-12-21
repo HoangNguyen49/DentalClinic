@@ -110,6 +110,26 @@
       "rejectFailed": "Không thể từ chối yêu cầu"
     },
     "menuLabel": "Duyệt khuôn mặt"
+  },
+  "layout": {
+    "title": "Quản lý nhân sự",
+    "companyName": "Sunshine Dental Care",
+    "nav": {
+      "dashboard": "Bảng điều khiển",
+      "employeeList": "Danh sách nhân viên",
+      "addEmployee": "Thêm nhân viên",
+      "schedules": "Lịch làm việc",
+      "createSchedule": "Tạo lịch",
+      "attendance": "Chấm công",
+      "attendanceExplanations": "Giải trình chấm công",
+      "leaveRequests": "Đơn xin nghỉ"
+    },
+    "logout": "Đăng xuất",
+    "header": {
+      "title": "Bảng điều khiển HR",
+      "changeLanguage": "Đổi ngôn ngữ",
+      "backToHome": "Về trang chủ"
+    }
   }
 }
 

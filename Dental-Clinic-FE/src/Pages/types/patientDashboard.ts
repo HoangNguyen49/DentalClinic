@@ -13,20 +13,34 @@ export interface Activity {
     type: string;
 }
 
+export interface MedicalRecordDTO {
+    recordId: number;
+    visitDate: string;
+    diagnosis: string;
+    treatment: string;
+    doctorName: string;
+    note: string;
+    prescriptionNote: string;
+    imageUrl: string | null;
+}
+
 export interface PatientDashboardDTO {
     fullName: string;
     patientCode: string;
     avatarUrl: string;
     
-    // Khối 1: Wellness
+    // Membership
+    memberTier: 'MEMBER' | 'SILVER' | 'GOLD' | 'DIAMOND';
+    totalSpent: number;
+    nextTierGoal: number | null;
+
+    // Wellness
     healthStatus: 'Excellent' | 'Warning' | 'Overdue' | 'New';
     healthMessage: string;
     daysSinceLastVisit: number;
 
-    // Khối 2: Appointment
     nextAppointment: UpcomingAppointment | null;
-
-    // Khối 3: Info
+    medicalHistory: MedicalRecordDTO[]; // Array
     latestAiTip: string;
     recentActivities: Activity[];
 }

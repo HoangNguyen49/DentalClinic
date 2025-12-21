@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
     fetchInventoryDetail, 
@@ -10,7 +10,7 @@ import {
     fetchProductById, // [NEW] Import thêm cái này
     extractValidationErrors 
 } from '../../../../../../huybro_api/productApi';
-
+export type AdjustmentMode = 'ADD' | 'SUBTRACT';
 export function useUpdateInventory() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -22,8 +22,21 @@ export function useUpdateInventory() {
 
     // --- FORM STATE ---
     
-    // 1. Quantity
-    const [quantity, setQuantity] = useState<number | ''>('');
+    // 1. Quantity Logic
+    const [adjustMode, setAdjustMode] = useState<AdjustmentMode>('ADD');
+    const [adjustValue, setAdjustValue] = useState<number | ''>('');
+
+    // Tự động tính ra số cuối cùng
+   const finalQuantity = useMemo(() => {
+        if (!data) return 0;
+        const val = typeof adjustValue === 'number' ? adjustValue : 0;
+        const current = data.quantity;
+
+        // Nếu là ADD thì cộng, SUBTRACT thì trừ (không cho âm)
+        return adjustMode === 'ADD' 
+            ? current + val 
+            : Math.max(0, current - val);
+    }, [data, adjustMode, adjustValue]);
     
     // 2. Pricing Calculator
     const [importPrice, setImportPrice] = useState<number | ''>(''); 
@@ -59,8 +72,6 @@ export function useUpdateInventory() {
                 
                 setData(invData);
                 
-                // Fill dữ liệu kho hiện tại vào form
-                setQuantity(invData.quantity);
                 setCurrency(invData.currency || 'USD'); 
 
                 // B. [NEW] Lấy thông tin Product gốc để lấy GIÁ LỊCH SỬ (Base Cost & Margin)
@@ -123,7 +134,7 @@ export function useUpdateInventory() {
 
         const payload: InventoryUpdateDto = {
             inventoryId: data.inventoryId,
-            newQuantity: quantity === '' ? undefined : Number(quantity),
+            newQuantity: finalQuantity,
             newRetailPrice: finalRetailPrice === '' ? undefined : Number(finalRetailPrice),
             newImportPrice: importPrice === '' ? 0 : Number(importPrice),
             newProfitMargin: profitMargin === '' ? 0 : Number(profitMargin),
@@ -148,9 +159,9 @@ export function useUpdateInventory() {
 
     return {
         data, loading, loadError, submitting,
-        
-        // Form Getters & Setters
-        quantity, setQuantity,
+        adjustMode, setAdjustMode, 
+        adjustValue, setAdjustValue, 
+        finalQuantity,
         importPrice, setImportPrice,
         profitMargin, setProfitMargin,
         currency, setCurrency,

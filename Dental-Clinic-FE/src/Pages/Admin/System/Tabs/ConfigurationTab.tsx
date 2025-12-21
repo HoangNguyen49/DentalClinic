@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import { Save, Loader2 } from "lucide-react";
 import { type SystemConfig, systemService } from "../../../../services/admin/systemService";
 import { toast } from "react-toastify";
+import { useTranslation } from "react-i18next";
 
 export default function ConfigurationTab() {
+    const { t } = useTranslation("admin");
     // State cho danh sách cấu hình hệ thống
     const [configs, setConfigs] = useState<SystemConfig[]>([]);
     // Loading khi lấy dữ liệu
@@ -27,7 +29,7 @@ export default function ConfigurationTab() {
             );
             setConfigs(filteredData);
         } catch (error) {
-            toast.error("Không thể tải cấu hình");
+            toast.error(t("system.config.messages.loadFailed"));
         } finally {
             setLoading(false);
         }
@@ -38,9 +40,9 @@ export default function ConfigurationTab() {
         setSaving(config.configKey);
         try {
             await systemService.updateConfig(config.configKey, config.configValue, config.description);
-            toast.success("Đã lưu cấu hình");
+            toast.success(t("system.config.messages.saveSuccess"));
         } catch (error) {
-            toast.error("Lưu thất bại");
+            toast.error(t("system.config.messages.saveFailed"));
         } finally {
             setSaving(null);
         }
@@ -70,22 +72,20 @@ export default function ConfigurationTab() {
                                     {config.configKey}
                                 </label>
                                 <p className="text-xs text-slate-500 mb-3">{config.description}</p>
-                                {/* Ô nhập giá trị cấu hình */}
                                 <input
                                     id={`config-${config.id}`}
                                     type="text"
                                     value={config.configValue}
                                     onChange={(e) => handleChange(config.configKey, e.target.value)}
-                                    placeholder={`Nhập giá trị cho ${config.configKey}`}
+                                    placeholder={`${t("system.config.valuePlaceholder")} ${config.configKey}`}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 />
                             </div>
-                            {/* Nút lưu */}
                             <button
                                 onClick={() => handleSave(config)}
                                 disabled={saving === config.configKey}
                                 className="mt-8 p-2 text-blue-600 hover:bg-blue-100 rounded-md transition-colors disabled:opacity-50"
-                                title="Lưu thay đổi"
+                                title={t("system.config.save")}
                             >
                                 {saving === config.configKey ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />
@@ -97,9 +97,8 @@ export default function ConfigurationTab() {
                     </div>
                 ))}
 
-                {/* Hiện thông báo nếu không có cấu hình */}
                 {configs.length === 0 && (
-                    <p className="text-center text-slate-500 py-8">Chưa có cấu hình nào.</p>
+                    <p className="text-center text-slate-500 py-8">{t("system.config.messages.noData")}</p>
                 )}
             </div>
         </div>

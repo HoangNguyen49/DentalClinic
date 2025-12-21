@@ -1,8 +1,21 @@
 export interface PatientAppointment {
   appointmentId: number;
-  startDateTime: string; // ISO string từ BE
+  startDateTime: string; // ISO string
   endDateTime: string | null;
-  status: 'PENDING' | 'CONFIRMED' | 'COMPLETED' | 'CANCELLED' | 'NOSHOW';
+  
+  // Vẫn giữ đồng bộ status với team member
+  status: 
+    | 'PENDING'       
+    | 'SCHEDULED'     
+    | 'CONFIRMED'     
+    | 'IN_PROGRESS'   
+    | 'PROCESSING'    
+    | 'COMPLETED'     
+    | 'CANCELLED'     
+    | 'CANCELED'      
+    | 'NOSHOW'        
+    | 'NO_SHOW';      
+
   note: string | null;
   
   clinicName: string;
@@ -14,6 +27,5 @@ export interface PatientAppointment {
   serviceName: string;
   variantName: string;
 
-  // --- BẮT BUỘC CÓ TRƯỜNG NÀY ---
-  canCancel: boolean; 
+  // Đã bỏ canCancel
 }

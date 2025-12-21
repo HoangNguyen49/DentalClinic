@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next'; // 1. Import i18n
 
 interface SuccessModalProps {
   isOpen: boolean;
@@ -6,6 +7,7 @@ interface SuccessModalProps {
 }
 
 export default function BookingSuccessModal({ isOpen, onClose }: SuccessModalProps) {
+  const { t } = useTranslation("booking"); // 2. Khởi tạo hook
   const [countdown, setCountdown] = useState(5); // Đếm ngược 5 giây
 
   useEffect(() => {
@@ -38,9 +40,9 @@ export default function BookingSuccessModal({ isOpen, onClose }: SuccessModalPro
           </svg>
         </div>
 
-        <h3 className="text-2xl font-bold text-gray-900 mb-2">Đặt Lịch Thành Công!</h3>
+        <h3 className="text-2xl font-bold text-gray-900 mb-2">{t("successModal.title")}</h3>
         <p className="text-gray-500 mb-6">
-          Cảm ơn bạn đã tin tưởng Sunshine Dental. Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.
+          {t("successModal.message")}
         </p>
 
         {/* Nút về trang chủ */}
@@ -48,12 +50,12 @@ export default function BookingSuccessModal({ isOpen, onClose }: SuccessModalPro
           onClick={onClose}
           className="w-full py-3 px-4 bg-gradient-to-r from-[#6699FF] to-[#3366FF] text-white rounded-xl font-bold shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200"
         >
-          Về Trang Chủ Ngay
+          {t("successModal.btnHome")}
         </button>
 
         {/* Dòng đếm ngược */}
         <p className="text-xs text-gray-400 mt-4">
-          Tự động chuyển hướng sau <span className="font-bold text-blue-600">{countdown}</span> giây...
+          {t("successModal.redirectMsg", { seconds: countdown })}
         </p>
       </div>
     </div>

@@ -95,7 +95,7 @@ const InventoryExport: React.FC = () => {
                                 <ArrowUpDown className="h-4 w-4 text-gray-400" />
                             </div>
                             <select
-                                className="block w-full sm:w-40 pl-10 pr-8 py-2 border border-gray-300 rounded-lg leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm appearance-none cursor-pointer font-medium text-gray-700"
+                                className="block w-full sm:w-46 pl-10 pr-8 py-2 border border-gray-300 rounded-lg leading-5 bg-white focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm shadow-sm appearance-none cursor-pointer font-medium text-gray-700"
                                 value={sortBy}
                                 onChange={(e) => setSortBy(e.target.value)}
                             >

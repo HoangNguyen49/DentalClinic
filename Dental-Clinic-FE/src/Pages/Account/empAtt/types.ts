@@ -16,6 +16,8 @@ export type AttendanceResponse = {
     updatedAt?: string | null;
     // Thông tin tính toán giờ làm việc và đi trễ/ra sớm
     shiftType?: string | null; // MORNING, AFTERNOON, FULL_DAY
+    startTime?: string | null; // Giờ bắt đầu ca theo lịch (HH:mm:ss)
+    endTime?: string | null; // Giờ kết thúc ca theo lịch (HH:mm:ss)
     actualWorkHours?: number | null; // Số giờ làm việc thực tế (đã trừ đi trễ, ra sớm, nghỉ trưa)
     expectedWorkHours?: number | null; // Số giờ làm việc theo lịch
     lateMinutes?: number | null; // Số phút đi trễ

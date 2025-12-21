@@ -28,20 +28,13 @@ export const Table: React.FC<TableProps> = ({
     const { t } = useTranslation("web");
 
     // trả về nhãn loại giải trình
+    // CHỈ CÒN LOẠI: MISSING_CHECK_OUT (quên check out)
     const getExplanationTypeLabel = (type?: string | null): string => {
         if (!type) return "-";
-        switch (type.toUpperCase()) {
-            case "LATE":
-                return t("attendance.explanationType.LATE");
-            case "ABSENT":
-                return t("attendance.explanationType.ABSENT");
-            case "MISSING_CHECK_IN":
-                return t("attendance.explanationType.MISSING_CHECK_IN");
-            case "MISSING_CHECK_OUT":
-                return t("attendance.explanationType.MISSING_CHECK_OUT");
-            default:
-                return type;
+        if (type.toUpperCase() === "MISSING_CHECK_OUT") {
+            return t("attendance.explanationType.MISSING_CHECK_OUT");
         }
+        return type;
     };
 
     return (

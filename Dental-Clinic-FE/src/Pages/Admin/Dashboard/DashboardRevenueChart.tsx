@@ -68,7 +68,7 @@ export default function DashboardRevenueChart() {
                         setLoading(false);
                     },
                     onError: () => {
-                        setError("Không tải được dữ liệu doanh thu");
+                        setError(t("dashboard.errors.fetchRevenueFailed", "Không tải được dữ liệu doanh thu"));
                         setChartData([]);
                         setLoading(false);
                     },
@@ -76,7 +76,7 @@ export default function DashboardRevenueChart() {
             );
 
             if (!data) {
-                setError("Không tải được dữ liệu doanh thu");
+                setError(t("dashboard.errors.fetchRevenueFailed", "Không tải được dữ liệu doanh thu"));
                 setChartData([]);
                 setLoading(false);
             }
@@ -133,24 +133,19 @@ export default function DashboardRevenueChart() {
                 </div>
                 {stats && (
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-right sm:text-left">
+                        {/* Chỉ hiển thị Net Profit và Expenses khi module chi phí đã được hỗ trợ */}
+                        {stats.expensesSupported && (
                         <div>
-                            {/* Hiển thị lợi nhuận ròng và chi phí (nếu có) */}
                             <p className="text-sm text-slate-500">{t("dashboard.metrics.netProfit", "Lợi nhuận ròng (tháng)")}</p>
                             <p className="text-xl font-bold text-emerald-700">
                                 {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(stats.netProfit)}
                             </p>
                             <p className="text-xs text-slate-500">
                                 {t("dashboard.metrics.expenses", "Chi phí")}{" "}
-                                {stats.expensesSupported
-                                    ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(stats.totalExpenses)
-                                    : t("dashboard.metrics.expensesNotConfigured", "Chưa cấu hình")}
+                                    {new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(stats.totalExpenses)}
                             </p>
-                            {!stats.expensesSupported && (
-                                <p className="text-xs text-orange-600 mt-1">
-                                    {t("dashboard.metrics.expensesWarning", "Cần thiết lập module chi phí để tính đúng lợi nhuận")}
-                                </p>
+                            </div>
                             )}
-                        </div>
                         <div className="sm:text-right">
                             {/* Hiển thị tăng trưởng doanh thu tháng so với tháng trước */}
                             <p className="text-sm text-slate-500">{t("dashboard.metrics.momGrowth", "So với tháng trước")}</p>
@@ -167,7 +162,7 @@ export default function DashboardRevenueChart() {
                 )}
             </div>
 
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 w-full" style={{ minHeight: '200px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={chartData}>
                         <defs>

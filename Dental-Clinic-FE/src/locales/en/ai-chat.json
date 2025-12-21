@@ -1,0 +1,21 @@
+{
+  "header": {
+    "title": "Sunshine Assistant",
+    "clearHistory": "Clear History"
+  },
+  "messages": {
+    "welcome": "Hello! 👋 I'm Sunshine AI Assistant. How can I help you?",
+    "welcomeShort": "Hello! 👋 I'm Sunshine AI Assistant.",
+    "historyCleared": "Chat history cleared. Hello again! 👋",
+    "error": "Connection error. Please try again!"
+  },
+  "suggestions": {
+    "services": "Suitable services:",
+    "doctors": "Specialist Doctors (VIP):",
+    "bookNow": "Book Now",
+    "selectVip": "Select (VIP)"
+  },
+  "input": {
+    "placeholder": "Type a message..."
+  }
+}

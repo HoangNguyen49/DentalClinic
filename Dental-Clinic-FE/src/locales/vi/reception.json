@@ -1,0 +1,291 @@
+{
+  "dashboard": {
+    "title": "Lịch Tổng Quát",
+    "myClinic": "Phòng khám của tôi",
+    "timeline": "Lịch Biểu",
+    "list": "Danh Sách",
+    "addBooking": "Đặt Lịch",
+    "queue": "Hàng Chờ",
+    "unassigned": "Chưa xếp",
+    "emptyQueue": "Hiện không có lịch hẹn nào cần xếp.",
+    "morningShift": "CA SÁNG",
+    "afternoonShift": "CA CHIỀU",
+    "dragConfirmTitle": "Xác nhận dời lịch",
+    "dragConfirmDesc": "Gán lịch cho <b>{{patient}}</b> sang",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "moveSuccess": "Dời lịch thành công! ✅",
+    "moveError": "Không thể dời lịch."
+  },
+  "list": {
+    "title": "Quản Lý Thu Ngân",
+    "subtitle": "Tra cứu lịch hẹn và xử lý thanh toán viện phí",
+    "searchPlaceholder": "Tìm tên, SĐT, mã BN...",
+    "filter": "Bộ lọc",
+    "allStatus": "-- Tất cả trạng thái --",
+    "allPayment": "-- Tất cả thanh toán --",
+    "refresh": "Làm mới",
+    "colPatient": "BỆNH NHÂN",
+    "colTime": "THỜI GI",
+    "colDoctor": "/ LOẠI",
+    "colStatus": "Trạng thái",
+    "colPayment": "Thanh toán",
+    "colAction": "Hành động",
+    "loading": "Đang tải dữ liệu...",
+    "noData": "Không tìm thấy lịch hẹn nào phù hợp.",
+    "pageInfo": "Trang {{current}} / {{total}} (Tổng: {{count}} dòng)",
+    "collectMoney": "Thu Tiền",
+    "printBill": "In Bill",
+    "selectRoom": "Chọn phòng",
+    "unassignedDoc": "Chưa xếp bác sĩ"
+  },
+  "invoice": {
+    "title": "Chi Tiết Hóa Đơn & Thanh Toán",
+    "invoiceHeader": "HÓA ĐƠN",
+    "invoiceId": "Mã HĐ",
+    "date": "Ngày",
+    "customer": "Khách hàng",
+    "rank": "Hạng thành viên",
+    "tableService": "Dịch vụ / Hạng mục",
+    "tableQty": "SL",
+    "tablePrice": "Đơn giá",
+    "tableTotal": "Thành tiền",
+    "scanQr": "Quét mã để thanh toán",
+    "bank": "Ngân hàng",
+    "accountNo": "STK",
+    "content": "Nội dung",
+    "subTotal": "Tổng tiền dịch vụ",
+    "discount": "Giảm giá hạng {{rank}}",
+    "bookingFee": "Phí đặt lịch ({{type}})",
+    "grandTotal": "TỔNG CỘNG",
+    "paidDeposit": "Đã thanh toán (Cọc)",
+    "remaining": "Khách phải trả",
+    "thankYou": "Cảm ơn quý khách đã sử dụng dịch vụ tại {{clinic}}!",
+    "footerNote": "Hóa đơn này có giá trị trong ngày. Vui lòng kiểm tra kỹ trước khi rời quầy.",
+    "sign": "Chữ ký thu ngân",
+    "btnPrint": "In Hóa Đơn",
+    "btnConfirm": "Xác Nhận Đã Thu Tiền",
+    "paidBadge": "Đã Thanh Toán",
+    "confirmSuccess": "Thanh toán thành công cho {{name}}",
+    "errorLoad": "Không thể tải chi tiết hóa đơn!",
+    "errorConfirm": "Lỗi xác nhận thanh toán.",
+    "confirmMsg": "Xác nhận đã thu đủ tiền từ khách hàng?"
+  },
+  "quickBooking": {
+    "title": "Tạo Phiếu Hẹn Nhanh",
+    "subtitle": "Thêm khách vào hàng chờ (Walk-in)",
+    "labelPatient": "1. Khách Hàng",
+    "placeholderSearch": "Tìm tên hoặc SĐT...",
+    "change": "Thay đổi",
+    "labelService": "2. Dịch Vụ",
+    "addService": "Thêm dịch vụ",
+    "selectService": "-- Chọn dịch vụ {{index}} --",
+    "estimated": "Tạm tính",
+    "cancel": "Hủy bỏ",
+    "create": "Tạo Phiếu",
+    "success": "Đã tạo phiếu cho {{count}} dịch vụ! 👋",
+    "error": "Lỗi tạo phiếu.",
+    "validate": "Vui lòng chọn Khách hàng và ít nhất 1 Dịch vụ!"
+  },
+  "editModal": {
+    "title": "Chi Tiết Lịch Hẹn",
+    "labelService": "Dịch vụ",
+    "labelDoctor": "Bác sĩ",
+    "labelTime": "Thời gian",
+    "labelStatus": "Trạng Thái",
+    "labelNote": "Ghi chú",
+    "placeholderNote": "Nhập ghi chú...",
+    "close": "Đóng",
+    "save": "Lưu Thay Đổi",
+    "success": "Cập nhật thành công!",
+    "error": "Lỗi cập nhật.",
+    "statusLocked": "Trạng thái do Bác sĩ cập nhật"
+  },
+  "roomModal": {
+    "title": "Chọn Phòng Điều Trị",
+    "patient": "Khách",
+    "walkInGuest": "Khách vãng lai",
+    "loading": "⏳ Đang tìm phòng phù hợp...",
+    "noRoom": "🚫 Không có phòng trống trong khung giờ này!",
+    "cancel": "Hủy",
+    "confirm": "Xác Nhận",
+    "saving": "Đang lưu...",
+    "success": "Xếp phòng thành công!",
+    "errorLoad": "Không thể tải danh sách phòng trống!",
+    "errorSave": "Lỗi khi lưu phòng",
+    "vipSurgery": "VIP / Phẫu Thuật",
+    "standard": "Tiêu Chuẩn"
+  },
+  "aiChat": {
+    "welcome": "Xin chào! Tôi là trợ lý ảo nha khoa. Bạn cần tra cứu thông tin gì không?",
+    "placeholder": "Ví dụ: Doanh thu hôm nay?",
+    "error": "Lỗi",
+    "disconnect": "Mất kết nối với AI Server.",
+    "noData": "Không tìm thấy dữ liệu nào.",
+    "foundResult": "Tìm thấy {{count}} kết quả",
+    "poweredBy": "Powered by Google Gemini AI"
+  },
+  "bookingOffline": {
+    "title": "Walk-in Booking",
+    "subtitle": "Tiếp nhận & Đặt lịch tại quầy",
+    "success": "Đặt lịch thành công! ✅",
+    "error": "Lỗi đặt lịch."
+  },
+  "status": {
+    "SCHEDULED": "Đã xác nhận",
+    "CONFIRMED": "Đã xác nhận",
+    "PENDING": "Chờ duyệt",
+    "IN_PROGRESS": "Đang khám",
+    "COMPLETED": "Hoàn thành",
+    "CANCELLED": "Đã hủy",
+    "UNPAID": "Chưa thanh toán",
+    "PAID": "Đã thanh toán",
+    "DEPOSIT_PAID": "Đã cọc"
+  },
+  "patients": {
+    "title": "Quản Lý Bệnh Nhân",
+    "totalRecords": "Tổng số",
+    "searchPlaceholder": "Tìm tên, SĐT, mã BN...",
+    "addNew": "Thêm Mới",
+    "table": {
+      "code": "Mã Hồ Sơ",
+      "name": "Họ và Tên",
+      "contact": "Thông Tin Liên Hệ",
+      "genderDob": "Giới tính / Ngày sinh",
+      "status": "Trạng thái",
+      "actions": "Hành động"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "messages": {
+      "loading": "Đang tải dữ liệu...",
+      "noData": "Không tìm thấy bệnh nhân nào.",
+      "loadError": "Không thể tải danh sách bệnh nhân."
+    },
+    "pagination": {
+      "page": "Trang",
+      "prev": "Trước",
+      "next": "Sau"
+    }
+  },
+  "patientDetail": {
+    "title": "Hồ Sơ Bệnh Nhân",
+    "labels": {
+      "fullName": "Họ và Tên",
+      "phone": "Số điện thoại",
+      "email": "Email (Tùy chọn)",
+      "emailLabel": "Email",
+      "dob": "Ngày sinh",
+      "gender": "Giới tính",
+      "address": "Địa chỉ"
+    },
+    "gender": {
+      "male": "Nam",
+      "female": "Nữ",
+      "other": "Khác",
+      "unspecified": "Chưa xác định"
+    },
+    "buttons": {
+      "close": "Đóng",
+      "edit": "Chỉnh sửa",
+      "cancel": "Hủy bỏ",
+      "save": "Lưu thay đổi"
+    },
+    "messages": {
+      "validation": "Họ tên và SĐT là bắt buộc!",
+      "success": "Cập nhật hồ sơ thành công!",
+      "error": "Lỗi khi cập nhật thông tin."
+    }
+  },
+  "patientHistory": {
+    "title": "Lịch Sử Khám Bệnh",
+    "table": {
+      "time": "Thời gian",
+      "doctor": "Bác sĩ phụ trách",
+      "service": "Dịch vụ sử dụng (Chi tiết)",
+      "note": "Ghi chú / Chẩn đoán",
+      "status": "Trạng thái",
+      "total": "Tổng tiền"
+    },
+    "messages": {
+      "loading": "Đang tải dữ liệu lịch sử...",
+      "noData": "Bệnh nhân chưa có lịch sử khám nào tại phòng khám.",
+      "error": "Lỗi tải lịch sử"
+    },
+    "noService": "Không có dịch vụ",
+    "noNote": "Không có ghi chú"
+  },
+  "stepSelectPatient": {
+    "search": {
+      "title": "Xác định Khách hàng",
+      "subtitle": "Tìm theo Tên, Số điện thoại hoặc Mã hồ sơ",
+      "placeholder": "Nhập từ khóa tìm kiếm...",
+      "notFound": "Không tìm thấy khách hàng này.",
+      "createNew": "Tạo hồ sơ mới"
+    },
+    "create": {
+      "title": "Tạo Hồ Sơ Mới",
+      "cancel": "Hủy",
+      "submit": "Tạo & Chọn"
+    },
+    "successModal": {
+      "title": "Tạo hồ sơ thành công!",
+      "codeLabel": "Mã bệnh nhân:",
+      "continue": "Tiếp tục"
+    },
+    "messages": {
+      "validation": "Vui lòng nhập Họ tên và SĐT!",
+      "createError": "Lỗi tạo hồ sơ.",
+      "searchError": "Không tìm được danh sách khách hàng."
+    }
+  },
+  "invoiceList": {
+    "title": "Danh Sách Hóa Đơn",
+    "stats": {
+      "revenue": "Doanh thu (Tổng)",
+      "invoiceCount": "Hóa đơn đã trả",
+      "averageValue": "Trung bình/Đơn",
+      "unit": "Đơn"
+    },
+    "filters": {
+      "searchLabel": "Tìm kiếm",
+      "searchPlaceholder": "Mã HĐ, Tên khách, SĐT...",
+      "fromDate": "Từ ngày",
+      "toDate": "Đến ngày",
+      "statusLabel": "Trạng thái",
+      "statusOptions": {
+        "all": "Tất cả trạng thái",
+        "paid": "Đã thanh toán",
+        "unpaid": "Chưa thanh toán"
+      },
+      "btnResetTooltip": "Làm mới bộ lọc",
+      "btnFilter": "Lọc kết quả"
+    },
+    "table": {
+      "headers": {
+        "code": "MÃ HÓA ĐƠN",
+        "date": "NGÀY XUẤT",
+        "customer": "KHÁCH HÀNG",
+        "total": "TỔNG TIỀN",
+        "status": "TRẠNG THÁI",
+        "action": ""
+      },
+      "statusDisplay": {
+        "paid": "Đã thanh toán",
+        "unpaid": "Chờ thanh toán",
+        "refunded": "Hoàn tiền"
+      },
+      "loading": "Đang tải dữ liệu...",
+      "empty": "Không tìm thấy hóa đơn nào phù hợp.",
+      "noCode": "---",
+      "viewTooltip": "Xem chi tiết"
+    },
+    "pagination": {
+      "info": "Trang {{page}} / {{total}}",
+      "prev": "Trước",
+      "next": "Sau"
+    }
+}
+}

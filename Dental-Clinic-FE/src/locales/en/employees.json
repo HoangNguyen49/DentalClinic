@@ -199,6 +199,49 @@
       "employeeCode": "Employee Code",
       "email": "E-mail",
       "phone": "Phone"
+    },
+    "cv": {
+      "title": "CV Profile",
+      "upload": {
+        "label": "Upload CV (PDF, DOC, DOCX)",
+        "selectFile": "Select CV file",
+        "button": "Upload & Extract",
+        "processing": "Processing...",
+        "fileInfo": "File: {{name}} ({{size}} MB)"
+      },
+      "validation": {
+        "invalidFileType": "Only PDF, DOC or DOCX files are accepted",
+        "fileTooLarge": "File size must not exceed 10MB"
+      },
+      "messages": {
+        "uploadSuccess": "CV uploaded and extracted successfully!",
+        "uploadFailed": "Failed to upload CV",
+        "saveSuccess": "Text saved successfully!",
+        "saveFailed": "Failed to save text",
+        "deleteConfirm": "Are you sure you want to delete this CV?",
+        "deleteSuccess": "CV deleted successfully",
+        "deleteFailed": "Failed to delete CV"
+      },
+      "view": {
+        "show": "Show",
+        "hide": "Hide",
+        "details": "details",
+        "delete": "Delete CV",
+        "deleteTitle": "Delete CV"
+      },
+      "extractedText": {
+        "label": "Extracted text:",
+        "edit": "Edit",
+        "save": "Save",
+        "cancel": "Cancel",
+        "saving": "Saving...",
+        "placeholder": "Enter or edit extracted text..."
+      },
+      "extractedImages": {
+        "label": "Extracted images ({{count}}):",
+        "viewImage": "View image {{index}} at full size",
+        "viewImageLabel": "View image {{index}}"
+      }
     }
   },
   "delete": {

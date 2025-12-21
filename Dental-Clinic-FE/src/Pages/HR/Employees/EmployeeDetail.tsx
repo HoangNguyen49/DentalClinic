@@ -6,6 +6,12 @@ import { useHrApi } from "../../../hooks/useHrApi";
 import {
   ArrowLeft,
   User,
+  Upload,
+  FileText,
+  Image as ImageIcon,
+  Save,
+  X,
+  Loader2,
 } from "lucide-react";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -21,12 +27,123 @@ function EmployeeDetail() {
   const [employee, setEmployee] = useState<HrEmployee | null>(null);
   const [avatarError, setAvatarError] = useState(false);
   const { execute: executeApi, loading } = useHrApi<any>();
+  
+  // CV Upload states
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [cvData, setCvData] = useState<{
+    id?: number
+    originalFileName?: string
+    fileType?: string
+    extractedText?: string
+    extractedImages?: string[]
+    cvFileUrl?: string
+  } | null>(null);
+  const [showCvPreview, setShowCvPreview] = useState(false);
+  const [editableText, setEditableText] = useState<string>("");
+  const [isEditingText, setIsEditingText] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (id) {
       fetchEmployeeDetail();
+      fetchCvData();
     }
   }, [id]);
+  
+  // Lấy CV data nếu có
+  const fetchCvData = async () => {
+    if (!id) return;
+    try {
+      const response = await hrApi.employees.getCvData(id);
+      if (response.data) {
+        setCvData(response.data);
+        setEditableText(response.data.extractedText || "");
+      }
+    } catch (error) {
+      // CV chưa có, không cần hiển thị lỗi
+      setCvData(null);
+      setEditableText("");
+    }
+  };
+  
+  // Xử lý chọn file
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Kiểm tra loại file
+      const validTypes = ['application/pdf', 'application/msword', 
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (!validTypes.includes(file.type)) {
+        toast.error(t("detail.cv.validation.invalidFileType"));
+        return;
+      }
+      // Kiểm tra kích thước (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(t("detail.cv.validation.fileTooLarge"));
+        return;
+      }
+      setSelectedFile(file);
+    }
+  };
+  
+  // Upload và extract CV
+  const handleUploadCv = async () => {
+    if (!id || !selectedFile) return;
+    
+    setUploading(true);
+    try {
+      const response = await hrApi.employees.uploadCv(id, selectedFile);
+      if (response.data) {
+        setCvData(response.data);
+        setEditableText(response.data.extractedText || "");
+        setSelectedFile(null);
+        setShowCvPreview(true);
+        setIsEditingText(false);
+        toast.success(t("detail.cv.messages.uploadSuccess"));
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || t("detail.cv.messages.uploadFailed"));
+    } finally {
+      setUploading(false);
+    }
+  };
+  
+  // Lưu extracted text đã chỉnh sửa
+  const handleSaveCvText = async () => {
+    if (!id || !cvData) return;
+    
+    setSaving(true);
+    try {
+      const response = await hrApi.employees.updateCvText(id, editableText);
+      if (response.data) {
+        setCvData({ ...cvData, extractedText: response.data.extractedText });
+        setIsEditingText(false);
+        toast.success(t("detail.cv.messages.saveSuccess"));
+      }
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || t("detail.cv.messages.saveFailed"));
+    } finally {
+      setSaving(false);
+    }
+  };
+  
+  // Xóa CV data
+  const handleDeleteCv = async () => {
+    if (!id) return;
+    if (!window.confirm(t("detail.cv.messages.deleteConfirm"))) return;
+    
+    try {
+      await hrApi.employees.deleteCvData(id);
+      setCvData(null);
+      setEditableText("");
+      setShowCvPreview(false);
+      setIsEditingText(false);
+      toast.success(t("detail.cv.messages.deleteSuccess"));
+    } catch (error: any) {
+      toast.error(error?.response?.data?.message || t("detail.cv.messages.deleteFailed"));
+    }
+  };
 
   // Lấy dữ liệu chi tiết nhân viên
   const fetchEmployeeDetail = async () => {
@@ -400,6 +517,193 @@ function EmployeeDetail() {
                             </div>
                           )}
                         </div>
+                      </div>
+                    </div>
+
+                    {/* Upload CV và Extract */}
+                    <div>
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-gray-900">{t("detail.cv.title")}</h3>
+                      </div>
+                      <div className="bg-white rounded-lg border border-gray-200 p-6">
+                        {!cvData ? (
+                          // Chưa có CV - hiển thị form upload
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                {t("detail.cv.upload.label")}
+                              </label>
+                              <div className="flex items-center gap-4">
+                                <label className="flex-1 cursor-pointer">
+                                  <input
+                                    type="file"
+                                    accept=".pdf,.doc,.docx"
+                                    onChange={handleFileSelect}
+                                    className="hidden"
+                                    disabled={uploading}
+                                  />
+                                  <div className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-gray-300 rounded-lg hover:border-blue-500 transition-colors">
+                                    <Upload className="w-5 h-5 text-gray-400" />
+                                    <span className="text-sm text-gray-600">
+                                      {selectedFile ? selectedFile.name : t("detail.cv.upload.selectFile")}
+                                    </span>
+                                  </div>
+                                </label>
+                                {selectedFile && (
+                                  <button
+                                    onClick={handleUploadCv}
+                                    disabled={uploading}
+                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                  >
+                                    {uploading ? (
+                                      <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        <span>{t("detail.cv.upload.processing")}</span>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Save className="w-4 h-4" />
+                                        <span>{t("detail.cv.upload.button")}</span>
+                                      </>
+                                    )}
+                                  </button>
+                                )}
+                              </div>
+                              {selectedFile && (
+                                <p className="mt-2 text-xs text-gray-500">
+                                  {t("detail.cv.upload.fileInfo", {
+                                    name: selectedFile.name,
+                                    size: (selectedFile.size / 1024 / 1024).toFixed(2)
+                                  })}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          // Đã có CV - hiển thị thông tin
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <FileText className="w-5 h-5 text-blue-600" />
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setShowCvPreview(!showCvPreview)}
+                                  className="px-3 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                                >
+                                  {showCvPreview ? t("detail.cv.view.hide") : t("detail.cv.view.show")} {t("detail.cv.view.details")}
+                                </button>
+                                <button
+                                  onClick={handleDeleteCv}
+                                  className="px-3 py-1.5 text-sm bg-red-50 text-red-700 rounded-lg hover:bg-red-100"
+                                  title={t("detail.cv.view.deleteTitle")}
+                                  aria-label={t("detail.cv.view.delete")}
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+
+                            {showCvPreview && (
+                              <div className="mt-4 space-y-4 border-t pt-4">
+                                {/* Extracted Text */}
+                                {editableText && (
+                                  <div>
+                                    <div className="flex items-center justify-between mb-2">
+                                      <label className="block text-sm font-medium text-gray-700">
+                                        {t("detail.cv.extractedText.label")}
+                                      </label>
+                                      <div className="flex gap-2">
+                                        {isEditingText ? (
+                                          <>
+                                            <button
+                                              onClick={handleSaveCvText}
+                                              disabled={saving}
+                                              className="flex items-center gap-1 px-3 py-1 text-xs bg-green-600 text-white rounded hover:bg-green-700 disabled:opacity-50"
+                                            >
+                                              {saving ? (
+                                                <>
+                                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                                  <span>{t("detail.cv.extractedText.saving")}</span>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Save className="w-3 h-3" />
+                                                  <span>{t("detail.cv.extractedText.save")}</span>
+                                                </>
+                                              )}
+                                            </button>
+                                            <button
+                                              onClick={() => {
+                                                setEditableText(cvData.extractedText || "");
+                                                setIsEditingText(false);
+                                              }}
+                                              className="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200"
+                                            >
+                                              {t("detail.cv.extractedText.cancel")}
+                                            </button>
+                                          </>
+                                        ) : (
+                                          <button
+                                            onClick={() => setIsEditingText(true)}
+                                            className="px-3 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
+                                          >
+                                            {t("detail.cv.extractedText.edit")}
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {isEditingText ? (
+                                      <textarea
+                                        value={editableText}
+                                        onChange={(e) => setEditableText(e.target.value)}
+                                        className="w-full min-h-[200px] p-4 bg-white rounded-lg border border-gray-300 text-xs text-gray-700 font-mono resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        placeholder={t("detail.cv.extractedText.placeholder")}
+                                      />
+                                    ) : (
+                                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 max-h-60 overflow-y-auto">
+                                        <pre className="text-xs text-gray-700 whitespace-pre-wrap">
+                                          {editableText}
+                                        </pre>
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Extracted Images */}
+                                {cvData.extractedImages && cvData.extractedImages.length > 0 && (
+                                  <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                                      {t("detail.cv.extractedImages.label", { count: cvData.extractedImages.length })}
+                                    </label>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                                      {cvData.extractedImages.map((imageUrl, index) => (
+                                        <div key={index} className="relative group">
+                                          <img
+                                            src={imageUrl}
+                                            alt={`Extracted image ${index + 1}`}
+                                            className="w-full h-32 object-cover rounded-lg border border-gray-200"
+                                            onError={(e) => {
+                                              (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect width="100" height="100" fill="%23f3f4f6"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af"%3EImage%3C/text%3E%3C/svg%3E';
+                                            }}
+                                          />
+                                          <a
+                                            href={imageUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-opacity rounded-lg"
+                                            title={t("detail.cv.extractedImages.viewImage", { index: index + 1 })}
+                                            aria-label={t("detail.cv.extractedImages.viewImageLabel", { index: index + 1 })}
+                                          >
+                                            <ImageIcon className="w-6 h-6 text-white opacity-0 group-hover:opacity-100" />
+                                          </a>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

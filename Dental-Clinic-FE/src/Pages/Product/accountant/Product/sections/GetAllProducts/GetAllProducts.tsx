@@ -231,8 +231,8 @@ function GetAllProduct() {
         <ProductToolbar
           totalElements={totalElements || 0}
           searchInput={searchInput}
-          onSearchInputChange={setSearchInput} // Cập nhật state input, trigger debounce useEffect
-          onSearch={handleSearch} // Vẫn truyền để hỗ trợ phím Enter
+          onSearchInputChange={setSearchInput} 
+          onSearch={handleSearch} 
           minPrice={minPrice}
           maxPrice={maxPrice}
           onMinPriceChange={handleMinPriceChange}
@@ -406,7 +406,7 @@ function GetAllProduct() {
                                     <button
                                       onClick={() => {
                                         navigate(
-                                          `product/update/${product.productId}`
+                                          `/accountant/product/update/${product.productId}`
                                         );
                                         setOpenDropdown(null);
                                       }}

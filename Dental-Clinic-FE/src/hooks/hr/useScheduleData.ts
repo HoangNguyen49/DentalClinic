@@ -50,11 +50,11 @@ export const useScheduleData = (weekStart: string) => {
                 const clinicsData = rawClinics
                     .map((c: any) => {
                         // Map clinic data - be very strict about isActive
-                        const isActiveValue = c.isActive;
+                        const isActiveValue = c.isActive ?? c.active;
                         return {
                             id: c.id,
                             name: c.clinicName || c.name,
-                            isActive: isActiveValue === true || isActiveValue === 'true' || isActiveValue === 1, // Only true values
+                            isActive: isActiveValue === true || isActiveValue === 'true' || isActiveValue === 1 || isActiveValue === '1', // Only true values
                         };
                     })
                     .filter((c: any) => {
@@ -68,6 +68,7 @@ export const useScheduleData = (weekStart: string) => {
     };
 
     // Lấy danh sách bác sĩ và cơ sở
+    // Pull doctors (active) and clinics (active only)
     const fetchDataFromAPI = async () => {
         await executeApi(() => hrApi.schedules.getEmployees({ size: 100, isActive: true }), {
             onSuccess: (data: any) => {

@@ -39,19 +39,19 @@ const HRLayout = () => {
     <div className="flex h-screen bg-gray-100">
       <aside className="w-64 bg-white shadow-md flex flex-col">
         <div className="p-6 border-b">
-          <div className="text-2xl font-bold text-blue-600 mb-2">HR Management</div>
-          <div className="text-sm text-gray-500">Sunshine Dental Care</div>
+          <div className="text-2xl font-bold text-blue-600 mb-2">{t("layout.title")}</div>
+          <div className="text-sm text-gray-500">{t("layout.companyName")}</div>
         </div>
         <nav className="flex flex-col gap-1 px-4 py-4 flex-1 overflow-y-auto">
-          <NavItem to="/hr/dashboard" label="Dashboard" icon={<FaChartBar />} />
-          <NavItem to="/hr/employees" label="Employee List" icon={<FaUsers />} />
-          <NavItem to="/hr/employees/create" label="Add Employee" icon={<FaUserPlus />} />
-          <NavItem to="/hr/schedules" label="Schedules" icon={<FaCalendarAlt />} />
-          <NavItem to="/hr/schedules/create" label="Create Schedule" icon={<FaCalendarAlt />} />
-          <NavItem to="/hr/attendance" label="Attendance" icon={<FaUser />} />
-          <NavItem to="/hr/attendance/explanations" label="Attendance Explanations" icon={<FaClipboardCheck />} />
-          <NavItem to="/hr/leave-requests" label="Leave Requests" icon={<FaFileAlt />} />
-          <NavItem to="/hr/face-profile-approvals" label={t("faceProfileApproval.menuLabel", "Face Profile Approvals")} icon={<FaUser />} />
+          <NavItem to="/hr/dashboard" label={t("layout.nav.dashboard")} icon={<FaChartBar />} />
+          <NavItem to="/hr/employees" label={t("layout.nav.employeeList")} icon={<FaUsers />} />
+          <NavItem to="/hr/employees/create" label={t("layout.nav.addEmployee")} icon={<FaUserPlus />} />
+          <NavItem to="/hr/schedules" label={t("layout.nav.schedules")} icon={<FaCalendarAlt />} />
+          <NavItem to="/hr/schedules/create" label={t("layout.nav.createSchedule")} icon={<FaCalendarAlt />} />
+          <NavItem to="/hr/attendance" label={t("layout.nav.attendance")} icon={<FaUser />} />
+          <NavItem to="/hr/attendance/explanations" label={t("layout.nav.attendanceExplanations")} icon={<FaClipboardCheck />} />
+          <NavItem to="/hr/leave-requests" label={t("layout.nav.leaveRequests")} icon={<FaFileAlt />} />
+          <NavItem to="/hr/face-profile-approvals" label={t("faceProfileApproval.menuLabel")} icon={<FaUser />} />
         </nav>
         <div className="p-4 border-t">
           <button
@@ -59,19 +59,19 @@ const HRLayout = () => {
             className="w-full flex items-center gap-3 px-4 py-2 rounded-md text-red-600 hover:bg-red-50 transition"
           >
             <FaSignOutAlt />
-            <span>{t("logout", "Logout")}</span>
+            <span>{t("layout.logout")}</span>
           </button>
         </div>
       </aside>
       <div className="flex-1 flex flex-col">
         <header className="bg-white shadow px-6 py-4 flex justify-between items-center">
-          <h1 className="text-xl font-semibold text-gray-800">HR Dashboard</h1>
+          <h1 className="text-xl font-semibold text-gray-800">{t("layout.header.title")}</h1>
           <div className="flex items-center gap-2">
             <NotificationBell />
             <button
               onClick={toggleLanguage}
               className="px-3 py-2 border rounded hover:bg-gray-100"
-              title="Change Language"
+              title={t("layout.header.changeLanguage")}
             >
               {i18n.language === "en" ? "🇻🇳" : "🇺🇸"}
             </button>
@@ -79,7 +79,7 @@ const HRLayout = () => {
               onClick={() => navigate("/")}
               className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
             >
-              Back to Home
+              {t("layout.header.backToHome")}
             </button>
           </div>
         </header>

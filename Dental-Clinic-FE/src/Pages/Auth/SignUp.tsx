@@ -70,7 +70,7 @@ function SignUp() {
         initialAvatarUrl = `${window.location.origin}${avatarUrl}`;
       }
 
-    
+      // API Call
       const res = await axios.post<SignUpResponse>(
         `${import.meta.env.VITE_API_URL}/api/auth/sign-up`,
         {
@@ -81,7 +81,7 @@ function SignUp() {
           password,
           avatarUrl: customAvatar ? undefined : initialAvatarUrl, 
           clinicId: undefined,                                    
-          locale: i18n?.language ?? "en",
+          locale: i18n?.language ?? "en", 
         }
       );
 
@@ -90,7 +90,7 @@ function SignUp() {
         throw new Error(t("signup:errors.idMissing"));
       }
 
-    
+      // Upload Custom Avatar nếu có
       if (customAvatar) {
         const token = localStorage.getItem("accessToken"); 
         const formData = new FormData();
@@ -108,14 +108,20 @@ function SignUp() {
         );
       }
 
-      // Hiển thị mã bệnh nhân
-      if (patientCode) {
-        toast.success(`${t("signup:success.registered")} — ${t("signup:labels.patientCode")}: ${patientCode}`);
-      } else {
-        toast.success(t("signup:success.registered"));
-      }
+      // --- CẬP NHẬT THÔNG BÁO TẠI ĐÂY ---
+      // Hiển thị thông báo rõ ràng hơn, nhắc check mail
+      toast.success(
+        <div>
+            <h4 className="font-bold text-lg">Đăng ký thành công! 🎉</h4>
+            <p className="mt-2">Vui lòng kiểm tra <b>Email</b> để kích hoạt tài khoản.</p>
+            {patientCode && <p className="text-sm mt-1 text-yellow-600 font-semibold">Mã BN: {patientCode}</p>}
+        </div>, 
+        { autoClose: 5000 } // Tự đóng sau 5 giây
+      );
 
-      setTimeout(() => navigate("/login"), 2000);
+      // Chuyển hướng sau 5 giây để khách kịp đọc thông báo
+      setTimeout(() => navigate("/login"), 5000);
+
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message;
       if (Array.isArray(errorMessage)) {
@@ -131,7 +137,7 @@ function SignUp() {
   return (
     <>
       <Header />
-      <ToastContainer position="top-right" autoClose={3000} />
+      <ToastContainer position="top-right" autoClose={5000} />
       <div className="min-h-screen flex items-center justify-center bg-white p-10">
         <div className="flex w-full max-w-7xl rounded-3xl shadow-2xl border-4 border-gray-300 overflow-hidden">
           {/* Left: avatar chooser */}
@@ -233,6 +239,7 @@ function SignUp() {
   );
 }
 
+// Components con giữ nguyên
 function InputField({ label, value, setValue, type = "text" }: any) {
   return (
     <div>

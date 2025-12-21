@@ -86,11 +86,16 @@ function CreateEmployeeForm() {
 
     await executeApi(hrApi.management.getClinics, {
       onSuccess: (data: any) => {
-        const clinicsData = ((data as HrClinic[]) || []).map((c: any) => ({
-          id: c.id,
-          clinicName: c.clinicName || c.name,
-          isActive: c.isActive !== undefined ? c.isActive : true,
-        }));
+        const clinicsData = ((data as HrClinic[]) || [])
+          .map((c: any) => ({
+            id: c.id,
+            clinicName: c.clinicName || c.name,
+            isActive: (c.isActive ?? c.active) === true
+              || (c.isActive ?? c.active) === "true"
+              || (c.isActive ?? c.active) === 1
+              || (c.isActive ?? c.active) === "1",
+          }))
+          .filter((c) => c.isActive); // chỉ hiển thị cơ sở đang hoạt động
         setClinics(clinicsData);
       },
       errorMessage: t("create.messages.failedToLoad"),

@@ -16,6 +16,10 @@
     "crm": "Chăm sóc khách hàng",
     "attendance": "Chấm công",
     "clinics": "Cơ sở",
+    "leaveRequests": "Đơn nghỉ phép",
+    "customers": "Khách hàng",
+    "salaryContracts": "Hợp đồng lương",
+    "system": "Hệ thống",
     "backToWebsite": "Về trang web"
   },
   "dashboard": {
@@ -25,50 +29,122 @@
       "manage": "Quản lý & giám sát"
     },
     "sections": {
-      "appointments": {
-        "title": "Quản lý lịch hẹn",
-        "description": "Tiếp nhận và kiểm soát trạng thái lịch hẹn."
-      },
-      "treatments": {
-        "title": "Kế hoạch điều trị",
-        "description": "Tạo và theo dõi phác đồ điều trị cho từng bệnh nhân."
-      },
-      "rooms": {
-        "title": "Phòng • Ghế • Bác sĩ",
-        "description": "Điều phối phòng khám, ghế và lịch bác sĩ."
-      },
-      "invoices": {
-        "title": "Hoá đơn & thanh toán",
-        "description": "Xuất hoá đơn và theo dõi lịch sử thanh toán."
-      },
-      "medical": {
-        "title": "Hình ảnh bệnh án",
-        "description": "Lưu trữ và quản lý ảnh X-ray, ảnh điều trị."
-      },
-      "inventory": {
-        "title": "Kho vật tư",
-        "description": "Theo dõi vật tư, tiêu hao và tình trạng sử dụng."
-      },
+      "overview": "Tổng quan",
+      "appointments": "Lịch hẹn & Nhân sự",
+      "alerts": "Cảnh báo",
+      "financial": "Tài chính",
+      "patients": "Bệnh nhân",
+      "details": "Chi tiết",
       "reports": {
-        "title": "Báo cáo & thống kê",
-        "description": "Xem biểu đồ doanh thu, lịch hẹn, bệnh nhân mới."
+        "title": "Báo cáo & Thống kê",
+        "description": "Xem biểu đồ doanh thu, lịch hẹn, bệnh nhân mới, phòng/ghế/bác sĩ."
       },
       "staff": {
         "title": "Quản lý nhân viên",
-        "description": "Chấm công, phân quyền và quản lý phòng ban."
+        "description": "Xem danh sách nhân viên, chấm công, đơn nghỉ việc, phòng khám."
       },
-      "crm": {
-        "title": "CRM & chăm sóc khách hàng",
-        "description": "Gửi nhắc lịch, email sinh nhật, chương trình khuyến mãi."
+      "customers": {
+        "title": "Quản lý khách hàng",
+        "description": "Xem danh sách khách hàng, thông tin liên hệ và lịch sử."
+      },
+      "inventory": {
+        "title": "Kho sản phẩm",
+        "description": "Thống kê sản phẩm đã bán theo từng cơ sở, số lượng tồn kho và sản phẩm sắp hết."
+      },
+      "system": {
+        "title": "Cấu hình hệ thống",
+        "description": "Thiết lập tham số, ngày nghỉ lễ và xem nhật ký hệ thống."
       }
-    }
+    },
+    "metrics": {
+      "totalPatients": "Tổng bệnh nhân",
+      "totalStaff": "Tổng nhân viên",
+      "totalClinics": "Tổng cơ sở",
+      "activeClinics": "Phòng khám hoạt động",
+      "retentionRate": "Tỷ lệ quay lại",
+      "todayAppointments": "Lịch hẹn hôm nay",
+      "weekAppointments": "Lịch hẹn tuần",
+      "monthAppointments": "Lịch hẹn tháng",
+      "todayAttendance": "Chấm công hôm nay",
+      "pendingLeaveRequests": "Đơn nghỉ chờ duyệt",
+      "todayCancelled": "Hủy hẹn hôm nay",
+      "lowStockItems": "Sản phẩm sắp hết",
+      "todayRevenue": "Doanh thu hôm nay",
+      "todaySales": "Bán hàng hôm nay",
+      "weekRevenue": "Doanh thu tuần",
+      "weekSales": "Bán hàng tuần",
+      "monthRevenue": "Doanh thu tháng",
+      "monthSales": "Bán hàng tháng",
+      "previousMonthRevenue": "Doanh thu tháng trước",
+      "previousMonthSales": "Bán hàng tháng trước",
+      "vsLastMonth": "so với tháng trước",
+      "revenue": "Doanh thu",
+      "sales": "Bán hàng",
+      "todayNewPatients": "Bệnh nhân mới hôm nay",
+      "weekNewPatients": "Bệnh nhân mới tuần",
+      "monthNewPatients": "Bệnh nhân mới tháng",
+      "returningPatients": "Bệnh nhân quay lại",
+      "patientsThisMonth": "Bệnh nhân trong tháng",
+      "appointmentsByStatus": "Trạng thái lịch tháng",
+      "inventorySummary": "Tình trạng kho",
+      "topDoctorsList": "Top bác sĩ theo doanh thu",
+      "sourceBreakdown": "Nguồn khách trong tháng",
+      "appointments": "lịch",
+      "patients": "khách",
+      "total": "Tổng",
+      "active": "Đang bán",
+      "inactive": "Ngưng",
+      "outOfStock": "Hết hàng",
+      "noAppointmentsStatus": "Chưa có dữ liệu",
+      "noSourceData": "Chưa có dữ liệu",
+      "onlySource": "Nguồn duy nhất",
+      "items": "items",
+      "revenueLabel": "doanh thu",
+      "netProfit": "Lợi nhuận ròng (tháng)",
+      "expenses": "Chi phí",
+      "momGrowth": "So với tháng trước"
+    },
+    "sources": {
+      "WEB_BOOKING": "Đặt lịch online",
+      "WALK_IN": "Đến trực tiếp quầy",
+      "PHONE": "Gọi điện thoại",
+      "REFERRAL": "Người giới thiệu",
+      "SOCIAL_MEDIA": "Mạng xã hội",
+      "OTHER": "Khác"
+    },
+    "errors": {
+      "fetchFailed": "Không tải được số liệu dashboard",
+      "fetchRevenueFailed": "Không tải được dữ liệu doanh thu"
+    },
+    "charts": {
+      "revenueWeek": "Doanh thu 7 ngày qua",
+      "notAvailable": "Dữ liệu doanh thu chưa khả dụng"
+      }
+  },
+  "common": {
+    "showing": "Hiển thị",
+    "of": "của",
+    "results": "kết quả",
+    "previous": "Trước",
+    "next": "Sau",
+    "all": "Tất cả",
+    "yes": "Có",
+    "no": "Không",
+    "filters": "Bộ lọc",
+    "advancedFilters": "Bộ lọc nâng cao",
+    "closeFilters": "Đóng bộ lọc",
+    "reset": "Đặt lại",
+    "apply": "Áp dụng",
+    "enterFilter": "Nhập {{label}}...",
+    "page": "Trang"
   },
   "pageTitles": {
     "adminDashboard": "Trang quản trị",
     "appointmentList": "Danh sách lịch hẹn",
     "clinicManagement": "Quản lý cơ sở",
     "attendanceManagement": "Quản lý chấm công",
-    "staffManagement": "Quản lý nhân viên"
+    "staffManagement": "Quản lý nhân viên",
+    "customerManagement": "Quản lý khách hàng"
   },
   "pageDescriptions": {
     "clinicManagement": "Xem và điều chỉnh trạng thái hoạt động của từng cơ sở. Cơ sở bị tắt sẽ không xuất hiện khi lập lịch."
@@ -140,7 +216,7 @@
       "allStatus": "Tất cả trạng thái"
     },
     "summary": {
-      "total": "Tổng bản ghi",
+      "total": "Tổng số",
       "onTime": "Đúng giờ",
       "late": "Đi trễ",
       "absent": "Vắng mặt"
@@ -169,9 +245,6 @@
     "explanation": {
       "type": "Loại",
       "reason": "Lý do",
-      "typeLate": "Đi trễ",
-      "typeAbsent": "Vắng mặt",
-      "typeMissingCheckIn": "Quên chấm vào",
       "typeMissingCheckOut": "Quên chấm ra",
       "status": {
         "pending": "Chờ xử lý",
@@ -210,11 +283,161 @@
       "noPendingExplanations": "Không có giải trình chờ xử lý"
     }
   },
+  "inventory": {
+    "pageTitle": "Quản lý kho sản phẩm",
+    "messages": {
+      "loadFailed": "Không thể tải thống kê kho",
+      "noData": "Không có dữ liệu",
+      "noSalesData": "Chưa có dữ liệu bán hàng",
+      "noTopProducts": "Chưa có sản phẩm bán chạy",
+      "noProducts": "Chưa có sản phẩm nào",
+      "noLowStockProducts": "Không có sản phẩm sắp hết"
+    },
+    "metrics": {
+      "totalProducts": "Tổng sản phẩm",
+      "active": "hoạt động",
+      "inactive": "ngừng",
+      "totalStock": "Tổng tồn kho",
+      "lowStock": "Sắp hết",
+      "outOfStock": "Hết hàng"
+    },
+    "sections": {
+      "statistics": "Thống kê tổng quan",
+      "salesByClinicTable": "Chi tiết doanh số theo cơ sở",
+      "topProductsTable": "Chi tiết top sản phẩm bán chạy",
+      "allProducts": "Danh sách tất cả sản phẩm",
+      "lowStock": "Sản phẩm sắp hết"
+    },
+    "table": {
+      "clinic": "Cơ sở",
+      "itemsSold": "Số lượng đã bán",
+      "uniqueProducts": "Sản phẩm khác nhau",
+      "revenue": "Doanh thu",
+      "product": "Sản phẩm",
+      "quantitySold": "Đã bán",
+      "currentStock": "Tồn kho",
+      "price": "Giá bán",
+      "status": "Trạng thái"
+    },
+    "pagination": {
+      "showing": "Hiển thị",
+      "to": "đến",
+      "of": "trong tổng số",
+      "results": "kết quả",
+      "previous": "Trước",
+      "next": "Sau",
+      "page": "Trang"
+    }
+  },
+  "system": {
+    "title": "Thiết lập hệ thống",
+    "subtitle": "Quản lý tham số, ngày nghỉ và nhật ký hoạt động",
+    "tabs": {
+      "holidays": "Ngày nghỉ lễ",
+      "logs": "Nhật ký hệ thống",
+      "config": "Tham số hệ thống"
+    },
+    "holidays": {
+      "addTitle": "Thêm ngày nghỉ lễ mới",
+      "addNew": "Thêm ngày nghỉ lễ mới",
+      "name": "Tên ngày lễ",
+      "namePlaceholder": "Ví dụ: Nghỉ mát công ty",
+      "startDate": "Từ ngày",
+      "endDate": "Đến ngày",
+      "recurring": "Lặp lại hàng năm",
+      "applyToClinic": "Áp dụng cho cơ sở",
+      "applyTo": "Áp dụng cho cơ sở",
+      "applyToClinicHint": "(Để trống nếu áp dụng tất cả)",
+      "applyToAll": "Để trống nếu áp dụng tất cả",
+      "allClinics": "Tất cả",
+      "addButton": "Thêm ngày lễ",
+      "adding": "Đang thêm...",
+      "yes": "Có",
+      "no": "Không",
+      "days": "ngày",
+      "to": "đến",
+      "deleteConfirm": "Bạn có chắc muốn xóa ngày lễ này?",
+      "table": {
+        "time": "Thời gian",
+        "name": "Tên ngày lễ",
+        "clinic": "Cơ sở",
+        "recurring": "Lặp lại",
+        "actions": "Thao tác",
+        "to": "đến",
+        "days": "ngày",
+        "yes": "Có",
+        "no": "Không"
+      },
+      "messages": {
+        "noHolidays": "Chưa có ngày nghỉ lễ nào được thiết lập.",
+        "noData": "Chưa có ngày nghỉ lễ nào được thiết lập",
+        "confirmDelete": "Bạn có chắc muốn xóa ngày lễ này?",
+        "added": "Đã thêm ngày lễ",
+        "addSuccess": "Đã thêm ngày lễ",
+        "deleted": "Đã xóa",
+        "deleteSuccess": "Đã xóa",
+        "deleteFailed": "Xóa thất bại",
+        "addFailed": "Thêm thất bại",
+        "loadFailed": "Không thể tải danh sách ngày lễ",
+        "startDateFuture": "Ngày bắt đầu phải là ngày tương lai (sau ngày hôm nay)",
+        "endDateAfterStart": "Ngày kết thúc phải sau hoặc bằng ngày bắt đầu"
+      }
+    },
+    "logs": {
+      "filterTitle": "Bộ lọc tìm kiếm",
+      "search": "Tìm kiếm",
+      "searchPlaceholder": "Tìm theo hành động hoặc tên người dùng...",
+      "searchAction": "Tìm theo hành động...",
+      "searchUsername": "Tìm theo tên người dùng...",
+      "selectDate": "Chọn ngày",
+      "filterRole": "Vai trò",
+      "allRoles": "Tất cả vai trò",
+      "clearFilters": "Xóa bộ lọc",
+      "table": {
+        "time": "Thời gian",
+        "user": "Người dùng",
+        "action": "Hành động",
+        "details": "Chi tiết",
+        "ip": "IP"
+      },
+      "messages": {
+        "noLogs": "Không tìm thấy nhật ký nào.",
+        "noData": "Không tìm thấy nhật ký nào",
+        "loadFailed": "Không thể tải nhật ký hệ thống",
+        "loading": "Đang tải..."
+      },
+      "pagination": {
+        "previous": "Trước",
+        "next": "Sau",
+        "page": "Trang"
+      }
+    },
+    "config": {
+      "save": "Lưu thay đổi",
+      "saving": "Đang lưu...",
+      "valuePlaceholder": "Nhập giá trị cho",
+      "messages": {
+        "loadFailed": "Không thể tải cấu hình",
+        "saveSuccess": "Đã lưu cấu hình",
+        "saveFailed": "Lưu thất bại",
+        "noData": "Chưa có cấu hình nào"
+      }
+    }
+  },
   "staff": {
     "pageDescription": "Tổng quan tất cả nhân viên trong hệ thống cùng vai trò, phòng ban và cơ sở đang làm việc.",
     "filters": {
       "search": "Tìm kiếm",
-      "searchPlaceholder": "Tìm theo tên, email, số điện thoại hoặc mã nhân viên"
+      "searchPlaceholder": "Tìm theo tên, email, số điện thoại hoặc mã nhân viên",
+      "status": "Trạng thái",
+      "department": "Phòng ban",
+      "role": "Vai trò",
+      "allDepartments": "Tất cả phòng ban",
+      "allRoles": "Tất cả vai trò",
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
+      "activeCount": "{{count}} bộ lọc đang hoạt động",
+      "activeCountPlural": "{{count}} bộ lọc đang hoạt động"
     },
     "actions": {
       "search": "Tìm kiếm",
@@ -227,18 +450,138 @@
       "clinics": "Cơ sở",
       "contact": "Liên hệ",
       "status": "Trạng thái",
+      "resignation": "Nghỉ việc",
       "createdAt": "Ngày tạo",
       "lastLogin": "Đăng nhập gần nhất",
       "noDepartment": "Chưa phân phòng ban",
       "noRole": "Chưa có vai trò",
       "noClinic": "Chưa phân cơ sở",
-      "active": "Đang hoạt động",
-      "inactive": "Ngừng hoạt động"
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
+      "approvedResignation": "Đã duyệt nghỉ việc",
+      "staffDirectory": "Danh sách nhân viên"
     },
     "messages": {
       "loading": "Đang tải danh sách nhân viên...",
       "noData": "Không tìm thấy nhân viên nào",
       "loadFailed": "Không thể tải danh sách nhân viên"
+    },
+    "cv": {
+      "title": "Hồ sơ CV",
+      "close": "Đóng",
+      "loading": "Đang tải CV...",
+      "extractedText": {
+        "label": "Text đã extract:",
+        "characters": "ký tự",
+        "title": "Text đã extract từ CV",
+        "ariaLabel": "Text đã extract từ CV"
+      },
+      "extractedImages": {
+        "label": "Hình ảnh đã extract:",
+        "count": "hình ảnh",
+        "viewImage": "Xem hình ảnh {{index}} ở kích thước lớn",
+        "viewImageLabel": "Xem hình ảnh {{index}}"
+      },
+      "messages": {
+        "noCv": "Nhân viên này chưa có CV",
+        "noExtractedData": "CV chưa có dữ liệu extract",
+        "loadFailed": "Không thể tải CV"
+      }
     }
+  },
+  "customers": {
+    "pageDescription": "Quản lý tất cả khách hàng trong hệ thống, bao gồm thông tin liên hệ và lịch sử",
+    "filters": {
+      "search": "Tìm kiếm",
+      "searchPlaceholder": "Tìm theo tên, mã bệnh nhân, số điện thoại hoặc email..."
+    },
+    "actions": {
+      "search": "Tìm kiếm",
+      "clear": "Xóa",
+      "viewDetail": "Xem chi tiết",
+      "block": "Chặn khách hàng",
+      "unblock": "Bỏ chặn khách hàng",
+      "close": "Đóng",
+      "activate": "Kích hoạt",
+      "deactivate": "Vô hiệu hóa"
+    },
+    "table": {
+      "customer": "Khách hàng",
+      "contact": "Liên hệ",
+      "address": "Địa chỉ",
+      "status": "Trạng thái",
+      "createdAt": "Ngày tạo",
+      "actions": "Thao tác",
+      "active": "Hoạt động",
+      "inactive": "Không hoạt động",
+      "listTitle": "Danh sách khách hàng",
+      "total": "Tổng",
+      "selectAll": "Chọn tất cả",
+      "code": "Mã",
+      "id": "ID",
+      "hasAccount": "Có tài khoản"
+    },
+    "bulkActions": {
+      "selected": "Đã chọn",
+      "customers": "khách hàng",
+      "customersPlural": "khách hàng"
+    },
+    "detail": {
+      "title": "Chi tiết khách hàng",
+      "fullName": "Họ và tên",
+      "patientCode": "Mã bệnh nhân",
+      "gender": "Giới tính",
+      "dateOfBirth": "Ngày sinh",
+      "phone": "Số điện thoại",
+      "email": "Email",
+      "address": "Địa chỉ",
+      "status": "Trạng thái",
+      "userId": "ID tài khoản",
+      "createdAt": "Ngày tạo",
+      "updatedAt": "Cập nhật lần cuối",
+      "noAccount": "Không có"
+    },
+    "messages": {
+      "loading": "Đang tải danh sách khách hàng...",
+      "noData": "Không tìm thấy khách hàng nào",
+      "loadFailed": "Không thể tải danh sách khách hàng",
+      "loadDetailFailed": "Không thể tải chi tiết khách hàng",
+      "updateFailed": "Không thể cập nhật trạng thái khách hàng",
+      "activated": "Khách hàng đã được kích hoạt",
+      "blocked": "Khách hàng đã bị chặn"
+    }
+  },
+  "salaryConfig": {
+    "title": "Cấu hình lương",
+    "subtitle": "Tạo hoặc cập nhật hợp đồng lương",
+    "selectEmployee": "Chọn nhân viên",
+    "calculationModel": "Mô hình tính toán",
+    "contractType": "Loại hợp đồng",
+    "shiftBased": "Theo ca",
+    "monthlySalary": "Lương tháng",
+    "autoAssigned": "Tự động gán theo vai trò",
+    "grossBaseSalary": "Lương cơ bản (Gross)",
+    "workStandards": "Tiêu chuẩn làm việc",
+    "standardShifts": "Số ca chuẩn",
+    "overShiftBonus": "Thưởng vượt ca (VND/ca)",
+    "standardDays": "Số ngày chuẩn",
+    "otMultiplier": "Hệ số OT (%)",
+    "latePenalty": "Phạt đi trễ (VND/phút)",
+    "insuranceTaxRelief": "Bảo hiểm & Giảm trừ thuế",
+    "insuranceBase": "Mức lương đóng BH (VND)",
+    "insurancePlaceholder": "Mặc định: lấy theo lương cơ bản",
+    "dependent": "Người phụ thuộc",
+    "person": "Người",
+    "monthlyAllowances": "Trợ cấp hàng tháng",
+    "add": "Thêm",
+    "allowanceNamePlaceholder": "Tên trợ cấp...",
+    "income": "THU NHẬP",
+    "remove": "Xóa",
+    "noAllowances": "Chưa có trợ cấp nào được cấu hình.",
+    "cancel": "Hủy",
+    "saving": "Đang lưu...",
+    "save": "Lưu cấu hình",
+    "startConfiguration": "Bắt đầu cấu hình",
+    "selectEmployeeHint": "Chọn nhân viên từ thanh tìm kiếm phía trên để bắt đầu."
   }
 }

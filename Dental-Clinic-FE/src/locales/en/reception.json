@@ -1,0 +1,291 @@
+{
+  "dashboard": {
+    "title": "General Schedule",
+    "myClinic": "My Clinic",
+    "timeline": "Timeline",
+    "list": "List View",
+    "addBooking": "New Booking",
+    "queue": "Waiting Queue",
+    "unassigned": "Unassigned",
+    "emptyQueue": "No appointments in queue.",
+    "morningShift": "MORNING",
+    "afternoonShift": "AFTERNOON",
+    "dragConfirmTitle": "Confirm Reschedule",
+    "dragConfirmDesc": "Reschedule <b>{{patient}}</b> to",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "moveSuccess": "Rescheduled successfully! ✅",
+    "moveError": "Failed to reschedule."
+  },
+  "list": {
+    "title": "Cashier Management",
+    "subtitle": "Look up appointments and process payments",
+    "searchPlaceholder": "Search name, phone, code...",
+    "filter": "Filter",
+    "allStatus": "-- All Statuses --",
+    "allPayment": "-- All Payments --",
+    "refresh": "Refresh",
+    "colPatient": "PATIENT",
+    "colTime": "TIME",
+    "colDoctor": "/ TYPE",
+    "colStatus": "Status",
+    "colPayment": "Payment",
+    "colAction": "Action",
+    "loading": "Loading data...",
+    "noData": "No matching appointments found.",
+    "pageInfo": "Page {{current}} / {{total}} (Total: {{count}} rows)",
+    "collectMoney": "Payment",
+    "printBill": "Print Bill",
+    "selectRoom": "Assign Room",
+    "unassignedDoc": "No Doctor"
+  },
+  "invoice": {
+    "title": "Invoice & Payment Details",
+    "invoiceHeader": "INVOICE",
+    "invoiceId": "Invoice ID",
+    "date": "Date",
+    "customer": "Customer",
+    "rank": "Membership Rank",
+    "tableService": "Service / Item",
+    "tableQty": "Qty",
+    "tablePrice": "Unit Price",
+    "tableTotal": "Total",
+    "scanQr": "Scan to Pay",
+    "bank": "Bank",
+    "accountNo": "Acc. No",
+    "content": "Memo",
+    "subTotal": "Subtotal",
+    "discount": "Discount {{rank}}",
+    "bookingFee": "Booking Fee ({{type}})",
+    "grandTotal": "GRAND TOTAL",
+    "paidDeposit": "Paid (Deposit)",
+    "remaining": "Remaining",
+    "thankYou": "Thank you for using services at {{clinic}}!",
+    "footerNote": "This invoice is valid for the day. Please check carefully before leaving.",
+    "sign": "Cashier Signature",
+    "btnPrint": "Print Invoice",
+    "btnConfirm": "Confirm Payment Received",
+    "paidBadge": "PAID",
+    "confirmSuccess": "Payment successful for {{name}}",
+    "errorLoad": "Unable to load invoice details!",
+    "errorConfirm": "Payment confirmation error.",
+    "confirmMsg": "Confirm payment received?"
+  },
+  "quickBooking": {
+    "title": "Quick Booking",
+    "subtitle": "Add guest to queue (Walk-in)",
+    "labelPatient": "1. Patient",
+    "placeholderSearch": "Search name or phone...",
+    "change": "Change",
+    "labelService": "2. Service",
+    "addService": "Add Service",
+    "selectService": "-- Select service {{index}} --",
+    "estimated": "Estimated",
+    "cancel": "Cancel",
+    "create": "Create Ticket",
+    "success": "Created ticket for {{count}} services! 👋",
+    "error": "Error creating ticket.",
+    "validate": "Please select a Patient and at least 1 Service!"
+  },
+  "editModal": {
+    "title": "Appointment Details",
+    "labelService": "Service",
+    "labelDoctor": "Doctor",
+    "labelTime": "Time",
+    "labelStatus": "Status",
+    "labelNote": "Note",
+    "placeholderNote": "Enter note...",
+    "close": "Close",
+    "save": "Save Changes",
+    "success": "Updated successfully!",
+    "error": "Update failed.",
+    "statusLocked": "Status is managed by Doctor"
+  },
+  "roomModal": {
+    "title": "Select Treatment Room",
+    "patient": "Patient",
+    "walkInGuest": "Walk-in Guest",
+    "loading": "⏳ Finding suitable rooms...",
+    "noRoom": "🚫 No rooms available in this time slot!",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "saving": "Saving...",
+    "success": "Room assigned successfully!",
+    "errorLoad": "Unable to load available rooms!",
+    "errorSave": "Error saving room",
+    "vipSurgery": "VIP / Surgery",
+    "standard": "Standard"
+  },
+  "aiChat": {
+    "welcome": "Hello! I am the Dental AI Assistant. What information do you need?",
+    "placeholder": "Ex: Revenue today?",
+    "error": "Error",
+    "disconnect": "Lost connection to AI Server.",
+    "noData": "No data found.",
+    "foundResult": "Found {{count}} results",
+    "poweredBy": "Powered by Google Gemini AI"
+  },
+  "bookingOffline": {
+    "title": "Walk-in Booking",
+    "subtitle": "Reception & Booking at Counter",
+    "success": "Booking successful! ✅",
+    "error": "Booking failed."
+  },
+  "status": {
+    "SCHEDULED": "Scheduled",
+    "CONFIRMED": "Confirmed",
+    "PENDING": "Pending",
+    "IN_PROGRESS": "In Progress",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled",
+    "UNPAID": "Unpaid",
+    "PAID": "Paid",
+    "DEPOSIT_PAID": "Deposit Paid"
+  },
+  "patients": {
+    "title": "Patient Management",
+    "totalRecords": "Total records",
+    "searchPlaceholder": "Search name, phone, code...",
+    "addNew": "Add New",
+    "table": {
+      "code": "Code",
+      "name": "Full Name",
+      "contact": "Contact Info",
+      "genderDob": "Gender / DOB",
+      "status": "Status",
+      "actions": "Actions"
+    },
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive"
+    },
+    "messages": {
+      "loading": "Loading data...",
+      "noData": "No patients found.",
+      "loadError": "Unable to load patient list."
+    },
+    "pagination": {
+      "page": "Page",
+      "prev": "Prev",
+      "next": "Next"
+    }
+  },
+  "patientDetail": {
+    "title": "Patient Profile",
+    "labels": {
+      "fullName": "Full Name",
+      "phone": "Phone Number",
+      "email": "Email (Optional)",
+      "emailLabel": "Email",
+      "dob": "Date of Birth",
+      "gender": "Gender",
+      "address": "Address"
+    },
+    "gender": {
+      "male": "Male",
+      "female": "Female",
+      "other": "Other",
+      "unspecified": "Unspecified"
+    },
+    "buttons": {
+      "close": "Close",
+      "edit": "Edit",
+      "cancel": "Cancel",
+      "save": "Save Changes"
+    },
+    "messages": {
+      "validation": "Name and Phone are required!",
+      "success": "Profile updated successfully!",
+      "error": "Error updating profile."
+    }
+  },
+  "patientHistory": {
+    "title": "Medical History",
+    "table": {
+      "time": "Time",
+      "doctor": "Doctor in Charge",
+      "service": "Services Used",
+      "note": "Note / Diagnosis",
+      "status": "Status",
+      "total": "Total Amount"
+    },
+    "messages": {
+      "loading": "Loading history data...",
+      "noData": "No medical history found for this patient.",
+      "error": "Error loading history"
+    },
+    "noService": "No services",
+    "noNote": "No notes"
+  },
+  "stepSelectPatient": {
+    "search": {
+      "title": "Identify Customer",
+      "subtitle": "Search by Name, Phone or Code",
+      "placeholder": "Enter search keywords...",
+      "notFound": "Customer not found.",
+      "createNew": "Create New Profile"
+    },
+    "create": {
+      "title": "Create New Profile",
+      "cancel": "Cancel",
+      "submit": "Create & Select"
+    },
+    "successModal": {
+      "title": "Profile Created Successfully!",
+      "codeLabel": "Patient Code:",
+      "continue": "Continue"
+    },
+    "messages": {
+      "validation": "Please enter Name and Phone!",
+      "createError": "Error creating profile.",
+      "searchError": "Unable to find customers."
+    }
+  },
+  "invoiceList": {
+    "title": "Invoice Management",
+    "stats": {
+      "revenue": "Total Revenue (Total)",
+      "invoiceCount": "Paid Invoices",
+      "averageValue": "Avg. Order Value",
+      "unit": "Inv"
+    },
+    "filters": {
+      "searchLabel": "Search",
+      "searchPlaceholder": "Invoice Code, Name, Phone...",
+      "fromDate": "From Date",
+      "toDate": "To Date",
+      "statusLabel": "Status",
+      "statusOptions": {
+        "all": "All Status",
+        "paid": "Paid",
+        "unpaid": "Unpaid"
+      },
+      "btnResetTooltip": "Reset Filters",
+      "btnFilter": "Filter Results"
+    },
+    "table": {
+      "headers": {
+        "code": "INVOICE CODE",
+        "date": "ISSUE DATE",
+        "customer": "CUSTOMER",
+        "total": "TOTAL AMOUNT",
+        "status": "STATUS",
+        "action": ""
+      },
+      "statusDisplay": {
+        "paid": "Paid",
+        "unpaid": "Pending",
+        "refunded": "Refunded"
+      },
+      "loading": "Loading data...",
+      "empty": "No invoices found.",
+      "noCode": "---",
+      "viewTooltip": "View Details"
+    },
+    "pagination": {
+      "info": "Page {{page}} of {{total}}",
+      "prev": "Prev",
+      "next": "Next"
+    }
+}
+}

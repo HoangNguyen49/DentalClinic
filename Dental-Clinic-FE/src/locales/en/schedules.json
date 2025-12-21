@@ -146,7 +146,11 @@
       "resultMessage": "Created {{count}} assignments for {{days}} day(s).",
       "error": "Error generating schedule",
       "messages": {
-        "pleaseInput": "Please input a description for schedule AI generation."
+        "pleaseInput": "Please input a description for schedule AI generation.",
+        "preparing": "Preparing data...",
+        "callingAi": "Calling Gemini AI...",
+        "processing": "AI is processing, please wait...",
+        "almostDone": "Almost done..."
       }
     }
   },

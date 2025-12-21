@@ -1,0 +1,31 @@
+{
+  "title": "Patient Profile",
+  "btnEdit": "Edit",
+  "btnCancel": "Cancel",
+  "btnSave": "Save Changes",
+  "patientCode": "Patient ID",
+  "loading": "Loading...",
+  "messages": {
+    "loadError": "Could not load profile.",
+    "updateSuccess": "Profile updated successfully!",
+    "updateError": "Update failed. Please try again."
+  },
+  "fields": {
+    "fullName": "Full Name",
+    "phone": "Phone Number",
+    "gender": "Gender",
+    "dob": "Date of Birth",
+    "address": "Address",
+    "addressPlaceholder": "House number, street, ward...",
+    "note": "Medical Note / History",
+    "noteHint": "(Help doctors understand your condition better)",
+    "notePlaceholder": "E.g., Antibiotic allergy, heart disease history...",
+    "genderOptions": {
+      "default": "-- Select Gender --",
+      "male": "Male",
+      "female": "Female",
+      "other": "Other"
+    },
+    "phoneHint": "*Contact support to change phone number"
+  }
+}

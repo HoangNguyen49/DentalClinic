@@ -109,7 +109,7 @@ export default function AppointmentList() {
       const raw = (newStatus || "").trim().toUpperCase();
       // Normalize common aliases
       let mapped = raw;
-      if (["IN-PROGRESS", "IN_PROGRESS"].includes(raw)) mapped = "PROCESSING";
+      if (["IN-PROGRESS", "IN_PROGRESS"].includes(raw)) mapped = "IN_PROGRESS";
       if (["NO-SHOW", "NO_SHOW", "NO-SHOWING", "NO_SHOWING"].includes(raw)) mapped = "CANCELED";
       if (raw === "CANCELLED") mapped = "CANCELED";
 
@@ -135,22 +135,11 @@ export default function AppointmentList() {
         );
 
         toast.success(`Appointment status changed to ${mapped}`);
-        
-        // Flow A: If status changed to PROCESSING, navigate to detail page immediately
-        if (mapped === "PROCESSING") {
-          // Navigate to appointment detail page immediately after successful status change
-          navigate(`/doctor/appointments/${appointmentId}`);
-          return; // Don't refresh list, we're navigating away
-        }
-        
-        fetchAppointments(); // Refresh list for other status changes
-      } catch (postErr: unknown) {
-        const resp = (postErr as { response?: { status?: number; data?: unknown } })?.response;
+        fetchAppointments(); // Refresh list
+      } catch (postErr: any) {
+        const resp = postErr?.response;
         // Backend returns 400 with message "Cannot set to COMPLETED: medical record is required"
-        const payload = resp?.data as { message?: unknown } | undefined;
-        const serverMsg = payload && typeof payload.message === "string" ? payload.message : undefined;
-
-        if (resp && resp.status === 400 && serverMsg && serverMsg.includes("medical record is required")) {
+        if (resp && resp.status === 400 && typeof resp.data?.message === "string" && resp.data.message.includes("medical record is required")) {
           console.error(`[DoctorAppointment] appointmentId=${appt.appointmentId} missing medical record according to server:`, resp.data);
           // show modal prompting to create/view medical record
           setMissingRecordAppointment(appt);
@@ -160,7 +149,7 @@ export default function AppointmentList() {
         // THÊM: XỬ LÝ CÁC LỖI VALIDATION KHÁC TỪ BACKEND
         if (resp && resp.status === 400) {
           // Hiển thị thông báo lỗi từ backend
-          toast.error(serverMsg ?? "Validation failed");
+          toast.error(resp.data?.message || "Validation failed");
           return;
         }
 
@@ -182,12 +171,19 @@ export default function AppointmentList() {
     }
   };
 
-
+  const checkAndAutoComplete = (appointment: DoctorAppointmentDTO) => {
+    const now = new Date();
+    const endTime = new Date(appointment.endDateTime ?? appointment.startDateTime);
+    // Auto-complete if past end time and not already completed
+    if (now > endTime && appointment.status !== "COMPLETED") {
+      changeStatus(appointment.appointmentId, "COMPLETED");
+    }
+  };
 
   const getStatusBadgeClass = (status: string) => {
     const s = status?.toLowerCase() || "";
     if (s === "scheduled") return "bg-blue-100 text-blue-800";
-    if (s === "in_progress" || s === "in-progress") return "bg-purple-100 text-purple-800";
+    if (s === "in_progress") return "bg-purple-100 text-purple-800";
     if (s === "completed") return "bg-green-100 text-green-800";
     if (s === "canceled") return "bg-red-100 text-red-800";
     return "bg-gray-100 text-gray-800";
@@ -296,7 +292,7 @@ export default function AppointmentList() {
                 >
                   <option value="">All Status</option>
                   <option value="SCHEDULED">Scheduled</option>
-                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="IN_PROGRESS">IN_PROGRESS</option>
                   <option value="COMPLETED">Completed</option>
                   <option value="CANCELED">Canceled</option>
                 </select>
@@ -373,7 +369,6 @@ export default function AppointmentList() {
                       const start = new Date(appointment.startDateTime);
                       const startMinus5 = new Date(start.getTime() - 5 * 60 * 1000);
                       const canStart = now >= startMinus5;
-
 
                       return (
                         <tr key={appointment.appointmentId} className="hover:bg-gray-50 transition-colors">
@@ -485,8 +480,6 @@ export default function AppointmentList() {
                               View
                             </button>
 
-
-
                             
 
                             {appointment.status === "SCHEDULED" && (
@@ -495,14 +488,14 @@ export default function AppointmentList() {
                                   onClick={() => changeStatus(appointment.appointmentId, "IN_PROGRESS")}
                                   disabled={!canStart}
                                   className={`text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded transition ${!canStart ? 'opacity-50 cursor-not-allowed' : 'hover:bg-purple-200'}`}
-                                  title={!canStart ? 'Cannot start yet: appointments can only be started within 5 minutes of scheduled time' : 'Start processing - meeting in progress'}
+                                  title={!canStart ? 'Cannot start yet: appointments can only be started within 5 minutes of scheduled time' : 'Start IN_PROGRESS - meeting in progress'}
                                 >
                                   Start
                                 </button>
                               </>
                             )}
 
-                            {(appointment.status === "IN_PROGRESS" || appointment.status === "IN-PROGRESS") && (
+                            {appointment.status === "IN_PROGRESS" && (
                               <>
                                 {/* Check if appointment duration exceeded 20 minutes */}
                                 {(() => {

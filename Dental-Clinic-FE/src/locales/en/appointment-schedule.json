@@ -1,0 +1,33 @@
+{
+  "title": "My Appointments",
+  "subtitle": "Manage and track your treatments",
+  "btnNew": "New Booking",
+  "tabs": {
+    "upcoming": "Upcoming & Ongoing",
+    "history": "History",
+    "cancelled": "Cancelled / No-show"
+  },
+  "empty": {
+    "message": "You have no appointments in this section.",
+    "action": "Book Now"
+  },
+  "card": {
+    "doctor": "Doctor",
+    "note": "Note"
+  },
+  "status": {
+    "PENDING": "Pending",
+    "SCHEDULED": "Scheduled",
+    "CONFIRMED": "Confirmed",
+    "IN_PROGRESS": "In Progress",
+    "PROCESSING": "In Progress",
+    "COMPLETED": "Completed",
+    "CANCELLED": "Cancelled",
+    "CANCELED": "Cancelled",
+    "NOSHOW": "No-show",
+    "NO_SHOW": "No-show"
+  },
+  "messages": {
+    "loadError": "Could not load appointment list."
+  }
+}
