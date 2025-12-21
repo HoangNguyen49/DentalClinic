@@ -132,7 +132,7 @@
     "error": "Lỗi đặt lịch."
   },
   "status": {
-    "CONFIRMED": "Đã xác nhận",
+    "SCHEDULED": "Đã xác nhận",
     "PENDING": "Chờ duyệt",
     "IN_PROGRESS": "Đang khám",
     "COMPLETED": "Hoàn thành",

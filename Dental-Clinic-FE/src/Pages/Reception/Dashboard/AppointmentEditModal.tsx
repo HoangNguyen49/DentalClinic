@@ -71,7 +71,7 @@ export default function AppointmentEditModal({
     if (s === "SCHEDULED" || s === "CONFIRMED")
       config = {
         color: "bg-blue-50 text-blue-700 border-blue-200",
-        label: t("status.CONFIRMED"),
+        label: t("status.SCHEDULED"),
       };
     if (s === "IN_PROGRESS" || s === "PROCESSING")
       config = {
@@ -252,6 +252,5 @@ export default function AppointmentEditModal({
     </div>
   );
 
-  // ✅ Portal to body => modal không bị ảnh hưởng bởi layout/overflow bên trong app
   return createPortal(modalUI, document.body);
 }

@@ -103,13 +103,15 @@ const m = Math.floor(seconds / 60);
   const totalDuration = (data.selectedServices || []).reduce((acc: number, s: any) => acc + (s.defaultDuration || 0), 0);
   const uniqueCategories = Array.from(new Set((data.selectedServices || []).map((s: any) => s.category)));
 
-  // --- XỬ LÝ THANH TOÁN ---
+
+  // --- XỬ LÝ THANH TOÁN ( ĐỒNG BỘ VỚI RACE CONDITION) ---
   const handlePayment = async (method: 'VNPAY' | 'PAYPAL') => {
     try {
       setIsProcessing(true);
       
       sessionStorage.setItem('bookingRetryData', JSON.stringify(data));
 
+      // 1. Gọi onConfirm (hàm này ở BookingPage sẽ check SLOT_ALREADY_BOOKED)
       const newAppointment = await onConfirm();
 
       if (!newAppointment || !newAppointment.id) {
@@ -120,6 +122,7 @@ const m = Math.floor(seconds / 60);
       currentRetryData.appointmentId = newAppointment.id;
       sessionStorage.setItem('bookingRetryData', JSON.stringify(currentRetryData));
 
+      // 2. Tiếp tục luồng thanh toán
       if (method === 'VNPAY') {
         const paymentUrl = await getVnpayUrl(newAppointment.id);
         window.location.href = paymentUrl;
@@ -141,9 +144,15 @@ const m = Math.floor(seconds / 60);
       const errorData = error.response?.data;
       const errorMsg = typeof errorData === 'string' ? errorData : (errorData?.message || "");
 
+      if (errorMsg === "SLOT_ALREADY_BOOKED") {
+          return; 
+      }
+
+      // Xử lý các lỗi đặc thù khác (Hết hạn, Hủy...)
       if (errorMsg.includes("BOOKING_EXPIRED") || errorMsg.includes("hủy") || errorMsg.includes("cancelled")) {
           setShowExpiredModal(true); 
       } else {
+          // Chỉ hiện Toast nếu lỗi đó chưa được xử lý ở BookingPage
           toast.error(errorMsg || "Payment Error");
       }
     }
