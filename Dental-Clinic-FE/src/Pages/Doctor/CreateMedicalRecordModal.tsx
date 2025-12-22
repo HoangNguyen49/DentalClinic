@@ -101,6 +101,7 @@ export default function CreateMedicalRecordModal({
   const [showVariantsModal, setShowVariantsModal] = useState(false);
   const [activeVariantId, setActiveVariantId] = useState<number | undefined>(undefined);
   const [activeVariantName, setActiveVariantName] = useState<string | undefined>(undefined);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const showOnlyActiveVariantForModal = Boolean(
     appointment?.serviceVariant || appointment?.appointmentServiceId || (appointment?.serviceDetails && appointment.serviceDetails.length === 1)
   );
@@ -126,6 +127,8 @@ export default function CreateMedicalRecordModal({
     setAiSuggestions(null);
     setAiError(null);
     setShowAiPreview(false);
+    // Reset errors
+    setErrors({});
   };
 
   // Function to call AI backend for suggestions
@@ -362,6 +365,10 @@ export default function CreateMedicalRecordModal({
       },
     ]);
     setMedicationInput({ medId: "", quantity: "", instructions: "" });
+    // Clear prescription error if medication is added
+    if (errors.prescription) {
+      setErrors((prev) => ({ ...prev, prescription: "" }));
+    }
   };
 
   const handleRemoveMedication = (id: string) => {
@@ -456,18 +463,46 @@ export default function CreateMedicalRecordModal({
   };
 
   const validate = () => {
+    const newErrors: Record<string, string> = {};
+    
     if (!patientId) {
-      toast.error("Patient info is missing.");
-      return false;
+      newErrors.patientId = "Patient info is missing.";
     }
     if (!doctorId) {
-      toast.error("Doctor info is missing.");
-      return false;
+      newErrors.doctorId = "Doctor info is missing.";
     }
     if (!clinicInfo?.id) {
-      toast.error("Clinic information is missing.");
+      newErrors.clinic = "Clinic information is missing.";
+    }
+    if (!recordDate || recordDate.trim() === "") {
+      newErrors.recordDate = "Record date is required.";
+    }
+    if (!diagnosis || diagnosis.trim() === "") {
+      newErrors.diagnosis = "Diagnosis is required.";
+    }
+    if (!treatmentPlan || treatmentPlan.trim() === "") {
+      newErrors.treatmentPlan = "Treatment plan is required.";
+    }
+    // Prescription: must have at least one medication
+    if (selectedMedications.length === 0) {
+      newErrors.prescription = "Please add at least one medication.";
+    }
+    // Additional Prescription Note: always required
+    if (!manualPrescriptionNote || manualPrescriptionNote.trim() === "") {
+      newErrors.manualPrescriptionNote = "Additional prescription note is required.";
+    }
+    if (!generalNote || generalNote.trim() === "") {
+      newErrors.generalNote = "General note is required.";
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      const firstError = Object.values(newErrors)[0];
+      toast.error(firstError);
       return false;
     }
+    
     return true;
   };
 
@@ -600,13 +635,26 @@ export default function CreateMedicalRecordModal({
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Record Date</label>
+              <label className="text-sm font-medium text-gray-600">
+                Record Date <span className="text-red-500">*</span>
+              </label>
               <input
                 type="date"
+                required
                 value={recordDate}
-                onChange={(e) => setRecordDate(e.target.value)}
-                className="mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => {
+                  setRecordDate(e.target.value);
+                  if (errors.recordDate) {
+                    setErrors((prev) => ({ ...prev, recordDate: "" }));
+                  }
+                }}
+                className={`mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.recordDate ? "border-red-500" : ""
+                }`}
               />
+              {errors.recordDate && (
+                <p className="mt-1 text-xs text-red-500">{errors.recordDate}</p>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600">Appointment ID</label>
@@ -621,7 +669,9 @@ export default function CreateMedicalRecordModal({
           {/* Diagnosis section with AI Assistant button */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-gray-600">Diagnosis</label>
+              <label className="text-sm font-medium text-gray-600">
+                Diagnosis <span className="text-red-500">*</span>
+              </label>
               <button
                 type="button"
                 onClick={callAiForSuggestions}
@@ -642,12 +692,23 @@ export default function CreateMedicalRecordModal({
               </button>
             </div>
             <textarea
+              required
               value={diagnosis}
-              onChange={(e) => setDiagnosis(e.target.value)}
+              onChange={(e) => {
+                setDiagnosis(e.target.value);
+                if (errors.diagnosis) {
+                  setErrors((prev) => ({ ...prev, diagnosis: "" }));
+                }
+              }}
               rows={3}
-              className="w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.diagnosis ? "border-red-500" : ""
+              }`}
               placeholder="Enter diagnosis... (AI will detect language and provide suggestions in same language)"
             />
+            {errors.diagnosis && (
+              <p className="text-xs text-red-500">{errors.diagnosis}</p>
+            )}
             {aiError && (
               <div className="rounded-lg border border-red-200 bg-red-50 p-3">
                 <p className="text-sm text-red-700">{aiError}</p>
@@ -770,14 +831,27 @@ export default function CreateMedicalRecordModal({
           )}
 
           <div>
-            <label className="text-sm font-medium text-gray-600">Treatment Plan</label>
+            <label className="text-sm font-medium text-gray-600">
+              Treatment Plan <span className="text-red-500">*</span>
+            </label>
             <textarea
+              required
               value={treatmentPlan}
-              onChange={(e) => setTreatmentPlan(e.target.value)}
+              onChange={(e) => {
+                setTreatmentPlan(e.target.value);
+                if (errors.treatmentPlan) {
+                  setErrors((prev) => ({ ...prev, treatmentPlan: "" }));
+                }
+              }}
               rows={4}
-              className="mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.treatmentPlan ? "border-red-500" : ""
+              }`}
               placeholder="Enter treatment plan..."
             />
+            {errors.treatmentPlan && (
+              <p className="mt-1 text-xs text-red-500">{errors.treatmentPlan}</p>
+            )}
           </div>
 
           <section className="rounded-xl border p-4">
@@ -787,40 +861,56 @@ export default function CreateMedicalRecordModal({
                 <p className="text-xs text-gray-500">Select medication, enter quantity & instructions.</p>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-              <select
-                value={medicationInput.medId}
-                onChange={(e) => setMedicationInput((prev) => ({ ...prev, medId: e.target.value }))}
-                className="rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select medication</option>
-                {medicationOptions.map((med) => (
-                  <option key={med.id} value={med.id}>
-                    {med.name}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={medicationInput.quantity}
-                onChange={(e) => setMedicationInput((prev) => ({ ...prev, quantity: e.target.value }))}
-                placeholder="Quantity"
-                className="rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex gap-2">
-                <input
-                  value={medicationInput.instructions}
-                  onChange={(e) => setMedicationInput((prev) => ({ ...prev, instructions: e.target.value }))}
-                  placeholder="Instructions"
-                  className="flex-1 rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddMedication}
-                  className="rounded bg-green-600 px-3 py-2 text-white hover:bg-green-700"
+            <div className="mt-3">
+              <label className="text-sm font-medium text-gray-600 mb-2 block">
+                Medications <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <select
+                  value={medicationInput.medId}
+                  onChange={(e) => setMedicationInput((prev) => ({ ...prev, medId: e.target.value }))}
+                  className={`rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.prescription ? "border-red-500" : ""
+                  }`}
+                  aria-label="Select medication"
                 >
-                  <Plus className="h-4 w-4" />
-                </button>
+                  <option value="">Select medication</option>
+                  {medicationOptions.map((med) => (
+                    <option key={med.id} value={med.id}>
+                      {med.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={medicationInput.quantity}
+                  onChange={(e) => setMedicationInput((prev) => ({ ...prev, quantity: e.target.value }))}
+                  placeholder="Quantity"
+                  className={`rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.prescription ? "border-red-500" : ""
+                  }`}
+                />
+                <div className="flex gap-2">
+                  <input
+                    value={medicationInput.instructions}
+                    onChange={(e) => setMedicationInput((prev) => ({ ...prev, instructions: e.target.value }))}
+                    placeholder="Instructions"
+                    className={`flex-1 rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.prescription ? "border-red-500" : ""
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddMedication}
+                    className="rounded bg-green-600 px-3 py-2 text-white hover:bg-green-700"
+                    aria-label="Add medication"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
+              {errors.prescription && (
+                <p className="mt-1 text-xs text-red-500">{errors.prescription}</p>
+              )}
             </div>
             {medicationInput.medId && (
               <p className="mt-1 text-xs text-gray-500">
@@ -849,26 +939,52 @@ export default function CreateMedicalRecordModal({
               </div>
             )}
             <div className="mt-3">
-              <label className="text-sm font-medium text-gray-600">Additional Prescription Note</label>
+              <label className="text-sm font-medium text-gray-600">
+                Additional Prescription Note <span className="text-red-500">*</span>
+              </label>
               <textarea
+                required
                 value={manualPrescriptionNote}
-                onChange={(e) => setManualPrescriptionNote(e.target.value)}
+                onChange={(e) => {
+                  setManualPrescriptionNote(e.target.value);
+                  if (errors.manualPrescriptionNote) {
+                    setErrors((prev) => ({ ...prev, manualPrescriptionNote: "" }));
+                  }
+                }}
                 rows={3}
-                className="mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.manualPrescriptionNote ? "border-red-500" : ""
+                }`}
                 placeholder="Add extra instructions..."
               />
+              {errors.manualPrescriptionNote && (
+                <p className="mt-1 text-xs text-red-500">{errors.manualPrescriptionNote}</p>
+              )}
             </div>
           </section>
 
           <div>
-            <label className="text-sm font-medium text-gray-600">General Note</label>
+            <label className="text-sm font-medium text-gray-600">
+              General Note <span className="text-red-500">*</span>
+            </label>
             <textarea
+              required
               value={generalNote}
-              onChange={(e) => setGeneralNote(e.target.value)}
+              onChange={(e) => {
+                setGeneralNote(e.target.value);
+                if (errors.generalNote) {
+                  setErrors((prev) => ({ ...prev, generalNote: "" }));
+                }
+              }}
               rows={3}
-              className="mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.generalNote ? "border-red-500" : ""
+              }`}
               placeholder="Enter additional notes..."
             />
+            {errors.generalNote && (
+              <p className="mt-1 text-xs text-red-500">{errors.generalNote}</p>
+            )}
           </div>
 
           <div>
