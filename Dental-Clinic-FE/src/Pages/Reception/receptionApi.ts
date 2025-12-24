@@ -108,7 +108,7 @@ export const receptionApi = {
         return axiosClient.get<PatientHistoryDTO[]>(`/api/reception/patients/${patientId}/history`);
     },
 
-    // 👇 MỚI: Cập nhật thông tin bệnh nhân
+    // MỚI: Cập nhật thông tin bệnh nhân
     updatePatient: (id: number, data: any) => {
         return axiosClient.put<PatientResponse>(`/api/reception/patients/${id}`, data);
     }

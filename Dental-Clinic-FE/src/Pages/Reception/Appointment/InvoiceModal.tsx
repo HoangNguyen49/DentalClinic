@@ -18,6 +18,7 @@ interface InvoiceModalProps {
   data: BillInvoice | null;
   onConfirm: () => void;
   loadingConfirm?: boolean;
+  viewOnly?: boolean;
 }
 
 export default function InvoiceModal({
@@ -26,6 +27,7 @@ export default function InvoiceModal({
   data,
   onConfirm,
   loadingConfirm,
+  viewOnly = false,
 }: InvoiceModalProps) {
   const { t } = useTranslation("reception");
 
@@ -268,7 +270,7 @@ export default function InvoiceModal({
           </div>
         </div>
 
-        {/* FOOTER ACTIONS (Ẩn khi in) */}
+        {/* FOOTER ACTIONS */}
         <div className="p-4 border-t bg-gray-50 flex justify-end gap-3 print:hidden shrink-0 sticky bottom-0 z-10">
           <button
             onClick={handlePrint}
@@ -278,19 +280,23 @@ export default function InvoiceModal({
           </button>
 
           {!isFullyPaid ? (
-            <button
-              onClick={onConfirm}
-              disabled={loadingConfirm}
-              className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 hover:shadow-lg active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              {loadingConfirm ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <CheckCircle size={18} />
-              )}
-              {t("invoice.btnConfirm")}
-            </button>
+            // Nếu chưa thanh toán VÀ KHÔNG PHẢI chế độ xem -> Mới hiện nút thu tiền
+            !viewOnly && (
+              <button
+                onClick={onConfirm}
+                disabled={loadingConfirm}
+                className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 hover:shadow-lg active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {loadingConfirm ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <CheckCircle size={18} />
+                )}
+                {t("invoice.btnConfirm")}
+              </button>
+            )
           ) : (
+            // Nếu đã thanh toán -> Hiện Badge PAID (giữ nguyên để biết trạng thái)
             <div className="flex items-center gap-2 px-6 py-2.5 bg-green-100 text-green-700 rounded-lg font-bold border border-green-200 cursor-default">
               <CheckCircle size={18} /> {t("invoice.paidBadge")}
             </div>

@@ -28,7 +28,13 @@ export default function AppointmentList() {
     const [keyword, setKeyword] = useState('');
     const [filterStatus, setFilterStatus] = useState(''); 
     const [filterPayment, setFilterPayment] = useState(''); 
-    const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]); 
+    const [filterDate, setFilterDate] = useState(() => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+});
 
     // --- 2. STATE QUẢN LÝ MODAL BILL ---
     const [isBillModalOpen, setIsBillModalOpen] = useState(false);
@@ -158,7 +164,8 @@ export default function AppointmentList() {
                     className="px-3 py-1.5 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none"
                 >
                     <option value="">{t("list.allStatus")}</option>
-                    <option value="SCHEDULED">{t("status.CONFIRMED")}</option>
+                    <option value="PENDING">{t("status.PENDING")}</option>
+                    <option value="SCHEDULED">{t("status.SCHEDULED")}</option>
                     <option value="COMPLETED">{t("status.COMPLETED")}</option>
                     <option value="CANCELLED">{t("status.CANCELLED")}</option>
                 </select>

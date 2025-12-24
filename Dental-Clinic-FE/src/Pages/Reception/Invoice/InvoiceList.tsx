@@ -451,6 +451,7 @@ const InvoiceList = () => {
           data={selectedInvoiceData}
           onConfirm={handleConfirmPayment}
           loadingConfirm={isConfirming}
+          viewOnly={true}
         />
       )}
     </div>
