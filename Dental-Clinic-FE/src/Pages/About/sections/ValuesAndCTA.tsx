@@ -1,6 +1,7 @@
 import React from "react";
 import { UserRound, Heart, Shield } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 function ValueItem(props: { icon: React.ReactNode; label: React.ReactNode }) {
   return (
@@ -12,7 +13,7 @@ function ValueItem(props: { icon: React.ReactNode; label: React.ReactNode }) {
             : props.icon}
         </div>
       </div>
-      <div className="text-xl md:text-2xl font-medium text-black leading-tight">
+      <div className="text-xl md:text-2xl font-medium text-black leading-tight whitespace-pre-line">
         {props.label}
       </div>
     </div>
@@ -20,34 +21,36 @@ function ValueItem(props: { icon: React.ReactNode; label: React.ReactNode }) {
 }
 
 export default function ValuesAndCTA() {
+  const { t } = useTranslation("about");
+
   return (
     <section className="py-8">
       <div className="mx-auto max-w-5xl">
         <div className="rounded-3xl bg-white p-8 md:p-10 text-center shadow-sm ring-1 ring-slate-200">
-          <h3 className="text-3xl md:text-4xl font-semibold text-black">Our Values</h3>
+          <h3 className="text-3xl md:text-4xl font-semibold text-black">{t("values.title")}</h3>
 
           <div className="mt-6 grid grid-cols-1 gap-8 md:grid-cols-3">
             <ValueItem
               icon={<UserRound strokeWidth={2} />}
-              label={
-                <span>
-                  Personalized
-                  <br /> Approach
-                </span>
-              }
+              label={t("values.personalized")}
             />
-            <ValueItem icon={<Heart strokeWidth={2} />} label="Compassion" />
-            <ValueItem icon={<Shield strokeWidth={2} />} label="Transparency" />
+            <ValueItem icon={<Heart strokeWidth={2} />} label={t("values.compassion")} />
+            <ValueItem icon={<Shield strokeWidth={2} />} label={t("values.transparency")} />
           </div>
         </div>
 
-        <div className="mt-6 flex justify-center">
+        <div className="mt-6 flex justify-center gap-4 flex-wrap">
           <Link
             to="/service"
             className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-blue-600 to-blue-500 px-10 md:px-14 py-4 text-white text-base md:text-lg font-semibold tracking-wide uppercase shadow-md transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:from-blue-700 hover:to-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 active:scale-95"
-
           >
-            See Our Services
+            {t("cta.seeServices")}
+          </Link>
+          <Link
+            to="/booking"
+            className="inline-flex items-center justify-center rounded-full bg-gradient-to-r from-[#3366FF] to-[#6699FF] px-10 md:px-14 py-4 text-white text-base md:text-lg font-semibold tracking-wide uppercase shadow-md transition-transform duration-300 ease-in-out hover:scale-105 hover:shadow-lg hover:from-[#2255DD] hover:to-[#5588EE] focus:outline-none focus:ring-2 focus:ring-[#3366FF] active:scale-95"
+          >
+            {t("cta.bookAppointment")}
           </Link>
         </div>
       </div>

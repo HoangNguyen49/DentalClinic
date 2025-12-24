@@ -16,6 +16,10 @@
     "crm": "CRM",
     "attendance": "Attendance",
     "clinics": "Clinics",
+    "leaveRequests": "Leave Requests",
+    "customers": "Customers",
+    "salaryContracts": "Salary Contracts",
+    "system": "System",
     "backToWebsite": "Back to Website"
   },
   "dashboard": {
@@ -222,9 +226,6 @@
     "explanation": {
       "type": "Type",
       "reason": "Reason",
-      "typeLate": "Late Arrival",
-      "typeAbsent": "Absent",
-      "typeMissingCheckIn": "Missing Check-In",
       "typeMissingCheckOut": "Missing Check-Out",
       "status": {
         "pending": "Pending",
@@ -386,6 +387,7 @@
       "searchPlaceholder": "Search by action or username...",
       "searchAction": "Search by action...",
       "searchUsername": "Search by username...",
+      "selectDate": "Select Date",
       "filterRole": "Role",
       "allRoles": "All Roles",
       "clearFilters": "Clear Filters",
@@ -431,7 +433,9 @@
       "allDepartments": "All departments",
       "allRoles": "All roles",
       "active": "Active",
-      "inactive": "Inactive"
+      "inactive": "Inactive",
+      "activeCount": "{{count}} filter active",
+      "activeCountPlural": "{{count}} filters active"
     },
     "actions": {
       "search": "Search",
@@ -452,12 +456,35 @@
       "noClinic": "N/A",
       "active": "Active",
       "inactive": "Inactive",
-      "approvedResignation": "Approved Resignation"
+      "approvedResignation": "Approved Resignation",
+      "staffDirectory": "Staff Directory"
     },
     "messages": {
       "loading": "Loading staff...",
       "noData": "No staff found",
       "loadFailed": "Unable to load staff"
+    },
+    "cv": {
+      "title": "CV Profile",
+      "close": "Close",
+      "loading": "Loading CV...",
+      "extractedText": {
+        "label": "Extracted text:",
+        "characters": "characters",
+        "title": "Text extracted from CV",
+        "ariaLabel": "Text extracted from CV"
+      },
+      "extractedImages": {
+        "label": "Extracted images:",
+        "count": "images",
+        "viewImage": "View image {{index}} at full size",
+        "viewImageLabel": "View image {{index}}"
+      },
+      "messages": {
+        "noCv": "This employee does not have a CV",
+        "noExtractedData": "CV has no extracted data",
+        "loadFailed": "Unable to load CV"
+      }
     }
   },
   "customers": {
@@ -521,5 +548,38 @@
       "activated": "Khách hàng đã được kích hoạt",
       "blocked": "Khách hàng đã bị chặn"
     }
+  },
+  "salaryConfig": {
+    "title": "Salary Configuration",
+    "subtitle": "Create or update salary contract",
+    "selectEmployee": "Select Employee",
+    "calculationModel": "Calculation Model",
+    "contractType": "Contract Type",
+    "shiftBased": "Shift Based",
+    "monthlySalary": "Monthly Salary",
+    "autoAssigned": "Auto-assigned by Role",
+    "grossBaseSalary": "Gross Base Salary",
+    "workStandards": "Work Standards",
+    "standardShifts": "Standard Shifts",
+    "overShiftBonus": "Over Shift Bonus (VND/shift)",
+    "standardDays": "Standard Days",
+    "otMultiplier": "OT Multiplier (%)",
+    "latePenalty": "Late Penalty (VND/minute)",
+    "insuranceTaxRelief": "Insurance & Tax Relief",
+    "insuranceBase": "Insurance contribution salary base (VND)",
+    "insurancePlaceholder": "Default: same as base salary",
+    "dependent": "Dependent (Family allowances)",
+    "person": "Person",
+    "monthlyAllowances": "Monthly Allowances",
+    "add": "Add",
+    "allowanceNamePlaceholder": "Allowance name...",
+    "income": "INCOME",
+    "remove": "Remove",
+    "noAllowances": "No allowances configured yet.",
+    "cancel": "Cancel",
+    "saving": "Saving...",
+    "save": "Save Configuration",
+    "startConfiguration": "Start Configuration",
+    "selectEmployeeHint": "Select an employee from the search bar above to begin."
   }
 }

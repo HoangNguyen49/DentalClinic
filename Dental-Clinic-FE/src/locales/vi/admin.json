@@ -16,6 +16,10 @@
     "crm": "Chăm sóc khách hàng",
     "attendance": "Chấm công",
     "clinics": "Cơ sở",
+    "leaveRequests": "Đơn nghỉ phép",
+    "customers": "Khách hàng",
+    "salaryContracts": "Hợp đồng lương",
+    "system": "Hệ thống",
     "backToWebsite": "Về trang web"
   },
   "dashboard": {
@@ -241,9 +245,6 @@
     "explanation": {
       "type": "Loại",
       "reason": "Lý do",
-      "typeLate": "Đi trễ",
-      "typeAbsent": "Vắng mặt",
-      "typeMissingCheckIn": "Quên chấm vào",
       "typeMissingCheckOut": "Quên chấm ra",
       "status": {
         "pending": "Chờ xử lý",
@@ -388,6 +389,7 @@
       "searchPlaceholder": "Tìm theo hành động hoặc tên người dùng...",
       "searchAction": "Tìm theo hành động...",
       "searchUsername": "Tìm theo tên người dùng...",
+      "selectDate": "Chọn ngày",
       "filterRole": "Vai trò",
       "allRoles": "Tất cả vai trò",
       "clearFilters": "Xóa bộ lọc",
@@ -433,7 +435,9 @@
       "allDepartments": "Tất cả phòng ban",
       "allRoles": "Tất cả vai trò",
       "active": "Hoạt động",
-      "inactive": "Không hoạt động"
+      "inactive": "Không hoạt động",
+      "activeCount": "{{count}} bộ lọc đang hoạt động",
+      "activeCountPlural": "{{count}} bộ lọc đang hoạt động"
     },
     "actions": {
       "search": "Tìm kiếm",
@@ -454,12 +458,35 @@
       "noClinic": "Chưa phân cơ sở",
       "active": "Hoạt động",
       "inactive": "Không hoạt động",
-      "approvedResignation": "Đã duyệt nghỉ việc"
+      "approvedResignation": "Đã duyệt nghỉ việc",
+      "staffDirectory": "Danh sách nhân viên"
     },
     "messages": {
       "loading": "Đang tải danh sách nhân viên...",
       "noData": "Không tìm thấy nhân viên nào",
       "loadFailed": "Không thể tải danh sách nhân viên"
+    },
+    "cv": {
+      "title": "Hồ sơ CV",
+      "close": "Đóng",
+      "loading": "Đang tải CV...",
+      "extractedText": {
+        "label": "Text đã extract:",
+        "characters": "ký tự",
+        "title": "Text đã extract từ CV",
+        "ariaLabel": "Text đã extract từ CV"
+      },
+      "extractedImages": {
+        "label": "Hình ảnh đã extract:",
+        "count": "hình ảnh",
+        "viewImage": "Xem hình ảnh {{index}} ở kích thước lớn",
+        "viewImageLabel": "Xem hình ảnh {{index}}"
+      },
+      "messages": {
+        "noCv": "Nhân viên này chưa có CV",
+        "noExtractedData": "CV chưa có dữ liệu extract",
+        "loadFailed": "Không thể tải CV"
+      }
     }
   },
   "customers": {
@@ -523,5 +550,38 @@
       "activated": "Khách hàng đã được kích hoạt",
       "blocked": "Khách hàng đã bị chặn"
     }
+  },
+  "salaryConfig": {
+    "title": "Cấu hình lương",
+    "subtitle": "Tạo hoặc cập nhật hợp đồng lương",
+    "selectEmployee": "Chọn nhân viên",
+    "calculationModel": "Mô hình tính toán",
+    "contractType": "Loại hợp đồng",
+    "shiftBased": "Theo ca",
+    "monthlySalary": "Lương tháng",
+    "autoAssigned": "Tự động gán theo vai trò",
+    "grossBaseSalary": "Lương cơ bản (Gross)",
+    "workStandards": "Tiêu chuẩn làm việc",
+    "standardShifts": "Số ca chuẩn",
+    "overShiftBonus": "Thưởng vượt ca (VND/ca)",
+    "standardDays": "Số ngày chuẩn",
+    "otMultiplier": "Hệ số OT (%)",
+    "latePenalty": "Phạt đi trễ (VND/phút)",
+    "insuranceTaxRelief": "Bảo hiểm & Giảm trừ thuế",
+    "insuranceBase": "Mức lương đóng BH (VND)",
+    "insurancePlaceholder": "Mặc định: lấy theo lương cơ bản",
+    "dependent": "Người phụ thuộc",
+    "person": "Người",
+    "monthlyAllowances": "Trợ cấp hàng tháng",
+    "add": "Thêm",
+    "allowanceNamePlaceholder": "Tên trợ cấp...",
+    "income": "THU NHẬP",
+    "remove": "Xóa",
+    "noAllowances": "Chưa có trợ cấp nào được cấu hình.",
+    "cancel": "Hủy",
+    "saving": "Đang lưu...",
+    "save": "Lưu cấu hình",
+    "startConfiguration": "Bắt đầu cấu hình",
+    "selectEmployeeHint": "Chọn nhân viên từ thanh tìm kiếm phía trên để bắt đầu."
   }
 }

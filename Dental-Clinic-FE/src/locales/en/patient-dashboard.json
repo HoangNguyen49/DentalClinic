@@ -1,0 +1,68 @@
+{
+  "ranks": {
+    "diamond": "Diamond",
+    "gold": "Gold",
+    "silver": "Silver",
+    "member": "Member"
+  },
+  "discount": "🎁 Member Perk: {{pct}}% Off",
+  "patientCode": "Patient ID",
+  "loading": "Loading data...",
+  "empty": "No data available.",
+  "spending": {
+    "label": "Accumulated Spend",
+    "needMore": "Spend <1>{{amount}}</1> more to reach the next tier.",
+    "vipTitle": "Elite Status 👑",
+    "vipSubtitle": "Thank you for being our most loyal customer!"
+  },
+  "quickLinks": {
+    "title": "QUICK MENU",
+    "appointments": "Appointments",
+    "account": "My Account",
+    "profile": "Profile",
+    "contact": "Contact"
+  },
+  "aiTip": {
+    "title": "AI Dental Tip",
+    "label": "AUTO"
+  },
+  "activities": {
+    "title": "RECENT ACTIVITY"
+  },
+  "wellness": {
+    "excellent": "Safe",
+    "warning": "Check Needed",
+    "overdue": "Overdue",
+    "new": "New Member",
+    "daysSuffix": "days since last visit",
+    "btnBook": "Book Now"
+  },
+  "appointment": {
+    "empty": "No upcoming appointments",
+    "btnBook": "Book New Appointment",
+    "tag": "UPCOMING",
+    "room": "ROOM"
+  },
+  "history": {
+    "titleRecent": "Recent Visits",
+    "titleAll": "All Medical History",
+    "viewAll": "View All",
+    "empty": "No medical records found.",
+    "table": {
+      "date": "Date",
+      "doctor": "Doctor",
+      "diagnosis": "Diagnosis",
+      "treatment": "Treatment",
+      "btnView": "View"
+    },
+    "modal": {
+      "title": "Record Details",
+      "diagnosis": "DIAGNOSIS",
+      "treatment": "TREATMENT",
+      "advice": "💬 ADVICE",
+      "prescription": "💊 PRESCRIPTION",
+      "images": "IMAGES",
+      "btnClose": "Close"
+    }
+  }
+}

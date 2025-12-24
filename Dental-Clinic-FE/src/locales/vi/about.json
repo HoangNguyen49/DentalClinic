@@ -1,0 +1,36 @@
+{
+  "mission": {
+    "title": "Sứ Mệnh Của Chúng Tôi",
+    "description": "Cam kết cung cấp dịch vụ chăm sóc răng miệng chất lượng cao trong môi trường thoải mái và thân thiện.",
+    "stats": {
+      "yearsExperience": "NĂM KINH NGHIỆM",
+      "happyPatients": "BỆNH NHÂN HÀI LÒNG",
+      "dentalProfessionals": "CHUYÊN GIA NHA KHOA"
+    },
+    "history": {
+      "title": "Lịch Sử Của Chúng Tôi",
+      "founded": "Thành lập tại Việt Nam",
+      "expanded": "Mở rộng văn phòng",
+      "renovated": "Cải tạo phòng khám"
+    },
+    "accreditations": {
+      "title": "Chứng Nhận"
+    }
+  },
+  "featuredDoctor": {
+    "name": "Bác sĩ Emily Johnson",
+    "title": "Trưởng Khoa Nha Khoa",
+    "description": "Giám sát mọi khía cạnh của phòng khám để đảm bảo chăm sóc bệnh nhân tốt nhất"
+  },
+  "values": {
+    "title": "Giá Trị Của Chúng Tôi",
+    "personalized": "Phương Pháp\nCá Nhân Hóa",
+    "compassion": "Đồng Cảm",
+    "transparency": "Minh Bạch"
+  },
+  "cta": {
+    "seeServices": "Xem Dịch Vụ",
+    "bookAppointment": "Đặt Lịch Hẹn"
+  }
+}
+

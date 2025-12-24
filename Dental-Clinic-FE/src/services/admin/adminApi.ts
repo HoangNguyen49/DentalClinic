@@ -97,6 +97,21 @@ export const adminApi = {
         params,
       })
       return { data: response.data }
+    },
+    getCvData: async (id: number | string) => {
+      const response = await axiosClient.get<{
+        id: number
+        userId: number
+        originalFileName: string
+        fileType: string
+        fileSize: number
+        cvFileUrl: string
+        extractedText: string
+        extractedImages: string[]
+        createdAt: string
+        updatedAt: string
+      }>(`/api/admin/staff/${id}/cv`)
+      return { data: response.data }
     }
   },
   // Khách hàng (Customer)

@@ -1,0 +1,41 @@
+{
+  "title": "Contact Us",
+  "subtitle": "Get in touch with us or reach our location.",
+  "info": {
+    "callUs": {
+      "title": "Call Us",
+      "desc": "(123) 456-7880"
+    },
+    "emailUs": {
+      "title": "Email Us",
+      "desc": "info@example.com"
+    },
+    "location": {
+      "title": "Location",
+      "desc": "40 Sanguin Street, Oklahoma, USA"
+    },
+    "officeHours": {
+      "title": "Office Hours",
+      "desc": "Mon - Sat: 08:00 - 18:00"
+    }
+  },
+  "form": {
+    "name": {
+      "label": "Name",
+      "placeholder": "Name"
+    },
+    "email": {
+      "label": "Email",
+      "placeholder": "Email"
+    },
+    "message": {
+      "label": "Message",
+      "placeholder": "Message"
+    },
+    "submit": "Send Message"
+  },
+  "cta": {
+    "bookAppointment": "Book Appointment"
+  }
+}
+

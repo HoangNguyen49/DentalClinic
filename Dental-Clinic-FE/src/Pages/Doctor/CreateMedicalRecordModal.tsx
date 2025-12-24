@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { X, Save, Trash2, Plus } from "lucide-react";
+import { X, Save, Trash2, Plus, Sparkles } from "lucide-react";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
 import medications from "../../data/dental-medications.json";
@@ -11,6 +11,19 @@ import type {
   MedicalRecordRequest,
   ServiceDTO,
 } from "../types/doctor";
+
+// Interface for AI-generated medical record response
+interface AiGeneratedMedicalRecordDto {
+  treatmentPlan: string;
+  prescriptionNote: Array<{
+    drugName: string;
+    dosage: string;
+    quantity: number;
+    usageInstruction: string;
+  }>;
+  prescriptionNoteFormatted: string;
+  note: string;
+}
 
 type MedicationOption = { id: string; name: string; defaultDosage?: string; description?: string };
 type SelectedMedication = { id: string; name: string; quantity: string; instructions: string };
@@ -30,7 +43,7 @@ const medicationOptions = (medications as { category: string; items: MedicationO
 
 const buildPrescriptionText = (meds: SelectedMedication[], manualNote: string) => {
   const auto = meds
-    .map((med, idx) => `${idx + 1}. ${med.name} • SL: ${med.quantity} • HDSD: ${med.instructions}`)
+    .map((med, idx) => `${idx + 1}. ${med.name} • Qty: ${med.quantity} • Instructions: ${med.instructions}`)
     .join("\n");
   if (auto && manualNote.trim()) return `${auto}\n\n${manualNote.trim()}`;
   return auto || manualNote.trim();
@@ -54,6 +67,12 @@ export default function CreateMedicalRecordModal({
   const serviceInfo = appointment?.service || record?.service;
   const appointmentId = appointment?.appointmentId ?? record?.appointmentId;
   
+  // State for AI Assistant
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
+  const [aiSuggestions, setAiSuggestions] = useState<AiGeneratedMedicalRecordDto | null>(null);
+  const [showAiPreview, setShowAiPreview] = useState(false);
+
   // Debug: Log appointment data to see what we're receiving
   useEffect(() => {
     if (appointment && isOpen) {
@@ -82,6 +101,7 @@ export default function CreateMedicalRecordModal({
   const [showVariantsModal, setShowVariantsModal] = useState(false);
   const [activeVariantId, setActiveVariantId] = useState<number | undefined>(undefined);
   const [activeVariantName, setActiveVariantName] = useState<string | undefined>(undefined);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const showOnlyActiveVariantForModal = Boolean(
     appointment?.serviceVariant || appointment?.appointmentServiceId || (appointment?.serviceDetails && appointment.serviceDetails.length === 1)
   );
@@ -103,6 +123,95 @@ export default function CreateMedicalRecordModal({
     setAttachments([]);
     setActiveVariantId(undefined);
     setActiveVariantName(undefined);
+    // Reset AI states
+    setAiSuggestions(null);
+    setAiError(null);
+    setShowAiPreview(false);
+    // Reset errors
+    setErrors({});
+  };
+
+  // Function to call AI backend for suggestions
+  const callAiForSuggestions = async () => {
+    if (!diagnosis.trim()) {
+      toast.error("Please enter a diagnosis first");
+      return;
+    }
+
+    if (!appointmentId) {
+      toast.error("Appointment ID is required for AI suggestions");
+      return;
+    }
+
+    setAiLoading(true);
+    setAiError(null);
+    setAiSuggestions(null);
+
+    try {
+      const response = await axios.post<AiGeneratedMedicalRecordDto>(
+        `${apiBase}/api/medical-records/${appointmentId}/ai/generate`,
+        {
+          appointmentId,
+          diagnosis: diagnosis.trim()
+        },
+        {
+          headers: { 
+            'Content-Type': 'application/json',
+            ...(accessToken ? { 'Authorization': `Bearer ${accessToken}` } : {})
+          },
+          withCredentials: true,
+        }
+      );
+
+      setAiSuggestions(response.data);
+      setShowAiPreview(true);
+      toast.success("AI suggestions generated successfully");
+    } catch (err: any) {
+      console.error("AI generation error:", err);
+      
+      if (err.response?.status === 401) {
+        setAiError("Session expired. Please login again.");
+      } else if (err.response?.status === 403) {
+        setAiError("You don't have permission to use AI features");
+      } else if (err.response?.status === 429) {
+        setAiError("Too many requests. Please try again later.");
+      } else if (err.response?.data?.message) {
+        setAiError(`AI Error: ${err.response.data.message}`);
+      } else {
+        setAiError("Failed to generate AI suggestions. Please try again.");
+      }
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
+  // Function to apply AI suggestions to the form
+  const applyAiSuggestions = () => {
+    if (!aiSuggestions) return;
+
+    // Apply treatment plan
+    if (aiSuggestions.treatmentPlan) {
+      setTreatmentPlan(aiSuggestions.treatmentPlan);
+    }
+
+    // Apply prescription note (use formatted version)
+    if (aiSuggestions.prescriptionNoteFormatted) {
+      setManualPrescriptionNote(aiSuggestions.prescriptionNoteFormatted);
+      
+      // Also try to parse and add to selected medications if needed
+      const parsedMeds = tryParsePrescriptionNote(aiSuggestions.prescriptionNoteFormatted);
+      if (parsedMeds && parsedMeds.length > 0) {
+        setSelectedMedications(parsedMeds);
+      }
+    }
+
+    // Apply general note
+    if (aiSuggestions.note) {
+      setGeneralNote(aiSuggestions.note);
+    }
+
+    toast.success("AI suggestions applied to form");
+    setShowAiPreview(false);
   };
 
   const tryParsePrescriptionNote = (note?: string) => {
@@ -128,7 +237,7 @@ export default function CreateMedicalRecordModal({
       // not JSON, continue
     }
 
-    // Try parse numbered lines of our format: "1. Name • SL: qty • HDSD: instr"
+    // Try parse numbered lines of our format: "1. Name • Qty: qty • Instructions: instr"
     const lines = note.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     const parsed: SelectedMedication[] = [];
     for (const line of lines) {
@@ -142,10 +251,10 @@ export default function CreateMedicalRecordModal({
       let instructions = "";
       for (let i = 1; i < parts.length; i++) {
         const part = parts[i];
-        const slMatch = part.match(/SL\s*:\s*(.*)/i);
-        const hdMatch = part.match(/HDSD\s*:\s*(.*)/i);
-        if (slMatch) quantity = slMatch[1].trim();
-        else if (hdMatch) instructions = hdMatch[1].trim();
+        const qtyMatch = part.match(/Qty\s*:\s*(.*)/i);
+        const instrMatch = part.match(/Instructions?\s*:\s*(.*)/i);
+        if (qtyMatch) quantity = qtyMatch[1].trim();
+        else if (instrMatch) instructions = instrMatch[1].trim();
       }
       // Fallback: if parts length === 2 and second part doesn't contain labels, assume it is quantity
       if (!quantity && parts.length === 2) {
@@ -165,13 +274,13 @@ export default function CreateMedicalRecordModal({
     } catch {
       // not JSON
     }
-    // Numbered lines like '1. Name • SL: ...'
+    // Numbered lines like '1. Name • Qty: ...'
     const lines = note.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     if (lines.length === 0) return false;
     let countNumbered = 0;
     for (const line of lines) {
       if (/^\s*\d+\./.test(line)) countNumbered++;
-      else if (/SL\s*:/i.test(line) && /HDSD\s*:/i.test(line)) countNumbered++;
+      else if (/Qty\s*:/i.test(line) && /Instructions?\s*:/i.test(line)) countNumbered++;
     }
     return countNumbered > 0;
   };
@@ -252,10 +361,14 @@ export default function CreateMedicalRecordModal({
         id: med.id,
         name: med.name,
         quantity: medicationInput.quantity.trim(),
-        instructions: medicationInput.instructions.trim() || med.defaultDosage || "Theo chỉ định của bác sĩ",
+        instructions: medicationInput.instructions.trim() || med.defaultDosage || "As directed by doctor",
       },
     ]);
     setMedicationInput({ medId: "", quantity: "", instructions: "" });
+    // Clear prescription error if medication is added
+    if (errors.prescription) {
+      setErrors((prev) => ({ ...prev, prescription: "" }));
+    }
   };
 
   const handleRemoveMedication = (id: string) => {
@@ -269,7 +382,7 @@ export default function CreateMedicalRecordModal({
   };
 
   const buildPayload = (): MedicalRecordRequest => {
-    // Ưu tiên sử dụng appointmentServiceId nếu có từ appointment
+    // Priority: use appointmentServiceId if available from appointment
     // If the manual prescription note contains a JSON object like {meds: [...], manual: "..."}, parse it
     let parsedMedText = manualPrescriptionNote || "";
     try {
@@ -306,12 +419,12 @@ export default function CreateMedicalRecordModal({
       recordDate: recordDate || null,
     };
 
-    // Ưu tiên 1: Nếu có appointmentServiceId trực tiếp từ appointment
+    // Priority 1: If appointmentServiceId is directly available from appointment
     if (appointment?.appointmentServiceId) {
       payload.appointmentServiceId = appointment.appointmentServiceId;
       console.log("Using appointmentServiceId:", appointment.appointmentServiceId);
     } 
-    // Ưu tiên 2: Nếu có appointmentServices array, lấy id của service đầu tiên
+    // Priority 2: If appointmentServices array exists, get id of first service
     else if (appointment?.appointmentServices && appointment.appointmentServices.length > 0) {
       const firstAppointmentService = appointment.appointmentServices[0];
       const serviceId = firstAppointmentService.id || firstAppointmentService.appointmentServiceId;
@@ -320,12 +433,12 @@ export default function CreateMedicalRecordModal({
         console.log("Using appointmentServiceId from array:", serviceId);
       }
     }
-    // Ưu tiên 3: Nếu chỉ có appointmentId, backend sẽ tự động lấy AppointmentService đầu tiên
-    // Không cần gửi thêm gì, chỉ cần appointmentId
-    // Ưu tiên 4: Fallback - dùng serviceId và variantId nếu không có appointmentServiceId
+    // Priority 3: If only appointmentId exists, backend will automatically get first AppointmentService
+    // Nothing additional needed, just appointmentId
+    // Priority 4: Fallback - use serviceId and variantId if no appointmentServiceId
     else if (serviceInfo?.id) {
       payload.serviceId = serviceInfo.id;
-      // Nếu có variant từ appointment hoặc record
+      // If variant exists from appointment or record
       const variantId = appointment?.serviceVariant?.variantId || 
                        appointment?.serviceVariant?.id ||
                        record?.serviceVariant?.variantId ||
@@ -335,7 +448,7 @@ export default function CreateMedicalRecordModal({
       }
       console.log("Using serviceId and variantId:", payload.serviceId, payload.variantId);
     } 
-    // Ưu tiên 5: Dùng serviceId từ record khi edit
+    // Priority 5: Use serviceId from record when editing
     else if (record?.serviceId) {
       payload.serviceId = record.serviceId;
       const variantId = record?.serviceVariant?.variantId || record?.serviceVariant?.id;
@@ -350,18 +463,46 @@ export default function CreateMedicalRecordModal({
   };
 
   const validate = () => {
+    const newErrors: Record<string, string> = {};
+    
     if (!patientId) {
-      toast.error("Patient info is missing.");
-      return false;
+      newErrors.patientId = "Patient info is missing.";
     }
     if (!doctorId) {
-      toast.error("Doctor info is missing.");
-      return false;
+      newErrors.doctorId = "Doctor info is missing.";
     }
     if (!clinicInfo?.id) {
-      toast.error("Clinic information is missing.");
+      newErrors.clinic = "Clinic information is missing.";
+    }
+    if (!recordDate || recordDate.trim() === "") {
+      newErrors.recordDate = "Record date is required.";
+    }
+    if (!diagnosis || diagnosis.trim() === "") {
+      newErrors.diagnosis = "Diagnosis is required.";
+    }
+    if (!treatmentPlan || treatmentPlan.trim() === "") {
+      newErrors.treatmentPlan = "Treatment plan is required.";
+    }
+    // Prescription: must have at least one medication
+    if (selectedMedications.length === 0) {
+      newErrors.prescription = "Please add at least one medication.";
+    }
+    // Additional Prescription Note: always required
+    if (!manualPrescriptionNote || manualPrescriptionNote.trim() === "") {
+      newErrors.manualPrescriptionNote = "Additional prescription note is required.";
+    }
+    if (!generalNote || generalNote.trim() === "") {
+      newErrors.generalNote = "General note is required.";
+    }
+    
+    setErrors(newErrors);
+    
+    if (Object.keys(newErrors).length > 0) {
+      const firstError = Object.values(newErrors)[0];
+      toast.error(firstError);
       return false;
     }
+    
     return true;
   };
 
@@ -439,7 +580,7 @@ export default function CreateMedicalRecordModal({
           </div>
           <button
             onClick={onClose}
-            disabled={loading}
+            disabled={loading || aiLoading}
             className="text-gray-500 hover:text-gray-800 transition"
           >
             <X className="h-6 w-6" />
@@ -494,13 +635,26 @@ export default function CreateMedicalRecordModal({
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-600">Record Date</label>
+              <label className="text-sm font-medium text-gray-600">
+                Record Date <span className="text-red-500">*</span>
+              </label>
               <input
                 type="date"
+                required
                 value={recordDate}
-                onChange={(e) => setRecordDate(e.target.value)}
-                className="mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                onChange={(e) => {
+                  setRecordDate(e.target.value);
+                  if (errors.recordDate) {
+                    setErrors((prev) => ({ ...prev, recordDate: "" }));
+                  }
+                }}
+                className={`mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.recordDate ? "border-red-500" : ""
+                }`}
               />
+              {errors.recordDate && (
+                <p className="mt-1 text-xs text-red-500">{errors.recordDate}</p>
+              )}
             </div>
             <div>
               <label className="text-sm font-medium text-gray-600">Appointment ID</label>
@@ -512,26 +666,192 @@ export default function CreateMedicalRecordModal({
             </div>
           </div>
 
-          <div>
-            <label className="text-sm font-medium text-gray-600">Diagnosis</label>
+          {/* Diagnosis section with AI Assistant button */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-gray-600">
+                Diagnosis <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={callAiForSuggestions}
+                disabled={aiLoading || !diagnosis.trim() || !appointmentId}
+                className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 px-4 py-2 text-sm font-semibold text-white hover:from-blue-700 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                {aiLoading ? (
+                  <>
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    AI Processing...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-4 w-4" />
+                    AI Assistant
+                  </>
+                )}
+              </button>
+            </div>
             <textarea
+              required
               value={diagnosis}
-              onChange={(e) => setDiagnosis(e.target.value)}
+              onChange={(e) => {
+                setDiagnosis(e.target.value);
+                if (errors.diagnosis) {
+                  setErrors((prev) => ({ ...prev, diagnosis: "" }));
+                }
+              }}
               rows={3}
-              className="mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="Enter diagnosis..."
+              className={`w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.diagnosis ? "border-red-500" : ""
+              }`}
+              placeholder="Enter diagnosis... (AI will detect language and provide suggestions in same language)"
             />
+            {errors.diagnosis && (
+              <p className="text-xs text-red-500">{errors.diagnosis}</p>
+            )}
+            {aiError && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3">
+                <p className="text-sm text-red-700">{aiError}</p>
+              </div>
+            )}
           </div>
 
+          {/* AI Suggestions Preview */}
+          {showAiPreview && aiSuggestions && (
+            <div className="rounded-xl border border-yellow-300 bg-gradient-to-b from-yellow-50 to-white p-5">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="rounded-lg bg-yellow-100 p-2">
+                    <Sparkles className="h-5 w-5 text-yellow-700" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-yellow-800">🧠 AI Suggestions</h3>
+                    <p className="text-sm text-yellow-700">
+                      Review and edit before applying. Language: {diagnosis.match(/[^\x00-\x7F]+/) ? 'Auto-detected' : 'English'}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowAiPreview(false)}
+                    className="rounded-lg border border-yellow-400 bg-white px-4 py-2 text-sm font-medium text-yellow-700 hover:bg-yellow-50"
+                  >
+                    Hide
+                  </button>
+                  <button
+                    type="button"
+                    onClick={applyAiSuggestions}
+                    className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-600 px-4 py-2 font-medium text-white hover:from-green-700 hover:to-emerald-700"
+                  >
+                    Apply Suggestions
+                  </button>
+                </div>
+              </div>
+
+              {/* Treatment Plan Suggestion */}
+              <div className="mb-4">
+                <label className="mb-2 block font-medium text-gray-800">
+                  Treatment Plan Suggestion:
+                </label>
+                <div className="whitespace-pre-wrap rounded border border-gray-200 bg-white p-3 text-gray-800">
+                  {aiSuggestions.treatmentPlan}
+                </div>
+              </div>
+
+              {/* Prescription Suggestion */}
+              <div className="mb-4">
+                <label className="mb-2 block font-medium text-gray-800">
+                  Prescription Suggestion:
+                </label>
+                <div className="whitespace-pre-wrap rounded border border-gray-200 bg-white p-3 font-mono text-sm text-gray-800">
+                  {aiSuggestions.prescriptionNoteFormatted}
+                </div>
+              </div>
+
+              {/* Medication Details Suggestion */}
+              {aiSuggestions.prescriptionNote.length > 0 && (
+                <div className="mb-4">
+                  <label className="mb-2 block font-medium text-gray-800">
+                    Medication Details ({aiSuggestions.prescriptionNote.length} items):
+                  </label>
+                  <div className="overflow-x-auto rounded border border-gray-200">
+                    <table className="w-full min-w-full border-collapse">
+                      <thead>
+                        <tr className="border-b bg-gray-100 text-left text-sm text-gray-600">
+                          <th className="px-4 py-2">#</th>
+                          <th className="px-4 py-2">Drug Name</th>
+                          <th className="px-4 py-2">Dosage</th>
+                          <th className="px-4 py-2">Quantity</th>
+                          <th className="px-4 py-2">Instructions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {aiSuggestions.prescriptionNote.map((item, index) => (
+                          <tr key={index} className="border-b hover:bg-gray-50">
+                            <td className="px-4 py-3 font-medium text-gray-700">{index + 1}</td>
+                            <td className="px-4 py-3 font-medium">{item.drugName}</td>
+                            <td className="px-4 py-3">{item.dosage}</td>
+                            <td className="px-4 py-3">{item.quantity}</td>
+                            <td className="px-4 py-3">{item.usageInstruction}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* Note Suggestion */}
+              <div className="mb-4">
+                <label className="mb-2 block font-medium text-gray-800">
+                  Additional Notes Suggestion:
+                </label>
+                <div className="whitespace-pre-wrap rounded border border-gray-200 bg-white p-3 text-gray-800">
+                  {aiSuggestions.note}
+                </div>
+              </div>
+
+              {/* Important Disclaimer */}
+              <div className="rounded-lg border border-red-200 bg-red-50 p-4">
+                <div className="flex items-start gap-3">
+                  <div className="mt-0.5 text-xl">⚠️</div>
+                  <div>
+                    <h4 className="font-semibold text-red-800">Important Disclaimer:</h4>
+                    <ul className="mt-2 space-y-1 text-sm text-red-700">
+                      <li>• AI provides suggestions based on input diagnosis only</li>
+                      <li>• Review all information carefully before applying</li>
+                      <li>• Ensure prescriptions are appropriate for patient's actual condition</li>
+                      <li>• Doctor is fully responsible for final clinical decisions</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div>
-            <label className="text-sm font-medium text-gray-600">Treatment Plan</label>
+            <label className="text-sm font-medium text-gray-600">
+              Treatment Plan <span className="text-red-500">*</span>
+            </label>
             <textarea
+              required
               value={treatmentPlan}
-              onChange={(e) => setTreatmentPlan(e.target.value)}
+              onChange={(e) => {
+                setTreatmentPlan(e.target.value);
+                if (errors.treatmentPlan) {
+                  setErrors((prev) => ({ ...prev, treatmentPlan: "" }));
+                }
+              }}
               rows={4}
-              className="mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.treatmentPlan ? "border-red-500" : ""
+              }`}
               placeholder="Enter treatment plan..."
             />
+            {errors.treatmentPlan && (
+              <p className="mt-1 text-xs text-red-500">{errors.treatmentPlan}</p>
+            )}
           </div>
 
           <section className="rounded-xl border p-4">
@@ -541,40 +861,56 @@ export default function CreateMedicalRecordModal({
                 <p className="text-xs text-gray-500">Select medication, enter quantity & instructions.</p>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-3">
-              <select
-                value={medicationInput.medId}
-                onChange={(e) => setMedicationInput((prev) => ({ ...prev, medId: e.target.value }))}
-                className="rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select medication</option>
-                {medicationOptions.map((med) => (
-                  <option key={med.id} value={med.id}>
-                    {med.name}
-                  </option>
-                ))}
-              </select>
-              <input
-                value={medicationInput.quantity}
-                onChange={(e) => setMedicationInput((prev) => ({ ...prev, quantity: e.target.value }))}
-                placeholder="Quantity"
-                className="rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <div className="flex gap-2">
-                <input
-                  value={medicationInput.instructions}
-                  onChange={(e) => setMedicationInput((prev) => ({ ...prev, instructions: e.target.value }))}
-                  placeholder="Instructions"
-                  className="flex-1 rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddMedication}
-                  className="rounded bg-green-600 px-3 py-2 text-white hover:bg-green-700"
+            <div className="mt-3">
+              <label className="text-sm font-medium text-gray-600 mb-2 block">
+                Medications <span className="text-red-500">*</span>
+              </label>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+                <select
+                  value={medicationInput.medId}
+                  onChange={(e) => setMedicationInput((prev) => ({ ...prev, medId: e.target.value }))}
+                  className={`rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.prescription ? "border-red-500" : ""
+                  }`}
+                  aria-label="Select medication"
                 >
-                  <Plus className="h-4 w-4" />
-                </button>
+                  <option value="">Select medication</option>
+                  {medicationOptions.map((med) => (
+                    <option key={med.id} value={med.id}>
+                      {med.name}
+                    </option>
+                  ))}
+                </select>
+                <input
+                  value={medicationInput.quantity}
+                  onChange={(e) => setMedicationInput((prev) => ({ ...prev, quantity: e.target.value }))}
+                  placeholder="Quantity"
+                  className={`rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    errors.prescription ? "border-red-500" : ""
+                  }`}
+                />
+                <div className="flex gap-2">
+                  <input
+                    value={medicationInput.instructions}
+                    onChange={(e) => setMedicationInput((prev) => ({ ...prev, instructions: e.target.value }))}
+                    placeholder="Instructions"
+                    className={`flex-1 rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                      errors.prescription ? "border-red-500" : ""
+                    }`}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddMedication}
+                    className="rounded bg-green-600 px-3 py-2 text-white hover:bg-green-700"
+                    aria-label="Add medication"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
+              {errors.prescription && (
+                <p className="mt-1 text-xs text-red-500">{errors.prescription}</p>
+              )}
             </div>
             {medicationInput.medId && (
               <p className="mt-1 text-xs text-gray-500">
@@ -603,26 +939,52 @@ export default function CreateMedicalRecordModal({
               </div>
             )}
             <div className="mt-3">
-              <label className="text-sm font-medium text-gray-600">Additional Prescription Note</label>
+              <label className="text-sm font-medium text-gray-600">
+                Additional Prescription Note <span className="text-red-500">*</span>
+              </label>
               <textarea
+                required
                 value={manualPrescriptionNote}
-                onChange={(e) => setManualPrescriptionNote(e.target.value)}
+                onChange={(e) => {
+                  setManualPrescriptionNote(e.target.value);
+                  if (errors.manualPrescriptionNote) {
+                    setErrors((prev) => ({ ...prev, manualPrescriptionNote: "" }));
+                  }
+                }}
                 rows={3}
-                className="mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.manualPrescriptionNote ? "border-red-500" : ""
+                }`}
                 placeholder="Add extra instructions..."
               />
+              {errors.manualPrescriptionNote && (
+                <p className="mt-1 text-xs text-red-500">{errors.manualPrescriptionNote}</p>
+              )}
             </div>
           </section>
 
           <div>
-            <label className="text-sm font-medium text-gray-600">General Note</label>
+            <label className="text-sm font-medium text-gray-600">
+              General Note <span className="text-red-500">*</span>
+            </label>
             <textarea
+              required
               value={generalNote}
-              onChange={(e) => setGeneralNote(e.target.value)}
+              onChange={(e) => {
+                setGeneralNote(e.target.value);
+                if (errors.generalNote) {
+                  setErrors((prev) => ({ ...prev, generalNote: "" }));
+                }
+              }}
               rows={3}
-              className="mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`mt-1 w-full rounded border px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.generalNote ? "border-red-500" : ""
+              }`}
               placeholder="Enter additional notes..."
             />
+            {errors.generalNote && (
+              <p className="mt-1 text-xs text-red-500">{errors.generalNote}</p>
+            )}
           </div>
 
           <div>
@@ -656,14 +1018,14 @@ export default function CreateMedicalRecordModal({
             <button
               type="button"
               onClick={onClose}
-              disabled={loading}
+              disabled={loading || aiLoading}
               className="rounded border px-4 py-2 text-gray-600 hover:bg-gray-100 disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || aiLoading}
               className="flex items-center gap-2 rounded bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
             >
               <Save className="h-4 w-4" />
@@ -689,4 +1051,3 @@ export default function CreateMedicalRecordModal({
     </div>
   );
 }
-

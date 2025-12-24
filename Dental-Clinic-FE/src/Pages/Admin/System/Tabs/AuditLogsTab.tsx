@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
-import { Search, Filter, FileText, User, X } from "lucide-react";
+import { Search, Filter, FileText, User, X, Calendar } from "lucide-react";
 import { type AuditLog, systemService } from "../../../../services/admin/systemService";
 import { toast } from "react-toastify";
 import { format } from "date-fns";
@@ -14,10 +14,12 @@ export default function AuditLogsTab() {
 
     // Bộ lọc tìm kiếm log (gộp action và username)
     const [searchFilter, setSearchFilter] = useState("");
+    // Bộ lọc theo ngày (chọn một ngày để xem)
+    const [selectedDate, setSelectedDate] = useState<string>("");
 
     useEffect(() => {
         loadLogs();
-    }, [page]);
+    }, [page, selectedDate]);
 
     // Lấy danh sách nhật ký từ server
     const loadLogs = async () => {
@@ -26,6 +28,8 @@ export default function AuditLogsTab() {
             const data = await systemService.getAuditLogs({
                 page,
                 size: 20,
+                fromDate: selectedDate || undefined,
+                toDate: selectedDate || undefined,
             });
             setAllLogs(data?.content || []);
             setTotalPages(data?.totalPages || 0);
@@ -80,13 +84,35 @@ export default function AuditLogsTab() {
                             />
                         </div>
                     </div>
+                    <div className="min-w-[180px]">
+                        <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                            {t("system.logs.selectDate", "Select Date")}
+                        </label>
+                        <div className="relative group">
+                            <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 group-focus-within:text-slate-600 transition-colors" />
+                            <input
+                                type="date"
+                                value={selectedDate}
+                                onChange={(e) => {
+                                    setSelectedDate(e.target.value);
+                                    setPage(0);
+                                }}
+                                className="w-full pl-12 pr-4 py-3 border-2 border-slate-200 rounded-xl text-base focus:outline-none focus:ring-4 focus:ring-slate-100 focus:border-slate-500 transition-all bg-white"
+                                aria-label={t("system.logs.selectDate", "Select Date")}
+                                title={t("system.logs.selectDate", "Select Date")}
+                            />
+                        </div>
+                    </div>
                     <div className="flex items-end">
                         <button
                             onClick={() => {
                                 setSearchFilter("");
+                                setSelectedDate("");
                                 setPage(0);
                             }}
                             className="px-5 py-3 border-2 border-slate-300 text-slate-700 rounded-xl hover:bg-slate-50 transition-all font-medium text-base flex items-center gap-2"
+                            title={t("system.logs.clearFilters", "Clear all filters")}
+                            aria-label={t("system.logs.clearFilters", "Clear all filters")}
                         >
                             <X className="w-5 h-5" /> {t("system.logs.clearFilters", "Clear")}
                         </button>

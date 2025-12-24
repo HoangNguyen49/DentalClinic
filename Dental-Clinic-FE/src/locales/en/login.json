@@ -1,18 +1,105 @@
 {
-  "pageTitle": "Login Page",
-  "pageSubtitle": "Start your journey now with us",
-  "formTitle": "Login to your account",
-  "username": "Username",
+  "pageTitle": "Welcome to Sunshine Dental",
+  "pageSubtitle": "Your smile is our priority.",
+  "formTitle": "Log in",
+  "welcome": "Welcome back! Please enter your details.",
+  "Email": "Email",
   "password": "Password",
-  "loginNow": "Login now",
-  "loggingIn": "Logging in...",
-  "loginSuccess": "Login successful! Redirecting...",
-  "loginFailed": "Login failed.",
-  "fillAll": "Please fill in all fields.",
-  "google": "Login with Google",
+  "fillAll": "Please fill in all fields",
+  "loginSuccess": "Login successful!",
+  "loginFailed": "Login failed",
+  "loggingIn": "Logging In...",
+  "loginNow": "Log In",
+  "google": "Continue with Google",
   "noAccount": "Don't have an account?",
   "signUp": "Sign up",
-  "logoutSuccess": "Logged out.",
-  "switchToEn": "EN",
-  "switchToVi": "VN"
+  "tabs": {
+    "email": "Email",
+    "phone": "Phone Number"
+  },
+  "phone": {
+    "label": "Phone Number",
+    "placeholder": "0912345678",
+    "usePassword": "Use Password",
+    "useOtp": "Use OTP Code",
+    "change": "Change Phone Number?",
+    "loginWithPass": "Login with Password"
+  },
+  "otp": {
+    "label": "OTP Code",
+    "placeholder": "123456",
+    "get": "Get OTP Code",
+    "sending": "Sending...",
+    "resendIn": "Resend OTP in {{count}}s",
+    "resend": "Resend OTP",
+    "login": "Login with OTP",
+    "verifying": "Verifying...",
+    "sent": "OTP code has been sent!"
+  },
+  "errors": {
+    "fillPhonePass": "Please enter phone number and password",
+    "fillPhone": "Please enter phone number",
+    "fillOtp": "Please enter OTP code",
+    "sendOtpFailed": "Failed to send OTP",
+    "resendFailed": "Failed to resend email. Please try again later.",
+    "forgotFailed": "Failed to send request.",
+    "emptyEmail": "Please enter your email.",
+    "userInfoFailed": "Failed to retrieve user information."
+  },
+  "locked": {
+    "title": "⚠️ Account Locked!",
+    "button": "👉 Unlock Now (Forgot Password)"
+  },
+  "inactive": {
+    "title": "⚠️ Account Not Activated",
+    "button": "📧 Resend Activation Email",
+    "sent": "Activation email resent! Please check your inbox."
+  },
+  "forgot": {
+    "link": "Forgot Password?",
+    "modalTitle": "Reset Password",
+    "instruction": "Enter your email address and we'll send you a link to unlock your account.",
+    "emailLabel": "Email Address",
+    "cancel": "Cancel",
+    "send": "Send Link",
+    "sending": "Sending...",
+    "success": "Password reset link sent! Please check your email."
+  },
+  "oauth": {
+    "processing": "Processing login...",
+    "success": "Login successful!",
+    "missingPhone": "Login successful! Please update your phone number.",
+    "failed": "Login failed (No token)."
+  },
+  "reset": {
+    "title": "Reset Password",
+    "subtitle": "Please enter your new password below.",
+    "newPass": "New Password",
+    "confirmPass": "Confirm Password",
+    "btnSubmit": "Reset Password",
+    "btnHome": "Back to Home",
+    "cancel": "Cancel",
+    "processing": "Processing...",
+    "success": "Password reset successful! Redirecting to login...",
+    "errorToken": "Invalid or missing Token.",
+    "errorTokenTitle": "Invalid Link",
+    "errorTokenMsg": "The link is invalid or expired. Please request a new one.",
+    "errorEmpty": "Please fill in all fields.",
+    "errorRule": "Password must be 8-100 chars, include upper, lower, digit, special char.",
+    "errorMatch": "Confirm password must match.",
+    "failed": "Password reset failed. Token may be expired."
+  },
+  "verify": {
+    "loadingTitle": "Processing...",
+    "loadingMsg": "Verifying account...",
+    "successTitle": "Success!",
+    "successMsg": "Account activated successfully!",
+    "redirect": "You will be redirected to login shortly...",
+    "btnLogin": "Login Now",
+    "errorTitle": "Failed",
+    "btnHome": "Back to Home",
+    "errorToken": "Invalid Link (Missing Token).",
+    "errorDefault": "Verification failed. Token may be expired."
+  },
+  "divider": "Or continue with"
 }

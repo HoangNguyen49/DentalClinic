@@ -13,7 +13,6 @@ import {
   ExplanationDialog,
 } from "./empAtt/components";
 import { useEmployeeAttendance, useExplanationActions } from "./empAtt/useAttendanceLogic";
-import { needsExplanation } from "./empAtt/utils";
 
 export default function EmployeeAttendanceView() {
   const navigate = useNavigate();
@@ -84,18 +83,36 @@ export default function EmployeeAttendanceView() {
     attendance: AttendanceResponse,
     explanationTypeOverride?: string
   ) => {
-    // Nếu có explanationTypeOverride (từ schedule chưa check-in), dùng nó
-    // Nếu không, kiểm tra từ attendance
-    const explanationInfo = explanationTypeOverride
-      ? { needs: true, explanationType: explanationTypeOverride }
-      : needsExplanation(attendance);
+    // Kiểm tra trực tiếp: có check-in nhưng không có check-out
+    const hasCheckIn = attendance.checkInTime != null;
+    const hasCheckOut = attendance.checkOutTime != null;
+    const needsMissingCheckOut = hasCheckIn && !hasCheckOut;
+    
+    // Nếu không có check-in hoặc đã có check-out, không cần giải trình
+    if (!needsMissingCheckOut && !explanationTypeOverride) {
+      return;
+    }
 
-    if (!explanationInfo.needs || !explanationInfo.explanationType) return;
+    // Xác định explanation type
+    const explanationType = explanationTypeOverride || "MISSING_CHECK_OUT";
+    
+    // Kiểm tra xem có pending explanation không (để lấy reason nếu có)
+    const hasPendingExplanation = attendance.note && attendance.note.includes("[EXPLANATION_REQUEST:");
+    const hasProcessedExplanation = attendance.note && (attendance.note.includes("[APPROVED]") || attendance.note.includes("[REJECTED]"));
+    
+    let employeeReason = "";
+    
+    // Nếu có pending explanation, extract reason từ note (nếu có)
+    if (hasPendingExplanation && !hasProcessedExplanation) {
+      const note = attendance.note || "";
+      // Extract employee reason (phần sau ] và trước | hoặc [HR: hoặc [APPROVED] hoặc [REJECTED]
+      const reasonMatch = note.match(/\[EXPLANATION_REQUEST:[^\]]+\]\s*(.*?)(?:\s*\|.*|\s*\[HR:.*|\s*\[APPROVED\].*|\s*\[REJECTED\].*)?$/);
+      employeeReason = reasonMatch ? reasonMatch[1].trim() : "";
+    }
 
-    // Nếu chưa có attendanceId (từ schedule), cần tạo attendance record trước
-    // Hoặc backend sẽ tự tạo khi submit explanation
+    // Tạo explanation object để mở form
     const explanation: ExplanationResponse = {
-      attendanceId: attendance.id && attendance.id > 0 ? attendance.id : 0, // 0 nếu chưa có attendance
+      attendanceId: attendance.id && attendance.id > 0 ? attendance.id : 0,
       userId: attendance.userId,
       userName: attendance.userName,
       clinicId: attendance.clinicId,
@@ -104,16 +121,16 @@ export default function EmployeeAttendanceView() {
       checkInTime: attendance.checkInTime,
       checkOutTime: attendance.checkOutTime,
       attendanceStatus: attendance.attendanceStatus,
-      explanationType: explanationInfo.explanationType,
-      employeeReason: null,
-      explanationStatus: "PENDING",
+      explanationType: explanationType,
+      employeeReason: employeeReason,
+      explanationStatus: hasPendingExplanation ? "PENDING" : "PENDING",
       adminNote: null,
       note: attendance.note,
       shiftType: attendance.shiftType,
     };
 
     setSelectedExplanation(explanation);
-    setExplanationReason("");
+    setExplanationReason(employeeReason);
     setShowExplanationDialog(true);
   };
 

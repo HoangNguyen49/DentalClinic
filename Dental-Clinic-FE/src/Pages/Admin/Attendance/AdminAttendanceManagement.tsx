@@ -151,15 +151,6 @@ export default function AdminAttendanceManagement() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [notifications]);
 
-  // Bảng màu (chủ đề UI)
-  const palette = {
-    background: "bg-slate-50",
-    surface: "bg-white",
-    border: "border-slate-200",
-    subtleText: "text-slate-500",
-    heading: "text-slate-900",
-  };
-
   // Đổi class hiển thị badge trạng thái theo loại trạng thái chấm công
   const statusBadgeClass = (status?: string | null) => {
     switch (status) {
@@ -177,16 +168,110 @@ export default function AdminAttendanceManagement() {
     }
   };
 
-  // Tính toán tổng kết (summary) số lượng record từng loại
+  // Type mở rộng để lưu thông tin về các ca
+  type ExtendedAttendanceResponse = AttendanceResponse & {
+    _shiftsInfo?: Array<{
+      status: string;
+      checkIn: string | null | undefined;
+      checkOut: string | null | undefined;
+      id: number;
+    }>;
+    _hasMultipleShifts?: boolean;
+  };
+
+  // Group và merge các bản ghi của cùng một nhân viên trong cùng một ngày thành một dòng
+  const groupedAttendances = useMemo(() => {
+    const grouped = new Map<string, AttendanceResponse[]>();
+    
+    attendances.forEach((item) => {
+      // Key: userId + workDate để group các bản ghi của cùng một nhân viên trong cùng một ngày
+      const key = `${item.userId}-${item.workDate}`;
+      if (!grouped.has(key)) {
+        grouped.set(key, []);
+      }
+      grouped.get(key)!.push(item);
+    });
+    
+    // Merge các bản ghi của cùng một nhân viên trong cùng một ngày thành một item duy nhất
+    const result: ExtendedAttendanceResponse[] = [];
+    grouped.forEach((items) => {
+      // Sắp xếp theo id để có thứ tự nhất quán
+      items.sort((a, b) => (a.id || 0) - (b.id || 0));
+      
+      // Nếu chỉ có 1 item, giữ nguyên
+      if (items.length === 1) {
+        result.push(items[0]);
+      } else {
+        // Merge nhiều items thành một
+        const firstItem = items[0];
+        
+        // Xác định status chính (ưu tiên: ON_TIME > APPROVED_LATE > LATE > APPROVED_ABSENCE > ABSENT)
+        const statusPriority: Record<string, number> = {
+          "ON_TIME": 1,
+          "APPROVED_LATE": 2,
+          "LATE": 3,
+          "APPROVED_ABSENCE": 4,
+          "ABSENT": 5,
+        };
+        const mainStatus = items.reduce((prev, curr) => {
+          const prevPriority = statusPriority[prev.attendanceStatus || ""] || 99;
+          const currPriority = statusPriority[curr.attendanceStatus || ""] || 99;
+          return currPriority < prevPriority ? curr : prev;
+        });
+        
+        // Lưu thông tin về các ca để hiển thị
+        const shiftsInfo = items.map(item => ({
+          status: item.attendanceStatus || "",
+          checkIn: item.checkInTime,
+          checkOut: item.checkOutTime,
+          id: item.id,
+        }));
+        
+        // Gộp notes
+        const notes = items
+          .map(item => item.note)
+          .filter(n => n && n.trim() !== "");
+        const mergedNote = notes.join("; ") || firstItem.note || "";
+        
+        const mergedItem: ExtendedAttendanceResponse = {
+          ...firstItem,
+          // Sử dụng status chính (nếu có nhiều status khác nhau, vẫn dùng status chính)
+          attendanceStatus: mainStatus.attendanceStatus,
+          // Gộp check-in/check-out (lấy sớm nhất và muộn nhất)
+          checkInTime: items
+            .map(item => item.checkInTime)
+            .filter(Boolean)
+            .sort()
+            [0] || null,
+          checkOutTime: items
+            .map(item => item.checkOutTime)
+            .filter(Boolean)
+            .sort()
+            .reverse()
+            [0] || null,
+          // Gộp notes
+          note: mergedNote,
+          // Lưu thông tin về các ca
+          _shiftsInfo: shiftsInfo,
+          _hasMultipleShifts: items.length > 1,
+        };
+        result.push(mergedItem);
+      }
+    });
+    
+    return result;
+  }, [attendances]);
+
+  // Tính toán tổng kết (summary) số lượng record từng loại dựa trên grouped list
   const attendanceSummary = useMemo(() => {
     const summary = {
-      total: attendances.length,
+      total: groupedAttendances.length,
       onTime: 0,
       late: 0,
       absent: 0,
     };
 
-    attendances.forEach((record) => {
+    groupedAttendances.forEach((record) => {
       switch (record.attendanceStatus) {
         case "ON_TIME":
           summary.onTime += 1;
@@ -205,7 +290,7 @@ export default function AdminAttendanceManagement() {
     });
 
     return summary;
-  }, [attendances]);
+  }, [groupedAttendances]);
 
   // Xử lý thay đổi giá trị filter (ngày, phòng khám, trạng thái)
   const handleFilterChange = useCallback((field: "date" | "clinicId" | "status", value: string) => {
@@ -439,15 +524,15 @@ export default function AdminAttendanceManagement() {
                       </div>
                     </td>
                   </tr>
-                ) : attendances.length === 0 ? (
+                ) : groupedAttendances.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                       {t("attendance.messages.noData", "No attendance records found")}
                     </td>
                   </tr>
                 ) : (
-                  // Render từng dòng dữ liệu chấm công
-                  attendances.map((attendance) => (
+                  // Render từng dòng dữ liệu chấm công (đã được group và merge)
+                  groupedAttendances.map((attendance) => (
                     <tr key={attendance.id} className="hover:bg-gradient-to-r hover:from-blue-50/30 hover:to-indigo-50/20 transition-all duration-200">
                       <td className="px-6 py-5 text-sm text-slate-900">
                         <div className="flex items-center gap-4">
@@ -475,13 +560,55 @@ export default function AdminAttendanceManagement() {
                         <span className="font-mono">{formatTime(attendance.checkOutTime)}</span>
                       </td>
                       <td className="px-6 py-5 text-sm">
-                        <span
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(
-                            attendance.attendanceStatus
-                          )}`}
-                        >
-                          {normalizeStatus(attendance.attendanceStatus, translateStatusLabel)}
-                        </span>
+                        {(() => {
+                          const extendedAttendance = attendance as ExtendedAttendanceResponse;
+                          const hasMultipleShifts = extendedAttendance._hasMultipleShifts;
+                          const shiftsInfo = extendedAttendance._shiftsInfo;
+                          
+                          if (hasMultipleShifts && shiftsInfo && shiftsInfo.length > 1) {
+                            // Hiển thị nhiều status nếu có nhiều ca
+                            return (
+                              <div className="flex flex-col gap-1.5">
+                                <span
+                                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(
+                                    attendance.attendanceStatus
+                                  )}`}
+                                >
+                                  {normalizeStatus(attendance.attendanceStatus, translateStatusLabel)}
+                                </span>
+                                <div className="flex flex-wrap gap-1">
+                                  {shiftsInfo.map((shift, idx) => (
+                                    <span
+                                      key={shift.id || idx}
+                                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${statusBadgeClass(shift.status)}`}
+                                      title={`${formatTime(shift.checkIn)} - ${formatTime(shift.checkOut)}`}
+                                    >
+                                      {normalizeStatus(shift.status, translateStatusLabel)}
+                                    </span>
+                                  ))}
+                                </div>
+                                <div className="text-xs text-slate-500 mt-1">
+                                  {shiftsInfo.map((shift, idx) => {
+                                    const checkIn = shift.checkIn ? formatTime(shift.checkIn) : "-";
+                                    const checkOut = shift.checkOut ? formatTime(shift.checkOut) : "-";
+                                    return `Ca ${idx + 1}: ${checkIn} - ${checkOut}`;
+                                  }).join(" | ")}
+                                </div>
+                              </div>
+                            );
+                          }
+                          
+                          // Hiển thị status bình thường nếu chỉ có 1 ca
+                          return (
+                            <span
+                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(
+                                attendance.attendanceStatus
+                              )}`}
+                            >
+                              {normalizeStatus(attendance.attendanceStatus, translateStatusLabel)}
+                            </span>
+                          );
+                        })()}
                       </td>
                       <td className="px-6 py-5 text-sm text-slate-600">
                         {attendance.note && attendance.note.trim().length > 0

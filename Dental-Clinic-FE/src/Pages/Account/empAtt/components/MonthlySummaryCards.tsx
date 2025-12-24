@@ -27,10 +27,12 @@ export const MonthlySummaryCards: React.FC<MonthlySummaryCardsProps> = ({ monthl
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
                 <div className="rounded-xl border border-gray-200 p-4 bg-gradient-to-br from-blue-50 to-blue-100">
                     <p className="text-sm font-medium text-blue-700">{t("attendance.monthlyHistory.summary.totalDays", "Days Logged")}</p>
-                    <p className="text-3xl font-bold text-blue-900 mt-2">{monthlySummary.totalDays}</p>
+                    <p className="text-3xl font-bold text-blue-900 mt-2">
+                        {monthlySummary.totalDays % 1 === 0 ? monthlySummary.totalDays : monthlySummary.totalDays.toFixed(1)}
+                    </p>
                     <p className="text-xs text-blue-800 mt-1">
-                        {t("attendance.monthlyHistory.summary.presentHelper", "Present days: {{value}}", {
-                            value: monthlySummary.presentDays,
+                        {t("attendance.monthlyHistory.summary.presentHelper", "Ngày làm: {{value}}", {
+                            value: monthlySummary.presentDays % 1 === 0 ? monthlySummary.presentDays : monthlySummary.presentDays.toFixed(1),
                         })}
                     </p>
                 </div>

@@ -1,0 +1,86 @@
+{
+  "title": "Dịch Vụ Của Chúng Tôi",
+  "services": {
+    "preventiveCare": {
+      "title": "Chăm Sóc Dự Phòng",
+      "desc": "Khám định kỳ, làm sạch và chụp X-quang để duy trì sức khỏe răng miệng tối ưu"
+    },
+    "dentalImplants": {
+      "title": "Cấy Ghép Răng",
+      "desc": "Giải pháp vĩnh viễn cho răng mất với vẻ ngoài và chức năng tự nhiên"
+    },
+    "orthodontics": {
+      "title": "Chỉnh Nha",
+      "desc": "Làm thẳng răng với niềng răng và khay chỉnh nha cho nụ cười khỏe mạnh hơn"
+    },
+    "cosmeticDentistry": {
+      "title": "Nha Khoa Thẩm Mỹ",
+      "desc": "Dán sứ, bọc răng sứ, tẩy trắng cho nụ cười sáng hơn, cân đối hơn"
+    },
+    "oralSurgery": {
+      "title": "Phẫu Thuật Răng Miệng",
+      "desc": "Nhổ răng, nhổ răng khôn và các thủ thuật phẫu thuật khác"
+    },
+    "pediatricDentistry": {
+      "title": "Nha Khoa Trẻ Em",
+      "desc": "Chăm sóc răng miệng cho trẻ em trong môi trường thân thiện, thoải mái"
+    }
+  },
+  "whyChooseUs": {
+    "title": "Tại Sao Chọn Chúng Tôi",
+    "bullets": [
+      "Quy trình vệ sinh và khử trùng nghiêm ngặt",
+      "Bác sĩ giàu kinh nghiệm và tận tâm",
+      "Công nghệ nha khoa hiện đại",
+      "Kết quả lâu dài và có thể dự đoán"
+    ]
+  },
+  "howItWorks": {
+    "title": "Quy Trình Làm Việc",
+    "steps": [
+      {
+        "title": "Khám Bệnh",
+        "desc": "Kiểm tra răng miệng toàn diện & chẩn đoán"
+      },
+      {
+        "title": "Kế Hoạch Điều Trị",
+        "desc": "Giải pháp và lựa chọn cá nhân hóa"
+      },
+      {
+        "title": "Theo Dõi",
+        "desc": "Chăm sóc liên tục và theo dõi sức khỏe răng miệng của bạn"
+      }
+    ]
+  },
+  "faq": {
+    "title": "Câu Hỏi Thường Gặp",
+    "questions": [
+      {
+        "q": "Giờ làm việc của bạn là gì?",
+        "a": "Thứ 2 - Thứ 7: 08:00 - 18:00. Chủ nhật chúng tôi nghỉ."
+      },
+      {
+        "q": "Bạn có chấp nhận bảo hiểm của tôi không?",
+        "a": "Có, chúng tôi hỗ trợ các công ty bảo hiểm lớn và cung cấp hóa đơn chi tiết."
+      },
+      {
+        "q": "Tôi nên khám định kỳ bao lâu một lần?",
+        "a": "Mỗi 6 tháng, hoặc theo lời khuyên của nha sĩ."
+      },
+      {
+        "q": "Bạn cung cấp những dịch vụ gì?",
+        "a": "Nha khoa tổng quát, chỉnh nha, thủ thuật thẩm mỹ và nhiều hơn nữa."
+      },
+      {
+        "q": "Bạn có cung cấp dịch vụ cấp cứu nha khoa không?",
+        "a": "Có, chúng tôi cung cấp dịch vụ cấp cứu trong giờ làm việc."
+      },
+      {
+        "q": "Làm thế nào để đặt lịch hẹn?",
+        "a": "Gọi cho chúng tôi hoặc sử dụng hệ thống đặt lịch trực tuyến trên website."
+      }
+    ]
+  },
+  "bookNow": "Đặt Lịch Ngay"
+}
+

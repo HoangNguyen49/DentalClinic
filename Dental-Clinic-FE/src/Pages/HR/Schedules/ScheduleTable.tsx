@@ -2,7 +2,7 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 
 import type { TableSchedule, DaySchedule } from "../../../utils/hr/scheduleUtils";
-import { isClinicHoliday } from "../../../utils/hr/scheduleUtils";
+import { isClinicHoliday, isDateHoliday } from "../../../utils/hr/scheduleUtils";
 
 type Holiday = {
     id: number;
@@ -67,19 +67,32 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                         <th className="border border-gray-300 px-4 py-3 text-left font-semibold text-gray-700 sticky left-12 bg-blue-50 z-10 min-w-[200px]">
                             {t("create.table.doctor")}
                         </th>
-                        {daysOfWeek.map((day) => (
-                            <th
-                                key={day.key}
-                                className="border border-gray-300 px-4 py-3 text-center font-semibold text-gray-700 min-w-[150px]"
-                            >
-                                <div className="flex flex-col">
-                                    <span>{day.label}</span>
-                                    <span className="text-xs font-normal text-gray-600 mt-1">
-                                        {day.dateString}
-                                    </span>
-                                </div>
-                            </th>
-                        ))}
+                        {daysOfWeek.map((day) => {
+                            const dayDate = day.dateStringISO || day.dateString;
+                            const isHoliday = isDateHoliday(dayDate, holidays);
+                            return (
+                                <th
+                                    key={day.key}
+                                    className={`border border-gray-300 px-4 py-3 text-center font-semibold min-w-[150px] ${
+                                        isHoliday 
+                                            ? "bg-red-100 text-red-800 border-red-300" 
+                                            : "text-gray-700"
+                                    }`}
+                                >
+                                    <div className="flex flex-col">
+                                        <span>{day.label}</span>
+                                        <span className={`text-xs font-normal mt-1 ${isHoliday ? "text-red-600" : "text-gray-600"}`}>
+                                            {day.dateString}
+                                        </span>
+                                        {isHoliday && (
+                                            <span className="text-xs font-bold text-red-700 mt-1">
+                                                (Nghỉ lễ)
+                                            </span>
+                                        )}
+                                    </div>
+                                </th>
+                            );
+                        })}
                     </tr>
                 </thead>
                 <tbody>
@@ -138,6 +151,7 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                         const dayDate = day.dateStringISO || day.dateString;
                                         const availableClinics = getAvailableClinics(dayDate);
                                         const availableClinicIds = availableClinics.map(c => c.id);
+                                        const isHoliday = isDateHoliday(dayDate, holidays);
                                         
                                         // Only show selected clinic if it's available (not on holiday)
                                         const morningClinicId = daySchedule.morning?.clinicId;
@@ -148,11 +162,23 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                         return (
                                             <td
                                                 key={day.key}
-                                                className="border border-gray-300 px-4 py-3"
+                                                className={`border px-4 py-3 ${
+                                                    isHoliday 
+                                                        ? "bg-red-50 border-red-200" 
+                                                        : "border-gray-300"
+                                                }`}
                                             >
                                                 <div className="space-y-2">
-                                                    <div className="p-2 bg-blue-50 rounded border border-blue-200">
-                                                        <div className="text-xs font-semibold text-blue-700 mb-1">
+                                                    <div className={`p-2 rounded border ${
+                                                        isHoliday 
+                                                            ? "bg-red-100 border-red-300" 
+                                                            : "bg-blue-50 border-blue-200"
+                                                    }`}>
+                                                        <div className={`text-xs font-semibold mb-1 ${
+                                                            isHoliday 
+                                                                ? "text-red-700" 
+                                                                : "text-blue-700"
+                                                        }`}>
                                                             {t("create.shifts.morning")} (08:00 - 11:00)
                                                         </div>
                                                         <select
@@ -182,8 +208,16 @@ const ScheduleTable: React.FC<ScheduleTableProps> = ({
                                                             ))}
                                                         </select>
                                                     </div>
-                                                    <div className="p-2 bg-orange-50 rounded border border-orange-200">
-                                                        <div className="text-xs font-semibold text-orange-700 mb-1">
+                                                    <div className={`p-2 rounded border ${
+                                                        isHoliday 
+                                                            ? "bg-red-100 border-red-300" 
+                                                            : "bg-orange-50 border-orange-200"
+                                                    }`}>
+                                                        <div className={`text-xs font-semibold mb-1 ${
+                                                            isHoliday 
+                                                                ? "text-red-700" 
+                                                                : "text-orange-700"
+                                                        }`}>
                                                             {t("create.shifts.afternoon")} (13:00 - 18:00)
                                                         </div>
                                                         <select

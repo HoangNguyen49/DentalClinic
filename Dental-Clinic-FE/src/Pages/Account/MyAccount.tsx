@@ -5,8 +5,9 @@ import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-// [MỚI] Import thư viện QR
 import { QRCodeCanvas } from "qrcode.react";
+// 1. Import hook
+import { useTranslation, Trans } from "react-i18next";
 
 type UserInfo = {
   userId: number;
@@ -20,12 +21,14 @@ type UserInfo = {
 };
 
 function MyAccount() {
+  // 2. Khởi tạo translation hook, sử dụng namespace "account"
+  const { t } = useTranslation(["account"]);
+
   const [user, setUser] = useState<UserInfo | null>(null);
   const [newAvatar, setNewAvatar] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // [MỚI] State cho QR Code
   const [qrToken, setQrToken] = useState<string | null>(null);
   const [showQrModal, setShowQrModal] = useState(false);
 
@@ -96,10 +99,10 @@ function MyAccount() {
       window.dispatchEvent(new Event("avatarUpdated"));
       setNewAvatar(null);
       setPreviewUrl(null);
-      toast.success("Avatar updated successfully!");
+      toast.success(t("avatar.success")); // Update translation
     } catch (error: any) {
       console.error(error);
-      toast.error("Failed to update avatar.");
+      toast.error(t("avatar.failed")); // Update translation
     }
   };
 
@@ -112,7 +115,7 @@ function MyAccount() {
     }
 
     if (!user.phone || user.phone.trim() === "") {
-        toast.warn("Vui lòng nhập số điện thoại để hoàn tất hồ sơ!");
+        toast.warn(t("messages.missingPhone")); // Update translation
         return;
     }
 
@@ -133,11 +136,11 @@ function MyAccount() {
       
       window.dispatchEvent(new Event("userUpdated")); 
 
-      toast.success("Cập nhật hồ sơ thành công!");
+      toast.success(t("messages.updateSuccess")); // Update translation
 
       if (isForceUpdate) {
           setTimeout(() => {
-              toast.info("Hoàn tất! Đang chuyển hướng về trang chủ...");
+              toast.info(t("messages.redirecting")); // Update translation
               navigate("/");
           }, 1500);
       }
@@ -148,22 +151,19 @@ function MyAccount() {
     }
   };
 
-  // [MỚI] Hàm lấy QR Token từ Backend
   const handleGenerateQr = async () => {
     try {
       const token = localStorage.getItem("accessToken");
       if (!token) return;
 
-      // SỬA DÒNG NÀY: Thêm <{ result: string }> để định nghĩa kiểu trả về
       const res = await axios.get<{ result: string }>(`${API}/api/auth/qr-generate`, {
          headers: { Authorization: `Bearer ${token}` }
       });
       
-      // Lúc này res.data đã được hiểu là có thuộc tính result
       setQrToken(res.data.result);
       setShowQrModal(true);
     } catch (error) {
-      toast.error("Không thể tạo mã QR đăng nhập.");
+      toast.error(t("messages.qrError")); // Update translation
     }
   };
 
@@ -175,7 +175,6 @@ function MyAccount() {
       
       <ToastContainer />
 
-      {/* [MỚI] Modal hiển thị QR Code */}
       {showQrModal && (
         <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[9999]">
           <div className="bg-white p-6 rounded-2xl shadow-2xl flex flex-col items-center max-w-sm w-full relative animate-fadeIn">
@@ -185,9 +184,10 @@ function MyAccount() {
             >
                 &times;
             </button>
-            <h3 className="text-xl font-bold mb-2 text-[#3366FF]">Đăng nhập Mobile App</h3>
+            <h3 className="text-xl font-bold mb-2 text-[#3366FF]">{t("qrModal.title")}</h3>
             <p className="text-sm text-gray-500 mb-6 text-center px-4">
-                Mở ứng dụng <strong>Sunshine Dental</strong> trên điện thoại và quét mã này để đăng nhập ngay lập tức.
+                {/* Sử dụng Trans để render HTML trong translation */}
+                <Trans i18nKey="qrModal.instruction" ns="account" components={{ strong: <strong /> }} />
             </p>
             
             <div className="p-4 border-4 border-[#AACCFF] rounded-xl bg-white shadow-inner">
@@ -205,7 +205,7 @@ function MyAccount() {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Mã này sẽ hết hạn trong 2 phút
+                {t("qrModal.expiry")}
             </div>
           </div>
         </div>
@@ -216,17 +216,16 @@ function MyAccount() {
           
           {isForceUpdate && (
              <div className="absolute top-0 left-0 w-full bg-yellow-100 text-yellow-800 p-3 text-center font-bold z-10 border-b border-yellow-300">
-                ⚠️ Bạn cần cập nhật số điện thoại để hoàn tất đăng ký.
+                {t("messages.forceUpdate")}
              </div>
           )}
 
           {/* Left Info */}
           <div className={`flex-1 space-y-4 w-full ${isForceUpdate ? "mt-8" : ""}`}>
-            <h2 className="text-3xl font-bold">My Account</h2>
+            <h2 className="text-3xl font-bold">{t("title")}</h2>
 
-            {/* ... Các input fields cũ giữ nguyên ... */}
             <div>
-              <label className="block font-semibold mb-1">Full Name</label>
+              <label className="block font-semibold mb-1">{t("fullName")}</label>
               <input
                 type="text"
                 value={user?.fullName || ""}
@@ -236,7 +235,7 @@ function MyAccount() {
             </div>
 
             <div>
-              <label className="block font-semibold mb-1">Email</label>
+              <label className="block font-semibold mb-1">{t("email")}</label>
               <input
                 type="email"
                 value={user?.email || ""}
@@ -247,7 +246,7 @@ function MyAccount() {
 
             <div>
               <label className="block font-semibold mb-1">
-                Phone <span className="text-red-500">*</span>
+                {t("phone")} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -256,21 +255,21 @@ function MyAccount() {
                 className={`w-full p-2 border rounded ${
                     !user?.phone && isForceUpdate ? "border-red-500 ring-2 ring-red-200" : ""
                 }`}
-                placeholder="Nhập số điện thoại của bạn"
+                placeholder={t("phone")}
               />
               {!user?.phone && isForceUpdate && (
-                  <p className="text-red-500 text-sm mt-1">Bắt buộc nhập số điện thoại.</p>
+                  <p className="text-red-500 text-sm mt-1">{t("messages.missingPhone")}</p>
               )}
             </div>
 
-            <p><strong>Username:</strong> {user?.username || "-"}</p>
+            <p><strong>{t("username")}:</strong> {user?.username || "-"}</p>
 
             <div className="flex flex-wrap gap-4 items-center pt-2">
               <button
                 onClick={handleSaveChanges}
                 className="px-6 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition font-semibold shadow-md"
               >
-                {isForceUpdate ? "Hoàn tất & Về trang chủ" : "Lưu thay đổi"}
+                {isForceUpdate ? t("buttons.complete") : t("buttons.save")}
               </button>
               
               {!isForceUpdate && (
@@ -278,19 +277,18 @@ function MyAccount() {
                   onClick={() => navigate("/change-password")}
                   className="px-4 py-2 bg-[#3366FF] text-white rounded hover:bg-[#254EDB] transition"
                 >
-                  {user?.hasPassword ? "Đổi mật khẩu" : "Tạo mật khẩu"}
+                  {user?.hasPassword ? t("buttons.changePassword") : t("buttons.setPassword")}
                 </button>
               )}
             </div>
 
-            {/* [MỚI] Phần nút bấm tạo QR Code */}
             {!isForceUpdate && (
                 <div className="mt-8 pt-6 border-t border-gray-100">
                     <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
-                        Kết nối thiết bị di động
+                        {t("qrModal.title")}
                     </h3>
                     <button
                         onClick={handleGenerateQr}
@@ -299,7 +297,7 @@ function MyAccount() {
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
                         </svg>
-                        Lấy mã QR đăng nhập
+                        {t("buttons.getQr")}
                     </button>
                 </div>
             )}
@@ -309,12 +307,12 @@ function MyAccount() {
           <div className="md:w-1/2 flex flex-col items-center justify-center gap-4">
             <img src={avatarSrc} alt="Avatar" className="w-60 h-60 rounded-full object-cover shadow-2xl border-4 border-white" />
             <label className="bg-white text-[#3366FF] font-semibold px-4 py-2 rounded cursor-pointer border border-[#3366FF] hover:bg-blue-50 transition">
-              Choose your avatar
+              {t("avatar.choose")}
               <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
             </label>
             {newAvatar && (
               <button onClick={handleUploadAvatar} className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 transition">
-                Confirm Upload
+                {t("avatar.confirm")}
               </button>
             )}
           </div>

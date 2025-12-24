@@ -5,17 +5,21 @@ import { toast, ToastContainer } from "react-toastify";
 import Header from "../../widgets/Header/Header";
 import Footer from "../../widgets/Footer/Footer";
 import "react-toastify/dist/ReactToastify.css";
+// 1. Import hook
+import { useTranslation } from "react-i18next";
 
 const PASSWORD_RULE = /^(?=\S+$)(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,100}$/;
 
-// Định nghĩa kiểu dữ liệu trả về từ API /me
 type UserProfile = {
   userId: number;
-  hasPassword?: boolean; // Trường quan trọng
+  hasPassword?: boolean;
   email: string;
 };
 
 function ChangePassword() {
+  // 2. Setup hook
+  const { t } = useTranslation(["account"]);
+  
   const navigate = useNavigate();
   const API_URL = import.meta.env.VITE_API_URL;
   
@@ -23,13 +27,11 @@ function ChangePassword() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   
-  const [loading, setLoading] = useState(false); // Loading khi submit
-  const [fetching, setFetching] = useState(true); // Loading khi lấy thông tin user
+  const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
   
-  // State quyết định giao diện: True = Hiện 3 ô, False = Hiện 2 ô
   const [hasPassword, setHasPassword] = useState(true); 
 
-  // 1. KHI VÀO TRANG: GỌI API KIỂM TRA TRẠNG THÁI MỚI NHẤT
   useEffect(() => {
     const checkUserStatus = async () => {
       const token = localStorage.getItem("accessToken");
@@ -43,10 +45,8 @@ function ChangePassword() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Cập nhật state dựa trên DB thực tế
         setHasPassword(!!data.hasPassword); 
 
-        // Đồng bộ lại localStorage để các trang khác dùng chung
         const localUser = localStorage.getItem("user");
         if (localUser) {
             const parsed = JSON.parse(localUser);
@@ -64,19 +64,16 @@ function ChangePassword() {
     checkUserStatus();
   }, [API_URL, navigate]);
 
-  // 2. XỬ LÝ SUBMIT
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation
     if (!newPassword || !confirmPassword) {
-      toast.error("Please fill in new password fields.");
+      toast.error(t("password.ruleError")); // Có thể thêm key chung cho empty field
       return;
     }
     
-    // Chỉ bắt buộc nhập pass cũ nếu hệ thống xác nhận user ĐÃ CÓ password
     if (hasPassword && !oldPassword) {
-        toast.error("Current password is required.");
+        toast.error(t("password.current") + " is required.");
         return;
     }
 
@@ -85,11 +82,11 @@ function ChangePassword() {
       return;
     }
     if (!PASSWORD_RULE.test(newPassword)) {
-      toast.error("Password must be 8-100 chars, include upper, lower, digit, special char.");
+      toast.error(t("password.ruleError"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      toast.error("Confirm password must match.");
+      toast.error(t("password.matchError"));
       return;
     }
 
@@ -100,7 +97,6 @@ function ChangePassword() {
       await axios.post<{ message?: string }>(
         `${API_URL}/api/auth/change-password`,
         {
-          // Nếu chưa có pass -> gửi chuỗi rỗng để Backend bỏ qua check
           currentPassword: hasPassword ? oldPassword : "", 
           newPassword: newPassword,
           confirmNewPassword: confirmPassword,
@@ -110,19 +106,14 @@ function ChangePassword() {
         }
       );
 
-      toast.success("Password updated successfully!");
+      toast.success(t("password.success"));
       
-      // 3. QUAN TRỌNG: CẬP NHẬT STATE NGAY LẬP TỨC
-      // Sau bước này, user đã có mật khẩu -> Set hasPassword = true
-      // Để nếu user ở lại trang này hoặc quay lại sau, họ sẽ thấy form đầy đủ (3 ô)
       setHasPassword(true);
       
-      // Clear form
       setOldPassword("");
       setNewPassword("");
       setConfirmPassword("");
 
-      // Chuyển trang sau 1.5s
       setTimeout(() => navigate("/my-account"), 1500);
 
     } catch (err: any) {
@@ -148,20 +139,18 @@ function ChangePassword() {
           className="bg-white p-8 rounded-2xl shadow-md max-w-md w-full space-y-6"
         >
           <h2 className="text-2xl font-bold text-center">
-            {hasPassword ? "Change Password" : "Set Password"}
+            {hasPassword ? t("password.titleChange") : t("password.titleSet")}
           </h2>
           
-          {/* Thông báo chỉ hiện khi chưa có pass */}
           {!hasPassword && (
               <div className="bg-blue-50 text-blue-700 p-3 rounded-lg text-sm text-center border border-blue-100">
-                  Bạn đang sử dụng tài khoản Google chưa có mật khẩu. Vui lòng thiết lập mật khẩu mới.
+                  {t("password.googleWarning")}
               </div>
           )}
 
-          {/* ẨN/HIỆN ô Current Password dựa trên state hasPassword */}
           {hasPassword && (
             <div>
-                <label className="block mb-1 text-sm font-semibold text-gray-700">Current Password</label>
+                <label className="block mb-1 text-sm font-semibold text-gray-700">{t("password.current")}</label>
                 <input
                     type="password"
                     value={oldPassword}
@@ -173,7 +162,7 @@ function ChangePassword() {
           )}
 
           <div>
-            <label className="block mb-1 text-sm font-semibold text-gray-700">New Password</label>
+            <label className="block mb-1 text-sm font-semibold text-gray-700">{t("password.new")}</label>
             <input
                 type="password"
                 value={newPassword}
@@ -184,7 +173,7 @@ function ChangePassword() {
           </div>
 
           <div>
-            <label className="block mb-1 text-sm font-semibold text-gray-700">Confirm Password</label>
+            <label className="block mb-1 text-sm font-semibold text-gray-700">{t("password.confirm")}</label>
             <input
                 type="password"
                 value={confirmPassword}
@@ -199,7 +188,7 @@ function ChangePassword() {
             disabled={loading}
             className="w-full bg-[#3366FF] text-white py-2 rounded hover:bg-[#254EDB] transition disabled:opacity-60 font-bold"
           >
-            {loading ? "Processing..." : (hasPassword ? "Update Password" : "Set Password")}
+            {loading ? "Processing..." : (hasPassword ? t("password.btnUpdate") : t("password.btnSet"))}
           </button>
         </form>
       </div>
