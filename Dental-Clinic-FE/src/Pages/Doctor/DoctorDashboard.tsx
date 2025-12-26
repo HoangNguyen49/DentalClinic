@@ -4,8 +4,6 @@ import axios from "axios";
 import {
   Calendar,
   Clock,
-  Users,
-  FileText,
   ArrowRight,
   CalendarDays,
   Crown,
@@ -345,40 +343,8 @@ export default function DoctorDashboard() {
               )}
             </div>
           </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-6">
-              
-
-              {/* Quick Actions */}
-              <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Quick Actions</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <button
-                    onClick={() => navigate("/doctor/appointments/calendar")}
-                    className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
-                  >
-                    <Calendar className="w-6 h-6 text-blue-600" />
-                    <span className="font-medium">View Calendar</span>
-                  </button>
-                  <button
-                    onClick={() => navigate("/doctor/medical-records/create")}
-                    className="p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
-                  >
-                    
-                    <Clock className="w-6 h-6 text-purple-600" />
-                    <span className="font-medium">View My Schedule</span>
-                  </button>
-
-                </div>
-              </div>
-            </div>
-
-           
-              </div>
-            </div>
-          </div>
-    
+        </div>
+      </div>
     </>
   );
 }

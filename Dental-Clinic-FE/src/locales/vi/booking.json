@@ -27,7 +27,8 @@
       "badge": "CAO CẤP",
       "feature1": "Chọn Bác sĩ Trưởng khoa/Chuyên gia",
       "feature2": "Chọn Giờ chính xác từng phút",
-      "feature3": "Ưu tiên check-in không cần chờ"
+      "feature3": "Ưu tiên check-in không cần chờ",
+      "feature4": "Phòng VIP tiện nghi, ghế massage & TV"
     },
     "perVisit": "/lượt",
     "selectBtn": "Chọn Ngay"
@@ -44,7 +45,14 @@
     "title": "Chọn Bác Sĩ (VIP)",
     "loading": "Đang tải danh sách bác sĩ...",
     "notFound": "Không tìm thấy bác sĩ phù hợp.",
-    "subNotFound": "Vui lòng quay lại chọn dịch vụ khác hoặc đổi cơ sở."
+    "subNotFound": "Vui lòng quay lại chọn dịch vụ khác hoặc đổi cơ sở.",
+    "vipWarning": "Dịch vụ VIP: Chỉ hiển thị bác sĩ >10 năm kinh nghiệm",
+    "mock": {
+      "titleStandard": "Bác sĩ Nha khoa",
+      "titleHead": "Trưởng Khoa",
+      "titleExpert": "Chuyên Gia Cao Cấp",
+      "expYears": "{{count}}+ Năm Kinh Nghiệm"
+    }
   },
   "stepDateStandard": {
     "title": "Chọn Thời Gian (Tiêu Chuẩn)",

@@ -309,7 +309,7 @@ export default function LeaveRequestManagement() {
 
               <div className="p-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-                  {/* Employee Info */}
+                  {/* Employee cardcard */}
                   <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-200 shadow-sm">
                     <p className="text-xs font-bold text-blue-700 uppercase tracking-wider mb-2">
                       {t("leaveRequest.employee", "Employee")}
@@ -342,7 +342,7 @@ export default function LeaveRequestManagement() {
                     </div>
                   </div>
 
-                  {/* Duration */}
+                  {/* Duration  card */}
                   <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-xl border-2 border-purple-200 shadow-sm">
                     <p className="text-xs font-bold text-purple-700 uppercase tracking-wider mb-2">
                       {t("leaveRequest.time", "Duration")}
@@ -362,7 +362,7 @@ export default function LeaveRequestManagement() {
                     </div>
                   </div>
 
-                  {/* Status */}
+                   { /* Status */}
                   <div
                     className={`p-5 rounded-xl border-2 shadow-sm ${
                       request.status === "APPROVED"

@@ -16,11 +16,14 @@ const NotificationBell: React.FC = () => {
     const [badgeAnimation, setBadgeAnimation] = useState<'bounce' | 'pulse' | ''>('');
     const prevUnreadCountRef = useRef(unreadCount);
 
-    // Refresh notifications và unread count khi mở dropdown (giống Mobile - refresh khi mở screen)
+    //  Refresh notifications và unread count khi mở dropdown (immediate để đảm bảo số chính xác)
     useEffect(() => {
         if (isOpen) {
             fetchNotifications();
-            fetchUnreadCount();
+            //  Gọi với immediate=true để đảm bảo số chính xác khi mở dropdown
+            fetchUnreadCount(true).catch(err => {
+                console.error('[NotificationBell] Failed to fetch unread count:', err);
+            });
         }
         // Chỉ phụ thuộc vào isOpen, không phụ thuộc vào functions để tránh re-render không cần thiết
         // eslint-disable-next-line react-hooks/exhaustive-deps

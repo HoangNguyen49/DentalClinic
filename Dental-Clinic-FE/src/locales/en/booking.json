@@ -27,7 +27,8 @@
       "badge": "PREMIUM",
       "feature1": "Choose Head Doctor/Specialist",
       "feature2": "Choose Exact Time Slot",
-      "feature3": "Priority check-in, no waiting"
+      "feature3": "Priority check-in, no waiting",
+      "feature4": "Luxury private room with massage chair & TV"
     },
     "perVisit": "/visit",
     "selectBtn": "Select Now"
@@ -44,7 +45,14 @@
     "title": "Select Doctor (VIP)",
     "loading": "Loading doctors...",
     "notFound": "No suitable doctors found.",
-    "subNotFound": "Please go back and select different services or clinic."
+    "subNotFound": "Please go back and select different services or clinic.",
+    "vipWarning": "VIP Service: Only showing doctors with >10 years experience",
+    "mock": {
+      "titleStandard": "Dentist",
+      "titleHead": "Head of Department",
+      "titleExpert": "Senior Expert",
+      "expYears": "{{count}}+ Years Exp"
+    }
   },
   "stepDateStandard": {
     "title": "Select Date (Standard)",

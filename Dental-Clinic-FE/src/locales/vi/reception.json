@@ -99,7 +99,17 @@
     "save": "Lưu Thay Đổi",
     "success": "Cập nhật thành công!",
     "error": "Lỗi cập nhật.",
-    "statusLocked": "Trạng thái do Bác sĩ cập nhật"
+    "statusLocked": "Trạng thái do Bác sĩ cập nhật",
+    "cancel": {
+      "title": "Xác nhận hủy lịch hẹn?",
+      "desc": "Hành động này không thể hoàn tác. Vui lòng nhập lý do hủy để lưu vào hồ sơ.",
+      "reasonLabel": "Lý do hủy",
+      "placeholder": "VD: Khách bận đột xuất, Khách muốn đổi giờ...",
+      "requireReason": "Vui lòng nhập lý do hủy!",
+      "success": "Đã hủy lịch hẹn thành công!",
+      "btnBack": "Quay lại",
+      "btnConfirm": "Xác nhận Hủy"
+    }
   },
   "roomModal": {
     "title": "Chọn Phòng Điều Trị",
@@ -287,5 +297,5 @@
       "prev": "Trước",
       "next": "Sau"
     }
-}
+  }
 }

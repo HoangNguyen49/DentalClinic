@@ -99,7 +99,17 @@
     "save": "Save Changes",
     "success": "Updated successfully!",
     "error": "Update failed.",
-    "statusLocked": "Status is managed by Doctor"
+    "statusLocked": "Status is managed by Doctor",
+    "cancel": {
+      "title": "Confirm Cancellation?",
+      "desc": "This action cannot be undone. Please enter a reason for the record.",
+      "reasonLabel": "Reason",
+      "placeholder": "E.g: Customer is busy, Rescheduling...",
+      "requireReason": "Please enter a cancellation reason!",
+      "success": "Appointment cancelled successfully!",
+      "btnBack": "Back",
+      "btnConfirm": "Confirm Cancel"
+    }
   },
   "roomModal": {
     "title": "Select Treatment Room",
@@ -287,5 +297,5 @@
       "prev": "Prev",
       "next": "Next"
     }
-}
+  }
 }

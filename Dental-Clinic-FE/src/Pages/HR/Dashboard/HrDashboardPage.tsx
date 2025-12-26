@@ -420,9 +420,21 @@ function HrDashboardPage() {
                       <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center overflow-hidden flex-shrink-0">
                         {employee.avatarUrl ? (
                           <img
-                            src={`${apiBase}${employee.avatarUrl}`}
+                            src={employee.avatarUrl.startsWith('http') ? employee.avatarUrl : `${apiBase}${employee.avatarUrl.startsWith('/') ? employee.avatarUrl : '/' + employee.avatarUrl}`}
                             alt={employee.fullName}
                             className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Nếu lỗi tải ảnh, hiện ký tự đầu
+                              const target = e.currentTarget as HTMLImageElement;
+                              target.style.display = 'none';
+                              const parent = target.parentElement;
+                              if (parent && !parent.querySelector('span')) {
+                                const fallback = document.createElement('span');
+                                fallback.className = 'text-blue-700 font-semibold text-sm';
+                                fallback.textContent = employee.fullName?.charAt(0).toUpperCase() || '?';
+                                parent.appendChild(fallback);
+                              }
+                            }}
                           />
                         ) : (
                           <span className="text-blue-700 font-semibold text-sm">

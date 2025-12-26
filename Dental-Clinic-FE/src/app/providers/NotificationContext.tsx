@@ -15,8 +15,9 @@ interface NotificationContextType {
     markAsRead: (id: number) => Promise<void>;
     markAllAsRead: () => Promise<void>;
     fetchNotifications: (page?: number, size?: number) => Promise<void>;
-    fetchUnreadCount: () => Promise<void>; // Export để có thể gọi từ component (giống Mobile)
+    fetchUnreadCount: (immediate?: boolean) => Promise<void>; // ✅ Export với optional immediate để tránh "nhảy số"
     onNotificationReceived: (callback: (notification: NotificationResponse) => void) => () => void;
+    reconnectWebSocket: () => void; // ✅ Export để component có thể trigger reconnect manually
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -29,6 +30,10 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const markingIdsRef = useRef<Set<number>>(new Set()); // Track các notification đang được mark (dùng ref để tránh dependency)
     const stompClientRef = useRef<Client | null>(null);
     const user = getUser();
+    
+    // ✅ Track fetchUnreadCount đang chạy để tránh race condition và "nhảy số"
+    const isFetchingUnreadCountRef = useRef<boolean>(false);
+    const fetchUnreadCountTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     // Danh sách listener được đăng ký để phát event notification realtime giữa các component
     const notificationListenersRef = useRef<Set<(notification: NotificationResponse) => void>>(new Set());
@@ -39,20 +44,74 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         return user.userId || user.id || null;
     }, [user?.userId, user?.id]);
 
-    // Hàm lấy số lượng thông báo chưa đọc (giống commit cũ - đơn giản)
-    const fetchUnreadCount = useCallback(async () => {
-        const token = getToken();
-        if (!token) {
+    // Lấy token để trigger reconnect khi token thay đổi
+    const token = useMemo(() => getToken(), [user]); // Re-compute khi user thay đổi
+
+    // ✅ Hàm lấy số lượng thông báo chưa đọc với debounce và tránh race condition
+    const fetchUnreadCount = useCallback(async (immediate = false) => {
+        const currentToken = getToken();
+        if (!currentToken) {
             console.warn('[Notification] Cannot fetch unread count: No token');
             return;
         }
+        
+        // ✅ Nếu đang fetch và không phải immediate, debounce 300ms
+        if (isFetchingUnreadCountRef.current && !immediate) {
+            // Hủy timeout cũ nếu có
+            if (fetchUnreadCountTimeoutRef.current) {
+                clearTimeout(fetchUnreadCountTimeoutRef.current);
+            }
+            // Set timeout mới để fetch sau khi fetch hiện tại hoàn thành
+            fetchUnreadCountTimeoutRef.current = setTimeout(async () => {
+                // Đợi fetch hiện tại hoàn thành (tối đa 2s)
+                let waitCount = 0;
+                while (isFetchingUnreadCountRef.current && waitCount < 20) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    waitCount++;
+                }
+                // Nếu đã hết thời gian chờ, bỏ qua
+                if (isFetchingUnreadCountRef.current) {
+                    return;
+                }
+                // Gọi lại với immediate=true
+                await fetchUnreadCount(true);
+            }, 300);
+            return;
+        }
+        
+        // ✅ Nếu đang fetch và là immediate, đợi fetch hiện tại hoàn thành (nhưng không quá 500ms)
+        if (isFetchingUnreadCountRef.current && immediate) {
+            // Đợi tối đa 500ms cho fetch hiện tại hoàn thành (giảm từ 2s để responsive hơn)
+            let waitCount = 0;
+            while (isFetchingUnreadCountRef.current && waitCount < 5) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+                waitCount++;
+            }
+            // ✅ Nếu vẫn đang fetch sau 500ms, vẫn tiếp tục fetch mới để đảm bảo số được update
+            // (không bỏ qua để tránh mất số khi có nhiều notification đến cùng lúc)
+        }
+        
+        // ✅ Hủy timeout cũ nếu có (trước khi fetch mới)
+        if (fetchUnreadCountTimeoutRef.current) {
+            clearTimeout(fetchUnreadCountTimeoutRef.current);
+            fetchUnreadCountTimeoutRef.current = null;
+        }
+        
+        // ✅ Set flag đang fetch
+        isFetchingUnreadCountRef.current = true;
+        
         try {
             const response = await notificationApi.countUnread();
+            // ✅ Luôn update với giá trị từ server để đảm bảo sync chính xác
+            // (Optimistic update đã được thực hiện ở WebSocket handler, giờ sync với server)
             setUnreadCount(response.data);
         } catch (error: any) {
             if (error.response?.status !== 401) {
                 console.error('[Notification] Failed to fetch unread count:', error);
             }
+        } finally {
+            // ✅ Clear flag
+            isFetchingUnreadCountRef.current = false;
         }
     }, []);
 
@@ -137,16 +196,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                 );
             });
 
-            // Fetch lại unread count từ server để đảm bảo sync chính xác (không giảm local trước)
-            await fetchUnreadCount();
+            // ✅ Fetch lại unread count từ server (immediate để đảm bảo sync ngay)
+            await fetchUnreadCount(true);
         } catch (error: any) {
             console.error('[Notification] Mark as read failed:', error);
 
             // Nếu lỗi 403 (Forbidden) hoặc 404 (Not Found), có thể notification không thuộc về user
             if (error.response?.status === 403 || error.response?.status === 404) {
-                // Fetch lại để sync với server (notification có thể đã bị xóa hoặc không thuộc về user)
+                // ✅ Fetch lại để sync với server (immediate để đảm bảo sync ngay)
                 await fetchNotifications();
-                await fetchUnreadCount();
+                await fetchUnreadCount(true);
                 toast.error('Notification not found or access denied', {
                     position: "top-right",
                     autoClose: 3000,
@@ -193,11 +252,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             // Cập nhật UI: đánh dấu tất cả notifications là đã đọc (giống Mobile - đơn giản)
             setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
             
-            // Set unread count về 0 ngay lập tức (giống Mobile)
+            // ✅ Set unread count về 0 ngay lập tức để UI responsive (giống Mobile)
             setUnreadCount(0);
             
-            // Fetch lại unread count từ server để đảm bảo sync (giống Mobile)
-            await fetchUnreadCount();
+            // ✅ Fetch lại unread count từ server (immediate để đảm bảo sync ngay)
+            await fetchUnreadCount(true);
             
             toast.success('All notifications marked as read', {
                 position: "top-right",
@@ -211,11 +270,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                     autoClose: 3000,
                 });
             }
-            // Fetch lại cả notifications và unread count để sync với server (có thể một số đã được mark thành công)
+            // ✅ Fetch lại cả notifications và unread count để sync với server (immediate)
             try {
                 await Promise.all([
                     fetchNotifications(),
-                    fetchUnreadCount()
+                    fetchUnreadCount(true)
                 ]);
             } catch (fetchError) {
                 console.error('[Notification] Failed to sync after mark all as read:', fetchError);
@@ -235,11 +294,24 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         };
     }, []);
 
-    // Kết nối WebSocket để nhận push notification realtime từ server
-    useEffect(() => {
-        const token = getToken();
-        if (!token || !userId) {
+    // Hàm reconnect WebSocket (có thể gọi từ bên ngoài)
+    const reconnectWebSocket = useCallback(() => {
+        const currentToken = getToken();
+        const currentUserId = userId;
+        if (!currentToken || !currentUserId) {
+            // Disconnect nếu không có token hoặc userId
+            if (stompClientRef.current) {
+                stompClientRef.current.deactivate();
+                stompClientRef.current = null;
+            }
+            setIsConnected(false);
             return;
+        }
+
+        // Disconnect client cũ nếu có
+        if (stompClientRef.current) {
+            stompClientRef.current.deactivate();
+            stompClientRef.current = null;
         }
 
         const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8080';
@@ -249,16 +321,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         const client = new Client({
             webSocketFactory: () => new SockJS(socketUrl),
             connectHeaders: {
-                Authorization: `Bearer ${token}`,
+                Authorization: `Bearer ${currentToken}`,
             },
-            // WebSocket debug logs - có thể bật lại nếu cần debug
-            // debug: (str) => console.log('[WebSocket Debug]:', str),
             onConnect: () => {
                 setIsConnected(true);
-                // Khi connect thành công, đồng bộ lại các dữ liệu notification để tránh sót
-                // Sử dụng setTimeout để tránh gọi ngay lập tức, đợi WebSocket ổn định
+                // ✅ Khi connect thành công, đồng bộ lại các dữ liệu notification (immediate)
                 setTimeout(() => {
-                    fetchUnreadCount();
+                    fetchUnreadCount(true);
                     fetchNotifications();
                 }, 100);
 
@@ -280,14 +349,16 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
                             return [notification, ...prev];
                         });
                         
-                        // Fetch lại unread count từ server thay vì tăng local để đảm bảo sync chính xác
+                        // ✅ Optimistic update: Tăng số ngay lập tức nếu notification chưa đọc để user thấy ngay
+                        if (!notification.isRead) {
+                            setUnreadCount((prev) => prev + 1);
+                        }
+                        
+                        // ✅ Fetch lại unread count từ server ngay lập tức (immediate) để đảm bảo sync chính xác
                         // (tránh trường hợp có notification khác đã được mark as read ở nơi khác)
-                        fetchUnreadCount().catch(err => {
+                        fetchUnreadCount(true).catch(err => {
                             console.error('[WebSocket] Failed to fetch unread count after receiving notification:', err);
-                            // Fallback: chỉ tăng nếu notification chưa đọc (nếu fetch thất bại)
-                            if (!notification.isRead) {
-                                setUnreadCount((prev) => prev + 1);
-                            }
+                            // ✅ Nếu fetch thất bại, giữ nguyên optimistic update đã tăng ở trên
                         });
 
                         // Phát tới các listener đã đăng ký
@@ -315,14 +386,38 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
             },
             onDisconnect: () => {
                 setIsConnected(false);
+                // Tự động reconnect sau 5s (dùng closure để tránh circular dependency)
+                setTimeout(() => {
+                    const token = getToken();
+                    const uid = userId;
+                    if (token && uid) {
+                        reconnectWebSocket();
+                    }
+                }, 5000);
             },
             onStompError: (frame) => {
                 console.error('[WebSocket] STOMP Error:', frame);
                 setIsConnected(false);
+                // Tự động reconnect sau 5s
+                setTimeout(() => {
+                    const token = getToken();
+                    const uid = userId;
+                    if (token && uid) {
+                        reconnectWebSocket();
+                    }
+                }, 5000);
             },
             onWebSocketError: (event) => {
                 console.error('[WebSocket] WebSocket Error:', event);
                 setIsConnected(false);
+                // Tự động reconnect sau 5s
+                setTimeout(() => {
+                    const token = getToken();
+                    const uid = userId;
+                    if (token && uid) {
+                        reconnectWebSocket();
+                    }
+                }, 5000);
             },
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,
@@ -331,25 +426,58 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
         client.activate();
         stompClientRef.current = client;
+    }, [userId, fetchUnreadCount, fetchNotifications]);
 
-        // Dọn dẹp khi unmount/kết thúc
+    // Kết nối WebSocket khi userId hoặc token thay đổi
+    useEffect(() => {
+        if (!token || !userId) {
+            // Disconnect nếu không có token hoặc userId
+            if (stompClientRef.current) {
+                stompClientRef.current.deactivate();
+                stompClientRef.current = null;
+            }
+            setIsConnected(false);
+            return;
+        }
+
+        reconnectWebSocket();
+
+        // ✅ Dọn dẹp khi unmount/kết thúc
         return () => {
             if (stompClientRef.current) {
                 stompClientRef.current.deactivate();
                 stompClientRef.current = null;
             }
+            // ✅ Cleanup timeout để tránh memory leak
+            if (fetchUnreadCountTimeoutRef.current) {
+                clearTimeout(fetchUnreadCountTimeoutRef.current);
+                fetchUnreadCountTimeoutRef.current = null;
+            }
         };
-    }, [userId]);
+    }, [userId, token, reconnectWebSocket]);
 
-    // Đồng bộ lại notifications và số chưa đọc định kỳ mỗi 30s (chống miss sót!) 
+    // Đồng bộ lại notifications và số chưa đọc định kỳ mỗi 30s (chống miss sót!)
+    // ✅ FIX: Sync ngay khi mount, không đợi interval
     useEffect(() => {
         if (!userId) return;
+        
+        // ✅ Sync ngay khi mount (immediate để đảm bảo hiện ngay)
+        fetchUnreadCount(true);
+        fetchNotifications();
+        
+        // ✅ Sau đó mới set interval (giảm xuống 15s và dùng immediate để sync nhanh hơn)
         const syncInterval = setInterval(() => {
-            fetchUnreadCount();
+            fetchUnreadCount(true); // ✅ Dùng immediate để đảm bảo sync ngay, không debounce
             fetchNotifications();
-        }, 30000);
+        }, 15000); // ✅ Giảm từ 30s xuống 15s để sync nhanh hơn và đảm bảo không bỏ sót
+        
         return () => {
             clearInterval(syncInterval);
+            // ✅ Cleanup timeout khi unmount để tránh memory leak
+            if (fetchUnreadCountTimeoutRef.current) {
+                clearTimeout(fetchUnreadCountTimeoutRef.current);
+                fetchUnreadCountTimeoutRef.current = null;
+            }
         };
         // Chỉ phụ thuộc vào userId, không phụ thuộc vào functions để tránh recreate interval
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -370,7 +498,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         fetchNotifications,
         fetchUnreadCount,
         onNotificationReceived,
-    }), [notifications, unreadCount, isConnected, isMarkingAsRead, markingIds, markAsRead, markAllAsRead, fetchNotifications, fetchUnreadCount, onNotificationReceived]);
+        reconnectWebSocket, // ✅ Export để component có thể trigger reconnect manually
+    }), [notifications, unreadCount, isConnected, isMarkingAsRead, markingIds, markAsRead, markAllAsRead, fetchNotifications, fetchUnreadCount, onNotificationReceived, reconnectWebSocket]);
 
     return (
         <NotificationContext.Provider value={contextValue}>
